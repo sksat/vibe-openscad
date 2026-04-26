@@ -1,0 +1,159 @@
+---
+interface Props {
+  src: string;
+  height?: number;
+}
+const { src, height = 480 } = Astro.props;
+---
+
+<div class="stl-host" data-stl-src={src} style={`height: ${height}px`}>
+  <div class="loading">loading STL…</div>
+</div>
+
+<script>
+  // Initialize all <div data-stl-src> on the page once. Lazy-load three.js
+  // and STLLoader so the bundle isn't paid for unless the page renders one.
+  async function init() {
+    const hosts = document.querySelectorAll<HTMLElement>("[data-stl-src]");
+    if (hosts.length === 0) return;
+
+    const THREE = await import("three");
+    const { STLLoader } = await import(
+      "three/examples/jsm/loaders/STLLoader.js"
+    );
+    const { OrbitControls } = await import(
+      "three/examples/jsm/controls/OrbitControls.js"
+    );
+
+    // Match OpenSCAD's Z-up convention so the STL viewer aligns with
+    // the PNG render. three.js's default up is Y; STL files carry no
+    // axis info, so without this every model would look tipped over.
+    THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
+
+    const loader = new STLLoader();
+
+    for (const host of Array.from(hosts)) {
+      const src = host.getAttribute("data-stl-src");
+      if (!src) continue;
+
+      const width = host.clientWidth;
+      const height = host.clientHeight;
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xffffff);
+
+      const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 5000);
+      camera.up.set(0, 0, 1);
+      camera.position.set(160, -160, 120);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(width, height);
+      host.innerHTML = "";
+      host.appendChild(renderer.domElement);
+
+      // Lights — positioned for Z-up
+      scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+      const dir = new THREE.DirectionalLight(0xffffff, 0.6);
+      dir.position.set(1, -1, 2);
+      scene.add(dir);
+      const dir2 = new THREE.DirectionalLight(0xffffff, 0.25);
+      dir2.position.set(-1, 1, 0.5);
+      scene.add(dir2);
+
+      // Grid helper on the XY plane (rotated from default XZ)
+      const grid = new THREE.GridHelper(200, 20, 0xbbbbbb, 0xdddddd);
+      grid.rotation.x = Math.PI / 2;
+      scene.add(grid);
+
+      // OrbitControls
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+
+      try {
+        const geom = await new Promise((resolve, reject) =>
+          loader.load(src, resolve, undefined, reject),
+        );
+        // @ts-expect-error - geom typing differs across versions
+        geom.computeVertexNormals();
+        const material = new THREE.MeshStandardMaterial({
+          color: 0x6cb6ff,
+          metalness: 0.05,
+          roughness: 0.6,
+        });
+        // @ts-expect-error - geom typing differs across versions
+        const mesh = new THREE.Mesh(geom, material);
+
+        // Center the model
+        // @ts-expect-error - geom typing
+        geom.computeBoundingBox();
+        // @ts-expect-error
+        const bbox = geom.boundingBox;
+        if (bbox) {
+          const center = new THREE.Vector3();
+          bbox.getCenter(center);
+          mesh.position.sub(center);
+          const size = new THREE.Vector3();
+          bbox.getSize(size);
+          const maxDim = Math.max(size.x, size.y, size.z);
+          // Z-up camera: from front-right, slightly above
+          camera.position.set(maxDim * 1.6, maxDim * -1.6, maxDim * 1.2);
+          camera.lookAt(0, 0, 0);
+        }
+        scene.add(mesh);
+      } catch (e) {
+        host.innerHTML = `<div class="error">STL load failed: ${
+          e instanceof Error ? e.message : String(e)
+        }</div>`;
+        continue;
+      }
+
+      function render() {
+        controls.update();
+        renderer.render(scene, camera);
+        requestAnimationFrame(render);
+      }
+      render();
+
+      // Resize handling
+      const observer = new ResizeObserver(() => {
+        const w = host.clientWidth;
+        const h = host.clientHeight;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+      });
+      observer.observe(host);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+</script>
+
+<style>
+  .stl-host {
+    position: relative;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    width: 100%;
+  }
+  .stl-host .loading,
+  .stl-host .error {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .stl-host .error { color: var(--bad); }
+</style>

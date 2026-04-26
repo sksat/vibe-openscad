@@ -1,0 +1,185 @@
+---
+import type { LoadedRun } from "../lib/results.js";
+import {
+  formatCost,
+  runBadges,
+  runCostUsd,
+  statusBadgeClass,
+} from "../lib/dataset.js";
+import VendorIcon from "./VendorIcon.astro";
+
+interface Props {
+  run: LoadedRun;
+  showTask?: boolean;
+  tier?: number;
+}
+const { run, showTask = false, tier } = Astro.props;
+const m = run.meta;
+const subagentModels =
+  m.harness.kind === "external-agent" && m.harness.subagents
+    ? m.harness.subagents.map((s) => s.model)
+    : [];
+const dataModels = [m.model, ...subagentModels].filter(Boolean).join(",");
+const cost = runCostUsd(m);
+const segments = runBadges(m);
+---
+
+<a
+  class="run-card"
+  href={`/benchmark/${m.runId}`}
+  data-model={m.model ?? ""}
+  data-models={dataModels}
+  data-provider={m.provider ?? ""}
+  data-harness={m.harness.kind}
+  data-matrix={m.matrixId}
+  data-status={m.status}
+  data-task={m.taskId}
+  data-tier={tier !== undefined ? String(tier) : ""}
+>
+  {run.pngUrl ? (
+    <div class="thumb"><img src={run.pngUrl} alt={`render of ${m.taskId} by ${m.matrixId}`} loading="lazy" /></div>
+  ) : (
+    <div class="thumb empty"><span>no render</span></div>
+  )}
+  <div class="meta">
+    <div class="row matrix-row">
+      <div class="matrix-badges" title={m.matrixId}>
+        {segments.map((s) => (
+          <span
+            class={`pill pill-${s.kind}`}
+            data-vendor={s.vendor ?? ""}
+            title={s.title ?? s.label}
+          >
+            {s.kind === "vendor" && s.vendor && <VendorIcon vendor={s.vendor} />}
+            {s.label}
+          </span>
+        ))}
+      </div>
+      <span class={statusBadgeClass(m.status)}>{m.status}</span>
+    </div>
+    {showTask && <div class="task muted">{m.taskId}</div>}
+    <div class="row sub muted">
+      <span>{(m.timing.totalMs / 1000).toFixed(1)}s</span>
+      {m.tokens && (
+        <span>{m.tokens.input}/{m.tokens.output}t</span>
+      )}
+      {cost != null && <span class="cost">{formatCost(cost)}</span>}
+    </div>
+    {subagentModels.length > 0 && (
+      <div class="row sub muted">
+        <span>+ subagents: {subagentModels.join(", ")}</span>
+      </div>
+    )}
+  </div>
+</a>
+
+<style>
+  .run-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    color: var(--fg);
+    transition: transform 0.05s ease, border-color 0.1s ease;
+  }
+  .run-card:hover {
+    transform: translateY(-1px);
+    border-color: var(--accent);
+    text-decoration: none;
+  }
+  .thumb {
+    aspect-ratio: 4 / 3;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .thumb img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+  .thumb.empty {
+    background: var(--bg-3);
+    color: var(--fg-dim);
+    font-size: 12px;
+    font-family: var(--mono);
+  }
+  .meta {
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+  }
+  .matrix-row {
+    align-items: flex-start;
+  }
+  .matrix-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+  }
+  .pill {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.5;
+    background: var(--bg-3);
+    border: 1px solid var(--line);
+    color: var(--fg-dim);
+    white-space: nowrap;
+  }
+  .pill-harness {
+    color: var(--fg);
+    border-color: rgba(108, 182, 255, 0.3);
+  }
+  .pill-vendor {
+    color: var(--fg-dim);
+  }
+  .pill-model {
+    color: var(--fg);
+    background: rgba(108, 182, 255, 0.10);
+    border-color: rgba(108, 182, 255, 0.4);
+  }
+
+  /* Vendor theming — Anthropic Claude (coral) */
+  .pill-vendor[data-vendor="claude"] {
+    color: #f3a585;
+    border-color: rgba(217, 119, 87, 0.5);
+    background: rgba(217, 119, 87, 0.14);
+  }
+  /* Vendor theming — Google Gemini (purple) */
+  .pill-vendor[data-vendor="gemini"] {
+    color: #d6bcfa;
+    border-color: rgba(139, 92, 246, 0.5);
+    background: rgba(139, 92, 246, 0.14);
+  }
+  /* Vendor theming — OpenAI (teal/sage; brand color #10a37f) */
+  .pill-vendor[data-vendor="openai"] {
+    color: #5ed5b3;
+    border-color: rgba(16, 163, 127, 0.55);
+    background: rgba(16, 163, 127, 0.14);
+  }
+  .task {
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .sub { font-size: 11px; }
+  .cost {
+    font-variant-numeric: tabular-nums;
+    color: var(--fg);
+  }
+</style>

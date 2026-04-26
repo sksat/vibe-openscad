@@ -1,0 +1,32 @@
+{
+  "runId": "bare_o3-ea53c442ebae-2026-04-26T19-39-17-414Z",
+  "taskId": "tier-1-mug",
+  "matrixId": "bare/o3",
+  "signature": "ea53c442ebaed485fb9f892c0b65d7d6e9949f8c85bf2c65f476371babb89327",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "883b512feb40f76c3fdcb332c7c513c491c27c8511f65b90fecbad6b6c197cd5",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "o3-2025-04-16"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "o3-2025-04-16",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 76831
+  },
+  "tokens": {
+    "input": 168,
+    "output": 5064
+  },
+  "cost_usd": 0.040848,
+  "createdAt": "2026-04-26T19:39:17.414Z"
+}

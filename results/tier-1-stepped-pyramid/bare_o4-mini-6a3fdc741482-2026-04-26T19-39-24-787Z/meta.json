@@ -1,0 +1,32 @@
+{
+  "runId": "bare_o4-mini-6a3fdc741482-2026-04-26T19-39-24-787Z",
+  "taskId": "tier-1-stepped-pyramid",
+  "matrixId": "bare/o4-mini",
+  "signature": "6a3fdc741482402a73da3c0a7a81e7e7354e05960c1868b1f37817bb85c2ce70",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "f33c33343b97cdee4ab2a95d84c7f4be5791294d1e997d9c55a752a15c9a2446",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "o4-mini-2025-04-16"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "o4-mini-2025-04-16",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 3289
+  },
+  "tokens": {
+    "input": 151,
+    "output": 381
+  },
+  "cost_usd": 0.0018425000000000002,
+  "createdAt": "2026-04-26T19:39:24.787Z"
+}

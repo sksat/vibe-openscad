@@ -1,0 +1,32 @@
+{
+  "runId": "bare_gemini-3.1-pro-1fe0f8ca3282-2026-04-26T18-57-37-429Z",
+  "taskId": "tier-1-cube-with-hole",
+  "matrixId": "bare/gemini-3.1-pro",
+  "signature": "1fe0f8ca32827f2abf415394ed3c654111cd21f6b9593621dc59aa06320154a5",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "8ff7e36af4bc202429ec68b7eb9cc3f195b6a3c68668be31239bcea23345a048",
+    "harness": {
+      "kind": "bare",
+      "provider": "google",
+      "model": "gemini-3.1-pro-preview"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "google",
+  "model": "gemini-3.1-pro-preview",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 8715
+  },
+  "tokens": {
+    "input": 68,
+    "output": 57
+  },
+  "cost_usd": 0.000655,
+  "createdAt": "2026-04-26T18:57:37.430Z"
+}

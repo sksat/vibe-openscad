@@ -1,0 +1,17 @@
+{
+  "name": "vibe-openscad",
+  "private": true,
+  "version": "0.0.0",
+  "description": "AI 3D spatial reasoning benchmark via OpenSCAD",
+  "type": "module",
+  "scripts": {
+    "test": "pnpm -r run test",
+    "typecheck": "pnpm -r run typecheck",
+    "build": "pnpm -r run build",
+    "bench": "pnpm --filter runners run bench"
+  },
+  "packageManager": "pnpm@10.33.2",
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "runId": "bare_gemini-2.5-pro-f92a9ef5dfee-2026-04-26T18-59-33-756Z",
+  "taskId": "tier-1-mug",
+  "matrixId": "bare/gemini-2.5-pro",
+  "signature": "f92a9ef5dfeec7f0c7863d2d4da61c6a3e3c738b9e7f93f7cc9922858866580a",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "883b512feb40f76c3fdcb332c7c513c491c27c8511f65b90fecbad6b6c197cd5",
+    "harness": {
+      "kind": "bare",
+      "provider": "google",
+      "model": "gemini-2.5-pro"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "google",
+  "model": "gemini-2.5-pro",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "no_code",
+  "timing": {
+    "totalMs": 38466
+  },
+  "createdAt": "2026-04-26T18:59:33.756Z",
+  "error": "model returned empty response (stopReason=MAX_TOKENS)"
+}

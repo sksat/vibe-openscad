@@ -1,0 +1,31 @@
+{
+  "name": "@vibe-openscad/runners",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "bench": "./dist/run.js"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "bench": "tsx src/run.ts",
+    "list-openai-models": "tsx scripts/list-openai-models.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.91.1",
+    "@google/genai": "^1.50.1",
+    "openai": "^6.34.0",
+    "yaml": "^2.8.3",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.10",
+    "vitest": "^4.1.5"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "runId": "bare_gpt-5-nano-6477bcbe58c5-2026-04-26T19-36-14-457Z",
+  "taskId": "tier-1-cube-with-hole",
+  "matrixId": "bare/gpt-5-nano",
+  "signature": "6477bcbe58c585025a6ac3094ca0127aa6672ae0dff4eb8fb37858ef7e280c22",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "8ff7e36af4bc202429ec68b7eb9cc3f195b6a3c68668be31239bcea23345a048",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5-nano-2025-08-07"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5-nano-2025-08-07",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 10727
+  },
+  "tokens": {
+    "input": 82,
+    "output": 1462
+  },
+  "cost_usd": 0.0005889000000000001,
+  "createdAt": "2026-04-26T19:36:14.457Z"
+}

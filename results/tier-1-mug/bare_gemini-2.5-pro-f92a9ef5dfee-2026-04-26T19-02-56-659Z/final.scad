@@ -1,0 +1,53 @@
+// --- パラメータ定義 ---
+
+// マグカップ本体の寸法
+outer_diameter = 80;      // 外径 (mm)
+height = 100;             // 高さ (mm)
+wall_thickness = 4;       // 側面の肉厚 (mm)
+bottom_thickness = 6;     // 底面の厚み (mm)
+
+// 取手の寸法
+handle_radius = 12;       // 取手のリング全体の半径 (mm)
+handle_pipe_radius = 5;   // 取手を構成するパイプの半径 (mm)
+
+// 曲面の解像度
+$fn = 100;
+
+
+// --- モデル生成 ---
+
+// 計算用変数
+outer_radius = outer_diameter / 2;
+inner_radius = outer_radius - wall_thickness;
+
+// union() で本体と取手を結合
+union() {
+    
+    // 1. マグカップ本体
+    difference() {
+        // 外側の円柱
+        cylinder(h = height, r = outer_radius);
+        
+        // 内側をくり抜くための円柱
+        // Z軸方向に底面の厚み分だけ移動させる
+        translate([0, 0, bottom_thickness]) {
+            // 高さを本体と同じか少し高くして、確実に上までくり抜く
+            cylinder(h = height, r = inner_radius);
+        }
+    }
+    
+    // 2. 取手 (トーラス形状)
+    // 本体側面に食い込むように位置を調整
+    translate([outer_radius - handle_pipe_radius, 0, height / 2]) {
+        // Z軸に平行なリングになるように90度回転
+        rotate([90, 0, 0]) {
+            // rotate_extrude を使ってトーラス（リング）を作成
+            rotate_extrude(convexity = 10) {
+                // 回転軸からオフセットした位置に断面の円を描画
+                translate([handle_radius, 0, 0]) {
+                    circle(r = handle_pipe_radius);
+                }
+            }
+        }
+    }
+}

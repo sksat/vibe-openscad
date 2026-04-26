@@ -1,0 +1,32 @@
+{
+  "runId": "bare_gpt-4.1-d074d7c5f83d-2026-04-26T19-37-49-474Z",
+  "taskId": "tier-1-mug",
+  "matrixId": "bare/gpt-4.1",
+  "signature": "d074d7c5f83d8633e3405173012d2c82a74f50728c54de368108afc0fcd6b0b8",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "883b512feb40f76c3fdcb332c7c513c491c27c8511f65b90fecbad6b6c197cd5",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-4.1-2025-04-14"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-4.1-2025-04-14",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 4767
+  },
+  "tokens": {
+    "input": 169,
+    "output": 491
+  },
+  "cost_usd": 0.004266,
+  "createdAt": "2026-04-26T19:37:49.474Z"
+}

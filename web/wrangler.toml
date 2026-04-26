@@ -1,0 +1,7 @@
+name = "vibe-openscad"
+compatibility_date = "2026-04-15"
+workers_dev = false
+
+[assets]
+directory = "./dist"
+not_found_handling = "404-page"

@@ -1,0 +1,32 @@
+{
+  "runId": "bare_claude-sonnet-4-0-6bab4cab351f-2026-04-26T18-19-47-827Z",
+  "taskId": "tier-1-cube-with-hole",
+  "matrixId": "bare/claude-sonnet-4-0",
+  "signature": "6bab4cab351fb04a7ccdc113158fdc172a1380415b41d49de12a7cbf0e8cda00",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "8ff7e36af4bc202429ec68b7eb9cc3f195b6a3c68668be31239bcea23345a048",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-sonnet-4-20250514",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 2033
+  },
+  "tokens": {
+    "input": 104,
+    "output": 47
+  },
+  "cost_usd": 0.0010170000000000001,
+  "createdAt": "2026-04-26T18:19:47.827Z"
+}

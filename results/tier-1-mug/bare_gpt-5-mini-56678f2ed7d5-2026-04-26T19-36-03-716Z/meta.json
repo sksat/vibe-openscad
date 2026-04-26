@@ -1,0 +1,32 @@
+{
+  "runId": "bare_gpt-5-mini-56678f2ed7d5-2026-04-26T19-36-03-716Z",
+  "taskId": "tier-1-mug",
+  "matrixId": "bare/gpt-5-mini",
+  "signature": "56678f2ed7d5a89d885e919125b6633fa1f896a086be8a25e2e07bb22dec6122",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "883b512feb40f76c3fdcb332c7c513c491c27c8511f65b90fecbad6b6c197cd5",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5-mini-2025-08-07"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5-mini-2025-08-07",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 53007
+  },
+  "tokens": {
+    "input": 168,
+    "output": 4069
+  },
+  "cost_usd": 0.00818,
+  "createdAt": "2026-04-26T19:36:03.716Z"
+}

@@ -1,0 +1,423 @@
+---
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { resolve } from "node:path";
+import Base from "../../layouts/Base.astro";
+import StlViewer from "../../components/StlViewer.astro";
+import ParametricStlViewer from "../../components/ParametricStlViewer.astro";
+import { Code } from "astro:components";
+import { formatCost, getDataset, runCostUsd, statusBadgeClass } from "../../lib/dataset.js";
+import { extractParameters } from "../../lib/scad-parameters.js";
+
+export function getStaticPaths() {
+  const ds = getDataset();
+  const tasksById = new Map(ds.tasks.map((t) => [t.task.id, t.task]));
+  const repoRoot = resolve(process.cwd(), "..");
+  const out = [];
+  for (const [runId, run] of ds.runs.entries()) {
+    const task = tasksById.get(run.meta.taskId);
+    let scad = "";
+    try {
+      scad = readFileSync(
+        join(repoRoot, "results", run.meta.taskId, runId, "final.scad"),
+        "utf8",
+      );
+    } catch {
+      // ignore
+    }
+    const parameters = scad ? extractParameters(scad) : [];
+    out.push({
+      params: { id: runId },
+      props: { run, task, scad, parameters },
+    });
+  }
+  return out;
+}
+
+const { run, task, scad, parameters } = Astro.props;
+const m = run.meta;
+const tweakable = parameters.filter(
+  (p) => p.kind === "number" || p.kind === "boolean",
+);
+const cost = runCostUsd(m);
+const ogTitle = `${m.matrixId} / ${m.taskId}`;
+const ogDescription = [
+  m.model ? `model: ${m.model}` : null,
+  `status: ${m.status}`,
+  `time: ${(m.timing.totalMs / 1000).toFixed(1)}s`,
+  cost !== null ? `cost: ${formatCost(cost)}` : null,
+]
+  .filter(Boolean)
+  .join(" · ");
+
+const placeholderHint: Record<string, string> = {
+  render_error: "OpenSCAD のレンダリングに失敗しました(下のエラー / SCAD を参照)",
+  no_code: "モデルが SCAD コードを返さなかったため何もレンダリングできません",
+  submit_missing: "ハーネスが submit_final を呼ばずに終了しました",
+  timeout: "タイムアウトで打ち切られました",
+};
+const failureHint = placeholderHint[m.status] ?? null;
+const subagents =
+  m.harness.kind === "external-agent" ? m.harness.subagents ?? [] : [];
+---
+
+<Base
+  title={`${ogTitle} — vibe-openscad`}
+  description={ogDescription}
+  ogImage={run.pngUrl}
+  ogType="article"
+>
+  <p class="muted">
+    <a href="/">← dashboard</a>
+    {" · "}
+    <a href={`/tasks/${m.taskId}`}>{m.taskId}</a>
+  </p>
+
+  <h1 class="title">
+    <span class="matrix">{m.matrixId}</span>
+    <span class="muted">/</span>
+    <span class="task-id">{m.taskId}</span>
+  </h1>
+  <div class="badges">
+    <span class={statusBadgeClass(m.status)}>{m.status}</span>
+    {task && <span class="badge">tier {task.tier}</span>}
+    {m.harness.kind === "external-agent" && (
+      <span class="badge">{m.harness.agent} {m.harness.agentVersion}</span>
+    )}
+  </div>
+
+  {m.error && (
+    <div class="error-box">
+      <div class="label">error</div>
+      <pre>{m.error}</pre>
+    </div>
+  )}
+
+  <section class="grid-2">
+    <div>
+      <h3>render</h3>
+      {run.pngUrl ? (
+        <img class="render" src={run.pngUrl} alt={`render of ${m.taskId}`} />
+      ) : failureHint ? (
+        <div class="empty failed">
+          <span class="status-tag">{m.status}</span>
+          <span>{failureHint}</span>
+        </div>
+      ) : (
+        <div class="empty">no render</div>
+      )}
+    </div>
+    <div>
+      <h3>3D viewer{tweakable.length > 0 && <span class="muted"> ({tweakable.length} 個のパラメータ)</span>}</h3>
+      {run.stlUrl ? (
+        tweakable.length > 0 ? (
+          <ParametricStlViewer
+            stlUrl={run.stlUrl}
+            scad={scad}
+            parameters={parameters}
+            height={420}
+          />
+        ) : (
+          <StlViewer src={run.stlUrl} height={420} />
+        )
+      ) : failureHint ? (
+        <div class="empty failed">
+          <span class="status-tag">{m.status}</span>
+          <span>{failureHint}</span>
+        </div>
+      ) : (
+        <div class="empty">no STL</div>
+      )}
+    </div>
+  </section>
+
+  <section class="meta-table">
+    <h3>meta</h3>
+    <table>
+      <tbody>
+        <tr><th>runId</th><td><code>{m.runId}</code></td></tr>
+        <tr><th>matrixId</th><td><code>{m.matrixId}</code></td></tr>
+        <tr><th>signature</th><td><code class="trunc" title={m.signature}>{m.signature.slice(0, 16)}…</code></td></tr>
+        <tr><th>provider</th><td>{m.provider ?? "—"}</td></tr>
+        <tr><th>model</th><td>{m.model ?? "—"}</td></tr>
+        <tr><th>harness</th><td>{m.harness.kind}</td></tr>
+        {m.harness.kind === "external-agent" && (
+          <>
+            <tr><th>turns</th><td>{m.harness.turnsUsed} / {m.harness.maxTurns}</td></tr>
+            <tr><th>renderCalls</th><td>{m.harness.renderCalls}</td></tr>
+          </>
+        )}
+        <tr><th>status</th><td>{m.status}</td></tr>
+        <tr><th>duration</th><td>{(m.timing.totalMs / 1000).toFixed(2)}s</td></tr>
+        {m.tokens && (
+          <tr><th>tokens</th><td>{m.tokens.input} in / {m.tokens.output} out</td></tr>
+        )}
+        {cost !== null && (
+          <tr><th>cost</th><td>{formatCost(cost)}{m.cost_usd === undefined && <span class="muted"> (recomputed)</span>}</td></tr>
+        )}
+        <tr><th>createdAt</th><td>{m.createdAt}</td></tr>
+        {m.gitCommit && (
+          <tr><th>gitCommit</th><td><code class="trunc">{m.gitCommit.slice(0, 12)}</code></td></tr>
+        )}
+        <tr><th>openscad</th><td>{m.fingerprint.openscadVersion}</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  {subagents.length > 0 && (
+    <section>
+      <h3>subagents</h3>
+      <table class="subagents">
+        <thead>
+          <tr><th>name</th><th>role</th><th>provider</th><th>model</th><th>invocations</th><th>tokens</th></tr>
+        </thead>
+        <tbody>
+          {subagents.map((s) => (
+            <tr>
+              <td><code>{s.name}</code></td>
+              <td>{s.role ?? "—"}</td>
+              <td>{s.provider ?? "—"}</td>
+              <td><code>{s.model}</code></td>
+              <td>{s.invocations}</td>
+              <td>{s.tokens ? `${s.tokens.input} / ${s.tokens.output}` : "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  )}
+
+  {run.iterations.length > 0 && (
+    <section>
+      <h3>iterations ({run.iterations.length})</h3>
+      <p class="muted hint">レンダリング画像を見て修正させるループの履歴。最終 iteration が <code>final.*</code> と同一です。</p>
+      <ol class="iterations">
+        {run.iterations.map((it) => {
+          const itMeta = m.iterations?.find(
+            (im) => String(im.index).padStart(2, "0") === it.dir,
+          );
+          return (
+            <li class="iter">
+              <div class="iter-head">
+                <span class="iter-idx">#{it.dir}</span>
+                {itMeta && (
+                  <span class={statusBadgeClass(itMeta.status)}>{itMeta.status}</span>
+                )}
+                {itMeta && (
+                  <span class="muted small">
+                    {(itMeta.durationMs / 1000).toFixed(1)}s
+                    {itMeta.tokens && ` · ${itMeta.tokens.input}/${itMeta.tokens.output}t`}
+                    {typeof itMeta.cost_usd === "number" &&
+                      ` · ${formatCost(itMeta.cost_usd)}`}
+                  </span>
+                )}
+              </div>
+              {it.pngUrl && (
+                <img class="iter-thumb" src={it.pngUrl} alt={`iteration ${it.dir}`} loading="lazy" />
+              )}
+              {itMeta?.error && <pre class="iter-error">{itMeta.error}</pre>}
+              {itMeta?.note && (
+                <p class="muted small note">{itMeta.note}</p>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  )}
+
+  {task && (
+    <section>
+      <h3>prompt</h3>
+      <pre class="prompt">{task.prompt}</pre>
+    </section>
+  )}
+
+  <section>
+    <h3>generated SCAD</h3>
+    {scad ? (
+      <Code code={scad} lang="c" theme="github-dark" wrap />
+    ) : m.status === "no_code" ? (
+      <div class="empty failed">
+        <span class="status-tag">no_code</span>
+        <span>モデルが SCAD コードブロックを返さなかった</span>
+      </div>
+    ) : (
+      <div class="empty">no SCAD</div>
+    )}
+  </section>
+</Base>
+
+<style>
+  .title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+  .matrix { color: var(--accent); }
+  .task-id { color: var(--fg); }
+  .badges {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 700px) {
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+  .render {
+    width: 100%;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+  .empty {
+    background: var(--bg-3);
+    color: var(--fg-dim);
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 13px;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .empty.failed {
+    background: rgba(239, 111, 108, 0.06);
+    border-color: rgba(239, 111, 108, 0.4);
+    color: var(--fg);
+  }
+  .empty.failed .status-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: rgba(239, 111, 108, 0.15);
+    color: var(--bad);
+    border: 1px solid rgba(239, 111, 108, 0.4);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .meta-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .meta-table th {
+    text-align: left;
+    padding: 6px 12px 6px 0;
+    font-weight: 500;
+    color: var(--fg-dim);
+    width: 140px;
+    vertical-align: top;
+  }
+  .meta-table td {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .meta-table tr:last-child td { border-bottom: none; }
+  .trunc {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 280px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  .subagents {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .subagents th, .subagents td {
+    text-align: left;
+    padding: 6px 12px 6px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .error-box {
+    background: rgba(239, 111, 108, 0.08);
+    border: 1px solid rgba(239, 111, 108, 0.4);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+  }
+  .error-box .label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--bad);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .error-box pre {
+    margin: 0;
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: var(--fg);
+  }
+  .prompt, .scad {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .iterations {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .iter {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .iter-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .iter-idx {
+    font-family: var(--mono);
+    font-weight: 600;
+  }
+  .iter-thumb {
+    width: 100%;
+    background: #fff;
+    border-radius: 4px;
+    border: 1px solid var(--line);
+    aspect-ratio: 4/3;
+    object-fit: contain;
+  }
+  .iter-error {
+    font-size: 11px;
+    color: var(--bad);
+    background: rgba(239, 111, 108, 0.06);
+    border: 1px solid rgba(239, 111, 108, 0.4);
+    padding: 6px 8px;
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .small { font-size: 11px; }
+  .note { margin: 0; }
+  .hint { font-size: 13px; }
+</style>

@@ -1,0 +1,190 @@
+---
+interface Props {
+  models: string[];
+  harnessKinds: string[];
+  statuses?: string[];
+  tiers?: number[];
+  subagentModels?: string[];
+}
+const {
+  models,
+  harnessKinds,
+  statuses = ["success", "no_code", "render_error", "submit_missing", "timeout", "api_error"],
+  tiers = [],
+  subagentModels = [],
+} = Astro.props;
+
+interface Group {
+  label: string;
+  facet: string;
+  values: { value: string; label: string }[];
+}
+
+const groups: Group[] = [];
+if (tiers.length > 0) {
+  groups.push({
+    label: "tier",
+    facet: "tier",
+    values: tiers.map((t) => ({ value: String(t), label: `tier ${t}` })),
+  });
+}
+groups.push({
+  label: "harness",
+  facet: "harness",
+  values: harnessKinds.map((h) => ({ value: h, label: h })),
+});
+groups.push({
+  label: "model",
+  facet: "models",
+  values: models.map((m) => ({ value: m, label: m })),
+});
+if (subagentModels.length > 0) {
+  groups.push({
+    label: "subagent",
+    facet: "models",
+    values: subagentModels.map((m) => ({ value: m, label: m })),
+  });
+}
+groups.push({
+  label: "status",
+  facet: "status",
+  values: statuses.map((s) => ({ value: s, label: s })),
+});
+---
+
+<aside class="filters" data-filter-root>
+  {groups.map((g) => (
+    <div class="group" data-group-label={g.label}>
+      <div class="label">{g.label}</div>
+      <div class="chips">
+        {g.values.map((v) => (
+          <button
+            type="button"
+            class="chip"
+            data-filter-chip
+            data-facet={g.facet}
+            data-value={v.value}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  ))}
+</aside>
+
+<script is:inline>
+  (() => {
+    const root = document.querySelector("[data-filter-root]");
+    if (!root) return;
+
+    const params = new URLSearchParams(location.hash.slice(1));
+    const active = new Map();
+    for (const [facet, csv] of params.entries()) {
+      active.set(facet, new Set(csv.split(",").filter(Boolean)));
+    }
+
+    function applyToChips() {
+      root.querySelectorAll("[data-filter-chip]").forEach((el) => {
+        const facet = el.getAttribute("data-facet");
+        const value = el.getAttribute("data-value");
+        if (!facet || !value) return;
+        const set = active.get(facet);
+        if (set && set.has(value)) el.classList.add("active");
+        else el.classList.remove("active");
+      });
+    }
+    function applyToCards() {
+      document.querySelectorAll("[data-task]").forEach((el) => {
+        let visible = true;
+        for (const [facet, set] of active.entries()) {
+          if (set.size === 0) continue;
+          if (facet === "models") {
+            const csv = el.getAttribute("data-models") || "";
+            const items = csv.split(",").filter(Boolean);
+            if (!items.some((v) => set.has(v))) visible = false;
+          } else if (facet === "tier") {
+            const v = el.getAttribute("data-tier");
+            if (v === null || !set.has(v)) visible = false;
+          } else {
+            const v = el.getAttribute(`data-${facet}`);
+            if (v === null || !set.has(v)) visible = false;
+          }
+        }
+        el.style.display = visible ? "" : "none";
+      });
+    }
+    function syncHash() {
+      const parts = [];
+      for (const [facet, set] of active.entries()) {
+        if (set.size === 0) continue;
+        parts.push(`${facet}=${[...set].join(",")}`);
+      }
+      const next = parts.join("&");
+      if (location.hash.slice(1) !== next) {
+        history.replaceState(null, "", next ? `#${next}` : location.pathname + location.search);
+      }
+    }
+
+    root.addEventListener("click", (e) => {
+      const t = e.target;
+      if (!(t instanceof Element)) return;
+      const chip = t.closest("[data-filter-chip]");
+      if (!chip) return;
+      e.preventDefault();
+      const facet = chip.getAttribute("data-facet");
+      const value = chip.getAttribute("data-value");
+      if (!facet || !value) return;
+      const set = active.get(facet) ?? new Set();
+      if (set.has(value)) set.delete(value);
+      else set.add(value);
+      if (set.size === 0) active.delete(facet);
+      else active.set(facet, set);
+      applyToChips();
+      applyToCards();
+      syncHash();
+    });
+
+    applyToChips();
+    applyToCards();
+  })();
+</script>
+
+<style>
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+  .group { display: flex; flex-direction: column; gap: 4px; }
+  .label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--fg-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    background: var(--bg-3);
+    color: var(--fg-dim);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+  }
+  .chip:hover { color: var(--fg); border-color: var(--accent); }
+  .chip.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+</style>

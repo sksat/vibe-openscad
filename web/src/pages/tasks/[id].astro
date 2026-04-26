@@ -1,0 +1,79 @@
+---
+import Base from "../../layouts/Base.astro";
+import RunCard from "../../components/RunCard.astro";
+import Filters from "../../components/Filters.astro";
+import { getDataset } from "../../lib/dataset.js";
+
+export function getStaticPaths() {
+  const ds = getDataset();
+  return ds.tasks.map((t) => ({
+    params: { id: t.task.id },
+    props: {
+      task: t.task,
+      runs: t.runs,
+      facets: ds.facets,
+    },
+  }));
+}
+
+const { task, runs, facets } = Astro.props;
+const sampleImage = runs.find((r) => r.pngUrl)?.pngUrl;
+const description = `${task.title} (tier ${task.tier}) — ${runs.length} run の比較`;
+---
+
+<Base
+  title={`${task.title} — vibe-openscad`}
+  description={description}
+  ogImage={sampleImage}
+>
+  <p class="muted"><a href="/">← dashboard</a></p>
+  <h1>{task.title}</h1>
+  <div class="meta">
+    <span class="badge">tier {task.tier}</span>
+    <code>{task.id}</code>
+  </div>
+
+  <h2>プロンプト</h2>
+  <pre>{task.prompt}</pre>
+
+  <h2>Runs ({runs.length})</h2>
+
+  <Filters
+    models={facets.models.toSorted()}
+    harnessKinds={facets.harnessKinds.toSorted()}
+    subagentModels={facets.subagentModels.toSorted()}
+  />
+
+  {runs.length === 0 ? (
+    <p class="muted">まだ run がありません。</p>
+  ) : (
+    <div class="grid">
+      {runs.map((r) => <RunCard run={r} tier={task.tier} />)}
+    </div>
+  )}
+</Base>
+
+<style>
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .meta code {
+    font-size: 13px;
+    color: var(--fg-dim);
+  }
+  details {
+    margin: 8px 0 16px;
+  }
+  details summary {
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+</style>

@@ -1,0 +1,33 @@
+{
+  "runId": "bare_gemini-2.5-flash-b817591b4eb4-2026-04-26T18-51-45-593Z",
+  "taskId": "tier-1-mug",
+  "matrixId": "bare/gemini-2.5-flash",
+  "signature": "b817591b4eb49e57414fab2801c2a01d632bada50cf5ceaf6af6e976c340490a",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "883b512feb40f76c3fdcb332c7c513c491c27c8511f65b90fecbad6b6c197cd5",
+    "harness": {
+      "kind": "bare",
+      "provider": "google",
+      "model": "gemini-2.5-flash"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "google",
+  "model": "gemini-2.5-flash",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "no_code",
+  "timing": {
+    "totalMs": 19745
+  },
+  "tokens": {
+    "input": 142,
+    "output": 162
+  },
+  "cost_usd": 0.00044760000000000004,
+  "createdAt": "2026-04-26T18:51:45.593Z",
+  "error": "no SCAD code block in response"
+}

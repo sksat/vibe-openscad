@@ -1,0 +1,125 @@
+defaults:
+  samples: 1
+  timeoutSec: 300
+
+# 可能なら dated snapshot を使う。Anthropic がエイリアスを内部的に
+# 別スナップショットへ向け直しても、エイリアス文字列は変わらず
+# fingerprint で検出できないため、dated を書けるなら必ず書く。
+# (Opus 4.7 / Sonnet 4.6 は dated suffix が未公開なので alias のまま)
+matrix:
+  # --- 現行世代 ---
+  - id: bare/claude-opus-4-7
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-opus-4-7
+  - id: bare/claude-sonnet-4-6
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-sonnet-4-6
+  - id: bare/claude-haiku-4-5
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-haiku-4-5-20251001
+
+  # --- 旧世代(比較用。--filter で絞らないと API コストが嵩むので注意) ---
+  - id: bare/claude-opus-4-5
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-opus-4-5-20251101
+  - id: bare/claude-opus-4-1
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-opus-4-1-20250805
+  - id: bare/claude-opus-4-0
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-opus-4-20250514
+  - id: bare/claude-sonnet-4-5
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-sonnet-4-5-20250929
+  - id: bare/claude-sonnet-4-0
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-sonnet-4-20250514
+
+  # --- Google Gemini ---
+  # Gemini は alias 指定が一般的(2.5 系は dated suffix 非公開)。
+  # Gemini 3 は 2026-04 時点では preview のみ。
+  - id: bare/gemini-3.1-pro
+    harness: { kind: bare }
+    provider: google
+    model: gemini-3.1-pro-preview
+  - id: bare/gemini-3-flash
+    harness: { kind: bare }
+    provider: google
+    model: gemini-3-flash-preview
+  - id: bare/gemini-3.1-flash-lite
+    harness: { kind: bare }
+    provider: google
+    model: gemini-3.1-flash-lite-preview
+  - id: bare/gemini-2.5-pro
+    harness: { kind: bare }
+    provider: google
+    model: gemini-2.5-pro
+  - id: bare/gemini-2.5-flash
+    harness: { kind: bare }
+    provider: google
+    model: gemini-2.5-flash
+  - id: bare/gemini-2.5-flash-lite
+    harness: { kind: bare }
+    provider: google
+    model: gemini-2.5-flash-lite
+
+  # --- OpenAI ---
+  # `pnpm --filter runners run list-openai-models` で確認した、API key で
+  # 実際に見えるモデル。ただし "*-pro" 系は組織認証(verified org)が必要で
+  # 一般 tier だと 404 になるので、認証完了したらコメント解除してください。
+  # 429 "exceeded quota" が出る場合は billing/支払い方法側の問題。
+  # - id: bare/gpt-5.2-pro
+  #   harness: { kind: bare }
+  #   provider: openai
+  #   model: gpt-5.2-pro-2025-12-11
+  # - id: bare/gpt-5-pro
+  #   harness: { kind: bare }
+  #   provider: openai
+  #   model: gpt-5-pro-2025-10-06
+  - id: bare/gpt-5.4
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.4-2026-03-05
+  - id: bare/gpt-5.4-mini
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.4-mini-2026-03-17
+  - id: bare/gpt-5.4-nano
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.4-nano-2026-03-17
+  - id: bare/gpt-5
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5-2025-08-07
+  - id: bare/gpt-5-mini
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5-mini-2025-08-07
+  - id: bare/gpt-5-nano
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5-nano-2025-08-07
+  - id: bare/gpt-4.1
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-4.1-2025-04-14
+  - id: bare/o3
+    harness: { kind: bare }
+    provider: openai
+    model: o3-2025-04-16
+  - id: bare/o4-mini
+    harness: { kind: bare }
+    provider: openai
+    model: o4-mini-2025-04-16
+
+tasks:
+  - tier: 1

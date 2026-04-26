@@ -1,0 +1,432 @@
+---
+import type { ScadParameter } from "../lib/scad-parameters.js";
+
+interface Props {
+  /** Initial STL URL — shown immediately, before any parameter change. */
+  stlUrl: string;
+  /** Full SCAD source — used as the base for parametric re-renders. */
+  scad: string;
+  /** Parsed top-level parameters. Numbers/booleans are interactive. */
+  parameters: ScadParameter[];
+  height?: number;
+}
+const { stlUrl, scad, parameters, height = 480 } = Astro.props;
+
+const tweakable = parameters.filter(
+  (p): p is Extract<ScadParameter, { kind: "number" | "boolean" }> =>
+    p.kind === "number" || p.kind === "boolean",
+);
+const hasTweakable = tweakable.length > 0;
+---
+
+<div class="param-viewer" data-component="param-viewer">
+  <div class="viewer-host" data-stl-host data-stl-src={stlUrl} style={`height: ${height}px`}>
+    <div class="overlay loading">loading STL…</div>
+  </div>
+
+  {hasTweakable && (
+    <details class="controls" open>
+      <summary>
+        パラメータ ({tweakable.length})
+        <span class="status muted" data-wasm-status>—</span>
+      </summary>
+      <div class="param-grid">
+        {tweakable.map((p) =>
+          p.kind === "number" ? (
+            <label class="param">
+              <span class="name">{p.name}</span>
+              <input
+                type="range"
+                data-param={p.name}
+                data-param-kind="number"
+                min={p.range?.min ?? Math.min(0, p.value * 0.5)}
+                max={p.range?.max ?? Math.max(p.value * 2, p.value + 1)}
+                step={p.range?.step ?? (Number.isInteger(p.value) ? 1 : 0.1)}
+                value={p.value}
+              />
+              <input
+                type="number"
+                class="numeric"
+                data-param-numeric={p.name}
+                step={p.range?.step ?? (Number.isInteger(p.value) ? 1 : 0.1)}
+                value={p.value}
+              />
+            </label>
+          ) : (
+            <label class="param">
+              <span class="name">{p.name}</span>
+              <input
+                type="checkbox"
+                data-param={p.name}
+                data-param-kind="boolean"
+                checked={p.value}
+              />
+            </label>
+          ),
+        )}
+      </div>
+      <div class="actions">
+        <button type="button" data-action="reset">リセット</button>
+        <span class="muted hint">スライダを動かすと openscad-wasm で再レンダリング</span>
+      </div>
+    </details>
+  )}
+
+  <script is:inline type="application/json" data-scad-source set:html={JSON.stringify(scad)}></script>
+</div>
+
+<script>
+  import * as THREE from "three";
+  import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
+  import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+
+  type ParamMap = Record<string, number | boolean>;
+
+  async function init() {
+    const components = document.querySelectorAll<HTMLElement>(
+      "[data-component='param-viewer']",
+    );
+    if (components.length === 0) return;
+
+    // Match OpenSCAD's Z-up convention so this viewer aligns with the PNG.
+    THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
+
+    for (const root of Array.from(components)) {
+      const host = root.querySelector<HTMLElement>("[data-stl-host]");
+      if (!host) continue;
+      const initialSrc = host.getAttribute("data-stl-src");
+      if (!initialSrc) continue;
+
+      const scadEl = root.querySelector<HTMLElement>("[data-scad-source]");
+      const scad: string = scadEl ? JSON.parse(scadEl.textContent || '""') : "";
+
+      // --- three.js scene setup ----------------------------------------
+      const width = host.clientWidth;
+      const h = host.clientHeight;
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xffffff);
+
+      const camera = new THREE.PerspectiveCamera(45, width / h, 0.1, 5000);
+      camera.up.set(0, 0, 1);
+      camera.position.set(160, -160, 120);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(width, h);
+      host.innerHTML = "";
+      host.appendChild(renderer.domElement);
+
+      scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+      const dir = new THREE.DirectionalLight(0xffffff, 0.6);
+      dir.position.set(1, -1, 2);
+      scene.add(dir);
+      const dir2 = new THREE.DirectionalLight(0xffffff, 0.25);
+      dir2.position.set(-1, 1, 0.5);
+      scene.add(dir2);
+      const grid = new THREE.GridHelper(200, 20, 0xbbbbbb, 0xdddddd);
+      grid.rotation.x = Math.PI / 2;
+      scene.add(grid);
+
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+
+      const material = new THREE.MeshStandardMaterial({
+        color: 0x6cb6ff,
+        metalness: 0.05,
+        roughness: 0.6,
+      });
+      let currentMesh: THREE.Mesh | null = null;
+
+      function setGeometry(geom: THREE.BufferGeometry) {
+        geom.computeVertexNormals();
+        if (currentMesh) {
+          scene.remove(currentMesh);
+          currentMesh.geometry.dispose();
+        }
+        const mesh = new THREE.Mesh(geom, material);
+        geom.computeBoundingBox();
+        if (geom.boundingBox) {
+          const center = new THREE.Vector3();
+          geom.boundingBox.getCenter(center);
+          mesh.position.sub(center);
+          if (!currentMesh) {
+            const size = new THREE.Vector3();
+            geom.boundingBox.getSize(size);
+            const maxDim = Math.max(size.x, size.y, size.z);
+            camera.position.set(maxDim * 1.6, maxDim * -1.6, maxDim * 1.2);
+            camera.lookAt(0, 0, 0);
+          }
+        }
+        scene.add(mesh);
+        currentMesh = mesh;
+      }
+
+      const loader = new STLLoader();
+      try {
+        const initialGeom = (await new Promise((resolve, reject) =>
+          loader.load(initialSrc, resolve, undefined, reject),
+        )) as THREE.BufferGeometry;
+        setGeometry(initialGeom);
+      } catch (e) {
+        host.innerHTML = `<div class="overlay error">STL load failed: ${
+          e instanceof Error ? e.message : String(e)
+        }</div>`;
+        continue;
+      }
+
+      function tick() {
+        controls.update();
+        renderer.render(scene, camera);
+        requestAnimationFrame(tick);
+      }
+      tick();
+
+      const resizeObs = new ResizeObserver(() => {
+        const w = host.clientWidth;
+        const h2 = host.clientHeight;
+        camera.aspect = w / h2;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h2);
+      });
+      resizeObs.observe(host);
+
+      // --- parameter handling ------------------------------------------
+      const paramInputs = root.querySelectorAll<HTMLInputElement>("[data-param]");
+      if (paramInputs.length === 0) continue;
+
+      const statusEl = root.querySelector<HTMLElement>("[data-wasm-status]");
+      function setStatus(text: string, error = false) {
+        if (!statusEl) return;
+        statusEl.textContent = text;
+        statusEl.style.color = error ? "var(--bad)" : "";
+      }
+
+      const initial: ParamMap = {};
+      const current: ParamMap = {};
+      paramInputs.forEach((el) => {
+        const name = el.getAttribute("data-param")!;
+        const kind = el.getAttribute("data-param-kind");
+        if (kind === "number") {
+          initial[name] = Number(el.value);
+        } else {
+          initial[name] = el.checked;
+        }
+        current[name] = initial[name]!;
+      });
+
+      // Lazy-init wasm only on first parameter change
+      let wasmInstance: Awaited<ReturnType<typeof import("openscad-wasm").createOpenSCAD>> | null = null;
+      let wasmLoading: Promise<void> | null = null;
+      async function ensureWasm() {
+        if (wasmInstance) return;
+        if (!wasmLoading) {
+          setStatus("openscad-wasm を読み込み中…");
+          wasmLoading = (async () => {
+            const mod = await import("openscad-wasm");
+            wasmInstance = await mod.createOpenSCAD();
+            setStatus("ready");
+          })();
+        }
+        await wasmLoading;
+      }
+
+      let pending = 0;
+      let scheduled: ReturnType<typeof setTimeout> | null = null;
+      function scheduleRerender() {
+        if (scheduled) clearTimeout(scheduled);
+        scheduled = setTimeout(() => {
+          scheduled = null;
+          rerender();
+        }, 200);
+      }
+
+      function buildOverriddenSource(): string {
+        const overrides: string[] = [];
+        for (const [name, value] of Object.entries(current)) {
+          if (typeof value === "boolean") {
+            overrides.push(`${name} = ${value};`);
+          } else {
+            overrides.push(`${name} = ${value};`);
+          }
+        }
+        return `${scad}\n\n// --- runtime overrides ---\n${overrides.join("\n")}\n`;
+      }
+
+      async function rerender() {
+        try {
+          await ensureWasm();
+          if (!wasmInstance) return;
+          const my = ++pending;
+          setStatus("rendering…");
+          const stlText = await wasmInstance.renderToStl(buildOverriddenSource());
+          if (my !== pending) return; // newer one in flight
+          const buf = new TextEncoder().encode(stlText).buffer;
+          const geom = loader.parse(buf as ArrayBuffer);
+          setGeometry(geom);
+          setStatus("ready");
+        } catch (e) {
+          setStatus(`error: ${e instanceof Error ? e.message : String(e)}`, true);
+        }
+      }
+
+      paramInputs.forEach((el) => {
+        const name = el.getAttribute("data-param")!;
+        const kind = el.getAttribute("data-param-kind");
+        const numericTwin = root.querySelector<HTMLInputElement>(
+          `[data-param-numeric='${name}']`,
+        );
+        const handle = () => {
+          if (kind === "number") {
+            current[name] = Number(el.value);
+            if (numericTwin && document.activeElement !== numericTwin) {
+              numericTwin.value = el.value;
+            }
+          } else {
+            current[name] = el.checked;
+          }
+          scheduleRerender();
+        };
+        el.addEventListener("input", handle);
+        el.addEventListener("change", handle);
+        if (numericTwin) {
+          const handleNumeric = () => {
+            const v = Number(numericTwin.value);
+            if (!Number.isFinite(v)) return;
+            current[name] = v;
+            el.value = String(v);
+            scheduleRerender();
+          };
+          numericTwin.addEventListener("input", handleNumeric);
+          numericTwin.addEventListener("change", handleNumeric);
+        }
+      });
+
+      const resetBtn = root.querySelector<HTMLButtonElement>("[data-action='reset']");
+      if (resetBtn) {
+        resetBtn.addEventListener("click", () => {
+          paramInputs.forEach((el) => {
+            const name = el.getAttribute("data-param")!;
+            const kind = el.getAttribute("data-param-kind");
+            const initialValue = initial[name];
+            if (kind === "number") {
+              el.value = String(initialValue);
+              const twin = root.querySelector<HTMLInputElement>(
+                `[data-param-numeric='${name}']`,
+              );
+              if (twin) twin.value = String(initialValue);
+              current[name] = initialValue as number;
+            } else {
+              el.checked = Boolean(initialValue);
+              current[name] = Boolean(initialValue);
+            }
+          });
+          scheduleRerender();
+        });
+      }
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+</script>
+
+<style>
+  .param-viewer {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .viewer-host {
+    position: relative;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    width: 100%;
+  }
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .overlay.error { color: var(--bad); }
+
+  .controls {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 16px;
+  }
+  .controls summary {
+    cursor: pointer;
+    font-size: 13px;
+    font-family: var(--mono);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    user-select: none;
+  }
+  .controls .status {
+    font-size: 11px;
+    color: var(--fg-dim);
+  }
+  .param-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  @media (min-width: 600px) {
+    .param-grid { grid-template-columns: 1fr 1fr; }
+  }
+  .param {
+    display: grid;
+    grid-template-columns: 100px 1fr 80px;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .param .name { color: var(--fg-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .param input[type="range"] { width: 100%; }
+  .param input[type="checkbox"] { justify-self: start; }
+  .param .numeric {
+    background: var(--bg-3);
+    color: var(--fg);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: var(--mono);
+    font-size: 12px;
+    width: 100%;
+  }
+  .actions {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .actions button {
+    background: var(--bg-3);
+    color: var(--fg);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-family: var(--mono);
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .actions button:hover { border-color: var(--accent); }
+  .actions .hint { font-size: 11px; }
+</style>
