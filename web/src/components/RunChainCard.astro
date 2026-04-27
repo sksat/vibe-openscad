@@ -59,7 +59,7 @@ const segments = runBadges(tailMeta);
   <div class="strip">
     {steps.map((s) => {
       const m = s.run.meta;
-      const lbl = s.depth === 0 ? "root" : `i${s.depth}`;
+      const lbl = s.depth === 0 ? "bare" : `i${s.depth}`;
       return (
         <a
           class="step"
