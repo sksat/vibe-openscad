@@ -17,7 +17,31 @@ export function getStaticPaths() {
 }
 
 const { task, runs, facets } = Astro.props;
-const sampleImage = runs.find((r) => r.pngUrl)?.pngUrl;
+
+/**
+ * OGP 画像は task の代表として「定番の現行世代モデルの default bare run」を
+ * 優先順で探す。決定的に選ばないと build ごとに og:image が変わって unfurl
+ * のキャッシュが暴れる。fallback で見つからなければ最初の render PNG。
+ */
+const OGP_PREFERRED_MODELS = [
+  "claude-opus-4-7",
+  "claude-sonnet-4-6",
+  "gpt-5.4-2026-03-05",
+  "gpt-5-2025-08-07",
+  "gemini-3.1-pro-preview",
+  "gemini-2.5-pro",
+];
+function pickOgpImage(): string | undefined {
+  const bareDefault = runs.filter(
+    (r) => r.pngUrl && r.meta.matrixId.startsWith("bare/"),
+  );
+  for (const model of OGP_PREFERRED_MODELS) {
+    const hit = bareDefault.find((r) => r.meta.model === model);
+    if (hit?.pngUrl) return hit.pngUrl;
+  }
+  return bareDefault[0]?.pngUrl ?? runs.find((r) => r.pngUrl)?.pngUrl;
+}
+const sampleImage = pickOgpImage();
 const description = `${task.title} (tier ${task.tier}) — ${runs.length} run の比較`;
 ---
 
