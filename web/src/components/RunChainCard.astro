@@ -95,17 +95,14 @@ for (const s of strategies) for (const st of s.iterSteps) accumulate(st.run);
 for (const row of variantRows) for (const v of row.variants) accumulate(v.run);
 const segments = runBadges(m);
 const dataModels = m.model ?? "";
-// bare サムネのクリック先: 単独の chain がある場合はその detail に飛ぶ。
-// 複数 strategy があるケースは将来的に「model 全体の overview」ページを
-// 作る余地があるが、現状は最初の strategy の chain detail に着地させる。
-const bareHref =
-  strategies.length > 0
-    ? `/chains/${strategies[0]!.tail.meta.runId}`
+// bare サムネ / strategy ラベルクリック先: card 全体の detail
+// (= /tasks/<task>/<model>/)。bare run 単独の detail は detail 上の
+// \"run detail →\" から到達できる。
+const cardHref =
+  m.model != null
+    ? `/tasks/${m.taskId}/${m.model}`
     : `/benchmark/${m.runId}`;
-const bareAriaLabel =
-  strategies.length > 0
-    ? `open chain detail for ${m.model ?? m.matrixId}`
-    : `open bare run ${m.runId}`;
+const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrixId}`;
 ---
 
 <article
@@ -119,7 +116,7 @@ const bareAriaLabel =
   data-tier={tier !== undefined ? String(tier) : ""}
 >
   <div class="bare-wrap" data-status={m.status}>
-    <a class="bare-link" href={bareHref} aria-label={bareAriaLabel}>
+    <a class="bare-link" href={cardHref} aria-label={bareAriaLabel}>
       {bare.pngUrl ? (
         <div class="bare-thumb"><img src={bare.pngUrl} alt={`bare render of ${m.taskId}`} loading="lazy" /></div>
       ) : (
@@ -176,8 +173,8 @@ const bareAriaLabel =
       <div class="strategy-row" data-strategy={s.groupSlug}>
         <a
           class="strategy-label"
-          href={`/chains/${tailMeta.runId}`}
-          title={`open ${s.groupSlug} chain detail`}
+          href={cardHref}
+          title={`open ${s.groupSlug} chain in card detail`}
         >
           <code>{s.groupSlug}</code>
           <span class={`${statusBadgeClass(tailMeta.status)} mini`}>{tailMeta.status}</span>

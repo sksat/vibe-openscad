@@ -1,0 +1,561 @@
+---
+import { readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { Code } from "astro:components";
+import Base from "../../../layouts/Base.astro";
+import {
+  chainDepthFor,
+  chainRootMatrixId,
+  effortVariantOf,
+  fingerprintByMatrixId,
+  formatCost,
+  getDataset,
+  harnessGroupSlug,
+  runBadges,
+  runCostUsd,
+  statusBadgeClass,
+} from "../../../lib/dataset.js";
+import VendorIcon from "../../../components/VendorIcon.astro";
+import type { LoadedRun } from "../../../lib/results.js";
+
+interface ChainStrategy {
+  groupSlug: string;
+  expectedDepth: number;
+  steps: Array<{ run: LoadedRun; depth: number; scad: string }>;
+}
+
+interface VariantEntry {
+  label: string;
+  run: LoadedRun;
+  scad: string;
+}
+
+interface VariantRow {
+  familySlug: string;
+  expectedLabels: string[];
+  variants: VariantEntry[];
+}
+
+function errorBadgeFor(status: string): string | null {
+  switch (status) {
+    case "render_error": return "render";
+    case "no_code": return "nocode";
+    case "submit_missing": return "nosub";
+    case "timeout": return "timeout";
+    case "api_error": return "api";
+    default: return null;
+  }
+}
+
+export function getStaticPaths() {
+  // Astro extracts getStaticPaths into a separate prerender chunk that
+  // can't see frontmatter-outer-scope helpers, so inline EFFORT_ORDER /
+  // compareEffortLabel here.
+  const EFFORT_ORDER = ["minimal", "low", "medium", "high", "max", "xhigh"];
+  const compareEffortLabel = (a: string, b: string): number => {
+    const ai = EFFORT_ORDER.indexOf(a);
+    const bi = EFFORT_ORDER.indexOf(b);
+    if (ai !== -1 || bi !== -1) {
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    }
+    return a.localeCompare(b);
+  };
+
+  const ds = getDataset();
+  const tasksById = new Map(ds.tasks.map((t) => [t.task.id, t.task]));
+  const fpByMatrix = fingerprintByMatrixId(ds.runs.values());
+  const repoRoot = resolve(process.cwd(), "..");
+  const readScad = (r: LoadedRun): string => {
+    try {
+      return readFileSync(
+        join(repoRoot, "results", r.meta.taskId, r.meta.runId, "final.scad"),
+        "utf8",
+      );
+    } catch {
+      return "";
+    }
+  };
+
+  type ModelBucket = {
+    bare?: LoadedRun;
+    iterRunsBySlug: Map<string, LoadedRun[]>;
+    variants: Array<{ label: string; run: LoadedRun }>;
+  };
+  type TaskBucket = {
+    task: ReturnType<typeof tasksById.get>;
+    byModel: Map<string, ModelBucket>;
+  };
+  const taskBuckets = new Map<string, TaskBucket>();
+  for (const r of ds.runs.values()) {
+    const taskId = r.meta.taskId;
+    let tb = taskBuckets.get(taskId);
+    if (!tb) {
+      tb = { task: tasksById.get(taskId), byModel: new Map() };
+      taskBuckets.set(taskId, tb);
+    }
+    const model = r.meta.model ?? "unknown";
+    let mb = tb.byModel.get(model);
+    if (!mb) {
+      mb = { iterRunsBySlug: new Map(), variants: [] };
+      tb.byModel.set(model, mb);
+    }
+    const slug = harnessGroupSlug(r.meta);
+    if (slug.startsWith("iter-")) {
+      const list = mb.iterRunsBySlug.get(slug) ?? [];
+      list.push(r);
+      mb.iterRunsBySlug.set(slug, list);
+    } else {
+      const variant = effortVariantOf(r.meta);
+      if (variant !== null) {
+        const existing = mb.variants.find((v) => v.label === variant);
+        if (!existing) {
+          mb.variants.push({ label: variant, run: r });
+        } else if (existing.run.meta.createdAt < r.meta.createdAt) {
+          existing.run = r;
+        }
+      } else {
+        if (!mb.bare || mb.bare.meta.createdAt < r.meta.createdAt) {
+          mb.bare = r;
+        }
+      }
+    }
+  }
+
+  // Per task, the union of effort labels across models.
+  const taskEffortLabels = new Map<string, string[]>();
+  for (const [taskId, tb] of taskBuckets.entries()) {
+    const set = new Set<string>();
+    for (const mb of tb.byModel.values()) {
+      for (const v of mb.variants) set.add(v.label);
+    }
+    taskEffortLabels.set(taskId, [...set].sort(compareEffortLabel));
+  }
+
+  // Per (task, slug), max chain depth.
+  const taskSlugMaxDepth = new Map<string, number>();
+  for (const [taskId, tb] of taskBuckets.entries()) {
+    for (const mb of tb.byModel.values()) {
+      for (const [slug, runs] of mb.iterRunsBySlug.entries()) {
+        for (const r of runs) {
+          const d = chainDepthFor(r.meta.matrixId, fpByMatrix);
+          const key = `${taskId}::${slug}`;
+          taskSlugMaxDepth.set(key, Math.max(taskSlugMaxDepth.get(key) ?? 0, d));
+        }
+      }
+    }
+  }
+
+  type Props = {
+    bare: LoadedRun;
+    bareScad: string;
+    task: ReturnType<typeof tasksById.get>;
+    strategies: ChainStrategy[];
+    variantRows: VariantRow[];
+    totalCost: number;
+    totalMs: number;
+    runCount: number;
+  };
+  const out: Array<{ params: { id: string; model: string }; props: Props }> = [];
+
+  for (const [taskId, tb] of taskBuckets.entries()) {
+    const labels = taskEffortLabels.get(taskId) ?? [];
+    for (const [model, mb] of tb.byModel.entries()) {
+      if (!mb.bare) continue;
+      const bare = mb.bare;
+      const bareScad = readScad(bare);
+
+      const strategies: ChainStrategy[] = [];
+      for (const [slug, runs] of mb.iterRunsBySlug.entries()) {
+        const latestByMatrix = new Map<string, LoadedRun>();
+        for (const r of runs) {
+          const ex = latestByMatrix.get(r.meta.matrixId);
+          if (!ex || ex.meta.createdAt < r.meta.createdAt) {
+            latestByMatrix.set(r.meta.matrixId, r);
+          }
+        }
+        const expectedDepth = taskSlugMaxDepth.get(`${taskId}::${slug}`) ?? 0;
+        const steps = [...latestByMatrix.values()]
+          .filter((r) => {
+            const root = chainRootMatrixId(r.meta.matrixId, fpByMatrix);
+            return root === bare.meta.matrixId;
+          })
+          .map((r) => ({
+            run: r,
+            depth: chainDepthFor(r.meta.matrixId, fpByMatrix),
+            scad: readScad(r),
+          }))
+          .sort((a, b) => a.depth - b.depth);
+        if (steps.length > 0) {
+          strategies.push({ groupSlug: slug, expectedDepth, steps });
+        }
+      }
+      strategies.sort((a, b) => a.groupSlug.localeCompare(b.groupSlug));
+
+      const variantRows: VariantRow[] =
+        mb.variants.length > 0 && labels.length > 0
+          ? [
+              {
+                familySlug: "effort",
+                expectedLabels: labels,
+                variants: mb.variants
+                  .map((v) => ({ label: v.label, run: v.run, scad: readScad(v.run) }))
+                  .sort((a, b) => compareEffortLabel(a.label, b.label)),
+              },
+            ]
+          : [];
+
+      let totalMs = bare.meta.timing.totalMs;
+      let totalCost = runCostUsd(bare.meta) ?? 0;
+      let runCount = 1;
+      const accumulate = (r: LoadedRun) => {
+        totalMs += r.meta.timing.totalMs;
+        const c = runCostUsd(r.meta);
+        if (c !== null) totalCost += c;
+        runCount++;
+      };
+      for (const s of strategies) for (const st of s.steps) accumulate(st.run);
+      for (const row of variantRows) for (const v of row.variants) accumulate(v.run);
+
+      out.push({
+        params: { id: taskId, model },
+        props: {
+          bare,
+          bareScad,
+          task: tb.task,
+          strategies,
+          variantRows,
+          totalCost,
+          totalMs,
+          runCount,
+        },
+      });
+    }
+  }
+  return out;
+}
+
+const props = Astro.props as {
+  bare: LoadedRun;
+  bareScad: string;
+  task: ReturnType<Map<string, ReturnType<typeof getDataset>["tasks"][number]["task"]>["get"]>;
+  strategies: ChainStrategy[];
+  variantRows: VariantRow[];
+  totalCost: number;
+  totalMs: number;
+  runCount: number;
+};
+const { bare, bareScad, task, strategies, variantRows, totalCost, totalMs, runCount } = props;
+const m = bare.meta;
+const segments = runBadges(m);
+const ogTitle = `${m.model} on ${m.taskId}`;
+const ogDescription = [
+  `${runCount} run`,
+  `${(totalMs / 1000).toFixed(1)}s 累計`,
+  formatCost(totalCost),
+].join(" · ");
+---
+
+<Base title={`${ogTitle} — vibe-openscad`} description={ogDescription} ogImage={bare.pngUrl} ogType="article">
+  <p class="muted">
+    <a href="/">← dashboard</a>
+    {" · "}
+    <a href={`/tasks/${m.taskId}`}>{m.taskId}</a>
+    {m.model && (<>{" · "}<a href={`/models/${m.model}`}><code>{m.model}</code></a></>)}
+  </p>
+
+  <h1 class="title">
+    <span class="task-id">{m.taskId}</span>
+    <span class="muted">/</span>
+    <span class="model"><code>{m.model}</code></span>
+  </h1>
+  <p class="muted small">
+    {runCount} run / 累計 {(totalMs / 1000).toFixed(1)}s / 累計 {formatCost(totalCost)}
+  </p>
+
+  <div class="badges">
+    {segments.map((s) => (
+      <span class={`pill pill-${s.kind}`} data-vendor={s.vendor ?? ""}>
+        {s.kind === "vendor" && s.vendor && <VendorIcon vendor={s.vendor} />}
+        {s.label}
+      </span>
+    ))}
+  </div>
+
+  <section class="bare-section">
+    <header>
+      <h2>bare <span class="muted small">(provider default effort)</span></h2>
+      <a class="muted runlink" href={`/benchmark/${m.runId}`}>run detail →</a>
+    </header>
+    <div class="bare-body">
+      <div>
+        {bare.pngUrl ? (
+          <img class="render" src={bare.pngUrl} alt={`bare render of ${m.taskId}`} />
+        ) : (
+          <div class="empty"><span class="muted">no render</span></div>
+        )}
+      </div>
+      <details class="scad-details">
+        <summary>SCAD ({bareScad.split("\n").length} lines · {m.status})</summary>
+        {bareScad ? <Code code={bareScad} lang="c" theme="github-dark" wrap /> : <p class="muted small">no SCAD</p>}
+      </details>
+    </div>
+  </section>
+
+  {task && (
+    <section class="prompt-section">
+      <h2>prompt</h2>
+      <pre class="prompt">{task.prompt}</pre>
+    </section>
+  )}
+
+  {strategies.map((s) => (
+    <section class="row-section">
+      <h2>iteration: <code>{s.groupSlug}</code></h2>
+      <div class="row-grid" style={`--cols: ${s.expectedDepth}`}>
+        {Array.from({ length: s.expectedDepth }, (_, i) => i + 1).map((d) => {
+          const step = s.steps.find((x) => x.depth === d);
+          if (!step) {
+            return (
+              <article class="step-tile placeholder">
+                <header><span class="step-label">i{d}</span><span class="muted small">not run</span></header>
+                <div class="empty"><span class="muted small">—</span></div>
+              </article>
+            );
+          }
+          const sm = step.run.meta;
+          const errBadge = errorBadgeFor(sm.status);
+          const cost = runCostUsd(sm);
+          return (
+            <article class="step-tile" data-status={sm.status}>
+              <header>
+                <span class="step-label">i{d}</span>
+                <span class={statusBadgeClass(sm.status)}>{sm.status}</span>
+                {errBadge && <span class="iter-err">{errBadge}</span>}
+                <a class="muted runlink" href={`/benchmark/${sm.runId}`}>→</a>
+              </header>
+              {step.run.pngUrl ? (
+                <img class="step-img" src={step.run.pngUrl} alt={`iter ${d}`} loading="lazy" />
+              ) : (
+                <div class="empty failed"><span class="muted small">{sm.status}</span></div>
+              )}
+              <div class="muted small step-meta">
+                {(sm.timing.totalMs / 1000).toFixed(1)}s
+                {sm.tokens && ` · ${sm.tokens.input}/${sm.tokens.output}t`}
+                {cost !== null && ` · ${formatCost(cost)}`}
+              </div>
+              {sm.error && <pre class="step-error">{sm.error}</pre>}
+              <details class="scad-details">
+                <summary>SCAD ({step.scad.split("\n").length} lines)</summary>
+                {step.scad ? <Code code={step.scad} lang="c" theme="github-dark" wrap /> : <p class="muted small">no SCAD</p>}
+              </details>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  ))}
+
+  {variantRows.map((row) => (
+    <section class="row-section">
+      <h2>variant: <code>{row.familySlug}</code></h2>
+      <div class="row-grid" style={`--cols: ${row.expectedLabels.length}`}>
+        {row.expectedLabels.map((lbl) => {
+          const v = row.variants.find((x) => x.label === lbl);
+          if (!v) {
+            return (
+              <article class="step-tile placeholder">
+                <header><span class="step-label">{lbl}</span><span class="muted small">not run</span></header>
+                <div class="empty"><span class="muted small">—</span></div>
+              </article>
+            );
+          }
+          const sm = v.run.meta;
+          const errBadge = errorBadgeFor(sm.status);
+          const cost = runCostUsd(sm);
+          return (
+            <article class="step-tile" data-status={sm.status}>
+              <header>
+                <span class="step-label">{lbl}</span>
+                <span class={statusBadgeClass(sm.status)}>{sm.status}</span>
+                {errBadge && <span class="iter-err">{errBadge}</span>}
+                <a class="muted runlink" href={`/benchmark/${sm.runId}`}>→</a>
+              </header>
+              {v.run.pngUrl ? (
+                <img class="step-img" src={v.run.pngUrl} alt={lbl} loading="lazy" />
+              ) : (
+                <div class="empty failed"><span class="muted small">{sm.status}</span></div>
+              )}
+              <div class="muted small step-meta">
+                {(sm.timing.totalMs / 1000).toFixed(1)}s
+                {sm.tokens && ` · ${sm.tokens.input}/${sm.tokens.output}t`}
+                {cost !== null && ` · ${formatCost(cost)}`}
+              </div>
+              {sm.error && <pre class="step-error">{sm.error}</pre>}
+              <details class="scad-details">
+                <summary>SCAD ({v.scad.split("\n").length} lines)</summary>
+                {v.scad ? <Code code={v.scad} lang="c" theme="github-dark" wrap /> : <p class="muted small">no SCAD</p>}
+              </details>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  ))}
+</Base>
+
+<style>
+  .title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+  .title .model code { color: var(--accent); }
+  .small { font-size: 12px; }
+  .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 12px 0 24px;
+  }
+  .pill {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.5;
+    background: var(--bg-3);
+    border: 1px solid var(--line);
+    color: var(--fg-dim);
+  }
+  .pill-model { color: var(--fg); background: rgba(108, 182, 255, 0.10); border-color: rgba(108, 182, 255, 0.4); }
+  .pill-harness { color: var(--fg); border-color: rgba(108, 182, 255, 0.3); }
+  .pill-vendor[data-vendor="claude"] { color: #f3a585; border-color: rgba(217, 119, 87, 0.5); background: rgba(217, 119, 87, 0.14); }
+  .pill-vendor[data-vendor="gemini"] { color: #d6bcfa; border-color: rgba(139, 92, 246, 0.5); background: rgba(139, 92, 246, 0.14); }
+  .pill-vendor[data-vendor="openai"] { color: #5ed5b3; border-color: rgba(16, 163, 127, 0.55); background: rgba(16, 163, 127, 0.14); }
+
+  section { margin-top: 24px; }
+  section header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  section h2 { font-family: var(--mono); font-size: 15px; margin: 0; }
+  .runlink { font-size: 12px; margin-left: auto; }
+
+  .bare-body {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  @media (min-width: 720px) {
+    .bare-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  }
+  .render {
+    width: 100%;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  .prompt {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .row-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+    gap: 12px;
+  }
+  @media (max-width: 720px) {
+    .row-grid { grid-template-columns: 1fr; }
+  }
+  .step-tile {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+  .step-tile header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0;
+  }
+  .step-label {
+    background: var(--bg-3);
+    color: var(--fg);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1px 7px;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .iter-err {
+    background: rgba(239, 111, 108, 0.85);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  .step-img {
+    width: 100%;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    aspect-ratio: 4 / 3;
+    object-fit: contain;
+  }
+  .step-meta { font-family: var(--mono); }
+  .step-error {
+    font-size: 11px;
+    color: var(--bad);
+    background: rgba(239, 111, 108, 0.06);
+    border: 1px solid rgba(239, 111, 108, 0.4);
+    padding: 6px 8px;
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .step-tile.placeholder { opacity: 0.55; }
+  .empty {
+    background: var(--bg-3);
+    color: var(--fg-dim);
+    border: 1px dashed var(--line);
+    border-radius: 6px;
+    padding: 16px;
+    text-align: center;
+    font-family: var(--mono);
+    aspect-ratio: 4 / 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .empty.failed {
+    background: rgba(239, 111, 108, 0.06);
+    border-color: rgba(239, 111, 108, 0.4);
+    color: var(--bad);
+  }
+  .scad-details {
+    background: var(--bg-3);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 6px 10px;
+  }
+  .scad-details summary {
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--fg-dim);
+  }
+</style>
