@@ -1,0 +1,38 @@
+{
+  "runId": "bare-xhigh_claude-opus-4-7-5101f0854e56-2026-04-27T20-38-00-555Z",
+  "taskId": "tier-1-cube-with-hole",
+  "matrixId": "bare-xhigh/claude-opus-4-7",
+  "signature": "5101f0854e56040f6916967937b89bf4bba410d86c960871b9b2919e74a7efb9",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "8ff7e36af4bc202429ec68b7eb9cc3f195b6a3c68668be31239bcea23345a048",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-opus-4-7",
+      "modelOptions": {
+        "output_config": {
+          "effort": "xhigh"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-opus-4-7",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 2434
+  },
+  "tokens": {
+    "input": 116,
+    "output": 63
+  },
+  "cost_usd": 0.002155,
+  "createdAt": "2026-04-27T20:38:00.555Z",
+  "gitCommit": "8910365a8146337ecbb77523441c6f35debfa656"
+}
