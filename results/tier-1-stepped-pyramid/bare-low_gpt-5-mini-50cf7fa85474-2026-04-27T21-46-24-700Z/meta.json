@@ -1,0 +1,38 @@
+{
+  "runId": "bare-low_gpt-5-mini-50cf7fa85474-2026-04-27T21-46-24-700Z",
+  "taskId": "tier-1-stepped-pyramid",
+  "matrixId": "bare-low/gpt-5-mini",
+  "signature": "50cf7fa85474c63a1a5cb8fb1fe004d48da471efdc250ce84ad08f5f821b54e5",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "f33c33343b97cdee4ab2a95d84c7f4be5791294d1e997d9c55a752a15c9a2446",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5-mini-2025-08-07",
+      "modelOptions": {
+        "reasoning": {
+          "effort": "low"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5-mini-2025-08-07",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 8264
+  },
+  "tokens": {
+    "input": 151,
+    "output": 594
+  },
+  "cost_usd": 0.00122575,
+  "createdAt": "2026-04-27T21:46:24.700Z",
+  "gitCommit": "9719f13cf9c1de58b8e915d5cc0a67d604a5f5f4"
+}

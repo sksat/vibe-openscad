@@ -104,6 +104,19 @@ function parseModelLabel(modelStr: string): MatrixSegment[] {
     ];
   }
 
+  // OpenAI GPT codex: gpt-MAJOR[.MINOR]-codex[-(max|mini)]
+  const gptCodex = modelStr.match(
+    /^gpt-(\d+(?:\.\d+)?)-codex(?:-(max|mini))?$/,
+  );
+  if (gptCodex) {
+    const ver = gptCodex[1];
+    const label = `gpt ${ver} codex${gptCodex[2] ? ` ${gptCodex[2]}` : ""}`;
+    return [
+      { kind: "vendor", label: "openai", vendor: "openai" },
+      { kind: "model", label, title: modelStr, vendor: "openai" },
+    ];
+  }
+
   // OpenAI GPT family: gpt-MAJOR[.MINOR][-(mini|nano|pro|turbo)][-YYYY-MM-DD]
   const gpt = modelStr.match(
     /^gpt-(\d+(?:\.\d+)?)(?:-(mini|nano|pro|turbo))?(?:-(\d{4}-\d{2}-\d{2}|preview|latest))?$/,
@@ -231,6 +244,7 @@ function defaultEffortFor(
   if (provider === "openai") {
     // gpt-5 family + reasoning o-series default to "medium".
     if (/^gpt-5(\.\d+)?(-mini|-nano|-pro)?$/.test(base)) return "medium";
+    if (/^gpt-5(\.\d+)?-codex(-max|-mini)?$/.test(base)) return "medium";
     if (/^o3(-mini|-pro)?$/.test(base)) return "medium";
     if (/^o4-mini$/.test(base)) return "medium";
     return null;

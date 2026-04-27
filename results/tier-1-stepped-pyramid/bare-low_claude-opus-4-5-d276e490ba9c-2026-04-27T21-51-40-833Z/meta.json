@@ -1,0 +1,38 @@
+{
+  "runId": "bare-low_claude-opus-4-5-d276e490ba9c-2026-04-27T21-51-40-833Z",
+  "taskId": "tier-1-stepped-pyramid",
+  "matrixId": "bare-low/claude-opus-4-5",
+  "signature": "d276e490ba9cfe2d6a1789b60337935ca360b30eb885ca7738a78e3097e26b4b",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "f33c33343b97cdee4ab2a95d84c7f4be5791294d1e997d9c55a752a15c9a2446",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-opus-4-5-20251101",
+      "modelOptions": {
+        "output_config": {
+          "effort": "low"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-opus-4-5-20251101",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 2195
+  },
+  "tokens": {
+    "input": 285,
+    "output": 74
+  },
+  "cost_usd": 0.003275,
+  "createdAt": "2026-04-27T21:51:40.834Z",
+  "gitCommit": "9719f13cf9c1de58b8e915d5cc0a67d604a5f5f4"
+}

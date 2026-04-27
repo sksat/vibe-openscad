@@ -23,6 +23,9 @@ const VISION_CAPABLE: RegExp[] = [
   /^gpt-4o/,
   /^gpt-4\.1/,
   /^gpt-5(\.\d+)?(-mini|-nano|-pro)?$/,
+  // GPT-5 codex variants (5-codex, 5.1-codex / -max / -mini, 5.2-codex,
+  // 5.3-codex) accept image input.
+  /^gpt-5(\.\d+)?-codex(-max|-mini)?$/,
   // OpenAI o-series reasoning: o1 lacks vision; o3 / o4-mini / o3-pro support
   // it. Be conservative and enumerate the ones we know.
   /^o3$/,

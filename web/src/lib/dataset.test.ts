@@ -324,6 +324,29 @@ describe("effortInfoFor", () => {
     ).toEqual({ value: "medium", isDefault: true });
   });
 
+  it("returns medium default for gpt-5.5 and codex variants", () => {
+    expect(
+      effortInfoFor(
+        makeBare({ provider: "openai", model: "gpt-5.5-2026-04-23" }),
+      ),
+    ).toEqual({ value: "medium", isDefault: true });
+    expect(
+      effortInfoFor(
+        makeBare({ provider: "openai", model: "gpt-5-codex" }),
+      ),
+    ).toEqual({ value: "medium", isDefault: true });
+    expect(
+      effortInfoFor(
+        makeBare({ provider: "openai", model: "gpt-5.1-codex" }),
+      ),
+    ).toEqual({ value: "medium", isDefault: true });
+    expect(
+      effortInfoFor(
+        makeBare({ provider: "openai", model: "gpt-5.1-codex-max" }),
+      ),
+    ).toEqual({ value: "medium", isDefault: true });
+  });
+
   it("returns explicit value for OpenAI reasoning override", () => {
     expect(
       effortInfoFor(

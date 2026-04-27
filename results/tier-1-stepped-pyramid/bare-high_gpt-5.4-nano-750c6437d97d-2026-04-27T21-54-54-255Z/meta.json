@@ -1,0 +1,38 @@
+{
+  "runId": "bare-high_gpt-5.4-nano-750c6437d97d-2026-04-27T21-54-54-255Z",
+  "taskId": "tier-1-stepped-pyramid",
+  "matrixId": "bare-high/gpt-5.4-nano",
+  "signature": "750c6437d97d9132354fce56bafbbae32773c0ba583a4d5ef576c85c65a75854",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "f33c33343b97cdee4ab2a95d84c7f4be5791294d1e997d9c55a752a15c9a2446",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5.4-nano-2026-03-17",
+      "modelOptions": {
+        "reasoning": {
+          "effort": "high"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5.4-nano-2026-03-17",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 2714
+  },
+  "tokens": {
+    "input": 151,
+    "output": 254
+  },
+  "cost_usd": 0.00016372499999999998,
+  "createdAt": "2026-04-27T21:54:54.255Z",
+  "gitCommit": "9719f13cf9c1de58b8e915d5cc0a67d604a5f5f4"
+}

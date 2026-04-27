@@ -22,6 +22,16 @@ describe("modelSupportsVision", () => {
     expect(modelSupportsVision("gpt-5-nano-2025-08-07")).toBe(true);
     expect(modelSupportsVision("gpt-5.4-2026-03-05")).toBe(true);
     expect(modelSupportsVision("gpt-5.4-mini-2026-03-17")).toBe(true);
+    expect(modelSupportsVision("gpt-5.5-2026-04-23")).toBe(true);
+  });
+
+  it("accepts gpt-5 codex family", () => {
+    expect(modelSupportsVision("gpt-5-codex")).toBe(true);
+    expect(modelSupportsVision("gpt-5.1-codex")).toBe(true);
+    expect(modelSupportsVision("gpt-5.1-codex-max")).toBe(true);
+    expect(modelSupportsVision("gpt-5.1-codex-mini")).toBe(true);
+    expect(modelSupportsVision("gpt-5.2-codex")).toBe(true);
+    expect(modelSupportsVision("gpt-5.3-codex")).toBe(true);
   });
 
   it("accepts o3 / o4-mini reasoning models", () => {

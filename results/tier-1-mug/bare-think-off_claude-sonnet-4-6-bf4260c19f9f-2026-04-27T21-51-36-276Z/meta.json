@@ -1,0 +1,39 @@
+{
+  "runId": "bare-think-off_claude-sonnet-4-6-bf4260c19f9f-2026-04-27T21-51-36-276Z",
+  "taskId": "tier-1-mug",
+  "matrixId": "bare-think-off/claude-sonnet-4-6",
+  "signature": "bf4260c19f9f59c20da9cc56e1359a5113dff743eac13bed85b568266fbe396c",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "883b512feb40f76c3fdcb332c7c513c491c27c8511f65b90fecbad6b6c197cd5",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-6",
+      "modelOptions": {
+        "thinking": {
+          "type": "disabled"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-sonnet-4-6",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "render_error",
+  "timing": {
+    "totalMs": 11359
+  },
+  "tokens": {
+    "input": 210,
+    "output": 703
+  },
+  "cost_usd": 0.011175,
+  "createdAt": "2026-04-27T21:51:36.276Z",
+  "gitCommit": "9719f13cf9c1de58b8e915d5cc0a67d604a5f5f4",
+  "error": "openscad stl render failed (exit 1): Current top level object is empty.\n"
+}

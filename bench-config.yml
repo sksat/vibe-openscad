@@ -273,6 +273,49 @@ matrix:
     model: o4-mini-2025-04-16
     modelOptions: { reasoning: { effort: high } }
 
+  # --- GPT-5.5 (current-gen general) ---
+  - id: bare/gpt-5.5
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.5-2026-04-23
+  - id: bare-low/gpt-5.5
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.5-2026-04-23
+    modelOptions: { reasoning: { effort: low } }
+  - id: bare-high/gpt-5.5
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.5-2026-04-23
+    modelOptions: { reasoning: { effort: high } }
+
+  # --- GPT-5 codex 系 (コーディング特化、reasoning + vision) ---
+  # 古い世代から順に並べる。dated suffix が付かないので alias で書く。
+  - id: bare/gpt-5-codex
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5-codex
+  - id: bare/gpt-5.1-codex
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.1-codex
+  - id: bare/gpt-5.1-codex-mini
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.1-codex-mini
+  - id: bare/gpt-5.1-codex-max
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.1-codex-max
+  - id: bare/gpt-5.2-codex
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.2-codex
+  - id: bare/gpt-5.3-codex
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.3-codex
+
   # --- iteration chain (PNG feedback) ---
   # 各 iteration step は独立した benchmark run。iter-png-1 は bare の出力を
   # 見せて修正させ、iter-png-2 は iter-png-1 の出力を見せて、… と数珠繋ぎ。
