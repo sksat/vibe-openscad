@@ -141,12 +141,14 @@ for (const r of ds.runs.values()) {
   if (c !== null) totalCost += c;
 }
 
-const slugTitle = slug.startsWith("iter-")
-  ? `${slug}(${depths.length - 1} 段の chain)`
-  : slug;
-const description = slug.startsWith("iter-")
-  ? `${slug} iteration を ${modelSections.length} モデル × ${tasks.length} タスクで比較。depth-0 は親の bare run。`
-  : `harness "${slug}" を ${models.length} モデル × ${tasks.length} タスクで比較`;
+const slugTitle =
+  mode === "iter" && depths
+    ? `${slug}(${depths.length - 1} 段の chain)`
+    : slug;
+const description =
+  mode === "iter"
+    ? `${slug} iteration を ${modelSections.length} モデル × ${tasks.length} タスクで比較。depth-0 は親の bare run。`
+    : `harness "${slug}" を ${models.length} モデル × ${tasks.length} タスクで比較`;
 ---
 
 <Base title={`${slugTitle} — vibe-openscad`} description={description}>

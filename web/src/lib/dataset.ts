@@ -190,7 +190,6 @@ export function runBadges(meta: RunMeta): MatrixSegment[] {
  */
 export function harnessGroupSlug(meta: RunMeta): string {
   if (meta.harness.kind === "external-agent") return "external-agent";
-  if (meta.harness.kind !== "bare") return meta.harness.kind;
   // bare: 単発 vs iter step
   const fpHarness = meta.fingerprint.harness;
   const isIter = fpHarness.kind === "bare" && !!fpHarness.iteration;
