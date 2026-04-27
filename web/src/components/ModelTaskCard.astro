@@ -1,11 +1,6 @@
 ---
 import type { LoadedRun } from "../lib/results.js";
-import {
-  formatCost,
-  runBadges,
-  runCostUsd,
-  statusBadgeClass,
-} from "../lib/dataset.js";
+import { formatCost, runBadges, runCostUsd } from "../lib/dataset.js";
 import VendorIcon from "./VendorIcon.astro";
 
 /** Short error tag for non-success iter statuses. Returns null on success. */
@@ -207,7 +202,6 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
   ))}
 
   {strategies.map((s) => {
-    const tailMeta = s.tail.meta;
     return (
       <div class="strategy-row" data-strategy={s.groupSlug}>
         <a
@@ -216,7 +210,6 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
           title={`open ${s.groupSlug} chain in card detail`}
         >
           <code>{s.groupSlug}</code>
-          <span class={`${statusBadgeClass(tailMeta.status)} mini`}>{tailMeta.status}</span>
         </a>
         <div class="strategy-strip">
           {Array.from({ length: s.expectedDepth }, (_, idx) => idx + 1).map((d) => {
@@ -359,36 +352,25 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
 
   .strategy-row {
     display: grid;
-    grid-template-columns: minmax(72px, auto) 1fr;
+    grid-template-columns: max-content 1fr;
     gap: 6px;
-    padding: 6px 8px;
+    padding: 4px 6px 4px 8px;
     border-top: 1px solid var(--line);
     align-items: center;
   }
   .strategy-label {
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: 10px;
     color: var(--fg-dim);
     text-decoration: none;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
     min-width: 0;
   }
   .strategy-label code {
     color: var(--fg);
-    font-size: 11px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 10px;
     white-space: nowrap;
-    display: block;
   }
   .strategy-label:hover code { color: var(--accent); }
-  .strategy-label .mini {
-    font-size: 10px;
-    padding: 0 5px;
-    width: fit-content;
-  }
   .strategy-strip {
     display: grid;
     grid-auto-flow: column;
