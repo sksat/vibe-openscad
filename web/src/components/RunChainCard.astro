@@ -8,12 +8,36 @@ import {
 } from "../lib/dataset.js";
 import VendorIcon from "./VendorIcon.astro";
 
+/** Short error tag for non-success iter statuses. Returns null on success. */
+function errorBadgeFor(status: string): string | null {
+  switch (status) {
+    case "render_error":
+      return "render";
+    case "no_code":
+      return "nocode";
+    case "submit_missing":
+      return "nosub";
+    case "timeout":
+      return "timeout";
+    case "api_error":
+      return "api";
+    default:
+      return null;
+  }
+}
+
 interface ChainStrategy {
   groupSlug: string;
   /** The chain tail (highest-depth run); used as the chain detail URL key. */
   tail: LoadedRun;
   /** Iter steps depth >= 1, ordered low to high. */
   iterSteps: Array<{ run: LoadedRun; depth: number }>;
+  /**
+   * 期待される chain 全長(他モデル含む同 strategy の最大 depth)。
+   * 未実行 / chain-break のところは placeholder で埋めて全 card の
+   * iter strip 幅を揃える。
+   */
+  expectedDepth: number;
 }
 
 interface Props {
@@ -84,7 +108,6 @@ const bareAriaLabel =
       ) : (
         <div class="bare-thumb empty"><span>no render</span></div>
       )}
-      <span class="bare-label">bare</span>
     </a>
     <div class="bare-overlay" title={m.matrixId}>
       {segments.map((s) => {
@@ -127,21 +150,36 @@ const bareAriaLabel =
           <span class={`${statusBadgeClass(tailMeta.status)} mini`}>{tailMeta.status}</span>
         </a>
         <div class="strategy-strip">
-          {s.iterSteps.map((st) => {
-            const sm = st.run.meta;
+          {Array.from({ length: s.expectedDepth }, (_, idx) => idx + 1).map((d) => {
+            const step = s.iterSteps.find((st) => st.depth === d);
+            if (!step) {
+              return (
+                <div
+                  class="iter-thumb placeholder"
+                  title={`iter ${d} not run`}
+                  aria-label={`iter ${d} not run`}
+                >
+                  <span class="iter-label">i{d}</span>
+                </div>
+              );
+            }
+            const sm = step.run.meta;
+            const errBadge = errorBadgeFor(sm.status);
             return (
               <a
                 class="iter-thumb"
                 href={`/benchmark/${sm.runId}`}
-                aria-label={`open iter ${st.depth} run ${sm.runId}`}
+                aria-label={`open iter ${d} run ${sm.runId}`}
                 data-status={sm.status}
+                title={errBadge ? `${sm.status}: ${sm.error ?? ""}` : sm.status}
               >
-                {st.run.pngUrl ? (
-                  <img src={st.run.pngUrl} alt={`iter ${st.depth}`} loading="lazy" />
+                {step.run.pngUrl ? (
+                  <img src={step.run.pngUrl} alt={`iter ${d}`} loading="lazy" />
                 ) : (
                   <span class="muted">·</span>
                 )}
-                <span class="iter-label">i{st.depth}</span>
+                <span class="iter-label">i{d}</span>
+                {errBadge && <span class="iter-err">{errBadge}</span>}
               </a>
             );
           })}
@@ -195,28 +233,16 @@ const bareAriaLabel =
     font-family: var(--mono);
     font-size: 12px;
   }
-  .bare-label {
-    position: absolute;
-    top: 6px;
-    left: 6px;
-    background: rgba(0, 0, 0, 0.55);
-    color: #fff;
-    font-family: var(--mono);
-    font-size: 11px;
-    padding: 1px 7px;
-    border-radius: 3px;
-    pointer-events: none;
-  }
   .bare-overlay {
     position: absolute;
-    bottom: 0;
+    top: 0;
     left: 0;
     right: 0;
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
     padding: 6px 8px;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.65) 60%, rgba(0, 0, 0, 0));
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.65) 60%, rgba(0, 0, 0, 0));
     /* gradient itself doesn't capture clicks; pills inside re-enable. */
     pointer-events: none;
   }
@@ -306,7 +332,9 @@ const bareAriaLabel =
   }
   .iter-thumb[data-status="render_error"]::after,
   .iter-thumb[data-status="no_code"]::after,
-  .iter-thumb[data-status="submit_missing"]::after {
+  .iter-thumb[data-status="submit_missing"]::after,
+  .iter-thumb[data-status="timeout"]::after,
+  .iter-thumb[data-status="api_error"]::after {
     content: "";
     position: absolute;
     inset: 0;
@@ -314,6 +342,28 @@ const bareAriaLabel =
     pointer-events: none;
   }
   .iter-thumb:hover { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 1; }
+  .iter-thumb.placeholder {
+    background: var(--bg-3);
+    color: var(--fg-dim);
+    cursor: default;
+  }
+  .iter-thumb.placeholder .iter-label {
+    background: rgba(0, 0, 0, 0.3);
+    color: rgba(255, 255, 255, 0.6);
+  }
+  .iter-err {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: rgba(239, 111, 108, 0.9);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 0 4px;
+    border-radius: 2px;
+    line-height: 1.5;
+    pointer-events: none;
+  }
 
   .meta {
     padding: 10px 12px;

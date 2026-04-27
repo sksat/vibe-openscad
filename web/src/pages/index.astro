@@ -57,6 +57,9 @@ type ChainStrategy = {
   groupSlug: string;
   tail: LoadedRun;
   iterSteps: Array<{ run: LoadedRun; depth: number }>;
+  /** 期待される chain 全長(他モデル含む同 strategy 中の最大 depth)。
+   *  未実行の slot は placeholder で埋めて card の幅を揃える。 */
+  expectedDepth: number;
 };
 type TaskTile =
   | { kind: "single"; key: string; run: LoadedRun }
@@ -66,6 +69,21 @@ type TaskTile =
       bare: LoadedRun;
       strategies: ChainStrategy[];
     };
+
+/**
+ * Per strategy slug, compute the deepest depth seen across all models +
+ * tasks. Used to pad iter strips with placeholders so cards align.
+ */
+const maxDepthByStrategy = (() => {
+  const out = new Map<string, number>();
+  for (const r of ds.runs.values()) {
+    const slug = harnessGroupSlug(r.meta);
+    if (!slug.startsWith("iter-")) continue;
+    const d = chainDepthFor(r.meta.matrixId, fpByMatrix);
+    out.set(slug, Math.max(out.get(slug) ?? 0, d));
+  }
+  return out;
+})();
 
 function buildTileRow(taskRuns: LoadedRun[]): {
   tiles: TaskTile[];
@@ -118,7 +136,12 @@ function buildTileRow(taskRuns: LoadedRun[]): {
       }))
       .sort((a, b) => a.depth - b.depth);
     const list = strategiesByModel.get(model) ?? [];
-    list.push({ groupSlug, tail, iterSteps });
+    list.push({
+      groupSlug,
+      tail,
+      iterSteps,
+      expectedDepth: maxDepthByStrategy.get(groupSlug) ?? iterSteps.length,
+    });
     strategiesByModel.set(model, list);
 
     // Walk the chain backward from any iter step to find the root bare.
