@@ -109,8 +109,8 @@ const bareAriaLabel =
         <div class="bare-thumb empty"><span>no render</span></div>
       )}
     </a>
-    <div class="bare-overlay" title={m.matrixId}>
-      {segments.map((s) => {
+    {(() => {
+      const renderPill = (s: typeof segments[number]) => {
         const inner = (
           <Fragment>
             {s.kind === "vendor" && s.vendor && <VendorIcon vendor={s.vendor} />}
@@ -133,8 +133,24 @@ const bareAriaLabel =
             {inner}
           </span>
         );
-      })}
-    </div>
+      };
+      const harnessPills = segments.filter((s) => s.kind === "harness");
+      const idPills = segments.filter((s) => s.kind === "vendor" || s.kind === "model");
+      return (
+        <div class="bare-overlay" title={m.matrixId}>
+          {harnessPills.length > 0 && (
+            <div class="overlay-row">
+              {harnessPills.map((s) => renderPill(s))}
+            </div>
+          )}
+          {idPills.length > 0 && (
+            <div class="overlay-row">
+              {idPills.map((s) => renderPill(s))}
+            </div>
+          )}
+        </div>
+      );
+    })()}
   </div>
 
   {strategies.map((s) => {
@@ -239,14 +255,41 @@ const bareAriaLabel =
     left: 0;
     right: 0;
     display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
+    flex-direction: column;
+    gap: 3px;
     padding: 6px 8px;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.65) 60%, rgba(0, 0, 0, 0));
-    /* gradient itself doesn't capture clicks; pills inside re-enable. */
     pointer-events: none;
   }
-  .bare-overlay > * { pointer-events: auto; }
+  .bare-overlay .overlay-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .bare-overlay .pill { pointer-events: auto; }
+  /* Pills must stay readable on white render thumbnails — force opaque
+     dark base + colored borders/text instead of the translucent fills
+     used in the bottom-meta context. */
+  .bare-overlay .pill {
+    background: rgba(20, 25, 32, 0.92);
+    backdrop-filter: blur(2px);
+    color: var(--fg);
+  }
+  .bare-overlay .pill-vendor[data-vendor="claude"] {
+    color: #f3a585;
+    border-color: rgba(217, 119, 87, 0.7);
+  }
+  .bare-overlay .pill-vendor[data-vendor="gemini"] {
+    color: #d6bcfa;
+    border-color: rgba(139, 92, 246, 0.7);
+  }
+  .bare-overlay .pill-vendor[data-vendor="openai"] {
+    color: #5ed5b3;
+    border-color: rgba(16, 163, 127, 0.7);
+  }
+  .bare-overlay .pill-model {
+    color: var(--fg);
+    border-color: rgba(108, 182, 255, 0.5);
+  }
   .bare-wrap[data-status="render_error"]::after,
   .bare-wrap[data-status="no_code"]::after,
   .bare-wrap[data-status="submit_missing"]::after {
