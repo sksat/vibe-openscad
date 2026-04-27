@@ -44,10 +44,14 @@ const fmtMin = (ms: number) =>
   ms < 60000 ? `${(ms / 1000).toFixed(1)}s` : `${(ms / 60000).toFixed(1)}m`;
 
 /**
- * For each task, fold the run list into one tile per (model, harness group).
- * Single-shot bare and external-agent tiles render as RunCard. Iter chains
- * (`iter-png` etc.) render as RunChainCard, with the root bare prepended at
- * depth 0 so before/after is visible in one strip.
+ * For each task, fold the run list into one tile per model. If a model has
+ * an iter chain, render a RunChainCard with the strip showing root bare →
+ * iter-1 → … → iter-N (the root *is* the single-shot bare, so we don't
+ * also render it standalone). If a model has only bare results, render a
+ * single RunCard.
+ *
+ * Multiple iter strategies on the same model (e.g. render-png-feedback と
+ * future error-text-feedback) は別チェーンとして表示する。
  */
 type TaskTile =
   | { kind: "single"; key: string; run: LoadedRun }
@@ -72,38 +76,38 @@ function buildTileRow(taskRuns: LoadedRun[]): {
   }
   const older = taskRuns.length - latestByMatrix.size;
 
-  // 2) Bucket by (model, groupSlug). Iter buckets gather the chain.
-  const buckets = new Map<
+  // 2) For each (model, iter group) combination, build a chain tile that
+  //    pulls in the root bare. Track which bare matrixIds got absorbed
+  //    into a chain so we don't also emit them as standalone tiles.
+  const tiles: TaskTile[] = [];
+  const absorbedBareMatrixIds = new Set<string>();
+
+  // Collect iter runs grouped by (model, iter slug).
+  const iterBuckets = new Map<
     string,
     { groupSlug: string; runs: LoadedRun[] }
   >();
   for (const r of latestByMatrix.values()) {
     const groupSlug = harnessGroupSlug(r.meta);
+    if (!groupSlug.startsWith("iter-")) continue;
     const model = r.meta.model ?? "unknown";
     const key = `${model}::${groupSlug}`;
-    const b = buckets.get(key) ?? { groupSlug, runs: [] };
+    const b = iterBuckets.get(key) ?? { groupSlug, runs: [] };
     b.runs.push(r);
-    buckets.set(key, b);
+    iterBuckets.set(key, b);
   }
 
-  const tiles: TaskTile[] = [];
-  for (const [key, { groupSlug, runs }] of buckets.entries()) {
-    if (!groupSlug.startsWith("iter-")) {
-      // single-shot tile per matrixId
-      for (const r of runs) {
-        tiles.push({ kind: "single", key: `${key}::${r.meta.matrixId}`, run: r });
-      }
-      continue;
-    }
-    // Iter bucket: also surface the chain root bare from the same task,
-    // even though it lives in the "bare" bucket.
+  for (const [key, { groupSlug, runs }] of iterBuckets.entries()) {
     const rootIds = new Set(
       runs.map((r) => chainRootMatrixId(r.meta.matrixId, fpByMatrix)),
     );
     const rootRuns: LoadedRun[] = [];
     for (const rootMatrixId of rootIds) {
       const root = latestByMatrix.get(rootMatrixId);
-      if (root) rootRuns.push(root);
+      if (root) {
+        rootRuns.push(root);
+        absorbedBareMatrixIds.add(rootMatrixId);
+      }
     }
     const stepRuns = [...rootRuns, ...runs];
     const seen = new Set<string>();
@@ -119,7 +123,21 @@ function buildTileRow(taskRuns: LoadedRun[]): {
     tiles.push({ kind: "chain", key, groupSlug, steps });
   }
 
-  // Sort: chain tiles after single tiles, otherwise stable on insertion.
+  // Standalone single-shot tiles for non-iter runs whose bare is NOT already
+  // absorbed into a chain card.
+  for (const r of latestByMatrix.values()) {
+    const groupSlug = harnessGroupSlug(r.meta);
+    if (groupSlug.startsWith("iter-")) continue;
+    if (absorbedBareMatrixIds.has(r.meta.matrixId)) continue;
+    tiles.push({
+      kind: "single",
+      key: `single::${r.meta.matrixId}`,
+      run: r,
+    });
+  }
+
+  // Singles first (alphabetical-ish via insertion order = matrixId order),
+  // chains after — same as before.
   tiles.sort((a, b) => {
     const ka = a.kind === "chain" ? 1 : 0;
     const kb = b.kind === "chain" ? 1 : 0;
