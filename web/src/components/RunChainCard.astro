@@ -54,6 +54,17 @@ for (const s of strategies) {
 }
 const segments = runBadges(m);
 const dataModels = m.model ?? "";
+// bare サムネのクリック先: 単独の chain がある場合はその detail に飛ぶ。
+// 複数 strategy があるケースは将来的に「model 全体の overview」ページを
+// 作る余地があるが、現状は最初の strategy の chain detail に着地させる。
+const bareHref =
+  strategies.length > 0
+    ? `/chains/${strategies[0]!.tail.meta.runId}`
+    : `/benchmark/${m.runId}`;
+const bareAriaLabel =
+  strategies.length > 0
+    ? `open chain detail for ${m.model ?? m.matrixId}`
+    : `open bare run ${m.runId}`;
 ---
 
 <article
@@ -66,7 +77,7 @@ const dataModels = m.model ?? "";
   data-task={m.taskId}
   data-tier={tier !== undefined ? String(tier) : ""}
 >
-  <a class="bare-link" href={`/benchmark/${m.runId}`} aria-label={`open bare run ${m.runId}`} data-status={m.status}>
+  <a class="bare-link" href={bareHref} aria-label={bareAriaLabel} data-status={m.status}>
     {bare.pngUrl ? (
       <div class="bare-thumb"><img src={bare.pngUrl} alt={`bare render of ${m.taskId}`} loading="lazy" /></div>
     ) : (
