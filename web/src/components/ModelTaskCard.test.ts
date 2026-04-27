@@ -107,6 +107,43 @@ describe("ModelTaskCard hover preview", () => {
     expect(html).toContain("1.8s");
   });
 
+  it("tags the default-effort variant with '(default)' in the row", async () => {
+    const container = await AstroContainer.create();
+    const defaultRun = fakeRun({
+      runId: "bare_default-2026",
+      matrixId: "bare/claude-opus-4-7",
+    });
+    const lowRun = fakeRun({
+      runId: "bare-low-2026",
+      matrixId: "bare-low/claude-opus-4-7",
+    });
+    const html = await container.renderToString(ModelTaskCard, {
+      props: {
+        bare: defaultRun,
+        strategies: [],
+        variantRows: [
+          {
+            familySlug: "effort",
+            expectedLabels: ["low", "high"],
+            variants: [
+              { label: "low", run: lowRun, isDefault: false },
+              { label: "high", run: defaultRun, isDefault: true },
+            ],
+          },
+        ],
+        tier: 1,
+      },
+    });
+    // "(default)" annotation literally appears
+    expect(html).toContain("(default)");
+    // The "(default)" string lives inside the high cell's hover-card, not
+    // the low cell's. Slice each cell's <a>...</a> non-greedily.
+    const aroundHigh = html.match(/iter-label[^>]*>high[\s\S]*?<\/a>/)?.[0] ?? "";
+    expect(aroundHigh).toContain("(default)");
+    const aroundLow = html.match(/iter-label[^>]*>low[\s\S]*?<\/a>/)?.[0] ?? "";
+    expect(aroundLow).not.toContain("(default)");
+  });
+
   it("does not put hover-card on placeholder slots (not run)", async () => {
     const container = await AstroContainer.create();
     const iter1 = fakeRun({

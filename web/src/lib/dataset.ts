@@ -203,6 +203,80 @@ export function effortVariantOf(meta: RunMeta): string | null {
 }
 
 /**
+ * Strip a date snapshot suffix (`-YYYYMMDD` / `-YYYY-MM-DD`) so model-family
+ * matchers can be written against the alias name.
+ */
+function modelBaseName(model: string): string {
+  return model.replace(/-\d{4}-\d{2}-\d{2}$/, "").replace(/-\d{8}$/, "");
+}
+
+/**
+ * Provider-default reasoning effort for models that support effort. Returns
+ * null for models without effort knob (Sonnet 4.5, Haiku 4.5, gpt-4.1, etc.)
+ * or providers we haven't modeled yet (Gemini).
+ */
+function defaultEffortFor(
+  provider: string | null | undefined,
+  model: string | null | undefined,
+): string | null {
+  if (!provider || !model) return null;
+  const base = modelBaseName(model);
+  if (provider === "anthropic") {
+    // Opus 4.5+ / Sonnet 4.6+ accept `output_config.effort` and default to "high".
+    if (/^claude-opus-4-([5-9]|\d{2,})/.test(base)) return "high";
+    if (/^claude-sonnet-4-6$/.test(base)) return "high";
+    if (/^claude-sonnet-4-([7-9]|\d{2,})/.test(base)) return "high";
+    return null;
+  }
+  if (provider === "openai") {
+    // gpt-5 family + reasoning o-series default to "medium".
+    if (/^gpt-5(\.\d+)?(-mini|-nano|-pro)?$/.test(base)) return "medium";
+    if (/^o3(-mini|-pro)?$/.test(base)) return "medium";
+    if (/^o4-mini$/.test(base)) return "medium";
+    return null;
+  }
+  // TODO: Gemini's `thinkingConfig.thinkingBudget` is a different axis (token
+  // budget, not symbolic effort levels) — not modeled in this helper yet.
+  return null;
+}
+
+/**
+ * Compute the effective reasoning-effort value for a run, plus whether the
+ * value comes from the provider default (no explicit `modelOptions.effort`).
+ * Returns null when the model doesn't support an effort knob at all.
+ */
+export function effortInfoFor(
+  meta: RunMeta,
+): { value: string; isDefault: boolean } | null {
+  const fpHarness = meta.fingerprint.harness;
+  if (fpHarness.kind !== "bare") return null;
+  const opts = (fpHarness.modelOptions ?? {}) as Record<string, unknown>;
+  if (meta.provider === "anthropic") {
+    const explicit =
+      typeof opts["output_config"] === "object" && opts["output_config"] !== null
+        ? ((opts["output_config"] as Record<string, unknown>)["effort"] as
+            | string
+            | undefined)
+        : undefined;
+    if (explicit) return { value: explicit, isDefault: false };
+    const def = defaultEffortFor(meta.provider, meta.model);
+    return def ? { value: def, isDefault: true } : null;
+  }
+  if (meta.provider === "openai") {
+    const explicit =
+      typeof opts["reasoning"] === "object" && opts["reasoning"] !== null
+        ? ((opts["reasoning"] as Record<string, unknown>)["effort"] as
+            | string
+            | undefined)
+        : undefined;
+    if (explicit) return { value: explicit, isDefault: false };
+    const def = defaultEffortFor(meta.provider, meta.model);
+    return def ? { value: def, isDefault: true } : null;
+  }
+  return null;
+}
+
+/**
  * Group runs into harness "buckets" for the /harnesses/[id]/ index.
  *
  *   single-shot bare                 → "bare"

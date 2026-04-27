@@ -44,8 +44,9 @@ interface VariantRow {
   familySlug: string;
   /** 全 model 横断で取りうる label の正規順(card 幅を揃えるためにこれで pad)。 */
   expectedLabels: string[];
-  /** モデル固有のバリアント。expectedLabels に対応する位置に詰める。 */
-  variants: Array<{ label: string; run: LoadedRun }>;
+  /** モデル固有のバリアント。expectedLabels に対応する位置に詰める。
+   *  isDefault=true は provider 既定値の run(明示的指定なし)を示す。 */
+  variants: Array<{ label: string; run: LoadedRun; isDefault?: boolean }>;
 }
 
 interface Props {
@@ -194,7 +195,7 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
               ) : (
                 <span class="muted">·</span>
               )}
-              <span class="iter-label">{lbl}</span>
+              <span class="iter-label">{lbl}{v.isDefault ? <span class="default-mark">*</span> : null}</span>
               {errBadge && <span class="iter-err">{errBadge}</span>}
               <div class="hover-card" role="tooltip">
                 {v.run.pngUrl && (
@@ -202,7 +203,7 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
                 )}
                 <div class="hover-meta">
                   <div class="hover-line">
-                    <strong>{row.familySlug} = {lbl}</strong>
+                    <strong>{row.familySlug} = {lbl}{v.isDefault ? " (default)" : ""}</strong>
                     <span class="hover-status" data-status={sm.status}>{sm.status}</span>
                   </div>
                   <div class="hover-line muted">
@@ -453,6 +454,10 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
     padding: 0 4px;
     border-radius: 2px;
     line-height: 1.5;
+  }
+  .default-mark {
+    color: var(--accent);
+    margin-left: 1px;
   }
   .iter-thumb[data-status="render_error"]::after,
   .iter-thumb[data-status="no_code"]::after,

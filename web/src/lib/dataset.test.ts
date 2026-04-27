@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RunMeta } from "@vibe-openscad/runners/src/schema.js";
-import { formatCost, parseMatrixId, runBadges } from "./dataset.js";
+import { effortInfoFor, formatCost, parseMatrixId, runBadges } from "./dataset.js";
 
 function fakeMeta(overrides: Partial<RunMeta>): RunMeta {
   return {
@@ -260,5 +260,117 @@ describe("formatCost", () => {
   it("uses 2 decimals for values >= 1", () => {
     expect(formatCost(1.234)).toBe("$1.23");
     expect(formatCost(12.345)).toBe("$12.35");
+  });
+});
+
+describe("effortInfoFor", () => {
+  function makeBare(over: {
+    provider: string;
+    model: string;
+    matrixId?: string;
+    modelOptions?: Record<string, unknown>;
+  }): RunMeta {
+    return fakeMeta({
+      provider: over.provider as RunMeta["provider"],
+      model: over.model,
+      matrixId: over.matrixId ?? `bare/${over.model}`,
+      fingerprint: {
+        schemaVersion: 1,
+        taskHash: "b".repeat(64),
+        harness: {
+          kind: "bare",
+          provider: over.provider,
+          model: over.model,
+          ...(over.modelOptions ? { modelOptions: over.modelOptions } : {}),
+        },
+        openscadVersion: "OpenSCAD",
+        promptTemplateHash: "c".repeat(64),
+      },
+    });
+  }
+
+  it("returns { high, isDefault: true } for default bare on Opus 4.7", () => {
+    expect(
+      effortInfoFor(
+        makeBare({ provider: "anthropic", model: "claude-opus-4-7" }),
+      ),
+    ).toEqual({ value: "high", isDefault: true });
+  });
+
+  it("returns explicit value for bare-low on Opus 4.7", () => {
+    expect(
+      effortInfoFor(
+        makeBare({
+          provider: "anthropic",
+          model: "claude-opus-4-7",
+          matrixId: "bare-low/claude-opus-4-7",
+          modelOptions: { output_config: { effort: "low" } },
+        }),
+      ),
+    ).toEqual({ value: "low", isDefault: false });
+  });
+
+  it("returns { medium, isDefault: true } for default gpt-5", () => {
+    expect(
+      effortInfoFor(
+        makeBare({ provider: "openai", model: "gpt-5-2025-08-07" }),
+      ),
+    ).toEqual({ value: "medium", isDefault: true });
+  });
+
+  it("returns explicit value for OpenAI reasoning override", () => {
+    expect(
+      effortInfoFor(
+        makeBare({
+          provider: "openai",
+          model: "gpt-5.4-2026-03-05",
+          matrixId: "bare-high/gpt-5.4",
+          modelOptions: { reasoning: { effort: "high" } },
+        }),
+      ),
+    ).toEqual({ value: "high", isDefault: false });
+  });
+
+  it("returns null for models without effort support (sonnet 4.5, haiku 4.5, gpt-4.1)", () => {
+    expect(
+      effortInfoFor(
+        makeBare({
+          provider: "anthropic",
+          model: "claude-haiku-4-5-20251001",
+        }),
+      ),
+    ).toBeNull();
+    expect(
+      effortInfoFor(
+        makeBare({
+          provider: "anthropic",
+          model: "claude-sonnet-4-5-20250929",
+        }),
+      ),
+    ).toBeNull();
+    expect(
+      effortInfoFor(
+        makeBare({
+          provider: "openai",
+          model: "gpt-4.1-2025-04-14",
+        }),
+      ),
+    ).toBeNull();
+  });
+
+  it("returns Sonnet 4.6 default = high", () => {
+    expect(
+      effortInfoFor(
+        makeBare({ provider: "anthropic", model: "claude-sonnet-4-6" }),
+      ),
+    ).toEqual({ value: "high", isDefault: true });
+  });
+
+  it("returns null for Gemini (effort not modeled here yet)", () => {
+    expect(
+      effortInfoFor(
+        makeBare({ provider: "google", model: "gemini-3.1-pro-preview" }),
+      ),
+    ).toBeNull();
   });
 });

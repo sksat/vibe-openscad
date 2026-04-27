@@ -6,7 +6,7 @@ import Base from "../../../layouts/Base.astro";
 import {
   chainDepthFor,
   chainRootMatrixId,
-  effortVariantOf,
+  effortInfoFor,
   fingerprintByMatrixId,
   formatCost,
   getDataset,
@@ -28,6 +28,7 @@ interface VariantEntry {
   label: string;
   run: LoadedRun;
   scad: string;
+  isDefault?: boolean;
 }
 
 interface VariantRow {
@@ -79,7 +80,7 @@ export function getStaticPaths() {
   type ModelBucket = {
     bare?: LoadedRun;
     iterRunsBySlug: Map<string, LoadedRun[]>;
-    variants: Array<{ label: string; run: LoadedRun }>;
+    variants: Array<{ label: string; run: LoadedRun; isDefault: boolean }>;
   };
   type TaskBucket = {
     task: ReturnType<typeof tasksById.get>;
@@ -105,15 +106,24 @@ export function getStaticPaths() {
       list.push(r);
       mb.iterRunsBySlug.set(slug, list);
     } else {
-      const variant = effortVariantOf(r.meta);
-      if (variant !== null) {
-        const existing = mb.variants.find((v) => v.label === variant);
+      const info = effortInfoFor(r.meta);
+      if (info) {
+        const existing = mb.variants.find((v) => v.label === info.value);
         if (!existing) {
-          mb.variants.push({ label: variant, run: r });
+          mb.variants.push({
+            label: info.value,
+            run: r,
+            isDefault: info.isDefault,
+          });
         } else if (existing.run.meta.createdAt < r.meta.createdAt) {
           existing.run = r;
+          existing.isDefault = info.isDefault;
         }
-      } else {
+      }
+      // Track the default-bare run as the main thumb. Effort-supporting
+      // models: the default-effort run. Non-effort models: any plain bare.
+      const isDefaultBare = info === null || info.isDefault;
+      if (isDefaultBare) {
         if (!mb.bare || mb.bare.meta.createdAt < r.meta.createdAt) {
           mb.bare = r;
         }
@@ -198,7 +208,12 @@ export function getStaticPaths() {
                 familySlug: "effort",
                 expectedLabels: labels,
                 variants: mb.variants
-                  .map((v) => ({ label: v.label, run: v.run, scad: readScad(v.run) }))
+                  .map((v) => ({
+                    label: v.label,
+                    run: v.run,
+                    scad: readScad(v.run),
+                    isDefault: v.isDefault,
+                  }))
                   .sort((a, b) => compareEffortLabel(a.label, b.label)),
               },
             ]
@@ -328,7 +343,7 @@ const ogDescription = [
           return (
             <article class="step-tile" data-status={sm.status}>
               <header>
-                <span class="step-label">{lbl}</span>
+                <span class="step-label">{lbl}{v.isDefault ? <span class="default-suffix"> (default)</span> : null}</span>
                 <span class={statusBadgeClass(sm.status)}>{sm.status}</span>
                 {errBadge && <span class="iter-err">{errBadge}</span>}
                 <a class="muted runlink" href={`/benchmark/${sm.runId}`}>→</a>
@@ -499,6 +514,10 @@ const ogDescription = [
     padding: 1px 7px;
     font-family: var(--mono);
     font-size: 12px;
+  }
+  .default-suffix {
+    color: var(--accent);
+    font-size: 10px;
   }
   .iter-err {
     background: rgba(239, 111, 108, 0.85);

@@ -7,7 +7,7 @@ import type { LoadedRun } from "../lib/results.js";
 import {
   chainDepthFor,
   chainRootMatrixId,
-  effortVariantOf,
+  effortInfoFor,
   fingerprintByMatrixId,
   formatCost,
   getDataset,
@@ -65,7 +65,7 @@ type ChainStrategy = {
 type VariantRow = {
   familySlug: string;
   expectedLabels: string[];
-  variants: Array<{ label: string; run: LoadedRun }>;
+  variants: Array<{ label: string; run: LoadedRun; isDefault?: boolean }>;
 };
 type TaskTile =
   | { kind: "single"; key: string; run: LoadedRun }
@@ -88,14 +88,15 @@ function compareEffortLabel(a: string, b: string): number {
 }
 
 /**
- * Per task, gather the union of effort-variant labels seen across all
- * models. Used to pad each model's effort row to the same width.
+ * Per task, gather the union of effort labels (default + explicit) seen
+ * across all models that support effort. Used to pad each model's effort
+ * row to the same width across cards.
  */
 function effortLabelsForTask(latestByMatrix: Map<string, LoadedRun>): string[] {
   const set = new Set<string>();
   for (const r of latestByMatrix.values()) {
-    const v = effortVariantOf(r.meta);
-    if (v) set.add(v);
+    const info = effortInfoFor(r.meta);
+    if (info) set.add(info.value);
   }
   return [...set].sort(compareEffortLabel);
 }
@@ -129,16 +130,18 @@ function buildTileRow(taskRuns: LoadedRun[]): {
   }
   const older = taskRuns.length - latestByMatrix.size;
 
-  // 2) Group every iter step by (model, groupSlug). Track each chain's tail
-  //    (highest-depth run) so we can link to the chain detail page.
+  // 2) Group iter steps by (model, groupSlug) and collect effort entries by
+  //    model. Effort entries include both explicit variants (`bare-low/...`)
+  //    and the provider-default `bare/...` run when the model supports an
+  //    effort knob — both get a slot in the effort row, with a `(default)`
+  //    tag on the implicit one.
   const iterBuckets = new Map<
     string,
     { groupSlug: string; runs: LoadedRun[] }
   >();
-  // Effort variants (matrixId head = bare-<variant>) by model.
-  const effortVariantsByModel = new Map<
+  const effortEntriesByModel = new Map<
     string,
-    Array<{ label: string; run: LoadedRun }>
+    Array<{ label: string; run: LoadedRun; isDefault: boolean }>
   >();
   for (const r of latestByMatrix.values()) {
     const groupSlug = harnessGroupSlug(r.meta);
@@ -149,12 +152,12 @@ function buildTileRow(taskRuns: LoadedRun[]): {
       b.runs.push(r);
       iterBuckets.set(key, b);
     } else {
-      const variant = effortVariantOf(r.meta);
-      if (variant !== null) {
+      const info = effortInfoFor(r.meta);
+      if (info) {
         const model = r.meta.model ?? "unknown";
-        const list = effortVariantsByModel.get(model) ?? [];
-        list.push({ label: variant, run: r });
-        effortVariantsByModel.set(model, list);
+        const list = effortEntriesByModel.get(model) ?? [];
+        list.push({ label: info.value, run: r, isDefault: info.isDefault });
+        effortEntriesByModel.set(model, list);
       }
     }
   }
@@ -195,44 +198,58 @@ function buildTileRow(taskRuns: LoadedRun[]): {
     if (root) bareByModel.set(model, root);
   }
 
-  // Also track default-bare runs whose model has only effort variants
-  // (no iter chain). These still need a chain card to host the variant row.
+  // Track the default-bare run per model (= the main thumb at the top of
+  // the card). For effort-supporting models that's the run with
+  // isDefault=true; for non-effort models it's any plain bare/X.
   for (const r of latestByMatrix.values()) {
     const slug = harnessGroupSlug(r.meta);
     if (slug.startsWith("iter-")) continue;
-    if (effortVariantOf(r.meta) !== null) continue; // skip variant rows
+    const info = effortInfoFor(r.meta);
+    const isDefaultBare = info === null || info.isDefault;
+    if (!isDefaultBare) continue;
     const model = r.meta.model ?? "unknown";
     if (!bareByModel.has(model)) bareByModel.set(model, r);
   }
 
   const tiles: TaskTile[] = [];
   const seenModels = new Set<string>();
-  // Models that have iter strategies OR effort variants → multi-row chain card.
+  // Helper: build the effort variant row for a model (sorted by canonical
+  // order, only the labels seen across the task to keep cards aligned).
+  const variantRowsFor = (model: string): VariantRow[] => {
+    const entries = effortEntriesByModel.get(model) ?? [];
+    if (entries.length === 0) return [];
+    const sorted = [...entries].sort((a, b) =>
+      compareEffortLabel(a.label, b.label),
+    );
+    return [
+      {
+        familySlug: "effort",
+        expectedLabels: taskEffortLabels,
+        variants: sorted.map((e) => ({
+          label: e.label,
+          run: e.run,
+          isDefault: e.isDefault,
+        })),
+      },
+    ];
+  };
+
+  // Models that have iter strategies → multi-row card with iter + effort.
   for (const [model, strategies] of strategiesByModel.entries()) {
     const bare = bareByModel.get(model);
     if (!bare) continue;
     strategies.sort((a, b) => a.groupSlug.localeCompare(b.groupSlug));
-    const variants = effortVariantsByModel.get(model) ?? [];
-    const variantRows: VariantRow[] = variants.length > 0
-      ? [
-          {
-            familySlug: "effort",
-            expectedLabels: taskEffortLabels,
-            variants,
-          },
-        ]
-      : [];
     tiles.push({
       kind: "model-chain",
       key: `chain::${bare.meta.matrixId}`,
       bare,
       strategies,
-      variantRows,
+      variantRows: variantRowsFor(model),
     });
     seenModels.add(model);
   }
-  // Models that have effort variants but NO iter chain.
-  for (const [model, variants] of effortVariantsByModel.entries()) {
+  // Models with effort entries but no iter chain.
+  for (const [model] of effortEntriesByModel.entries()) {
     if (seenModels.has(model)) continue;
     const bare = bareByModel.get(model);
     if (!bare) continue;
@@ -241,28 +258,25 @@ function buildTileRow(taskRuns: LoadedRun[]): {
       key: `chain::${bare.meta.matrixId}`,
       bare,
       strategies: [],
-      variantRows: [
-        { familySlug: "effort", expectedLabels: taskEffortLabels, variants },
-      ],
+      variantRows: variantRowsFor(model),
     });
     seenModels.add(model);
   }
-  // Bare-only models (no chain & no variants).
-  const consumedBareMatrixIds = new Set(
-    [...bareByModel.values()]
-      .filter((r) => seenModels.has(r.meta.model ?? "unknown"))
-      .map((r) => r.meta.matrixId),
-  );
+  // Bare-only models (no chain & no effort variants — usually models that
+  // don't even support an effort knob, e.g. haiku-4-5, sonnet-4-5, gpt-4.1).
   for (const r of latestByMatrix.values()) {
-    const groupSlug = harnessGroupSlug(r.meta);
-    if (groupSlug.startsWith("iter-")) continue;
-    if (effortVariantOf(r.meta) !== null) continue;
-    if (consumedBareMatrixIds.has(r.meta.matrixId)) continue;
+    const slug = harnessGroupSlug(r.meta);
+    if (slug.startsWith("iter-")) continue;
+    const info = effortInfoFor(r.meta);
+    if (info && !info.isDefault) continue; // explicit effort variant — no standalone tile
+    const model = r.meta.model ?? "unknown";
+    if (seenModels.has(model)) continue;
     tiles.push({
       kind: "single",
       key: `single::${r.meta.matrixId}`,
       run: r,
     });
+    seenModels.add(model);
   }
 
   // Bare-only first (insertion order ≒ YAML order), chain cards after.
