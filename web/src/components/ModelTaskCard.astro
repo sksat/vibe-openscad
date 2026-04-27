@@ -162,10 +162,12 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
     })()}
   </div>
 
-  {variantRows.map((row) => (
+  {variantRows.map((row) => {
+    const labelLines = row.familySlug.split("-");
+    return (
     <div class="strategy-row variant-row" data-family={row.familySlug}>
       <span class="strategy-label">
-        <code>{row.familySlug}</code>
+        {labelLines.map((line) => <code>{line}</code>)}
       </span>
       <div class="strategy-strip">
         {row.expectedLabels.map((lbl) => {
@@ -199,9 +201,11 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
         })}
       </div>
     </div>
-  ))}
+  );
+  })}
 
   {strategies.map((s) => {
+    const labelLines = s.groupSlug.split("-");
     return (
       <div class="strategy-row" data-strategy={s.groupSlug}>
         <a
@@ -209,7 +213,7 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
           href={cardHref}
           title={`open ${s.groupSlug} chain in card detail`}
         >
-          <code>{s.groupSlug}</code>
+          {labelLines.map((line) => <code>{line}</code>)}
         </a>
         <div class="strategy-strip">
           {Array.from({ length: s.expectedDepth }, (_, idx) => idx + 1).map((d) => {
@@ -350,9 +354,11 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
     outline-offset: -2px;
   }
 
+  /* 全 row で固定の label 列幅。最長想定の "effort" / "iter-png" の各行が
+     収まる + 余白。これで effort 行と iter-png 行の strip 開始位置が揃う。 */
   .strategy-row {
     display: grid;
-    grid-template-columns: max-content 1fr;
+    grid-template-columns: 48px 1fr;
     gap: 6px;
     padding: 4px 6px 4px 8px;
     border-top: 1px solid var(--line);
@@ -363,6 +369,12 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
     font-size: 10px;
     color: var(--fg-dim);
     text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.15;
     min-width: 0;
   }
   .strategy-label code {
