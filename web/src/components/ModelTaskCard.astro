@@ -181,13 +181,13 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
           }
           const sm = v.run.meta;
           const errBadge = errorBadgeFor(sm.status);
+          const cost = runCostUsd(sm);
           return (
             <a
               class="iter-thumb"
               href={`/benchmark/${sm.runId}`}
               aria-label={`open ${row.familySlug}=${lbl} run ${sm.runId}`}
               data-status={sm.status}
-              title={errBadge ? `${row.familySlug}=${lbl} · ${sm.status}` : `${row.familySlug}=${lbl}`}
             >
               {v.run.pngUrl ? (
                 <img src={v.run.pngUrl} alt={`${row.familySlug}=${lbl}`} loading="lazy" />
@@ -196,6 +196,23 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
               )}
               <span class="iter-label">{lbl}</span>
               {errBadge && <span class="iter-err">{errBadge}</span>}
+              <div class="hover-card" role="tooltip">
+                {v.run.pngUrl && (
+                  <img class="hover-img" src={v.run.pngUrl} alt={`${row.familySlug}=${lbl} preview`} loading="lazy" />
+                )}
+                <div class="hover-meta">
+                  <div class="hover-line">
+                    <strong>{row.familySlug} = {lbl}</strong>
+                    <span class="hover-status" data-status={sm.status}>{sm.status}</span>
+                  </div>
+                  <div class="hover-line muted">
+                    {(sm.timing.totalMs / 1000).toFixed(1)}s
+                    {sm.tokens && ` · ${sm.tokens.input}/${sm.tokens.output}t`}
+                    {cost !== null && ` · ${formatCost(cost)}`}
+                  </div>
+                  {sm.error && <pre class="hover-err">{sm.error}</pre>}
+                </div>
+              </div>
             </a>
           );
         })}
@@ -231,13 +248,13 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
             }
             const sm = step.run.meta;
             const errBadge = errorBadgeFor(sm.status);
+            const cost = runCostUsd(sm);
             return (
               <a
                 class="iter-thumb"
                 href={`/benchmark/${sm.runId}`}
                 aria-label={`open iter ${d} run ${sm.runId}`}
                 data-status={sm.status}
-                title={errBadge ? `${sm.status}: ${sm.error ?? ""}` : sm.status}
               >
                 {step.run.pngUrl ? (
                   <img src={step.run.pngUrl} alt={`iter ${d}`} loading="lazy" />
@@ -246,6 +263,23 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
                 )}
                 <span class="iter-label">i{d}</span>
                 {errBadge && <span class="iter-err">{errBadge}</span>}
+                <div class="hover-card" role="tooltip">
+                  {step.run.pngUrl && (
+                    <img class="hover-img" src={step.run.pngUrl} alt={`iter ${d} preview`} loading="lazy" />
+                  )}
+                  <div class="hover-meta">
+                    <div class="hover-line">
+                      <strong>iter {d}</strong>
+                      <span class="hover-status" data-status={sm.status}>{sm.status}</span>
+                    </div>
+                    <div class="hover-line muted">
+                      {(sm.timing.totalMs / 1000).toFixed(1)}s
+                      {sm.tokens && ` · ${sm.tokens.input}/${sm.tokens.output}t`}
+                      {cost !== null && ` · ${formatCost(cost)}`}
+                    </div>
+                    {sm.error && <pre class="hover-err">{sm.error}</pre>}
+                  </div>
+                </div>
               </a>
             );
           })}
@@ -432,6 +466,74 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
     pointer-events: none;
   }
   .iter-thumb:hover { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 1; }
+
+  /* hover-card popover: iter サムネにマウス載せたら大きいプレビュー + meta */
+  .iter-thumb .hover-card {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 220px;
+    background: var(--bg-2);
+    color: var(--fg);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 6px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+    display: none;
+    z-index: 50;
+    pointer-events: none;
+    font-family: var(--mono);
+  }
+  .iter-thumb:hover .hover-card { display: block; }
+  /* card 全体が overflow:hidden だとはみ出した hover-card が消えるので
+     hover 中だけ親を visible に */
+  .model-task-card:has(.iter-thumb:hover) { overflow: visible; }
+  .strategy-strip:has(.iter-thumb:hover) { overflow: visible; }
+  .hover-img {
+    width: 100%;
+    background: #fff;
+    border-radius: 4px;
+    aspect-ratio: 1 / 1;
+    object-fit: contain;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .hover-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 10px;
+    line-height: 1.35;
+  }
+  .hover-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .hover-status {
+    color: var(--ok);
+  }
+  .hover-status[data-status="render_error"],
+  .hover-status[data-status="no_code"],
+  .hover-status[data-status="submit_missing"],
+  .hover-status[data-status="timeout"],
+  .hover-status[data-status="api_error"] {
+    color: var(--bad);
+  }
+  .hover-err {
+    margin: 0;
+    font-size: 9px;
+    color: var(--bad);
+    background: rgba(239, 111, 108, 0.06);
+    border: 1px solid rgba(239, 111, 108, 0.4);
+    padding: 4px 6px;
+    max-height: 80px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    pointer-events: auto;
+  }
   .iter-thumb.placeholder {
     background: var(--bg-3);
     color: var(--fg-dim);
