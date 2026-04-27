@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "node scripts/generate-ogp.mjs && astro build",
     "preview": "astro preview",
     "deploy": "astro build && wrangler deploy",
     "test": "vitest run",
@@ -23,6 +23,7 @@
     "@astrojs/check": "^0.9.8",
     "@types/three": "^0.184.0",
     "happy-dom": "^15.11.7",
+    "sharp": "^0.34.5",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5",
     "wrangler": "^4.85.0"

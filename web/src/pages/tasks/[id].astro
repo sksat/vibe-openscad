@@ -19,9 +19,9 @@ export function getStaticPaths() {
 const { task, runs, facets } = Astro.props;
 
 /**
- * OGP 画像は task の代表として「定番の現行世代モデルの default bare run」を
- * 優先順で探す。決定的に選ばないと build ごとに og:image が変わって unfurl
- * のキャッシュが暴れる。fallback で見つからなければ最初の render PNG。
+ * OGP 画像はビルド時に `web/scripts/generate-ogp.mjs` が `/og/task-<id>.png`
+ * (4 モデルの 2x2 タイル + ヘッダ) を生成する。生成されていない場合は
+ * preferred-model fallback で代表 1 枚を選ぶ(= run があるなら必ず何か出る)。
  */
 const OGP_PREFERRED_MODELS = [
   "claude-opus-4-7",
@@ -31,7 +31,13 @@ const OGP_PREFERRED_MODELS = [
   "gemini-3.1-pro-preview",
   "gemini-2.5-pro",
 ];
-function pickOgpImage(): string | undefined {
+import { existsSync } from "node:fs";
+import { resolve as pathResolve } from "node:path";
+const syntheticOgpPath = `/og/task-${task.id}.png`;
+const syntheticOgpExists = existsSync(
+  pathResolve(process.cwd(), "public", syntheticOgpPath.slice(1)),
+);
+function pickFallbackOgpImage(): string | undefined {
   const bareDefault = runs.filter(
     (r) => r.pngUrl && r.meta.matrixId.startsWith("bare/"),
   );
@@ -41,7 +47,9 @@ function pickOgpImage(): string | undefined {
   }
   return bareDefault[0]?.pngUrl ?? runs.find((r) => r.pngUrl)?.pngUrl;
 }
-const sampleImage = pickOgpImage();
+const sampleImage = syntheticOgpExists
+  ? syntheticOgpPath
+  : pickFallbackOgpImage();
 const description = `${task.title} (tier ${task.tier}) — ${runs.length} run の比較`;
 ---
 
