@@ -144,6 +144,51 @@ describe("ModelTaskCard hover preview", () => {
     expect(aroundLow).not.toContain("(default)");
   });
 
+  it("renders multiple variant rows (effort + thinking) when both are passed", async () => {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(ModelTaskCard, {
+      props: {
+        bare: fakeRun(),
+        strategies: [],
+        variantRows: [
+          {
+            familySlug: "effort",
+            expectedLabels: ["high"],
+            variants: [{ label: "high", run: fakeRun(), isDefault: true }],
+          },
+          {
+            familySlug: "thinking",
+            expectedLabels: ["off", "adaptive"],
+            variants: [
+              {
+                label: "off",
+                run: fakeRun({
+                  runId: "bare-think-off-2026",
+                  matrixId: "bare-think-off/claude-opus-4-7",
+                }),
+                isDefault: false,
+              },
+              {
+                label: "adaptive",
+                run: fakeRun(),
+                isDefault: true,
+              },
+            ],
+          },
+        ],
+        tier: 1,
+      },
+    });
+    expect(html).toContain("data-family=\"effort\"");
+    expect(html).toContain("data-family=\"thinking\"");
+    // both rows render their slugs (split by "-" into separate <code>s)
+    expect(html).toMatch(/strategy-label[\s\S]*effort[\s\S]*strategy-strip/);
+    expect(html).toMatch(/strategy-label[\s\S]*thinking[\s\S]*strategy-strip/);
+    // adaptive cell is the default in the thinking row
+    const aroundAdaptive = html.match(/iter-label[^>]*>adaptive[\s\S]*?<\/a>/)?.[0] ?? "";
+    expect(aroundAdaptive).toContain("(default)");
+  });
+
   it("does not put hover-card on placeholder slots (not run)", async () => {
     const container = await AstroContainer.create();
     const iter1 = fakeRun({

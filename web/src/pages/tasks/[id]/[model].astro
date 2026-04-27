@@ -7,6 +7,7 @@ import {
   chainDepthFor,
   chainRootMatrixId,
   effortInfoFor,
+  thinkingInfoFor,
   fingerprintByMatrixId,
   formatCost,
   getDataset,
@@ -81,6 +82,7 @@ export function getStaticPaths() {
     bare?: LoadedRun;
     iterRunsBySlug: Map<string, LoadedRun[]>;
     variants: Array<{ label: string; run: LoadedRun; isDefault: boolean }>;
+    thinking: Array<{ label: string; run: LoadedRun; isDefault: boolean }>;
   };
   type TaskBucket = {
     task: ReturnType<typeof tasksById.get>;
@@ -97,7 +99,7 @@ export function getStaticPaths() {
     const model = r.meta.model ?? "unknown";
     let mb = tb.byModel.get(model);
     if (!mb) {
-      mb = { iterRunsBySlug: new Map(), variants: [] };
+      mb = { iterRunsBySlug: new Map(), variants: [], thinking: [] };
       tb.byModel.set(model, mb);
     }
     const slug = harnessGroupSlug(r.meta);
@@ -120,15 +122,49 @@ export function getStaticPaths() {
           existing.isDefault = info.isDefault;
         }
       }
-      // Track the default-bare run as the main thumb. Effort-supporting
-      // models: the default-effort run. Non-effort models: any plain bare.
-      const isDefaultBare = info === null || info.isDefault;
+      const tInfo = thinkingInfoFor(r.meta);
+      if (tInfo) {
+        const existing = mb.thinking.find((v) => v.label === tInfo.value);
+        if (!existing) {
+          mb.thinking.push({
+            label: tInfo.value,
+            run: r,
+            isDefault: tInfo.isDefault,
+          });
+        } else if (existing.run.meta.createdAt < r.meta.createdAt) {
+          existing.run = r;
+          existing.isDefault = tInfo.isDefault;
+        }
+      }
+      // Track the default-bare run as the main thumb.
+      const isDefaultBare =
+        (info === null || info.isDefault) &&
+        (tInfo === null || tInfo.isDefault);
       if (isDefaultBare) {
         if (!mb.bare || mb.bare.meta.createdAt < r.meta.createdAt) {
           mb.bare = r;
         }
       }
     }
+  }
+
+  // Per task, the union of thinking labels across models.
+  const THINKING_ORDER = ["off", "adaptive"];
+  const compareThinkingLabel = (a: string, b: string): number => {
+    const ai = THINKING_ORDER.indexOf(a);
+    const bi = THINKING_ORDER.indexOf(b);
+    if (ai !== -1 || bi !== -1) {
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    }
+    return a.localeCompare(b);
+  };
+  const taskThinkingLabels = new Map<string, string[]>();
+  for (const [taskId, tb] of taskBuckets.entries()) {
+    const set = new Set<string>();
+    for (const mb of tb.byModel.values()) {
+      for (const v of mb.thinking) set.add(v.label);
+    }
+    taskThinkingLabels.set(taskId, [...set].sort(compareThinkingLabel));
   }
 
   // Per task, the union of effort labels across models.
@@ -201,23 +237,36 @@ export function getStaticPaths() {
       }
       strategies.sort((a, b) => a.groupSlug.localeCompare(b.groupSlug));
 
-      const variantRows: VariantRow[] =
-        mb.variants.length > 0 && labels.length > 0
-          ? [
-              {
-                familySlug: "effort",
-                expectedLabels: labels,
-                variants: mb.variants
-                  .map((v) => ({
-                    label: v.label,
-                    run: v.run,
-                    scad: readScad(v.run),
-                    isDefault: v.isDefault,
-                  }))
-                  .sort((a, b) => compareEffortLabel(a.label, b.label)),
-              },
-            ]
-          : [];
+      const variantRows: VariantRow[] = [];
+      if (mb.variants.length > 0 && labels.length > 0) {
+        variantRows.push({
+          familySlug: "effort",
+          expectedLabels: labels,
+          variants: mb.variants
+            .map((v) => ({
+              label: v.label,
+              run: v.run,
+              scad: readScad(v.run),
+              isDefault: v.isDefault,
+            }))
+            .sort((a, b) => compareEffortLabel(a.label, b.label)),
+        });
+      }
+      const tLabels = taskThinkingLabels.get(taskId) ?? [];
+      if (mb.thinking.length > 0 && tLabels.length > 0) {
+        variantRows.push({
+          familySlug: "thinking",
+          expectedLabels: tLabels,
+          variants: mb.thinking
+            .map((v) => ({
+              label: v.label,
+              run: v.run,
+              scad: readScad(v.run),
+              isDefault: v.isDefault,
+            }))
+            .sort((a, b) => compareThinkingLabel(a.label, b.label)),
+        });
+      }
 
       let totalMs = bare.meta.timing.totalMs;
       let totalCost = runCostUsd(bare.meta) ?? 0;

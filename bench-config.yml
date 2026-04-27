@@ -29,10 +29,22 @@ matrix:
     provider: anthropic
     model: claude-opus-4-7
     modelOptions: { output_config: { effort: xhigh } }
+  # Thinking variant — adaptive thinking is the Opus 4.7 default;
+  # explicitly disable it to compare \"thinking off\" baseline.
+  - id: bare-think-off/claude-opus-4-7
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-opus-4-7
+    modelOptions: { thinking: { type: disabled } }
   - id: bare/claude-sonnet-4-6
     harness: { kind: bare }
     provider: anthropic
     model: claude-sonnet-4-6
+  - id: bare-think-off/claude-sonnet-4-6
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-sonnet-4-6
+    modelOptions: { thinking: { type: disabled } }
   - id: bare/claude-haiku-4-5
     harness: { kind: bare }
     provider: anthropic

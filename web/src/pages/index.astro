@@ -13,6 +13,7 @@ import {
   getDataset,
   harnessGroupSlug,
   runCostUsd,
+  thinkingInfoFor,
 } from "../lib/dataset.js";
 
 const ds = getDataset();
@@ -101,6 +102,25 @@ function effortLabelsForTask(latestByMatrix: Map<string, LoadedRun>): string[] {
   return [...set].sort(compareEffortLabel);
 }
 
+const THINKING_ORDER = ["off", "adaptive"];
+function compareThinkingLabel(a: string, b: string): number {
+  const ai = THINKING_ORDER.indexOf(a);
+  const bi = THINKING_ORDER.indexOf(b);
+  if (ai !== -1 || bi !== -1) {
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  }
+  return a.localeCompare(b);
+}
+
+function thinkingLabelsForTask(latestByMatrix: Map<string, LoadedRun>): string[] {
+  const set = new Set<string>();
+  for (const r of latestByMatrix.values()) {
+    const info = thinkingInfoFor(r.meta);
+    if (info) set.add(info.value);
+  }
+  return [...set].sort(compareThinkingLabel);
+}
+
 /**
  * Per strategy slug, compute the deepest depth seen across all models +
  * tasks. Used to pad iter strips with placeholders so cards align.
@@ -143,6 +163,11 @@ function buildTileRow(taskRuns: LoadedRun[]): {
     string,
     Array<{ label: string; run: LoadedRun; isDefault: boolean }>
   >();
+  // Thinking variant entries (Anthropic thinking axis).
+  const thinkingEntriesByModel = new Map<
+    string,
+    Array<{ label: string; run: LoadedRun; isDefault: boolean }>
+  >();
   for (const r of latestByMatrix.values()) {
     const groupSlug = harnessGroupSlug(r.meta);
     if (groupSlug.startsWith("iter-")) {
@@ -159,9 +184,24 @@ function buildTileRow(taskRuns: LoadedRun[]): {
         list.push({ label: info.value, run: r, isDefault: info.isDefault });
         effortEntriesByModel.set(model, list);
       }
+      const tInfo = thinkingInfoFor(r.meta);
+      if (tInfo) {
+        const model = r.meta.model ?? "unknown";
+        const list = thinkingEntriesByModel.get(model) ?? [];
+        // Dedup by label (newest wins) — same shape as effort.
+        const existing = list.find((e) => e.label === tInfo.value);
+        if (!existing) {
+          list.push({ label: tInfo.value, run: r, isDefault: tInfo.isDefault });
+        } else if (existing.run.meta.createdAt < r.meta.createdAt) {
+          existing.run = r;
+          existing.isDefault = tInfo.isDefault;
+        }
+        thinkingEntriesByModel.set(model, list);
+      }
     }
   }
   const taskEffortLabels = effortLabelsForTask(latestByMatrix);
+  const taskThinkingLabels = thinkingLabelsForTask(latestByMatrix);
 
   // 3) Per model, collect all strategies + the root bare.
   const strategiesByModel = new Map<string, ChainStrategy[]>();
@@ -213,16 +253,16 @@ function buildTileRow(taskRuns: LoadedRun[]): {
 
   const tiles: TaskTile[] = [];
   const seenModels = new Set<string>();
-  // Helper: build the effort variant row for a model (sorted by canonical
-  // order, only the labels seen across the task to keep cards aligned).
+  // Helper: build all variant rows (effort + thinking) for a model. Each
+  // row is independently aligned across cards via expectedLabels.
   const variantRowsFor = (model: string): VariantRow[] => {
-    const entries = effortEntriesByModel.get(model) ?? [];
-    if (entries.length === 0) return [];
-    const sorted = [...entries].sort((a, b) =>
-      compareEffortLabel(a.label, b.label),
-    );
-    return [
-      {
+    const rows: VariantRow[] = [];
+    const effortEntries = effortEntriesByModel.get(model) ?? [];
+    if (effortEntries.length > 0 && taskEffortLabels.length > 0) {
+      const sorted = [...effortEntries].sort((a, b) =>
+        compareEffortLabel(a.label, b.label),
+      );
+      rows.push({
         familySlug: "effort",
         expectedLabels: taskEffortLabels,
         variants: sorted.map((e) => ({
@@ -230,8 +270,24 @@ function buildTileRow(taskRuns: LoadedRun[]): {
           run: e.run,
           isDefault: e.isDefault,
         })),
-      },
-    ];
+      });
+    }
+    const thinkingEntries = thinkingEntriesByModel.get(model) ?? [];
+    if (thinkingEntries.length > 0 && taskThinkingLabels.length > 0) {
+      const sorted = [...thinkingEntries].sort((a, b) =>
+        compareThinkingLabel(a.label, b.label),
+      );
+      rows.push({
+        familySlug: "thinking",
+        expectedLabels: taskThinkingLabels,
+        variants: sorted.map((e) => ({
+          label: e.label,
+          run: e.run,
+          isDefault: e.isDefault,
+        })),
+      });
+    }
+    return rows;
   };
 
   // Models that have iter strategies → multi-row card with iter + effort.
@@ -248,8 +304,11 @@ function buildTileRow(taskRuns: LoadedRun[]): {
     });
     seenModels.add(model);
   }
-  // Models with effort entries but no iter chain.
-  for (const [model] of effortEntriesByModel.entries()) {
+  // Models with effort or thinking entries but no iter chain.
+  const variantOnlyModels = new Set<string>();
+  for (const m of effortEntriesByModel.keys()) variantOnlyModels.add(m);
+  for (const m of thinkingEntriesByModel.keys()) variantOnlyModels.add(m);
+  for (const model of variantOnlyModels) {
     if (seenModels.has(model)) continue;
     const bare = bareByModel.get(model);
     if (!bare) continue;

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { RunMeta } from "@vibe-openscad/runners/src/schema.js";
-import { effortInfoFor, formatCost, parseMatrixId, runBadges } from "./dataset.js";
+import {
+  effortInfoFor,
+  formatCost,
+  parseMatrixId,
+  runBadges,
+  thinkingInfoFor,
+} from "./dataset.js";
 
 function fakeMeta(overrides: Partial<RunMeta>): RunMeta {
   return {
@@ -369,6 +375,124 @@ describe("effortInfoFor", () => {
   it("returns null for Gemini (effort not modeled here yet)", () => {
     expect(
       effortInfoFor(
+        makeBare({ provider: "google", model: "gemini-3.1-pro-preview" }),
+      ),
+    ).toBeNull();
+  });
+});
+
+describe("thinkingInfoFor", () => {
+  function makeBare(over: {
+    provider: string;
+    model: string;
+    matrixId?: string;
+    modelOptions?: Record<string, unknown>;
+  }): RunMeta {
+    return fakeMeta({
+      provider: over.provider as RunMeta["provider"],
+      model: over.model,
+      matrixId: over.matrixId ?? `bare/${over.model}`,
+      fingerprint: {
+        schemaVersion: 1,
+        taskHash: "b".repeat(64),
+        harness: {
+          kind: "bare",
+          provider: over.provider,
+          model: over.model,
+          ...(over.modelOptions ? { modelOptions: over.modelOptions } : {}),
+        },
+        openscadVersion: "OpenSCAD",
+        promptTemplateHash: "c".repeat(64),
+      },
+    });
+  }
+
+  it("returns adaptive default for Opus 4.7", () => {
+    expect(
+      thinkingInfoFor(
+        makeBare({ provider: "anthropic", model: "claude-opus-4-7" }),
+      ),
+    ).toEqual({ value: "adaptive", isDefault: true });
+  });
+
+  it("returns adaptive default for Sonnet 4.6", () => {
+    expect(
+      thinkingInfoFor(
+        makeBare({ provider: "anthropic", model: "claude-sonnet-4-6" }),
+      ),
+    ).toEqual({ value: "adaptive", isDefault: true });
+  });
+
+  it("returns 'off' when thinking explicitly disabled", () => {
+    expect(
+      thinkingInfoFor(
+        makeBare({
+          provider: "anthropic",
+          model: "claude-opus-4-7",
+          modelOptions: { thinking: { type: "disabled" } },
+        }),
+      ),
+    ).toEqual({ value: "off", isDefault: false });
+  });
+
+  it("returns adaptive (explicit) when thinking explicitly adaptive", () => {
+    expect(
+      thinkingInfoFor(
+        makeBare({
+          provider: "anthropic",
+          model: "claude-opus-4-7",
+          modelOptions: { thinking: { type: "adaptive" } },
+        }),
+      ),
+    ).toEqual({ value: "adaptive", isDefault: false });
+  });
+
+  it("returns enabled-<N> when thinking explicitly enabled with budget", () => {
+    expect(
+      thinkingInfoFor(
+        makeBare({
+          provider: "anthropic",
+          model: "claude-opus-4-6",
+          modelOptions: {
+            thinking: { type: "enabled", budget_tokens: 4096 },
+          },
+        }),
+      ),
+    ).toEqual({ value: "enabled-4096", isDefault: false });
+  });
+
+  it("returns 'off' default for older Anthropic without adaptive support", () => {
+    // Sonnet 4.5 / Haiku 4.5 / Opus 4.5: no adaptive default; thinking is off
+    // unless explicitly enabled.
+    expect(
+      thinkingInfoFor(
+        makeBare({
+          provider: "anthropic",
+          model: "claude-sonnet-4-5-20250929",
+        }),
+      ),
+    ).toEqual({ value: "off", isDefault: true });
+    expect(
+      thinkingInfoFor(
+        makeBare({
+          provider: "anthropic",
+          model: "claude-haiku-4-5-20251001",
+        }),
+      ),
+    ).toEqual({ value: "off", isDefault: true });
+  });
+
+  it("returns null for OpenAI (thinking subsumed by effort axis)", () => {
+    expect(
+      thinkingInfoFor(
+        makeBare({ provider: "openai", model: "gpt-5-2025-08-07" }),
+      ),
+    ).toBeNull();
+  });
+
+  it("returns null for Gemini (different thinking-budget axis, not modeled here)", () => {
+    expect(
+      thinkingInfoFor(
         makeBare({ provider: "google", model: "gemini-3.1-pro-preview" }),
       ),
     ).toBeNull();
