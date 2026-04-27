@@ -40,6 +40,19 @@ interface ChainStrategy {
   expectedDepth: number;
 }
 
+/**
+ * 並列バリアント一覧(reasoning effort など)。各バリアントは独立な run で、
+ * 親子関係はない。一行に label + サムネ列で表示。
+ */
+interface VariantRow {
+  /** 行ヘッダ(例: \"effort\")。 */
+  familySlug: string;
+  /** 全 model 横断で取りうる label の正規順(card 幅を揃えるためにこれで pad)。 */
+  expectedLabels: string[];
+  /** モデル固有のバリアント。expectedLabels に対応する位置に詰める。 */
+  variants: Array<{ label: string; run: LoadedRun }>;
+}
+
 interface Props {
   /** Single-shot bare run for this (task, model). */
   bare: LoadedRun;
@@ -49,10 +62,14 @@ interface Props {
    * additional rows below the bare image without changing the shape.
    */
   strategies: ChainStrategy[];
+  /**
+   * 並列バリアント行(reasoning effort など)。各行は独立に表示される。
+   */
+  variantRows?: VariantRow[];
   tier?: number;
 }
 
-const { bare, strategies, tier } = Astro.props;
+const { bare, strategies, variantRows = [], tier } = Astro.props;
 const m = bare.meta;
 // Aggregate stats across bare + every iter step.
 let totalMs = m.timing.totalMs;
@@ -61,21 +78,21 @@ let totalIn = m.tokens?.input ?? 0;
 let totalOut = m.tokens?.output ?? 0;
 let stepCount = 1;
 let hasCost = runCostUsd(m) !== null;
-for (const s of strategies) {
-  for (const st of s.iterSteps) {
-    totalMs += st.run.meta.timing.totalMs;
-    const c = runCostUsd(st.run.meta);
-    if (c !== null) {
-      totalCost += c;
-      hasCost = true;
-    }
-    if (st.run.meta.tokens) {
-      totalIn += st.run.meta.tokens.input;
-      totalOut += st.run.meta.tokens.output;
-    }
-    stepCount++;
+const accumulate = (run: LoadedRun) => {
+  totalMs += run.meta.timing.totalMs;
+  const c = runCostUsd(run.meta);
+  if (c !== null) {
+    totalCost += c;
+    hasCost = true;
   }
-}
+  if (run.meta.tokens) {
+    totalIn += run.meta.tokens.input;
+    totalOut += run.meta.tokens.output;
+  }
+  stepCount++;
+};
+for (const s of strategies) for (const st of s.iterSteps) accumulate(st.run);
+for (const row of variantRows) for (const v of row.variants) accumulate(v.run);
 const segments = runBadges(m);
 const dataModels = m.model ?? "";
 // bare サムネのクリック先: 単独の chain がある場合はその detail に飛ぶ。
@@ -203,6 +220,45 @@ const bareAriaLabel =
       </div>
     );
   })}
+
+  {variantRows.map((row) => (
+    <div class="strategy-row variant-row" data-family={row.familySlug}>
+      <span class="strategy-label">
+        <code>{row.familySlug}</code>
+      </span>
+      <div class="strategy-strip">
+        {row.expectedLabels.map((lbl) => {
+          const v = row.variants.find((x) => x.label === lbl);
+          if (!v) {
+            return (
+              <div class="iter-thumb placeholder" title={`${row.familySlug}=${lbl} not run`} aria-label={`${row.familySlug}=${lbl} not run`}>
+                <span class="iter-label">{lbl}</span>
+              </div>
+            );
+          }
+          const sm = v.run.meta;
+          const errBadge = errorBadgeFor(sm.status);
+          return (
+            <a
+              class="iter-thumb"
+              href={`/benchmark/${sm.runId}`}
+              aria-label={`open ${row.familySlug}=${lbl} run ${sm.runId}`}
+              data-status={sm.status}
+              title={errBadge ? `${row.familySlug}=${lbl} · ${sm.status}` : `${row.familySlug}=${lbl}`}
+            >
+              {v.run.pngUrl ? (
+                <img src={v.run.pngUrl} alt={`${row.familySlug}=${lbl}`} loading="lazy" />
+              ) : (
+                <span class="muted">·</span>
+              )}
+              <span class="iter-label">{lbl}</span>
+              {errBadge && <span class="iter-err">{errBadge}</span>}
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  ))}
 
   <div class="meta">
     <div class="row sub muted">

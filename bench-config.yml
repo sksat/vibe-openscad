@@ -12,6 +12,23 @@ matrix:
     harness: { kind: bare }
     provider: anthropic
     model: claude-opus-4-7
+  # Effort variants of opus 4.7 — default `bare/...` is effort=high.
+  # max は Opus 系のみ。xhigh は Opus 4.7 のみ。
+  - id: bare-low/claude-opus-4-7
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-opus-4-7
+    modelOptions: { output_config: { effort: low } }
+  - id: bare-max/claude-opus-4-7
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-opus-4-7
+    modelOptions: { output_config: { effort: max } }
+  - id: bare-xhigh/claude-opus-4-7
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-opus-4-7
+    modelOptions: { output_config: { effort: xhigh } }
   - id: bare/claude-sonnet-4-6
     harness: { kind: bare }
     provider: anthropic
@@ -88,6 +105,17 @@ matrix:
     harness: { kind: bare }
     provider: openai
     model: gpt-5.4-2026-03-05
+  # Effort variants of gpt-5.4 — default は medium。
+  - id: bare-low/gpt-5.4
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.4-2026-03-05
+    modelOptions: { reasoning: { effort: low } }
+  - id: bare-high/gpt-5.4
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.4-2026-03-05
+    modelOptions: { reasoning: { effort: high } }
   - id: bare/gpt-5.4-mini
     harness: { kind: bare }
     provider: openai

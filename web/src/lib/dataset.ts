@@ -56,6 +56,16 @@ const HARNESS_NAMES = new Set([
   "claude-code",
 ]);
 
+/**
+ * Treat the matrixId head as a harness label when it matches one of the
+ * known names or a `bare-<variant>` form (e.g. `bare-low`, `bare-max`,
+ * `bare-xhigh` for reasoning effort variants).
+ */
+function isHarnessHead(part: string): boolean {
+  if (HARNESS_NAMES.has(part)) return true;
+  return /^bare-[a-z0-9]+$/.test(part);
+}
+
 /** Parse one model id string into vendor + model badges (or fall through). */
 function parseModelLabel(modelStr: string): MatrixSegment[] {
   // Anthropic model: claude-(opus|sonnet|haiku)-MAJOR[-MINOR][-YYYYMMDD]
@@ -140,7 +150,7 @@ export function parseMatrixId(matrixId: string): MatrixSegment[] {
   const out: MatrixSegment[] = [];
   for (let i = 0; i < parts.length; i++) {
     const p = parts[i]!;
-    if (i === 0 && HARNESS_NAMES.has(p)) {
+    if (i === 0 && isHarnessHead(p)) {
       out.push({ kind: "harness", label: p });
       continue;
     }
@@ -172,12 +182,24 @@ export function runBadges(meta: RunMeta): MatrixSegment[] {
       label: headPart,
       href: `/harnesses/${harnessGroupSlug(meta)}`,
     });
-  } else if (headPart && HARNESS_NAMES.has(headPart)) {
+  } else if (headPart && isHarnessHead(headPart)) {
     out.push({ kind: "harness", label: headPart });
   } else {
     out.push({ kind: "harness", label: meta.harness.kind });
   }
   return out;
+}
+
+/**
+ * Extract a reasoning-effort variant tag from a `bare-<variant>/...` matrixId.
+ * Returns null for the plain `bare/...` (= provider default) and for non-bare
+ * heads. Useful to label effort-variant runs as "low" / "max" / "xhigh" etc.
+ */
+export function effortVariantOf(meta: RunMeta): string | null {
+  const head = meta.matrixId.split("/")[0];
+  if (!head) return null;
+  const m = head.match(/^bare-([a-z0-9]+)$/);
+  return m ? m[1]! : null;
 }
 
 /**
