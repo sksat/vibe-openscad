@@ -1,0 +1,42 @@
+{
+  "runId": "iter-png-3_o3-0fd9cc71d8af-2026-04-27T17-25-00-098Z",
+  "taskId": "tier-1-cube-with-hole",
+  "matrixId": "iter-png-3/o3",
+  "signature": "0fd9cc71d8af8e9e47c85a392ee8267cf0978e79d8a77b97282001e4d2ee998f",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "8ff7e36af4bc202429ec68b7eb9cc3f195b6a3c68668be31239bcea23345a048",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "o3-2025-04-16",
+      "iterateFrom": "iter-png-2/o3",
+      "iteration": {
+        "kind": "render-png-feedback"
+      },
+      "parentSignature": "2c46c4c20d2541380b19fcb6add5886bd5bc10f673713a747c13f056c03e1284"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "o3-2025-04-16",
+  "harness": {
+    "kind": "bare",
+    "iteration": {
+      "kind": "render-png-feedback"
+    }
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 5332
+  },
+  "tokens": {
+    "input": 890,
+    "output": 195
+  },
+  "cost_usd": 0.00334,
+  "createdAt": "2026-04-27T17:25:00.098Z",
+  "gitCommit": "af54e116f6f801123194340a652c805991015178",
+  "parentRunId": "iter-png-2_o3-2c46c4c20d25-2026-04-27T17-24-31-189Z"
+}

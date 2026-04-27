@@ -301,11 +301,17 @@ const PERSISTED_STATUSES: ReadonlySet<RunStatus> = new Set<RunStatus>([
 ]);
 
 /**
- * Locate the most recent successful run for a (task, matrixId) pair so an
- * iteration step can read its `final.scad`/`final.png` as feedback. Returns
- * undefined if no successful predecessor exists.
+ * Locate the most recent run for a (task, matrixId) pair whose artifacts
+ * are usable as feedback for the next iteration step. Accepts:
+ *
+ *   - `success`       — final.scad + final.png 両方あり、PNG feedback OK
+ *   - `render_error`  — final.scad はあるが PNG 無し。harness が
+ *                       buildFeedbackMessages 内で error-text fallback する
+ *
+ * 拒否: `no_code` / `submit_missing` / `timeout` / `api_error` —
+ * SCAD 自体が無いので chain を続ける材料が無い。
  */
-function findLatestSuccessfulRun(
+function findLatestUsableParentRun(
   resultsDir: string,
   taskId: string,
   matrixId: string,
@@ -316,7 +322,7 @@ function findLatestSuccessfulRun(
       (m) =>
         m.taskId === taskId &&
         m.matrixId === matrixId &&
-        m.status === "success",
+        (m.status === "success" || m.status === "render_error"),
     )
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
   return candidates[0];
@@ -360,14 +366,14 @@ async function executeBareRun(
 
   let parent: ParentRunContext | undefined;
   if (entry.harness.iterateFrom) {
-    const parentMeta = findLatestSuccessfulRun(
+    const parentMeta = findLatestUsableParentRun(
       resultsDir,
       item.candidate.task.id,
       entry.harness.iterateFrom,
     );
     if (!parentMeta) {
       throw new Error(
-        `iterateFrom: no successful run found for predecessor matrixId="${entry.harness.iterateFrom}" task="${item.candidate.task.id}". Run the predecessor first.`,
+        `iterateFrom: no usable run found for predecessor matrixId="${entry.harness.iterateFrom}" task="${item.candidate.task.id}". The predecessor needs to be at least render_error (have a SCAD artifact) for the chain to continue. Run the predecessor first or skip this entry.`,
       );
     }
     parent = loadParentContext(resultsDir, parentMeta);

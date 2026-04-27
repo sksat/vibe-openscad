@@ -1,0 +1,42 @@
+{
+  "runId": "iter-png-1_gpt-5-nano-11d4cd0c3eb5-2026-04-27T17-17-17-175Z",
+  "taskId": "tier-1-cube-with-hole",
+  "matrixId": "iter-png-1/gpt-5-nano",
+  "signature": "11d4cd0c3eb5a6916b08f892dd2fff7b89cbea9119776b67bcd37e109c872848",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "8ff7e36af4bc202429ec68b7eb9cc3f195b6a3c68668be31239bcea23345a048",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5-nano-2025-08-07",
+      "iterateFrom": "bare/gpt-5-nano",
+      "iteration": {
+        "kind": "render-png-feedback"
+      },
+      "parentSignature": "6477bcbe58c585025a6ac3094ca0127aa6672ae0dff4eb8fb37858ef7e280c22"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5-nano-2025-08-07",
+  "harness": {
+    "kind": "bare",
+    "iteration": {
+      "kind": "render-png-feedback"
+    }
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 12060
+  },
+  "tokens": {
+    "input": 928,
+    "output": 1896
+  },
+  "cost_usd": 0.0008048,
+  "createdAt": "2026-04-27T17:17:17.175Z",
+  "gitCommit": "af54e116f6f801123194340a652c805991015178",
+  "parentRunId": "bare_gpt-5-nano-6477bcbe58c5-2026-04-26T19-36-14-457Z"
+}
