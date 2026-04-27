@@ -94,14 +94,9 @@ matrix:
     harness: { kind: bare }
     provider: google
     model: gemini-3.1-pro-preview
-  - id: bare-think-off/gemini-3.1-pro
-    harness: { kind: bare }
-    provider: google
-    model: gemini-3.1-pro-preview
-    modelOptions:
-      config:
-        thinkingConfig:
-          thinkingBudget: 0
+  # NOTE: Gemini Pro 系 (2.5-pro / 3.1-pro) は API が thinkingBudget: 0
+  # を弾く ("This model only works in thinking mode")。Flash 系のみ
+  # bare-think-off variant を持てる。
   - id: bare/gemini-3-flash
     harness: { kind: bare }
     provider: google
@@ -126,12 +121,6 @@ matrix:
     harness: { kind: bare }
     provider: google
     model: gemini-2.5-pro
-  - id: bare-think-off/gemini-2.5-pro
-    harness: { kind: bare }
-    provider: google
-    model: gemini-2.5-pro
-    modelOptions:
-      config: { thinkingConfig: { thinkingBudget: 0 } }
   - id: bare/gemini-2.5-flash
     harness: { kind: bare }
     provider: google
