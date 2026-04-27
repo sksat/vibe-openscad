@@ -40,6 +40,11 @@ matrix:
     harness: { kind: bare }
     provider: anthropic
     model: claude-sonnet-4-6
+  - id: bare-low/claude-sonnet-4-6
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-sonnet-4-6
+    modelOptions: { output_config: { effort: low } }
   - id: bare-think-off/claude-sonnet-4-6
     harness: { kind: bare }
     provider: anthropic
@@ -55,6 +60,16 @@ matrix:
     harness: { kind: bare }
     provider: anthropic
     model: claude-opus-4-5-20251101
+  - id: bare-low/claude-opus-4-5
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-opus-4-5-20251101
+    modelOptions: { output_config: { effort: low } }
+  - id: bare-max/claude-opus-4-5
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-opus-4-5-20251101
+    modelOptions: { output_config: { effort: max } }
   - id: bare/claude-opus-4-1
     harness: { kind: bare }
     provider: anthropic
@@ -91,22 +106,52 @@ matrix:
     harness: { kind: bare }
     provider: google
     model: gemini-3-flash-preview
+  - id: bare-think-off/gemini-3-flash
+    harness: { kind: bare }
+    provider: google
+    model: gemini-3-flash-preview
+    modelOptions:
+      config: { thinkingConfig: { thinkingBudget: 0 } }
   - id: bare/gemini-3.1-flash-lite
     harness: { kind: bare }
     provider: google
     model: gemini-3.1-flash-lite-preview
+  - id: bare-think-off/gemini-3.1-flash-lite
+    harness: { kind: bare }
+    provider: google
+    model: gemini-3.1-flash-lite-preview
+    modelOptions:
+      config: { thinkingConfig: { thinkingBudget: 0 } }
   - id: bare/gemini-2.5-pro
     harness: { kind: bare }
     provider: google
     model: gemini-2.5-pro
+  - id: bare-think-off/gemini-2.5-pro
+    harness: { kind: bare }
+    provider: google
+    model: gemini-2.5-pro
+    modelOptions:
+      config: { thinkingConfig: { thinkingBudget: 0 } }
   - id: bare/gemini-2.5-flash
     harness: { kind: bare }
     provider: google
     model: gemini-2.5-flash
+  - id: bare-think-off/gemini-2.5-flash
+    harness: { kind: bare }
+    provider: google
+    model: gemini-2.5-flash
+    modelOptions:
+      config: { thinkingConfig: { thinkingBudget: 0 } }
   - id: bare/gemini-2.5-flash-lite
     harness: { kind: bare }
     provider: google
     model: gemini-2.5-flash-lite
+  - id: bare-think-off/gemini-2.5-flash-lite
+    harness: { kind: bare }
+    provider: google
+    model: gemini-2.5-flash-lite
+    modelOptions:
+      config: { thinkingConfig: { thinkingBudget: 0 } }
 
   # --- OpenAI ---
   # `pnpm --filter runners run list-openai-models` で確認した、API key で
@@ -140,22 +185,72 @@ matrix:
     harness: { kind: bare }
     provider: openai
     model: gpt-5.4-mini-2026-03-17
+  - id: bare-low/gpt-5.4-mini
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.4-mini-2026-03-17
+    modelOptions: { reasoning: { effort: low } }
+  - id: bare-high/gpt-5.4-mini
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.4-mini-2026-03-17
+    modelOptions: { reasoning: { effort: high } }
   - id: bare/gpt-5.4-nano
     harness: { kind: bare }
     provider: openai
     model: gpt-5.4-nano-2026-03-17
+  - id: bare-low/gpt-5.4-nano
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.4-nano-2026-03-17
+    modelOptions: { reasoning: { effort: low } }
+  - id: bare-high/gpt-5.4-nano
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.4-nano-2026-03-17
+    modelOptions: { reasoning: { effort: high } }
   - id: bare/gpt-5
     harness: { kind: bare }
     provider: openai
     model: gpt-5-2025-08-07
+  - id: bare-low/gpt-5
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5-2025-08-07
+    modelOptions: { reasoning: { effort: low } }
+  - id: bare-high/gpt-5
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5-2025-08-07
+    modelOptions: { reasoning: { effort: high } }
   - id: bare/gpt-5-mini
     harness: { kind: bare }
     provider: openai
     model: gpt-5-mini-2025-08-07
+  - id: bare-low/gpt-5-mini
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5-mini-2025-08-07
+    modelOptions: { reasoning: { effort: low } }
+  - id: bare-high/gpt-5-mini
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5-mini-2025-08-07
+    modelOptions: { reasoning: { effort: high } }
   - id: bare/gpt-5-nano
     harness: { kind: bare }
     provider: openai
     model: gpt-5-nano-2025-08-07
+  - id: bare-low/gpt-5-nano
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5-nano-2025-08-07
+    modelOptions: { reasoning: { effort: low } }
+  - id: bare-high/gpt-5-nano
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5-nano-2025-08-07
+    modelOptions: { reasoning: { effort: high } }
   - id: bare/gpt-4.1
     harness: { kind: bare }
     provider: openai
@@ -164,10 +259,30 @@ matrix:
     harness: { kind: bare }
     provider: openai
     model: o3-2025-04-16
+  - id: bare-low/o3
+    harness: { kind: bare }
+    provider: openai
+    model: o3-2025-04-16
+    modelOptions: { reasoning: { effort: low } }
+  - id: bare-high/o3
+    harness: { kind: bare }
+    provider: openai
+    model: o3-2025-04-16
+    modelOptions: { reasoning: { effort: high } }
   - id: bare/o4-mini
     harness: { kind: bare }
     provider: openai
     model: o4-mini-2025-04-16
+  - id: bare-low/o4-mini
+    harness: { kind: bare }
+    provider: openai
+    model: o4-mini-2025-04-16
+    modelOptions: { reasoning: { effort: low } }
+  - id: bare-high/o4-mini
+    harness: { kind: bare }
+    provider: openai
+    model: o4-mini-2025-04-16
+    modelOptions: { reasoning: { effort: high } }
 
   # --- iteration chain (PNG feedback) ---
   # 各 iteration step は独立した benchmark run。iter-png-1 は bare の出力を
