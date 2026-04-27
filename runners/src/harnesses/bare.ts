@@ -27,9 +27,13 @@ function buildFeedbackMessages(
   parent: ParentRunContext,
   strategy: IterationStrategy,
 ): ChatMessage[] {
+  // 直前の自分の出力を code-fence 形式で渡す。raw だとモデルが
+  // 「自分は code-fence で返さなかったらしい」と勘違いして次のターンで
+  // フォーマットを変えがちなので。
+  const assistantText = `\`\`\`openscad\n${parent.scad}\n\`\`\``;
   const messages: ChatMessage[] = [
     { role: "user", content: prompt },
-    { role: "assistant", content: parent.scad },
+    { role: "assistant", content: assistantText },
   ];
 
   if (strategy.kind === "render-png-feedback" && parent.png) {
