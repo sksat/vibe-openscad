@@ -44,22 +44,27 @@ const fmtMin = (ms: number) =>
   ms < 60000 ? `${(ms / 1000).toFixed(1)}s` : `${(ms / 60000).toFixed(1)}m`;
 
 /**
- * For each task, fold the run list into one tile per model. If a model has
- * an iter chain, render a RunChainCard with the strip showing root bare →
- * iter-1 → … → iter-N (the root *is* the single-shot bare, so we don't
- * also render it standalone). If a model has only bare results, render a
- * single RunCard.
+ * For each task, fold the run list into one tile per model. The tile shows:
  *
- * Multiple iter strategies on the same model (e.g. render-png-feedback と
- * future error-text-feedback) は別チェーンとして表示する。
+ *   - 1段目: bare (single-shot) run, large
+ *   - 2段目以降: 各 iteration strategy の chain (i1, i2, ...) を横一列。
+ *               別 strategy が生えたら下に行が追加される(error-text-feedback
+ *               などを後付けする想定)。
+ *
+ * Bare のみの model は素の RunCard。
  */
+type ChainStrategy = {
+  groupSlug: string;
+  tail: LoadedRun;
+  iterSteps: Array<{ run: LoadedRun; depth: number }>;
+};
 type TaskTile =
   | { kind: "single"; key: string; run: LoadedRun }
   | {
-      kind: "chain";
+      kind: "model-chain";
       key: string;
-      groupSlug: string;
-      steps: Array<{ run: LoadedRun; depth: number }>;
+      bare: LoadedRun;
+      strategies: ChainStrategy[];
     };
 
 function buildTileRow(taskRuns: LoadedRun[]): {
@@ -76,13 +81,8 @@ function buildTileRow(taskRuns: LoadedRun[]): {
   }
   const older = taskRuns.length - latestByMatrix.size;
 
-  // 2) For each (model, iter group) combination, build a chain tile that
-  //    pulls in the root bare. Track which bare matrixIds got absorbed
-  //    into a chain so we don't also emit them as standalone tiles.
-  const tiles: TaskTile[] = [];
-  const absorbedBareMatrixIds = new Set<string>();
-
-  // Collect iter runs grouped by (model, iter slug).
+  // 2) Group every iter step by (model, groupSlug). Track each chain's tail
+  //    (highest-depth run) so we can link to the chain detail page.
   const iterBuckets = new Map<
     string,
     { groupSlug: string; runs: LoadedRun[] }
@@ -97,38 +97,57 @@ function buildTileRow(taskRuns: LoadedRun[]): {
     iterBuckets.set(key, b);
   }
 
-  for (const [key, { groupSlug, runs }] of iterBuckets.entries()) {
-    const rootIds = new Set(
-      runs.map((r) => chainRootMatrixId(r.meta.matrixId, fpByMatrix)),
-    );
-    const rootRuns: LoadedRun[] = [];
-    for (const rootMatrixId of rootIds) {
-      const root = latestByMatrix.get(rootMatrixId);
-      if (root) {
-        rootRuns.push(root);
-        absorbedBareMatrixIds.add(rootMatrixId);
-      }
-    }
-    const stepRuns = [...rootRuns, ...runs];
-    const seen = new Set<string>();
-    const dedup: LoadedRun[] = [];
-    for (const r of stepRuns) {
-      if (seen.has(r.meta.matrixId)) continue;
-      seen.add(r.meta.matrixId);
-      dedup.push(r);
-    }
-    const steps = dedup
-      .map((r) => ({ run: r, depth: chainDepthFor(r.meta.matrixId, fpByMatrix) }))
+  // 3) Per model, collect all strategies + the root bare.
+  const strategiesByModel = new Map<string, ChainStrategy[]>();
+  const bareByModel = new Map<string, LoadedRun>();
+  for (const { groupSlug, runs } of iterBuckets.values()) {
+    const model = runs[0]?.meta.model ?? "unknown";
+    // Find chain tail (max depth, then newest createdAt).
+    const sorted = [...runs].sort((a, b) => {
+      const da = chainDepthFor(a.meta.matrixId, fpByMatrix);
+      const db = chainDepthFor(b.meta.matrixId, fpByMatrix);
+      if (da !== db) return db - da;
+      return a.meta.createdAt < b.meta.createdAt ? 1 : -1;
+    });
+    const tail = sorted[0]!;
+    // Iter steps depth >= 1 in ascending order.
+    const iterSteps = runs
+      .map((r) => ({
+        run: r,
+        depth: chainDepthFor(r.meta.matrixId, fpByMatrix),
+      }))
       .sort((a, b) => a.depth - b.depth);
-    tiles.push({ kind: "chain", key, groupSlug, steps });
+    const list = strategiesByModel.get(model) ?? [];
+    list.push({ groupSlug, tail, iterSteps });
+    strategiesByModel.set(model, list);
+
+    // Walk the chain backward from any iter step to find the root bare.
+    const rootMatrixId = chainRootMatrixId(runs[0]!.meta.matrixId, fpByMatrix);
+    const root = latestByMatrix.get(rootMatrixId);
+    if (root) bareByModel.set(model, root);
   }
 
-  // Standalone single-shot tiles for non-iter runs whose bare is NOT already
-  // absorbed into a chain card.
+  const tiles: TaskTile[] = [];
+  // Models that have iter strategies → multi-row chain card.
+  for (const [model, strategies] of strategiesByModel.entries()) {
+    const bare = bareByModel.get(model);
+    if (!bare) continue; // chain root missing — skip rather than emit a half tile
+    strategies.sort((a, b) => a.groupSlug.localeCompare(b.groupSlug));
+    tiles.push({
+      kind: "model-chain",
+      key: `chain::${bare.meta.matrixId}`,
+      bare,
+      strategies,
+    });
+  }
+  // Bare-only models (those whose bare/X is NOT consumed as a chain root).
+  const consumedBareMatrixIds = new Set(
+    [...bareByModel.values()].map((r) => r.meta.matrixId),
+  );
   for (const r of latestByMatrix.values()) {
     const groupSlug = harnessGroupSlug(r.meta);
     if (groupSlug.startsWith("iter-")) continue;
-    if (absorbedBareMatrixIds.has(r.meta.matrixId)) continue;
+    if (consumedBareMatrixIds.has(r.meta.matrixId)) continue;
     tiles.push({
       kind: "single",
       key: `single::${r.meta.matrixId}`,
@@ -136,11 +155,10 @@ function buildTileRow(taskRuns: LoadedRun[]): {
     });
   }
 
-  // Singles first (alphabetical-ish via insertion order = matrixId order),
-  // chains after — same as before.
+  // Bare-only first (insertion order ≒ YAML order), chain cards after.
   tiles.sort((a, b) => {
-    const ka = a.kind === "chain" ? 1 : 0;
-    const kb = b.kind === "chain" ? 1 : 0;
+    const ka = a.kind === "model-chain" ? 1 : 0;
+    const kb = b.kind === "model-chain" ? 1 : 0;
     return ka - kb;
   });
   return { tiles, older };
@@ -209,8 +227,8 @@ const taskRows = ds.tasks.map((t) => {
                 <RunCard run={tile.run} tier={task.tier} />
               ) : (
                 <RunChainCard
-                  steps={tile.steps}
-                  groupSlug={tile.groupSlug}
+                  bare={tile.bare}
+                  strategies={tile.strategies}
                   tier={task.tier}
                 />
               ),

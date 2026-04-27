@@ -1,0 +1,450 @@
+---
+import { readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { Code } from "astro:components";
+import Base from "../../layouts/Base.astro";
+import {
+  chainDepthFor,
+  fingerprintByMatrixId,
+  formatCost,
+  getDataset,
+  harnessGroupSlug,
+  runBadges,
+  runCostUsd,
+  statusBadgeClass,
+} from "../../lib/dataset.js";
+import VendorIcon from "../../components/VendorIcon.astro";
+import type { LoadedRun } from "../../lib/results.js";
+
+export function getStaticPaths() {
+  const ds = getDataset();
+  const fpByMatrix = fingerprintByMatrixId(ds.runs.values());
+  const tasksById = new Map(ds.tasks.map((t) => [t.task.id, t.task]));
+  const repoRoot = resolve(process.cwd(), "..");
+
+  // Find chain tails: runs that have parentRunId but no run iterates *from*
+  // them. Picking the tail makes the URL stable while a chain is still being
+  // extended (today the YAML adds iter-png-1..3 only).
+  const isParentOf = new Set<string>();
+  for (const r of ds.runs.values()) {
+    if (r.meta.parentRunId) isParentOf.add(r.meta.parentRunId);
+  }
+
+  // Group runs by (task, model, groupSlug). For each group, pick the tail
+  // (highest depth, then newest createdAt) and walk parentRunId to build
+  // the full chain in depth order.
+  const chainsByKey = new Map<string, LoadedRun[]>();
+  for (const r of ds.runs.values()) {
+    if (!r.meta.parentRunId) continue;
+    const groupSlug = harnessGroupSlug(r.meta);
+    const model = r.meta.model ?? "unknown";
+    const key = `${r.meta.taskId}::${model}::${groupSlug}`;
+    const list = chainsByKey.get(key) ?? [];
+    list.push(r);
+    chainsByKey.set(key, list);
+  }
+
+  type StepProps = {
+    run: LoadedRun;
+    depth: number;
+    scad: string;
+    task: ReturnType<typeof tasksById.get>;
+  };
+  const out: Array<{
+    params: { id: string };
+    props: {
+      tail: LoadedRun;
+      task: ReturnType<typeof tasksById.get>;
+      groupSlug: string;
+      steps: StepProps[];
+      totalCost: number;
+      totalMs: number;
+    };
+  }> = [];
+  for (const runs of chainsByKey.values()) {
+    const sorted = [...runs].sort((a, b) => {
+      const da = chainDepthFor(a.meta.matrixId, fpByMatrix);
+      const db = chainDepthFor(b.meta.matrixId, fpByMatrix);
+      if (da !== db) return db - da;
+      return a.meta.createdAt < b.meta.createdAt ? 1 : -1;
+    });
+    const tail = sorted[0];
+    if (!tail) continue;
+
+    const ordered: LoadedRun[] = [tail];
+    let cur: LoadedRun = tail;
+    while (cur.meta.parentRunId) {
+      const parent = ds.runs.get(cur.meta.parentRunId);
+      if (!parent) break;
+      ordered.unshift(parent);
+      cur = parent;
+    }
+
+    const steps: StepProps[] = [];
+    let totalCost = 0;
+    let totalMs = 0;
+    for (const r of ordered) {
+      let scad = "";
+      try {
+        scad = readFileSync(
+          join(repoRoot, "results", r.meta.taskId, r.meta.runId, "final.scad"),
+          "utf8",
+        );
+      } catch {
+        // ignore
+      }
+      const c = runCostUsd(r.meta);
+      if (c !== null) totalCost += c;
+      totalMs += r.meta.timing.totalMs;
+      steps.push({
+        run: r,
+        depth: chainDepthFor(r.meta.matrixId, fpByMatrix),
+        scad,
+        task: tasksById.get(r.meta.taskId),
+      });
+    }
+
+    out.push({
+      params: { id: tail.meta.runId },
+      props: {
+        tail,
+        task: tasksById.get(tail.meta.taskId),
+        groupSlug: harnessGroupSlug(tail.meta),
+        steps,
+        totalCost,
+        totalMs,
+      },
+    });
+  }
+  return out;
+}
+
+const { tail, task, groupSlug, steps, totalCost, totalMs } = Astro.props;
+const tailMeta = tail.meta;
+const segments = runBadges(tailMeta);
+const ogTitle = `${tailMeta.model} → ${groupSlug} chain on ${tailMeta.taskId}`;
+const ogDescription = [
+  `${steps.length} step`,
+  `${(totalMs / 1000).toFixed(1)}s 累計`,
+  `${formatCost(totalCost)}`,
+].join(" · ");
+---
+
+<Base
+  title={`${ogTitle} — vibe-openscad`}
+  description={ogDescription}
+  ogImage={tail.pngUrl}
+  ogType="article"
+>
+  <p class="muted">
+    <a href="/">← dashboard</a>
+    {" · "}
+    <a href={`/tasks/${tailMeta.taskId}`}>{tailMeta.taskId}</a>
+    {" · "}
+    <a href={`/harnesses/${groupSlug}`}><code>{groupSlug}</code></a>
+    {tailMeta.model && (
+      <>{" · "}<a href={`/models/${tailMeta.model}`}><code>{tailMeta.model}</code></a></>
+    )}
+  </p>
+
+  <h1 class="title">
+    <span class="task-id">{tailMeta.taskId}</span>
+    <span class="muted">/</span>
+    <span class="matrix">{groupSlug}</span>
+    <span class="muted">/</span>
+    <span class="model"><code>{tailMeta.model}</code></span>
+  </h1>
+  <p class="muted small">
+    {steps.length} step / 累計 {(totalMs / 1000).toFixed(1)}s / 累計 {formatCost(totalCost)}
+  </p>
+
+  <div class="strip" aria-label="chain progression">
+    {steps.map((s) => (
+      <a class="thumb" href={`/benchmark/${s.run.meta.runId}`} data-status={s.run.meta.status}>
+        {s.run.pngUrl ? (
+          <img src={s.run.pngUrl} alt={`${s.depth === 0 ? "bare" : `iter ${s.depth}`}`} loading="lazy" />
+        ) : (
+          <div class="thumb-empty">no render</div>
+        )}
+        <span class="thumb-label">
+          {s.depth === 0 ? "bare" : `iter ${s.depth}`}
+        </span>
+      </a>
+    ))}
+  </div>
+
+  <div class="badges">
+    {segments.map((s) => (
+      <span class={`pill pill-${s.kind}`} data-vendor={s.vendor ?? ""}>
+        {s.kind === "vendor" && s.vendor && <VendorIcon vendor={s.vendor} />}
+        {s.label}
+      </span>
+    ))}
+  </div>
+
+  {task && (
+    <section>
+      <h2>prompt</h2>
+      <pre class="prompt">{task.prompt}</pre>
+    </section>
+  )}
+
+  <section class="steps">
+    {steps.map((s) => {
+      const m = s.run.meta;
+      const cost = runCostUsd(m);
+      return (
+        <article class="step" data-depth={s.depth} data-status={m.status}>
+          <header>
+            <h2>
+              <span class="step-label">{s.depth === 0 ? "bare" : `iter ${s.depth}`}</span>
+              <span class={`${statusBadgeClass(m.status)} status-link`}>{m.status}</span>
+              <a class="muted runlink" href={`/benchmark/${m.runId}`}>run detail →</a>
+            </h2>
+            <div class="muted small step-meta">
+              {(m.timing.totalMs / 1000).toFixed(1)}s
+              {m.tokens && ` · ${m.tokens.input}/${m.tokens.output}t`}
+              {cost !== null && ` · ${formatCost(cost)}`}
+              {" · "}<code class="trunc" title={m.matrixId}>{m.matrixId}</code>
+            </div>
+          </header>
+          <div class="step-body">
+            <div class="render-col">
+              {s.run.pngUrl ? (
+                <img class="render" src={s.run.pngUrl} alt={`render of ${m.taskId}`} />
+              ) : m.status === "render_error" ? (
+                <div class="empty failed">
+                  <span class="status-tag">render_error</span>
+                  <span class="muted small">SCAD はあるがレンダリング不可</span>
+                </div>
+              ) : (
+                <div class="empty">
+                  <span class="muted small">{m.status}</span>
+                </div>
+              )}
+              {m.error && <pre class="step-error">{m.error}</pre>}
+            </div>
+            <details class="scad-details">
+              <summary>SCAD ({s.scad.split("\n").length} lines)</summary>
+              {s.scad ? (
+                <Code code={s.scad} lang="c" theme="github-dark" wrap />
+              ) : (
+                <p class="muted small">no SCAD</p>
+              )}
+            </details>
+          </div>
+        </article>
+      );
+    })}
+  </section>
+</Base>
+
+<style>
+  .title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+  .title .matrix { color: var(--accent); }
+  .title .model code { color: var(--fg); }
+  .small { font-size: 12px; }
+  .strip {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 8px;
+    margin: 16px 0 12px;
+  }
+  .thumb {
+    position: relative;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    text-decoration: none;
+  }
+  .thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .thumb-empty {
+    color: #888;
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .thumb-label {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  .thumb[data-status="render_error"]::after,
+  .thumb[data-status="no_code"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(239, 111, 108, 0.25);
+    pointer-events: none;
+  }
+  .thumb:hover { outline: 2px solid var(--accent); }
+  .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 24px;
+  }
+  .pill {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.5;
+    background: var(--bg-3);
+    border: 1px solid var(--line);
+    color: var(--fg-dim);
+  }
+  .pill-model {
+    color: var(--fg);
+    background: rgba(108, 182, 255, 0.10);
+    border-color: rgba(108, 182, 255, 0.4);
+  }
+  .pill-harness {
+    color: var(--fg);
+    border-color: rgba(108, 182, 255, 0.3);
+  }
+  .pill-vendor[data-vendor="claude"] {
+    color: #f3a585;
+    border-color: rgba(217, 119, 87, 0.5);
+    background: rgba(217, 119, 87, 0.14);
+  }
+  .pill-vendor[data-vendor="gemini"] {
+    color: #d6bcfa;
+    border-color: rgba(139, 92, 246, 0.5);
+    background: rgba(139, 92, 246, 0.14);
+  }
+  .pill-vendor[data-vendor="openai"] {
+    color: #5ed5b3;
+    border-color: rgba(16, 163, 127, 0.55);
+    background: rgba(16, 163, 127, 0.14);
+  }
+  .prompt {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin-top: 16px;
+  }
+  .step {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .step header h2 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 6px;
+    font-family: var(--mono);
+    font-size: 15px;
+  }
+  .step-label {
+    background: var(--bg-3);
+    color: var(--fg);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 12px;
+  }
+  .step[data-depth="0"] .step-label { color: var(--fg-dim); }
+  .runlink { font-size: 12px; margin-left: auto; }
+  .step-meta { margin-bottom: 12px; }
+  .step-body {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  @media (min-width: 720px) {
+    .step-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  }
+  .render {
+    width: 100%;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  .empty {
+    background: var(--bg-3);
+    color: var(--fg-dim);
+    border: 1px dashed var(--line);
+    border-radius: 6px;
+    padding: 20px;
+    text-align: center;
+    font-family: var(--mono);
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .empty.failed {
+    background: rgba(239, 111, 108, 0.06);
+    border-color: rgba(239, 111, 108, 0.4);
+    color: var(--fg);
+  }
+  .status-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: rgba(239, 111, 108, 0.15);
+    color: var(--bad);
+    border: 1px solid rgba(239, 111, 108, 0.4);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .step-error {
+    font-size: 11px;
+    color: var(--bad);
+    background: rgba(239, 111, 108, 0.06);
+    border: 1px solid rgba(239, 111, 108, 0.4);
+    padding: 8px;
+    margin-top: 8px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .scad-details {
+    background: var(--bg-3);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 8px 12px;
+  }
+  .scad-details summary {
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--fg-dim);
+  }
+  .trunc {
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    vertical-align: middle;
+  }
+</style>

@@ -8,80 +8,112 @@ import {
 } from "../lib/dataset.js";
 import VendorIcon from "./VendorIcon.astro";
 
-interface ChainStep {
-  run: LoadedRun;
-  depth: number;
+interface ChainStrategy {
+  groupSlug: string;
+  /** The chain tail (highest-depth run); used as the chain detail URL key. */
+  tail: LoadedRun;
+  /** Iter steps depth >= 1, ordered low to high. */
+  iterSteps: Array<{ run: LoadedRun; depth: number }>;
 }
 
 interface Props {
-  /** Chain steps in depth order (root = depth 0 → newest tail). */
-  steps: ChainStep[];
-  /** Slug shown as a tag — e.g. "iter-png". */
-  groupSlug: string;
+  /** Single-shot bare run for this (task, model). */
+  bare: LoadedRun;
+  /**
+   * Iteration chains rooted in `bare`. Empty when the model has only a
+   * single-shot result. Future strategies (error-text-feedback etc.) become
+   * additional rows below the bare image without changing the shape.
+   */
+  strategies: ChainStrategy[];
   tier?: number;
 }
 
-const { steps, groupSlug, tier } = Astro.props;
-// Aggregate stats across all steps.
-let totalMs = 0;
-let totalCost = 0;
-let totalIn = 0;
-let totalOut = 0;
-let hasCost = false;
-for (const s of steps) {
-  totalMs += s.run.meta.timing.totalMs;
-  const c = runCostUsd(s.run.meta);
-  if (c !== null) {
-    totalCost += c;
-    hasCost = true;
-  }
-  if (s.run.meta.tokens) {
-    totalIn += s.run.meta.tokens.input;
-    totalOut += s.run.meta.tokens.output;
+const { bare, strategies, tier } = Astro.props;
+const m = bare.meta;
+// Aggregate stats across bare + every iter step.
+let totalMs = m.timing.totalMs;
+let totalCost = runCostUsd(m) ?? 0;
+let totalIn = m.tokens?.input ?? 0;
+let totalOut = m.tokens?.output ?? 0;
+let stepCount = 1;
+let hasCost = runCostUsd(m) !== null;
+for (const s of strategies) {
+  for (const st of s.iterSteps) {
+    totalMs += st.run.meta.timing.totalMs;
+    const c = runCostUsd(st.run.meta);
+    if (c !== null) {
+      totalCost += c;
+      hasCost = true;
+    }
+    if (st.run.meta.tokens) {
+      totalIn += st.run.meta.tokens.input;
+      totalOut += st.run.meta.tokens.output;
+    }
+    stepCount++;
   }
 }
-const tail = steps[steps.length - 1]!;
-const tailMeta = tail.run.meta;
-const segments = runBadges(tailMeta);
+const segments = runBadges(m);
+const dataModels = m.model ?? "";
 ---
 
 <article
   class="chain-card"
-  data-model={tailMeta.model ?? ""}
-  data-provider={tailMeta.provider ?? ""}
-  data-harness={tailMeta.harness.kind}
-  data-matrix={tailMeta.matrixId}
-  data-status={tailMeta.status}
-  data-task={tailMeta.taskId}
+  data-model={dataModels}
+  data-provider={m.provider ?? ""}
+  data-harness={m.harness.kind}
+  data-matrix={m.matrixId}
+  data-status={m.status}
+  data-task={m.taskId}
   data-tier={tier !== undefined ? String(tier) : ""}
-  data-group={groupSlug}
 >
-  <div class="strip">
-    {steps.map((s) => {
-      const m = s.run.meta;
-      const lbl = s.depth === 0 ? "bare" : `i${s.depth}`;
-      return (
+  <a class="bare-link" href={`/benchmark/${m.runId}`} aria-label={`open bare run ${m.runId}`} data-status={m.status}>
+    {bare.pngUrl ? (
+      <div class="bare-thumb"><img src={bare.pngUrl} alt={`bare render of ${m.taskId}`} loading="lazy" /></div>
+    ) : (
+      <div class="bare-thumb empty"><span>no render</span></div>
+    )}
+    <span class="bare-label">bare</span>
+  </a>
+
+  {strategies.map((s) => {
+    const tailMeta = s.tail.meta;
+    return (
+      <div class="strategy-row" data-strategy={s.groupSlug}>
         <a
-          class="step"
-          href={`/benchmark/${m.runId}`}
-          aria-label={`open ${lbl} run ${m.runId}`}
-          data-status={m.status}
+          class="strategy-label"
+          href={`/chains/${tailMeta.runId}`}
+          title={`open ${s.groupSlug} chain detail`}
         >
-          <div class="step-thumb">
-            {s.run.pngUrl ? (
-              <img src={s.run.pngUrl} alt={`render of ${m.taskId} ${lbl}`} loading="lazy" />
-            ) : (
-              <span class="muted">no render</span>
-            )}
-          </div>
-          <span class="step-label">{lbl}</span>
+          <code>{s.groupSlug}</code>
+          <span class={`${statusBadgeClass(tailMeta.status)} mini`}>{tailMeta.status}</span>
         </a>
-      );
-    })}
-  </div>
+        <div class="strategy-strip">
+          {s.iterSteps.map((st) => {
+            const sm = st.run.meta;
+            return (
+              <a
+                class="iter-thumb"
+                href={`/benchmark/${sm.runId}`}
+                aria-label={`open iter ${st.depth} run ${sm.runId}`}
+                data-status={sm.status}
+              >
+                {st.run.pngUrl ? (
+                  <img src={st.run.pngUrl} alt={`iter ${st.depth}`} loading="lazy" />
+                ) : (
+                  <span class="muted">·</span>
+                )}
+                <span class="iter-label">i{st.depth}</span>
+              </a>
+            );
+          })}
+        </div>
+      </div>
+    );
+  })}
+
   <div class="meta">
     <div class="row matrix-row">
-      <div class="matrix-badges" title={tailMeta.matrixId}>
+      <div class="matrix-badges" title={m.matrixId}>
         {segments.map((s) => {
           const inner = (
             <Fragment>
@@ -91,35 +123,25 @@ const segments = runBadges(tailMeta);
           );
           let href: string | null = null;
           if (s.href) href = s.href;
-          else if (s.kind === "model" && tailMeta.model)
-            href = `/models/${tailMeta.model}`;
+          else if (s.kind === "model" && m.model) href = `/models/${m.model}`;
           else if (s.kind === "harness") href = `/harnesses/${s.label}`;
           if (href) {
             return (
-              <a
-                class={`pill pill-${s.kind}`}
-                data-vendor={s.vendor ?? ""}
-                title={s.title ?? s.label}
-                href={href}
-              >{inner}</a>
+              <a class={`pill pill-${s.kind}`} data-vendor={s.vendor ?? ""} title={s.title ?? s.label} href={href}>
+                {inner}
+              </a>
             );
           }
           return (
-            <span
-              class={`pill pill-${s.kind}`}
-              data-vendor={s.vendor ?? ""}
-              title={s.title ?? s.label}
-            >{inner}</span>
+            <span class={`pill pill-${s.kind}`} data-vendor={s.vendor ?? ""} title={s.title ?? s.label}>
+              {inner}
+            </span>
           );
         })}
       </div>
-      <a
-        class={`${statusBadgeClass(tailMeta.status)} status-link`}
-        href={`/benchmark/${tailMeta.runId}`}
-      >{tailMeta.status}</a>
     </div>
     <div class="row sub muted">
-      <span>{steps.length} step</span>
+      <span>{stepCount} step</span>
       <span>{(totalMs / 1000).toFixed(1)}s</span>
       {totalIn + totalOut > 0 && <span>{totalIn}/{totalOut}t</span>}
       {hasCost && <span class="cost">{formatCost(totalCost)}</span>}
@@ -136,69 +158,141 @@ const segments = runBadges(tailMeta);
     border-radius: 8px;
     overflow: hidden;
   }
-  .strip {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: 1fr;
-    gap: 1px;
-    background: var(--line);
-  }
-  .step {
+  .bare-link {
     position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    background: #fff;
+    display: block;
     color: inherit;
     text-decoration: none;
   }
-  .step-thumb {
-    aspect-ratio: 1 / 1;
+  .bare-thumb {
+    aspect-ratio: 4 / 3;
+    background: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #fff;
   }
-  .step-thumb img {
+  .bare-thumb img {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
   }
-  .step-thumb .muted {
+  .bare-thumb.empty {
+    background: var(--bg-3);
+    color: var(--fg-dim);
     font-family: var(--mono);
-    font-size: 10px;
-    color: #888;
+    font-size: 12px;
   }
-  .step-label {
+  .bare-label {
     position: absolute;
-    bottom: 4px;
-    left: 4px;
+    top: 6px;
+    left: 6px;
     background: rgba(0, 0, 0, 0.55);
     color: #fff;
     font-family: var(--mono);
-    font-size: 10px;
-    padding: 1px 5px;
+    font-size: 11px;
+    padding: 1px 7px;
     border-radius: 3px;
-    line-height: 1.4;
   }
-  .step[data-status="render_error"]::after,
-  .step[data-status="no_code"]::after,
-  .step[data-status="submit_missing"]::after {
+  .bare-link[data-status="render_error"]::after,
+  .bare-link[data-status="no_code"]::after,
+  .bare-link[data-status="submit_missing"]::after {
     content: "";
     position: absolute;
     inset: 0;
     background: rgba(239, 111, 108, 0.25);
     pointer-events: none;
   }
-  .step:hover .step-thumb {
+  .bare-link:hover .bare-thumb {
     outline: 2px solid var(--accent);
     outline-offset: -2px;
   }
+
+  .strategy-row {
+    display: grid;
+    grid-template-columns: minmax(72px, auto) 1fr;
+    gap: 6px;
+    padding: 6px 8px;
+    border-top: 1px solid var(--line);
+    align-items: center;
+  }
+  .strategy-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--fg-dim);
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .strategy-label code {
+    color: var(--fg);
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+  }
+  .strategy-label:hover code { color: var(--accent); }
+  .strategy-label .mini {
+    font-size: 10px;
+    padding: 0 5px;
+    width: fit-content;
+  }
+  .strategy-strip {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 1px;
+    background: var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .iter-thumb {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    aspect-ratio: 1 / 1;
+    text-decoration: none;
+    color: inherit;
+  }
+  .iter-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .iter-thumb .muted {
+    color: #888;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .iter-label {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 0 4px;
+    border-radius: 2px;
+    line-height: 1.5;
+  }
+  .iter-thumb[data-status="render_error"]::after,
+  .iter-thumb[data-status="no_code"]::after,
+  .iter-thumb[data-status="submit_missing"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(239, 111, 108, 0.25);
+    pointer-events: none;
+  }
+  .iter-thumb:hover { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 1; }
+
   .meta {
     padding: 10px 12px;
     display: flex;
     flex-direction: column;
     gap: 4px;
+    border-top: 1px solid var(--line);
   }
   .row {
     display: flex;
@@ -227,31 +321,11 @@ const segments = runBadges(tailMeta);
     color: var(--fg-dim);
     white-space: nowrap;
   }
-  .pill-harness {
-    color: var(--fg);
-    border-color: rgba(108, 182, 255, 0.3);
-  }
-  .pill-model {
-    color: var(--fg);
-    background: rgba(108, 182, 255, 0.1);
-    border-color: rgba(108, 182, 255, 0.4);
-  }
-  .pill-vendor[data-vendor="claude"] {
-    color: #f3a585;
-    border-color: rgba(217, 119, 87, 0.5);
-    background: rgba(217, 119, 87, 0.14);
-  }
-  .pill-vendor[data-vendor="gemini"] {
-    color: #d6bcfa;
-    border-color: rgba(139, 92, 246, 0.5);
-    background: rgba(139, 92, 246, 0.14);
-  }
-  .pill-vendor[data-vendor="openai"] {
-    color: #5ed5b3;
-    border-color: rgba(16, 163, 127, 0.55);
-    background: rgba(16, 163, 127, 0.14);
-  }
+  .pill-harness { color: var(--fg); border-color: rgba(108, 182, 255, 0.3); }
+  .pill-model { color: var(--fg); background: rgba(108, 182, 255, 0.1); border-color: rgba(108, 182, 255, 0.4); }
+  .pill-vendor[data-vendor="claude"] { color: #f3a585; border-color: rgba(217, 119, 87, 0.5); background: rgba(217, 119, 87, 0.14); }
+  .pill-vendor[data-vendor="gemini"] { color: #d6bcfa; border-color: rgba(139, 92, 246, 0.5); background: rgba(139, 92, 246, 0.14); }
+  .pill-vendor[data-vendor="openai"] { color: #5ed5b3; border-color: rgba(16, 163, 127, 0.55); background: rgba(16, 163, 127, 0.14); }
   .sub { font-size: 11px; }
   .cost { font-variant-numeric: tabular-nums; color: var(--fg); }
-  .status-link { text-decoration: none; }
 </style>
