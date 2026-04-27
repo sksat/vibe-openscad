@@ -106,7 +106,7 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
 ---
 
 <article
-  class="chain-card"
+  class="model-task-card"
   data-model={dataModels}
   data-provider={m.provider ?? ""}
   data-harness={m.harness.kind}
@@ -167,6 +167,45 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
     })()}
   </div>
 
+  {variantRows.map((row) => (
+    <div class="strategy-row variant-row" data-family={row.familySlug}>
+      <span class="strategy-label">
+        <code>{row.familySlug}</code>
+      </span>
+      <div class="strategy-strip">
+        {row.expectedLabels.map((lbl) => {
+          const v = row.variants.find((x) => x.label === lbl);
+          if (!v) {
+            return (
+              <div class="iter-thumb placeholder" title={`${row.familySlug}=${lbl} not run`} aria-label={`${row.familySlug}=${lbl} not run`}>
+                <span class="iter-label">{lbl}</span>
+              </div>
+            );
+          }
+          const sm = v.run.meta;
+          const errBadge = errorBadgeFor(sm.status);
+          return (
+            <a
+              class="iter-thumb"
+              href={`/benchmark/${sm.runId}`}
+              aria-label={`open ${row.familySlug}=${lbl} run ${sm.runId}`}
+              data-status={sm.status}
+              title={errBadge ? `${row.familySlug}=${lbl} · ${sm.status}` : `${row.familySlug}=${lbl}`}
+            >
+              {v.run.pngUrl ? (
+                <img src={v.run.pngUrl} alt={`${row.familySlug}=${lbl}`} loading="lazy" />
+              ) : (
+                <span class="muted">·</span>
+              )}
+              <span class="iter-label">{lbl}</span>
+              {errBadge && <span class="iter-err">{errBadge}</span>}
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  ))}
+
   {strategies.map((s) => {
     const tailMeta = s.tail.meta;
     return (
@@ -218,45 +257,6 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
     );
   })}
 
-  {variantRows.map((row) => (
-    <div class="strategy-row variant-row" data-family={row.familySlug}>
-      <span class="strategy-label">
-        <code>{row.familySlug}</code>
-      </span>
-      <div class="strategy-strip">
-        {row.expectedLabels.map((lbl) => {
-          const v = row.variants.find((x) => x.label === lbl);
-          if (!v) {
-            return (
-              <div class="iter-thumb placeholder" title={`${row.familySlug}=${lbl} not run`} aria-label={`${row.familySlug}=${lbl} not run`}>
-                <span class="iter-label">{lbl}</span>
-              </div>
-            );
-          }
-          const sm = v.run.meta;
-          const errBadge = errorBadgeFor(sm.status);
-          return (
-            <a
-              class="iter-thumb"
-              href={`/benchmark/${sm.runId}`}
-              aria-label={`open ${row.familySlug}=${lbl} run ${sm.runId}`}
-              data-status={sm.status}
-              title={errBadge ? `${row.familySlug}=${lbl} · ${sm.status}` : `${row.familySlug}=${lbl}`}
-            >
-              {v.run.pngUrl ? (
-                <img src={v.run.pngUrl} alt={`${row.familySlug}=${lbl}`} loading="lazy" />
-              ) : (
-                <span class="muted">·</span>
-              )}
-              <span class="iter-label">{lbl}</span>
-              {errBadge && <span class="iter-err">{errBadge}</span>}
-            </a>
-          );
-        })}
-      </div>
-    </div>
-  ))}
-
   <div class="meta">
     <div class="row sub muted">
       <span>{stepCount} step</span>
@@ -268,7 +268,7 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
 </article>
 
 <style>
-  .chain-card {
+  .model-task-card {
     display: flex;
     flex-direction: column;
     background: var(--bg-2);

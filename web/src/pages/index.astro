@@ -1,7 +1,7 @@
 ---
 import Base from "../layouts/Base.astro";
 import RunCard from "../components/RunCard.astro";
-import RunChainCard from "../components/RunChainCard.astro";
+import ModelTaskCard from "../components/ModelTaskCard.astro";
 import Filters from "../components/Filters.astro";
 import type { LoadedRun } from "../lib/results.js";
 import {
@@ -336,7 +336,7 @@ const taskRows = ds.tasks.map((t) => {
               tile.kind === "single" ? (
                 <RunCard run={tile.run} tier={task.tier} />
               ) : (
-                <RunChainCard
+                <ModelTaskCard
                   bare={tile.bare}
                   strategies={tile.strategies}
                   variantRows={tile.variantRows}

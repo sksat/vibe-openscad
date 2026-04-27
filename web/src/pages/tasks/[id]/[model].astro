@@ -308,53 +308,6 @@ const ogDescription = [
     </section>
   )}
 
-  {strategies.map((s) => (
-    <section class="row-section">
-      <h2>iteration: <code>{s.groupSlug}</code></h2>
-      <div class="row-grid" style={`--cols: ${s.expectedDepth}`}>
-        {Array.from({ length: s.expectedDepth }, (_, i) => i + 1).map((d) => {
-          const step = s.steps.find((x) => x.depth === d);
-          if (!step) {
-            return (
-              <article class="step-tile placeholder">
-                <header><span class="step-label">i{d}</span><span class="muted small">not run</span></header>
-                <div class="empty"><span class="muted small">—</span></div>
-              </article>
-            );
-          }
-          const sm = step.run.meta;
-          const errBadge = errorBadgeFor(sm.status);
-          const cost = runCostUsd(sm);
-          return (
-            <article class="step-tile" data-status={sm.status}>
-              <header>
-                <span class="step-label">i{d}</span>
-                <span class={statusBadgeClass(sm.status)}>{sm.status}</span>
-                {errBadge && <span class="iter-err">{errBadge}</span>}
-                <a class="muted runlink" href={`/benchmark/${sm.runId}`}>→</a>
-              </header>
-              {step.run.pngUrl ? (
-                <img class="step-img" src={step.run.pngUrl} alt={`iter ${d}`} loading="lazy" />
-              ) : (
-                <div class="empty failed"><span class="muted small">{sm.status}</span></div>
-              )}
-              <div class="muted small step-meta">
-                {(sm.timing.totalMs / 1000).toFixed(1)}s
-                {sm.tokens && ` · ${sm.tokens.input}/${sm.tokens.output}t`}
-                {cost !== null && ` · ${formatCost(cost)}`}
-              </div>
-              {sm.error && <pre class="step-error">{sm.error}</pre>}
-              <details class="scad-details">
-                <summary>SCAD ({step.scad.split("\n").length} lines)</summary>
-                {step.scad ? <Code code={step.scad} lang="c" theme="github-dark" wrap /> : <p class="muted small">no SCAD</p>}
-              </details>
-            </article>
-          );
-        })}
-      </div>
-    </section>
-  ))}
-
   {variantRows.map((row) => (
     <section class="row-section">
       <h2>variant: <code>{row.familySlug}</code></h2>
@@ -394,6 +347,53 @@ const ogDescription = [
               <details class="scad-details">
                 <summary>SCAD ({v.scad.split("\n").length} lines)</summary>
                 {v.scad ? <Code code={v.scad} lang="c" theme="github-dark" wrap /> : <p class="muted small">no SCAD</p>}
+              </details>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  ))}
+
+  {strategies.map((s) => (
+    <section class="row-section">
+      <h2>iteration: <code>{s.groupSlug}</code></h2>
+      <div class="row-grid" style={`--cols: ${s.expectedDepth}`}>
+        {Array.from({ length: s.expectedDepth }, (_, i) => i + 1).map((d) => {
+          const step = s.steps.find((x) => x.depth === d);
+          if (!step) {
+            return (
+              <article class="step-tile placeholder">
+                <header><span class="step-label">i{d}</span><span class="muted small">not run</span></header>
+                <div class="empty"><span class="muted small">—</span></div>
+              </article>
+            );
+          }
+          const sm = step.run.meta;
+          const errBadge = errorBadgeFor(sm.status);
+          const cost = runCostUsd(sm);
+          return (
+            <article class="step-tile" data-status={sm.status}>
+              <header>
+                <span class="step-label">i{d}</span>
+                <span class={statusBadgeClass(sm.status)}>{sm.status}</span>
+                {errBadge && <span class="iter-err">{errBadge}</span>}
+                <a class="muted runlink" href={`/benchmark/${sm.runId}`}>→</a>
+              </header>
+              {step.run.pngUrl ? (
+                <img class="step-img" src={step.run.pngUrl} alt={`iter ${d}`} loading="lazy" />
+              ) : (
+                <div class="empty failed"><span class="muted small">{sm.status}</span></div>
+              )}
+              <div class="muted small step-meta">
+                {(sm.timing.totalMs / 1000).toFixed(1)}s
+                {sm.tokens && ` · ${sm.tokens.input}/${sm.tokens.output}t`}
+                {cost !== null && ` · ${formatCost(cost)}`}
+              </div>
+              {sm.error && <pre class="step-error">{sm.error}</pre>}
+              <details class="scad-details">
+                <summary>SCAD ({step.scad.split("\n").length} lines)</summary>
+                {step.scad ? <Code code={step.scad} lang="c" theme="github-dark" wrap /> : <p class="muted small">no SCAD</p>}
               </details>
             </article>
           );
