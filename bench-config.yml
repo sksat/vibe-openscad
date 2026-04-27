@@ -126,27 +126,113 @@ matrix:
   # 見せて修正させ、iter-png-2 は iter-png-1 の出力を見せて、… と数珠繋ぎ。
   # 別の戦略 (error-text-feedback など) を同じ bare から分岐させたいときも
   # iterateFrom を bare に向ければ iter-png-1 を再実行せずに枝分かれできる。
+  #
+  # 全部走らせると Claude 7 モデル × 3 step × 3 task = 63 call で結構嵩む
+  # (opus 系 1 step ~ $0.02-0.05)。`--filter iter-png:sonnet-4-6` などで絞ると
+  # よい。
   - id: iter-png-1/claude-sonnet-4-6
-    harness:
-      kind: bare
-      iterateFrom: bare/claude-sonnet-4-6
-      iteration: { kind: render-png-feedback }
+    harness: { kind: bare, iterateFrom: bare/claude-sonnet-4-6, iteration: { kind: render-png-feedback } }
     provider: anthropic
     model: claude-sonnet-4-6
   - id: iter-png-2/claude-sonnet-4-6
-    harness:
-      kind: bare
-      iterateFrom: iter-png-1/claude-sonnet-4-6
-      iteration: { kind: render-png-feedback }
+    harness: { kind: bare, iterateFrom: iter-png-1/claude-sonnet-4-6, iteration: { kind: render-png-feedback } }
     provider: anthropic
     model: claude-sonnet-4-6
   - id: iter-png-3/claude-sonnet-4-6
-    harness:
-      kind: bare
-      iterateFrom: iter-png-2/claude-sonnet-4-6
-      iteration: { kind: render-png-feedback }
+    harness: { kind: bare, iterateFrom: iter-png-2/claude-sonnet-4-6, iteration: { kind: render-png-feedback } }
     provider: anthropic
     model: claude-sonnet-4-6
+
+  - id: iter-png-1/claude-opus-4-7
+    harness: { kind: bare, iterateFrom: bare/claude-opus-4-7, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-opus-4-7
+  - id: iter-png-2/claude-opus-4-7
+    harness: { kind: bare, iterateFrom: iter-png-1/claude-opus-4-7, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-opus-4-7
+  - id: iter-png-3/claude-opus-4-7
+    harness: { kind: bare, iterateFrom: iter-png-2/claude-opus-4-7, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-opus-4-7
+
+  - id: iter-png-1/claude-haiku-4-5
+    harness: { kind: bare, iterateFrom: bare/claude-haiku-4-5, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-haiku-4-5-20251001
+  - id: iter-png-2/claude-haiku-4-5
+    harness: { kind: bare, iterateFrom: iter-png-1/claude-haiku-4-5, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-haiku-4-5-20251001
+  - id: iter-png-3/claude-haiku-4-5
+    harness: { kind: bare, iterateFrom: iter-png-2/claude-haiku-4-5, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-haiku-4-5-20251001
+
+  - id: iter-png-1/claude-opus-4-5
+    harness: { kind: bare, iterateFrom: bare/claude-opus-4-5, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-opus-4-5-20251101
+  - id: iter-png-2/claude-opus-4-5
+    harness: { kind: bare, iterateFrom: iter-png-1/claude-opus-4-5, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-opus-4-5-20251101
+  - id: iter-png-3/claude-opus-4-5
+    harness: { kind: bare, iterateFrom: iter-png-2/claude-opus-4-5, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-opus-4-5-20251101
+
+  - id: iter-png-1/claude-opus-4-1
+    harness: { kind: bare, iterateFrom: bare/claude-opus-4-1, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-opus-4-1-20250805
+  - id: iter-png-2/claude-opus-4-1
+    harness: { kind: bare, iterateFrom: iter-png-1/claude-opus-4-1, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-opus-4-1-20250805
+  - id: iter-png-3/claude-opus-4-1
+    harness: { kind: bare, iterateFrom: iter-png-2/claude-opus-4-1, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-opus-4-1-20250805
+
+  - id: iter-png-1/claude-opus-4-0
+    harness: { kind: bare, iterateFrom: bare/claude-opus-4-0, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-opus-4-20250514
+  - id: iter-png-2/claude-opus-4-0
+    harness: { kind: bare, iterateFrom: iter-png-1/claude-opus-4-0, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-opus-4-20250514
+  - id: iter-png-3/claude-opus-4-0
+    harness: { kind: bare, iterateFrom: iter-png-2/claude-opus-4-0, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-opus-4-20250514
+
+  - id: iter-png-1/claude-sonnet-4-5
+    harness: { kind: bare, iterateFrom: bare/claude-sonnet-4-5, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-sonnet-4-5-20250929
+  - id: iter-png-2/claude-sonnet-4-5
+    harness: { kind: bare, iterateFrom: iter-png-1/claude-sonnet-4-5, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-sonnet-4-5-20250929
+  - id: iter-png-3/claude-sonnet-4-5
+    harness: { kind: bare, iterateFrom: iter-png-2/claude-sonnet-4-5, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-sonnet-4-5-20250929
+
+  - id: iter-png-1/claude-sonnet-4-0
+    harness: { kind: bare, iterateFrom: bare/claude-sonnet-4-0, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-sonnet-4-20250514
+  - id: iter-png-2/claude-sonnet-4-0
+    harness: { kind: bare, iterateFrom: iter-png-1/claude-sonnet-4-0, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-sonnet-4-20250514
+  - id: iter-png-3/claude-sonnet-4-0
+    harness: { kind: bare, iterateFrom: iter-png-2/claude-sonnet-4-0, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-sonnet-4-20250514
 
 tasks:
   - tier: 1
