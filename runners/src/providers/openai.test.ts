@@ -108,4 +108,40 @@ describe("createOpenaiProvider", () => {
       provider.complete({ prompt: "p", model: "gpt-5" }),
     ).rejects.toThrow();
   });
+
+  it("translates ChatMessage[] with image into Responses input array", async () => {
+    const create = vi.fn().mockResolvedValue(fakeResp());
+    const provider = createOpenaiProvider({ create });
+    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+    await provider.complete({
+      messages: [
+        { role: "user", content: "first turn" },
+        { role: "assistant", content: "cube();" },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "see this" },
+            { type: "image", mediaType: "image/png", data: png },
+          ],
+        },
+      ],
+      model: "gpt-5",
+    });
+    const call = create.mock.calls[0]?.[0];
+    expect(call.input).toEqual([
+      { role: "user", content: "first turn" },
+      { role: "assistant", content: "cube();" },
+      {
+        role: "user",
+        content: [
+          { type: "input_text", text: "see this" },
+          {
+            type: "input_image",
+            detail: "auto",
+            image_url: `data:image/png;base64,${png.toString("base64")}`,
+          },
+        ],
+      },
+    ]);
+  });
 });

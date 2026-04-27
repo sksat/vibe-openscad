@@ -118,4 +118,45 @@ describe("createGoogleProvider", () => {
       provider.complete({ prompt: "p", model: "gemini-2.5-flash" }),
     ).rejects.toThrow(/no candidates/i);
   });
+
+  it("translates ChatMessage[] with image into Gemini Content[] with inlineData", async () => {
+    const generate = vi.fn().mockResolvedValue(fakeResp());
+    const provider = createGoogleProvider({ generate });
+    await provider.complete({
+      messages: [
+        { role: "user", content: "first turn" },
+        { role: "assistant", content: "cube();" },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "look at this render" },
+            {
+              type: "image",
+              mediaType: "image/png",
+              data: Buffer.from([0x89, 0x50, 0x4e, 0x47]),
+            },
+          ],
+        },
+      ],
+      model: "gemini-2.5-flash",
+    });
+    const call = generate.mock.calls[0]?.[0];
+    expect(call.contents).toEqual([
+      { role: "user", parts: [{ text: "first turn" }] },
+      { role: "model", parts: [{ text: "cube();" }] },
+      {
+        role: "user",
+        parts: [
+          { text: "look at this render" },
+          {
+            inlineData: {
+              mimeType: "image/png",
+              // 4-byte buffer: PNG magic prefix
+              data: Buffer.from([0x89, 0x50, 0x4e, 0x47]).toString("base64"),
+            },
+          },
+        ],
+      },
+    ]);
+  });
 });

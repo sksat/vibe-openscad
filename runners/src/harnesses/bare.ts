@@ -1,3 +1,4 @@
+import { modelSupportsVision } from "../capabilities.js";
 import { extractScad } from "../extract.js";
 import type {
   ChatMessage,
@@ -79,6 +80,20 @@ export async function runBare(ctx: HarnessContext): Promise<HarnessResult> {
       ? { modelOptions: ctx.config.modelOptions }
       : {}),
   };
+
+  // Reject early when the configured strategy needs a capability the model
+  // doesn't have — a render-png-feedback iteration on a vision-less model
+  // would otherwise blow up at API time with a confusing error.
+  if (
+    ctx.parent &&
+    ctx.config.iteration?.kind === "render-png-feedback" &&
+    !modelSupportsVision(ctx.config.model)
+  ) {
+    return finish({
+      status: "api_error",
+      errorMessage: `model "${ctx.config.model}" does not support image input; render-png-feedback iteration requires a vision-capable model`,
+    });
+  }
 
   let response: CompletionResponse;
   try {

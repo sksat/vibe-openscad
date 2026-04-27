@@ -2,8 +2,47 @@ import OpenAI from "openai";
 import type {
   Response,
   ResponseCreateParamsNonStreaming,
+  ResponseInput,
 } from "openai/resources/responses/responses";
-import type { CompletionRequest, CompletionResponse, Provider } from "./types.js";
+import type {
+  ChatMessage,
+  CompletionRequest,
+  CompletionResponse,
+  Provider,
+} from "./types.js";
+
+/**
+ * Translate ChatMessage[] to the OpenAI Responses API input array.
+ * Multi-turn input is a list of message-shaped items with role + content
+ * parts. Image inputs use a `data:` URL.
+ */
+function toOpenaiInput(messages: ChatMessage[]): ResponseInput {
+  return messages.map((m) => {
+    if (m.role === "assistant") {
+      // Past assistant turns don't take typed content arrays in the
+      // Responses API multi-turn input; pass them as a plain message.
+      return {
+        role: "assistant",
+        content: m.content,
+      };
+    }
+    if (typeof m.content === "string") {
+      return { role: "user", content: m.content };
+    }
+    return {
+      role: "user",
+      content: m.content.map((p) =>
+        p.type === "text"
+          ? { type: "input_text" as const, text: p.text }
+          : {
+              type: "input_image" as const,
+              detail: "auto" as const,
+              image_url: `data:${p.mediaType};base64,${p.data.toString("base64")}`,
+            },
+      ),
+    };
+  }) as ResponseInput;
+}
 
 export type CreateResponse = (
   params: ResponseCreateParamsNonStreaming,
@@ -38,19 +77,20 @@ export function createOpenaiProvider(
     name: "openai",
     async complete(req: CompletionRequest): Promise<CompletionResponse> {
       const started = performance.now();
-      if (req.messages) {
-        throw new Error(
-          "openai provider: ChatMessage[] history not yet supported (iterative harnesses are Anthropic-only for now)",
-        );
-      }
-      if (req.prompt == null) {
-        throw new Error("openai provider: prompt is required");
-      }
+      const input: string | ResponseInput = req.messages
+        ? toOpenaiInput(req.messages)
+        : req.prompt != null
+          ? req.prompt
+          : (() => {
+              throw new Error(
+                "openai provider: either prompt or messages is required",
+              );
+            })();
       // modelOptions spread last so e.g. { reasoning: { effort: "high" } }
       // gets through to the API on reasoning models.
       const params: ResponseCreateParamsNonStreaming = {
         model: req.model,
-        input: req.prompt,
+        input,
         max_output_tokens: req.maxTokens ?? DEFAULT_MAX_TOKENS,
         ...(req.systemPrompt ? { instructions: req.systemPrompt } : {}),
         ...(req.modelOptions ?? {}),

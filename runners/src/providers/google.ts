@@ -1,9 +1,41 @@
 import {
   GoogleGenAI,
+  type Content,
   type GenerateContentParameters,
   type GenerateContentResponse,
+  type Part,
 } from "@google/genai";
-import type { CompletionRequest, CompletionResponse, Provider } from "./types.js";
+import type {
+  ChatMessage,
+  CompletionRequest,
+  CompletionResponse,
+  Provider,
+} from "./types.js";
+
+/** Translate our generic ChatMessage[] to Gemini Content[]. */
+function toGeminiContents(messages: ChatMessage[]): Content[] {
+  return messages.map((m) => {
+    // Gemini uses "model" for assistant turns. assistant content is always
+    // a plain string (declared in our types), so a single text part suffices.
+    if (m.role === "assistant") {
+      return { role: "model", parts: [{ text: m.content }] };
+    }
+    if (typeof m.content === "string") {
+      return { role: "user", parts: [{ text: m.content }] };
+    }
+    const parts: Part[] = m.content.map((p) =>
+      p.type === "text"
+        ? { text: p.text }
+        : {
+            inlineData: {
+              mimeType: p.mediaType,
+              data: p.data.toString("base64"),
+            },
+          },
+    );
+    return { role: "user", parts };
+  });
+}
 
 export type GenerateContent = (
   params: GenerateContentParameters,
@@ -46,14 +78,15 @@ export function createGoogleProvider(
     name: "google",
     async complete(req: CompletionRequest): Promise<CompletionResponse> {
       const started = performance.now();
-      if (req.messages) {
-        throw new Error(
-          "google provider: ChatMessage[] history not yet supported (iterative harnesses are Anthropic-only for now)",
-        );
-      }
-      if (req.prompt == null) {
-        throw new Error("google provider: prompt is required");
-      }
+      const contents: Content[] | string = req.messages
+        ? toGeminiContents(req.messages)
+        : req.prompt != null
+          ? req.prompt
+          : (() => {
+              throw new Error(
+                "google provider: either prompt or messages is required",
+              );
+            })();
       // modelOptions: top-level fields spread directly; `config` sub-object
       // is shallow-merged with our defaults so callers can override pieces
       // like { config: { thinkingConfig: { thinkingBudget: 0 } } } without
@@ -66,7 +99,7 @@ export function createGoogleProvider(
       const { config: _, ...optsTopLevel } = opts as { config?: unknown };
       const params: GenerateContentParameters = {
         model: req.model,
-        contents: req.prompt,
+        contents,
         config: {
           maxOutputTokens: req.maxTokens ?? DEFAULT_MAX_TOKENS,
           ...(req.systemPrompt

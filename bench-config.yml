@@ -234,5 +234,203 @@ matrix:
     provider: anthropic
     model: claude-sonnet-4-20250514
 
+  # --- Gemini iter-png ---
+  - id: iter-png-1/gemini-3.1-pro
+    harness: { kind: bare, iterateFrom: bare/gemini-3.1-pro, iteration: { kind: render-png-feedback } }
+    provider: google
+    model: gemini-3.1-pro-preview
+  - id: iter-png-2/gemini-3.1-pro
+    harness: { kind: bare, iterateFrom: iter-png-1/gemini-3.1-pro, iteration: { kind: render-png-feedback } }
+    provider: google
+    model: gemini-3.1-pro-preview
+  - id: iter-png-3/gemini-3.1-pro
+    harness: { kind: bare, iterateFrom: iter-png-2/gemini-3.1-pro, iteration: { kind: render-png-feedback } }
+    provider: google
+    model: gemini-3.1-pro-preview
+
+  - id: iter-png-1/gemini-3-flash
+    harness: { kind: bare, iterateFrom: bare/gemini-3-flash, iteration: { kind: render-png-feedback } }
+    provider: google
+    model: gemini-3-flash-preview
+  - id: iter-png-2/gemini-3-flash
+    harness: { kind: bare, iterateFrom: iter-png-1/gemini-3-flash, iteration: { kind: render-png-feedback } }
+    provider: google
+    model: gemini-3-flash-preview
+  - id: iter-png-3/gemini-3-flash
+    harness: { kind: bare, iterateFrom: iter-png-2/gemini-3-flash, iteration: { kind: render-png-feedback } }
+    provider: google
+    model: gemini-3-flash-preview
+
+  - id: iter-png-1/gemini-3.1-flash-lite
+    harness: { kind: bare, iterateFrom: bare/gemini-3.1-flash-lite, iteration: { kind: render-png-feedback } }
+    provider: google
+    model: gemini-3.1-flash-lite-preview
+  - id: iter-png-2/gemini-3.1-flash-lite
+    harness: { kind: bare, iterateFrom: iter-png-1/gemini-3.1-flash-lite, iteration: { kind: render-png-feedback } }
+    provider: google
+    model: gemini-3.1-flash-lite-preview
+  - id: iter-png-3/gemini-3.1-flash-lite
+    harness: { kind: bare, iterateFrom: iter-png-2/gemini-3.1-flash-lite, iteration: { kind: render-png-feedback } }
+    provider: google
+    model: gemini-3.1-flash-lite-preview
+
+  - id: iter-png-1/gemini-2.5-pro
+    harness: { kind: bare, iterateFrom: bare/gemini-2.5-pro, iteration: { kind: render-png-feedback } }
+    provider: google
+    model: gemini-2.5-pro
+  - id: iter-png-2/gemini-2.5-pro
+    harness: { kind: bare, iterateFrom: iter-png-1/gemini-2.5-pro, iteration: { kind: render-png-feedback } }
+    provider: google
+    model: gemini-2.5-pro
+  - id: iter-png-3/gemini-2.5-pro
+    harness: { kind: bare, iterateFrom: iter-png-2/gemini-2.5-pro, iteration: { kind: render-png-feedback } }
+    provider: google
+    model: gemini-2.5-pro
+
+  - id: iter-png-1/gemini-2.5-flash
+    harness: { kind: bare, iterateFrom: bare/gemini-2.5-flash, iteration: { kind: render-png-feedback } }
+    provider: google
+    model: gemini-2.5-flash
+  - id: iter-png-2/gemini-2.5-flash
+    harness: { kind: bare, iterateFrom: iter-png-1/gemini-2.5-flash, iteration: { kind: render-png-feedback } }
+    provider: google
+    model: gemini-2.5-flash
+  - id: iter-png-3/gemini-2.5-flash
+    harness: { kind: bare, iterateFrom: iter-png-2/gemini-2.5-flash, iteration: { kind: render-png-feedback } }
+    provider: google
+    model: gemini-2.5-flash
+
+  - id: iter-png-1/gemini-2.5-flash-lite
+    harness: { kind: bare, iterateFrom: bare/gemini-2.5-flash-lite, iteration: { kind: render-png-feedback } }
+    provider: google
+    model: gemini-2.5-flash-lite
+  - id: iter-png-2/gemini-2.5-flash-lite
+    harness: { kind: bare, iterateFrom: iter-png-1/gemini-2.5-flash-lite, iteration: { kind: render-png-feedback } }
+    provider: google
+    model: gemini-2.5-flash-lite
+  - id: iter-png-3/gemini-2.5-flash-lite
+    harness: { kind: bare, iterateFrom: iter-png-2/gemini-2.5-flash-lite, iteration: { kind: render-png-feedback } }
+    provider: google
+    model: gemini-2.5-flash-lite
+
+  # --- OpenAI iter-png ---
+  # vision 対応の系統(gpt-4.1 / gpt-5 family / o3 / o4-mini)のみ。o1 は非対応。
+  - id: iter-png-1/gpt-5.4
+    harness: { kind: bare, iterateFrom: bare/gpt-5.4, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.4-2026-03-05
+  - id: iter-png-2/gpt-5.4
+    harness: { kind: bare, iterateFrom: iter-png-1/gpt-5.4, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.4-2026-03-05
+  - id: iter-png-3/gpt-5.4
+    harness: { kind: bare, iterateFrom: iter-png-2/gpt-5.4, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.4-2026-03-05
+
+  - id: iter-png-1/gpt-5.4-mini
+    harness: { kind: bare, iterateFrom: bare/gpt-5.4-mini, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.4-mini-2026-03-17
+  - id: iter-png-2/gpt-5.4-mini
+    harness: { kind: bare, iterateFrom: iter-png-1/gpt-5.4-mini, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.4-mini-2026-03-17
+  - id: iter-png-3/gpt-5.4-mini
+    harness: { kind: bare, iterateFrom: iter-png-2/gpt-5.4-mini, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.4-mini-2026-03-17
+
+  - id: iter-png-1/gpt-5.4-nano
+    harness: { kind: bare, iterateFrom: bare/gpt-5.4-nano, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.4-nano-2026-03-17
+  - id: iter-png-2/gpt-5.4-nano
+    harness: { kind: bare, iterateFrom: iter-png-1/gpt-5.4-nano, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.4-nano-2026-03-17
+  - id: iter-png-3/gpt-5.4-nano
+    harness: { kind: bare, iterateFrom: iter-png-2/gpt-5.4-nano, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.4-nano-2026-03-17
+
+  - id: iter-png-1/gpt-5
+    harness: { kind: bare, iterateFrom: bare/gpt-5, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5-2025-08-07
+  - id: iter-png-2/gpt-5
+    harness: { kind: bare, iterateFrom: iter-png-1/gpt-5, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5-2025-08-07
+  - id: iter-png-3/gpt-5
+    harness: { kind: bare, iterateFrom: iter-png-2/gpt-5, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5-2025-08-07
+
+  - id: iter-png-1/gpt-5-mini
+    harness: { kind: bare, iterateFrom: bare/gpt-5-mini, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5-mini-2025-08-07
+  - id: iter-png-2/gpt-5-mini
+    harness: { kind: bare, iterateFrom: iter-png-1/gpt-5-mini, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5-mini-2025-08-07
+  - id: iter-png-3/gpt-5-mini
+    harness: { kind: bare, iterateFrom: iter-png-2/gpt-5-mini, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5-mini-2025-08-07
+
+  - id: iter-png-1/gpt-5-nano
+    harness: { kind: bare, iterateFrom: bare/gpt-5-nano, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5-nano-2025-08-07
+  - id: iter-png-2/gpt-5-nano
+    harness: { kind: bare, iterateFrom: iter-png-1/gpt-5-nano, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5-nano-2025-08-07
+  - id: iter-png-3/gpt-5-nano
+    harness: { kind: bare, iterateFrom: iter-png-2/gpt-5-nano, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5-nano-2025-08-07
+
+  - id: iter-png-1/gpt-4.1
+    harness: { kind: bare, iterateFrom: bare/gpt-4.1, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-4.1-2025-04-14
+  - id: iter-png-2/gpt-4.1
+    harness: { kind: bare, iterateFrom: iter-png-1/gpt-4.1, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-4.1-2025-04-14
+  - id: iter-png-3/gpt-4.1
+    harness: { kind: bare, iterateFrom: iter-png-2/gpt-4.1, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-4.1-2025-04-14
+
+  - id: iter-png-1/o3
+    harness: { kind: bare, iterateFrom: bare/o3, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: o3-2025-04-16
+  - id: iter-png-2/o3
+    harness: { kind: bare, iterateFrom: iter-png-1/o3, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: o3-2025-04-16
+  - id: iter-png-3/o3
+    harness: { kind: bare, iterateFrom: iter-png-2/o3, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: o3-2025-04-16
+
+  - id: iter-png-1/o4-mini
+    harness: { kind: bare, iterateFrom: bare/o4-mini, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: o4-mini-2025-04-16
+  - id: iter-png-2/o4-mini
+    harness: { kind: bare, iterateFrom: iter-png-1/o4-mini, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: o4-mini-2025-04-16
+  - id: iter-png-3/o4-mini
+    harness: { kind: bare, iterateFrom: iter-png-2/o4-mini, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: o4-mini-2025-04-16
+
 tasks:
   - tier: 1
