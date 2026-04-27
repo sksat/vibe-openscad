@@ -280,12 +280,23 @@ function printPlan(items: PlanItem[]): void {
   );
 }
 
-interface ExecutionOutcome {
-  meta: RunMeta;
-  /** True when meta + artifacts were written to results/. */
-  persisted: boolean;
-  errorDetail?: string;
-}
+type ExecutionOutcome =
+  | {
+      kind: "ran";
+      meta: RunMeta;
+      /** True when meta + artifacts were written to results/. */
+      persisted: boolean;
+      errorDetail?: string;
+    }
+  | {
+      /**
+       * Predecessor was unusable (no_code / api_error / no run at all etc.)
+       * so the chain can't proceed for this (task, matrixId). Not a failure
+       * — the chain simply has no inputs to work from.
+       */
+      kind: "chain-break";
+      reason: string;
+    };
 
 /**
  * Statuses we persist to results/. Transient infra failures
@@ -372,9 +383,10 @@ async function executeBareRun(
       entry.harness.iterateFrom,
     );
     if (!parentMeta) {
-      throw new Error(
-        `iterateFrom: no usable run found for predecessor matrixId="${entry.harness.iterateFrom}" task="${item.candidate.task.id}". The predecessor needs to be at least render_error (have a SCAD artifact) for the chain to continue. Run the predecessor first or skip this entry.`,
-      );
+      return {
+        kind: "chain-break",
+        reason: `predecessor "${entry.harness.iterateFrom}" has no usable run for task "${item.candidate.task.id}" (no_code / not run / etc.)`,
+      };
     }
     parent = loadParentContext(resultsDir, parentMeta);
   }
@@ -459,8 +471,8 @@ async function executeBareRun(
   }
 
   return result.errorMessage
-    ? { meta, persisted, errorDetail: result.errorMessage }
-    : { meta, persisted };
+    ? { kind: "ran", meta, persisted, errorDetail: result.errorMessage }
+    : { kind: "ran", meta, persisted };
 }
 
 async function runRerender(resultsDir: string, filter?: string): Promise<void> {
@@ -670,6 +682,7 @@ async function main(): Promise<void> {
 
   let passed = 0;
   let failed = 0;
+  let runSkipped = 0;
   let totalCost = 0;
   const failures: Failure[] = [];
   const runStarted = performance.now();
@@ -679,6 +692,21 @@ async function main(): Promise<void> {
     process.stdout.write(`bench ${name} ... `);
     try {
       const outcome = await executeBareRun(item, cfg, resultsDir, args.prune);
+      if (outcome.kind === "chain-break") {
+        runSkipped++;
+        console.log(
+          itemLine(
+            {
+              verb: "bench",
+              name,
+              status: "skipped",
+              hint: `chain-break: ${outcome.reason}`,
+            },
+            { color },
+          ).replace(/^bench .* \.\.\. /, ""),
+        );
+        continue;
+      }
       const meta = outcome.meta;
       if (meta.status === "success") {
         passed++;
@@ -735,7 +763,7 @@ async function main(): Promise<void> {
       {
         kind: "bench",
         ok: failed === 0,
-        counts: { passed, failed, skipped },
+        counts: { passed, failed, skipped: skipped + runSkipped },
         durationMs: elapsed,
       },
       { color },
