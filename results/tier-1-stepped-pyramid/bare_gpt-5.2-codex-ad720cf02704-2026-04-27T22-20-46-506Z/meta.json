@@ -1,0 +1,33 @@
+{
+  "runId": "bare_gpt-5.2-codex-ad720cf02704-2026-04-27T22-20-46-506Z",
+  "taskId": "tier-1-stepped-pyramid",
+  "matrixId": "bare/gpt-5.2-codex",
+  "signature": "ad720cf0270466678eb2cc3008bc75ed3b3671b524f0d8da9dadfe1d7f0431d7",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "f33c33343b97cdee4ab2a95d84c7f4be5791294d1e997d9c55a752a15c9a2446",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5.2-codex"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5.2-codex",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 7302
+  },
+  "tokens": {
+    "input": 151,
+    "output": 329
+  },
+  "cost_usd": 0.0041896,
+  "createdAt": "2026-04-27T22:20:46.506Z",
+  "gitCommit": "4b7e41e217e81121e364f4598381719d8e60a5b3"
+}

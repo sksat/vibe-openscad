@@ -1,0 +1,33 @@
+{
+  "runId": "bare_gpt-5-codex-1f0885c64a4f-2026-04-27T22-16-43-353Z",
+  "taskId": "tier-1-cube-with-hole",
+  "matrixId": "bare/gpt-5-codex",
+  "signature": "1f0885c64a4fb5e3a9ef6caa5391a9bb51e655f381f03859429c9ee22da7119b",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "8ff7e36af4bc202429ec68b7eb9cc3f195b6a3c68668be31239bcea23345a048",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5-codex"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5-codex",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 1961
+  },
+  "tokens": {
+    "input": 82,
+    "output": 138
+  },
+  "cost_usd": 0.0014824999999999999,
+  "createdAt": "2026-04-27T22:16:43.353Z",
+  "gitCommit": "4b7e41e217e81121e364f4598381719d8e60a5b3"
+}

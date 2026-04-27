@@ -1,0 +1,38 @@
+{
+  "runId": "bare-low_gpt-5.5-af328617e04c-2026-04-27T22-13-03-847Z",
+  "taskId": "tier-1-cube-with-hole",
+  "matrixId": "bare-low/gpt-5.5",
+  "signature": "af328617e04c630bd33652f777887fde0021f4d8250ecdf004b2b4881c12e8f7",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "8ff7e36af4bc202429ec68b7eb9cc3f195b6a3c68668be31239bcea23345a048",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5.5-2026-04-23",
+      "modelOptions": {
+        "reasoning": {
+          "effort": "low"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5.5-2026-04-23",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 3400
+  },
+  "tokens": {
+    "input": 82,
+    "output": 105
+  },
+  "cost_usd": 0.0011525,
+  "createdAt": "2026-04-27T22:13:03.847Z",
+  "gitCommit": "4b7e41e217e81121e364f4598381719d8e60a5b3"
+}
