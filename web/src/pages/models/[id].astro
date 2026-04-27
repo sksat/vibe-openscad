@@ -1,0 +1,156 @@
+---
+import Base from "../../layouts/Base.astro";
+import RunCard from "../../components/RunCard.astro";
+import { formatCost, getDataset, runCostUsd } from "../../lib/dataset.js";
+
+export function getStaticPaths() {
+  const ds = getDataset();
+  const byModel = new Map<string, { task: string; matrixId: string; runId: string }[]>();
+  for (const run of ds.runs.values()) {
+    const m = run.meta.model;
+    if (!m) continue;
+    const list = byModel.get(m) ?? [];
+    list.push({ task: run.meta.taskId, matrixId: run.meta.matrixId, runId: run.meta.runId });
+    byModel.set(m, list);
+  }
+
+  const tasksById = new Map(ds.tasks.map((t) => [t.task.id, t.task]));
+  return Array.from(byModel.keys()).map((model) => {
+    // Build task → matrixId → latest LoadedRun grid for this model.
+    const grid: Record<string, Record<string, string /* runId */>> = {};
+    const variants = new Set<string>();
+    const runsForModel = [...ds.runs.values()].filter(
+      (r) => r.meta.model === model,
+    );
+    // newest-first within (task, matrix)
+    runsForModel.sort((a, b) =>
+      a.meta.createdAt < b.meta.createdAt ? 1 : -1,
+    );
+    for (const r of runsForModel) {
+      grid[r.meta.taskId] ??= {};
+      if (!(r.meta.matrixId in grid[r.meta.taskId]!)) {
+        grid[r.meta.taskId]![r.meta.matrixId] = r.meta.runId;
+      }
+      variants.add(r.meta.matrixId);
+    }
+    return {
+      params: { id: model },
+      props: {
+        model,
+        variants: [...variants].sort(),
+        tasks: [...new Set(runsForModel.map((r) => r.meta.taskId))]
+          .map((id) => tasksById.get(id))
+          .filter((t): t is NonNullable<typeof t> => !!t)
+          .sort((a, b) => a.tier - b.tier || a.id.localeCompare(b.id)),
+        grid,
+      },
+    };
+  });
+}
+
+const { model, variants, tasks, grid } = Astro.props;
+const ds = getDataset();
+let totalCost = 0;
+let runCount = 0;
+for (const r of ds.runs.values()) {
+  if (r.meta.model !== model) continue;
+  runCount++;
+  const c = runCostUsd(r.meta);
+  if (c !== null) totalCost += c;
+}
+---
+
+<Base
+  title={`${model} — vibe-openscad`}
+  description={`${model} の harness・パラメータ違い ${variants.length} variant × ${tasks.length} タスク`}
+>
+  <p class="muted"><a href="/">← dashboard</a></p>
+  <h1 class="title"><code>{model}</code></h1>
+  <p class="muted small">
+    {runCount} run / {variants.length} variant / {tasks.length} task / 累計 {formatCost(totalCost)}
+  </p>
+
+  <div class="grid-wrap">
+    <table class="grid-table">
+      <thead>
+        <tr>
+          <th class="task-col">task</th>
+          {variants.map((v) => (
+            <th><code class="variant">{v}</code></th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {tasks.map((t) => (
+          <tr>
+            <th class="task-col">
+              <a href={`/tasks/${t.id}`}>{t.title}</a>
+              <div class="muted small">tier {t.tier}</div>
+            </th>
+            {variants.map((v) => {
+              const runId = grid[t.id]?.[v];
+              const run = runId ? ds.runs.get(runId) : undefined;
+              return (
+                <td>
+                  {run ? <RunCard run={run} tier={t.tier} /> : <div class="empty">—</div>}
+                </td>
+              );
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</Base>
+
+<style>
+  .title {
+    font-family: var(--mono);
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+  .title code { color: var(--accent); }
+  .small { font-size: 12px; }
+  .grid-wrap {
+    overflow-x: auto;
+    margin-top: 16px;
+  }
+  .grid-table {
+    border-collapse: separate;
+    border-spacing: 8px;
+    table-layout: fixed;
+  }
+  .grid-table th, .grid-table td {
+    vertical-align: top;
+    min-width: 240px;
+  }
+  .grid-table thead th {
+    text-align: left;
+    padding: 0 4px;
+    font-weight: 500;
+    color: var(--fg-dim);
+    font-size: 12px;
+  }
+  .task-col {
+    min-width: 180px;
+    width: 180px;
+    text-align: left;
+    padding: 0 8px;
+    font-size: 14px;
+  }
+  .task-col a { color: var(--fg); }
+  .variant {
+    font-size: 11px;
+    color: var(--fg-dim);
+  }
+  .empty {
+    background: var(--bg-2);
+    border: 1px dashed var(--line);
+    border-radius: 6px;
+    padding: 24px;
+    text-align: center;
+    color: var(--fg-dim);
+    font-family: var(--mono);
+    min-height: 120px;
+  }
+</style>

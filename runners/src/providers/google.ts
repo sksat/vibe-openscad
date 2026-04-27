@@ -46,6 +46,14 @@ export function createGoogleProvider(
     name: "google",
     async complete(req: CompletionRequest): Promise<CompletionResponse> {
       const started = performance.now();
+      if (req.messages) {
+        throw new Error(
+          "google provider: ChatMessage[] history not yet supported (iterative harnesses are Anthropic-only for now)",
+        );
+      }
+      if (req.prompt == null) {
+        throw new Error("google provider: prompt is required");
+      }
       // modelOptions: top-level fields spread directly; `config` sub-object
       // is shallow-merged with our defaults so callers can override pieces
       // like { config: { thinkingConfig: { thinkingBudget: 0 } } } without

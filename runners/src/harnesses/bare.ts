@@ -1,6 +1,56 @@
 import { extractScad } from "../extract.js";
-import type { CompletionResponse } from "../providers/types.js";
-import type { HarnessContext, HarnessResult } from "./types.js";
+import type {
+  ChatMessage,
+  CompletionRequest,
+  CompletionResponse,
+} from "../providers/types.js";
+import type {
+  HarnessContext,
+  HarnessLogBare,
+  HarnessResult,
+  ParentRunContext,
+} from "./types.js";
+import type { IterationStrategy } from "../schema.js";
+
+const FEEDBACK_PNG_DEFAULT =
+  "上の画像はあなたが書いた SCAD を OpenSCAD でレンダリングした結果です。" +
+  "元の課題プロンプトと照らし合わせて、形状・寸法・配置に誤りや改善点があれば修正したコードを ```openscad ... ``` で出力してください。" +
+  "問題が無ければ同じコードをそのまま再度出力してください。";
+
+const FEEDBACK_ERROR_DEFAULT =
+  "あなたが出力した SCAD は OpenSCAD で次のエラーになりました。" +
+  "原因を踏まえて修正したコードを ```openscad ... ``` で出力してください。";
+
+function buildFeedbackMessages(
+  prompt: string,
+  parent: ParentRunContext,
+  strategy: IterationStrategy,
+): ChatMessage[] {
+  const messages: ChatMessage[] = [
+    { role: "user", content: prompt },
+    { role: "assistant", content: parent.scad },
+  ];
+
+  if (strategy.kind === "render-png-feedback" && parent.png) {
+    const text = strategy.promptOverride ?? FEEDBACK_PNG_DEFAULT;
+    messages.push({
+      role: "user",
+      content: [
+        { type: "text", text },
+        { type: "image", mediaType: "image/png", data: parent.png },
+      ],
+    });
+    return messages;
+  }
+
+  // error-text-feedback, or render-png-feedback fallback when PNG missing.
+  const errBody = parent.errorMessage ?? "(エラー詳細なし)";
+  const text =
+    strategy.promptOverride ??
+    `${FEEDBACK_ERROR_DEFAULT}\n\nエラー:\n${errBody}`;
+  messages.push({ role: "user", content: text });
+  return messages;
+}
 
 export async function runBare(ctx: HarnessContext): Promise<HarnessResult> {
   if (ctx.config.kind !== "bare") {
@@ -8,7 +58,10 @@ export async function runBare(ctx: HarnessContext): Promise<HarnessResult> {
   }
 
   const start = performance.now();
-  const harnessLog = { kind: "bare" as const };
+  const harnessLog: HarnessLogBare = {
+    kind: "bare",
+    ...(ctx.config.iteration ? { iteration: ctx.config.iteration } : {}),
+  };
   const finish = (extra: Partial<HarnessResult>): HarnessResult => ({
     durationMs: performance.now() - start,
     harnessLog,
@@ -16,19 +69,32 @@ export async function runBare(ctx: HarnessContext): Promise<HarnessResult> {
     status: extra.status ?? "api_error",
   });
 
+  const baseReq: Omit<CompletionRequest, "prompt" | "messages"> = {
+    model: ctx.config.model,
+    ...(ctx.config.systemPrompt
+      ? { systemPrompt: ctx.config.systemPrompt }
+      : {}),
+    ...(ctx.config.maxTokens ? { maxTokens: ctx.config.maxTokens } : {}),
+    ...(ctx.config.modelOptions
+      ? { modelOptions: ctx.config.modelOptions }
+      : {}),
+  };
+
   let response: CompletionResponse;
   try {
-    response = await ctx.config.provider.complete({
-      prompt: ctx.task.prompt,
-      model: ctx.config.model,
-      ...(ctx.config.systemPrompt
-        ? { systemPrompt: ctx.config.systemPrompt }
-        : {}),
-      ...(ctx.config.maxTokens ? { maxTokens: ctx.config.maxTokens } : {}),
-      ...(ctx.config.modelOptions
-        ? { modelOptions: ctx.config.modelOptions }
-        : {}),
-    });
+    if (ctx.parent && ctx.config.iteration) {
+      const messages = buildFeedbackMessages(
+        ctx.task.prompt,
+        ctx.parent,
+        ctx.config.iteration,
+      );
+      response = await ctx.config.provider.complete({ ...baseReq, messages });
+    } else {
+      response = await ctx.config.provider.complete({
+        ...baseReq,
+        prompt: ctx.task.prompt,
+      });
+    }
   } catch (e) {
     return finish({
       status: "api_error",

@@ -121,5 +121,32 @@ matrix:
     provider: openai
     model: o4-mini-2025-04-16
 
+  # --- iteration chain (PNG feedback) ---
+  # 各 iteration step は独立した benchmark run。iter-png-1 は bare の出力を
+  # 見せて修正させ、iter-png-2 は iter-png-1 の出力を見せて、… と数珠繋ぎ。
+  # 別の戦略 (error-text-feedback など) を同じ bare から分岐させたいときも
+  # iterateFrom を bare に向ければ iter-png-1 を再実行せずに枝分かれできる。
+  - id: iter-png-1/claude-sonnet-4-6
+    harness:
+      kind: bare
+      iterateFrom: bare/claude-sonnet-4-6
+      iteration: { kind: render-png-feedback }
+    provider: anthropic
+    model: claude-sonnet-4-6
+  - id: iter-png-2/claude-sonnet-4-6
+    harness:
+      kind: bare
+      iterateFrom: iter-png-1/claude-sonnet-4-6
+      iteration: { kind: render-png-feedback }
+    provider: anthropic
+    model: claude-sonnet-4-6
+  - id: iter-png-3/claude-sonnet-4-6
+    harness:
+      kind: bare
+      iterateFrom: iter-png-2/claude-sonnet-4-6
+      iteration: { kind: render-png-feedback }
+    provider: anthropic
+    model: claude-sonnet-4-6
+
 tasks:
   - tier: 1

@@ -10,8 +10,50 @@ export const TaskSchema = z.object({
 });
 export type Task = z.infer<typeof TaskSchema>;
 
+/**
+ * Iteration strategy — describes how a *single* iteration step builds its
+ * feedback turn from the predecessor run's artifacts. Each iteration step
+ * is its own benchmark run (one LLM call); chains are expressed as separate
+ * matrix entries linked via `iterateFrom`, not as a count inside one entry.
+ * That way iter-1, iter-2, iter-3 are first-class runs and multiple
+ * strategies can branch off the same iter-1 without re-running it.
+ *
+ * Discriminated union so new strategies (multi-angle PNGs, cost-budget,
+ * verifier-sub-model, etc.) can be added as new variants without
+ * perturbing existing entries' fingerprints.
+ */
+const IterationStrategySchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("render-png-feedback"),
+    /** Optional override for the feedback message text. */
+    promptOverride: z.string().optional(),
+  }),
+  z.object({
+    kind: z.literal("error-text-feedback"),
+    promptOverride: z.string().optional(),
+  }),
+]);
+export type IterationStrategy = z.infer<typeof IterationStrategySchema>;
+
+/**
+ * Bare provider call. Single-shot when both `iterateFrom` and `iteration`
+ * are omitted — same fingerprint shape as pre-iteration runs.
+ *
+ * When `iterateFrom` is set, this entry is **one iteration step** that
+ * depends on a predecessor matrix entry's successful run for the same
+ * task. The harness reads the predecessor's `final.scad`/`final.png`,
+ * builds a feedback turn with `iteration`, and makes one LLM call.
+ * Each step is its own first-class benchmark run with `parentRunId`
+ * pointing back at the predecessor — so iter-1, iter-2, iter-3 are
+ * three separate runs, and multiple iteration strategies can branch
+ * from the same iter-1 without re-running it.
+ */
 const BareHarnessConfigSchema = z.object({
   kind: z.literal("bare"),
+  /** Matrix id of the predecessor (the run whose output we iterate on). */
+  iterateFrom: z.string().min(1).optional(),
+  /** Strategy for the feedback turn (required when iterateFrom is set). */
+  iteration: IterationStrategySchema.optional(),
 });
 
 /**
@@ -104,6 +146,20 @@ const FingerprintBareHarnessSchema = z.object({
   modelOptions: z.record(z.string(), z.unknown()).optional(),
   /** User-assigned cache-busting tag (see MatrixEntryBareSchema.revision). */
   revision: z.string().optional(),
+  /** Predecessor matrix id (only set on iteration steps). */
+  iterateFrom: z.string().min(1).optional(),
+  /**
+   * Iteration strategy fingerprint. Omitted for single-shot bare runs
+   * (signature-compatible with pre-iteration data). Required on
+   * iteration steps.
+   */
+  iteration: IterationStrategySchema.optional(),
+  /**
+   * Predecessor's signature, embedded so changing the parent (e.g. swapping
+   * its model) cascades to the child's signature and re-stales it. Set iff
+   * `iterateFrom` is set.
+   */
+  parentSignature: sha256Hex.optional(),
 });
 
 const FingerprintExternalAgentHarnessSchema = z.object({
@@ -144,38 +200,6 @@ const RunStatusSchema = z.enum([
 ]);
 export type RunStatus = z.infer<typeof RunStatusSchema>;
 
-/**
- * One step in an agentic harness's render-and-fix loop. The final iteration
- * of a run also serves as the run's `final.{scad,stl,png}`. For bare (single
- * shot) runs `iterations` is omitted entirely.
- */
-const IterationMetaSchema = z.object({
-  /** 1-based position within the run. */
-  index: z.number().int().positive(),
-  /** Status of this iteration on its own. */
-  status: z.enum(["success", "render_error", "no_code"]),
-  /** Free-form description (e.g. feedback the agent received before this step). */
-  note: z.string().optional(),
-  /** Render or compile error message, if any. */
-  error: z.string().optional(),
-  /** Wall-clock for this iteration only. */
-  durationMs: z.number().nonnegative(),
-  /** Tokens spent on this iteration only. */
-  tokens: z
-    .object({
-      input: z.number().int().nonnegative(),
-      output: z.number().int().nonnegative(),
-    })
-    .optional(),
-  cost_usd: z.number().nonnegative().optional(),
-  /** sha256 of the iteration's SCAD source, for dedup / change detection. */
-  scadSha256: z
-    .string()
-    .regex(/^[0-9a-f]{64}$/)
-    .optional(),
-});
-export type IterationMeta = z.infer<typeof IterationMetaSchema>;
-
 const SubagentLogSchema = z.object({
   name: z.string().min(1),
   provider: z.string().optional(),
@@ -193,7 +217,16 @@ const SubagentLogSchema = z.object({
 export type SubagentLog = z.infer<typeof SubagentLogSchema>;
 
 const RunHarnessLogSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("bare") }),
+  z.object({
+    kind: z.literal("bare"),
+    /**
+     * For iterative bare runs, mirror the iteration strategy + how many
+     * rounds actually fired. Omitted for single-shot (back-compat with
+     * pre-iteration meta.json files).
+     */
+    iteration: IterationStrategySchema.optional(),
+    iterationsRun: z.number().int().nonnegative().optional(),
+  }),
   z.object({
     kind: z.literal("external-agent"),
     agent: z.string().min(1),
@@ -232,10 +265,10 @@ export const RunMetaSchema = z.object({
   /** Free-form error detail when status is non-success. */
   error: z.string().optional(),
   /**
-   * Per-iteration history for agentic harnesses. The last iteration is the
-   * one that produced `final.{scad,stl,png}`. Bare (single-shot) runs omit
-   * this field entirely.
+   * For iteration steps: runId of the predecessor whose final.{scad,png}
+   * was fed back into this run. Omitted for single-shot bare runs and the
+   * head of an iteration chain.
    */
-  iterations: z.array(IterationMetaSchema).optional(),
+  parentRunId: z.string().min(1).optional(),
 });
 export type RunMeta = z.infer<typeof RunMetaSchema>;

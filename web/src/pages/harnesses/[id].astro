@@ -1,0 +1,288 @@
+---
+import Base from "../../layouts/Base.astro";
+import RunCard from "../../components/RunCard.astro";
+import {
+  chainDepthFor,
+  chainRootMatrixId,
+  fingerprintByMatrixId,
+  formatCost,
+  getDataset,
+  harnessGroupSlug,
+  runCostUsd,
+} from "../../lib/dataset.js";
+
+export function getStaticPaths() {
+  const ds = getDataset();
+  const tasksById = new Map(ds.tasks.map((t) => [t.task.id, t.task]));
+  const fpByMatrix = fingerprintByMatrixId(ds.runs.values());
+
+  // Group all runs by harness slug.
+  const slugs = new Set<string>();
+  for (const r of ds.runs.values()) slugs.add(harnessGroupSlug(r.meta));
+
+  return [...slugs].map((slug) => {
+    const slugRuns = [...ds.runs.values()]
+      .filter((r) => harnessGroupSlug(r.meta) === slug)
+      .sort((a, b) => (a.meta.createdAt < b.meta.createdAt ? 1 : -1));
+
+    const isIterSlug = slug.startsWith("iter-");
+
+    if (!isIterSlug) {
+      // Single-shot bare or external-agent: original layout (task × model).
+      const grid: Record<string, Record<string, string>> = {};
+      const models = new Set<string>();
+      for (const r of slugRuns) {
+        const model = r.meta.model ?? "unknown";
+        grid[r.meta.taskId] ??= {};
+        if (!(model in grid[r.meta.taskId]!)) {
+          grid[r.meta.taskId]![model] = r.meta.runId;
+        }
+        models.add(model);
+      }
+      return {
+        params: { id: slug },
+        props: {
+          slug,
+          mode: "flat" as const,
+          models: [...models].sort(),
+          tasks: [...new Set(slugRuns.map((r) => r.meta.taskId))]
+            .map((id) => tasksById.get(id))
+            .filter((t): t is NonNullable<typeof t> => !!t)
+            .sort((a, b) => a.tier - b.tier || a.id.localeCompare(b.id)),
+          grid,
+          modelSections: [],
+        },
+      };
+    }
+
+    // Iter slug: rows = task, columns = depth (0..max). Per model.
+    // Collect the chain root for each iter step + include those root bare runs
+    // so depth=0 is visible alongside iter-1..N.
+    const rootsToInclude = new Set<string>();
+    for (const r of slugRuns) {
+      rootsToInclude.add(chainRootMatrixId(r.meta.matrixId, fpByMatrix));
+    }
+    const allRuns = [
+      ...slugRuns,
+      ...[...ds.runs.values()].filter((r) =>
+        rootsToInclude.has(r.meta.matrixId),
+      ),
+    ].sort((a, b) => (a.meta.createdAt < b.meta.createdAt ? 1 : -1));
+
+    // Group runs by model. For each model: pick latest run per (task, depth).
+    const byModel = new Map<
+      string,
+      {
+        taskId: string;
+        depth: number;
+        matrixId: string;
+        runId: string;
+      }[]
+    >();
+    let maxDepth = 0;
+    const taskIdsInSlug = new Set<string>();
+    for (const r of allRuns) {
+      const model = r.meta.model ?? "unknown";
+      const depth = chainDepthFor(r.meta.matrixId, fpByMatrix);
+      maxDepth = Math.max(maxDepth, depth);
+      taskIdsInSlug.add(r.meta.taskId);
+      const list = byModel.get(model) ?? [];
+      list.push({
+        taskId: r.meta.taskId,
+        depth,
+        matrixId: r.meta.matrixId,
+        runId: r.meta.runId,
+      });
+      byModel.set(model, list);
+    }
+
+    // For each model, build (task, depth) → runId, picking newest occurrence
+    // (allRuns is newest-first so first wins).
+    const modelSections = [...byModel.entries()]
+      .map(([model, list]) => {
+        const grid: Record<string, Record<number, string>> = {};
+        for (const e of list) {
+          grid[e.taskId] ??= {};
+          if (!(e.depth in grid[e.taskId]!)) {
+            grid[e.taskId]![e.depth] = e.runId;
+          }
+        }
+        return { model, grid };
+      })
+      .sort((a, b) => a.model.localeCompare(b.model));
+
+    return {
+      params: { id: slug },
+      props: {
+        slug,
+        mode: "iter" as const,
+        depths: Array.from({ length: maxDepth + 1 }, (_, i) => i),
+        tasks: [...taskIdsInSlug]
+          .map((id) => tasksById.get(id))
+          .filter((t): t is NonNullable<typeof t> => !!t)
+          .sort((a, b) => a.tier - b.tier || a.id.localeCompare(b.id)),
+        modelSections,
+        models: [],
+        grid: {},
+      },
+    };
+  });
+}
+
+const { slug, mode, models, tasks, grid, modelSections, depths } = Astro.props;
+const ds = getDataset();
+
+let totalCost = 0;
+let runCount = 0;
+for (const r of ds.runs.values()) {
+  if (harnessGroupSlug(r.meta) !== slug) continue;
+  runCount++;
+  const c = runCostUsd(r.meta);
+  if (c !== null) totalCost += c;
+}
+
+const slugTitle = slug.startsWith("iter-")
+  ? `${slug}(${depths.length - 1} 段の chain)`
+  : slug;
+const description = slug.startsWith("iter-")
+  ? `${slug} iteration を ${modelSections.length} モデル × ${tasks.length} タスクで比較。depth-0 は親の bare run。`
+  : `harness "${slug}" を ${models.length} モデル × ${tasks.length} タスクで比較`;
+---
+
+<Base title={`${slugTitle} — vibe-openscad`} description={description}>
+  <p class="muted"><a href="/">← dashboard</a></p>
+  <h1 class="title">harness: <code>{slug}</code></h1>
+  <p class="muted small">
+    {runCount} run / {mode === "iter" ? `${modelSections.length} model` : `${models.length} model`} / {tasks.length} task / 累計 {formatCost(totalCost)}
+  </p>
+
+  {mode === "flat" && (
+    <div class="grid-wrap">
+      <table class="grid-table">
+        <thead>
+          <tr>
+            <th class="task-col">task</th>
+            {models.map((mdl) => (
+              <th>
+                <a class="model-link" href={`/models/${mdl}`}>
+                  <code>{mdl}</code>
+                </a>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {tasks.map((t) => (
+            <tr>
+              <th class="task-col">
+                <a href={`/tasks/${t.id}`}>{t.title}</a>
+                <div class="muted small">tier {t.tier}</div>
+              </th>
+              {models.map((mdl) => {
+                const runId = grid[t.id]?.[mdl];
+                const run = runId ? ds.runs.get(runId) : undefined;
+                return (
+                  <td>
+                    {run ? <RunCard run={run} tier={t.tier} /> : <div class="empty">—</div>}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+
+  {mode === "iter" && modelSections.map(({ model, grid: mGrid }) => (
+    <section class="model-section">
+      <h2 class="model-head">
+        <a href={`/models/${model}`}><code>{model}</code></a>
+      </h2>
+      <div class="grid-wrap">
+        <table class="grid-table">
+          <thead>
+            <tr>
+              <th class="task-col">task</th>
+              {depths.map((d) => (
+                <th>
+                  <span class="depth-label">
+                    {d === 0 ? "bare (root)" : `iter ${d}`}
+                  </span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {tasks.map((t) => (
+              <tr>
+                <th class="task-col">
+                  <a href={`/tasks/${t.id}`}>{t.title}</a>
+                  <div class="muted small">tier {t.tier}</div>
+                </th>
+                {depths.map((d) => {
+                  const runId = mGrid[t.id]?.[d];
+                  const run = runId ? ds.runs.get(runId) : undefined;
+                  return (
+                    <td>
+                      {run ? <RunCard run={run} tier={t.tier} /> : <div class="empty">—</div>}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  ))}
+</Base>
+
+<style>
+  .title {
+    font-family: var(--mono);
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+  .title code { color: var(--accent); }
+  .small { font-size: 12px; }
+  .grid-wrap { overflow-x: auto; margin-top: 16px; }
+  .grid-table { border-collapse: separate; border-spacing: 8px; table-layout: fixed; }
+  .grid-table th, .grid-table td { vertical-align: top; min-width: 240px; }
+  .grid-table thead th {
+    text-align: left;
+    padding: 0 4px;
+    font-weight: 500;
+    color: var(--fg-dim);
+    font-size: 12px;
+  }
+  .task-col {
+    min-width: 180px;
+    width: 180px;
+    text-align: left;
+    padding: 0 8px;
+    font-size: 14px;
+  }
+  .task-col a { color: var(--fg); }
+  .model-link code { font-size: 11px; }
+  .depth-label { font-family: var(--mono); font-size: 11px; }
+  .model-section { margin-top: 32px; }
+  .model-head {
+    font-family: var(--mono);
+    font-size: 14px;
+    margin: 0;
+    color: var(--fg-dim);
+    font-weight: 500;
+  }
+  .model-head code { color: var(--accent); }
+  .empty {
+    background: var(--bg-2);
+    border: 1px dashed var(--line);
+    border-radius: 6px;
+    padding: 24px;
+    text-align: center;
+    color: var(--fg-dim);
+    font-family: var(--mono);
+    min-height: 120px;
+  }
+</style>

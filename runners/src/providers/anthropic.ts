@@ -1,5 +1,38 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { CompletionRequest, CompletionResponse, Provider } from "./types.js";
+import type {
+  ChatMessage,
+  CompletionRequest,
+  CompletionResponse,
+  Provider,
+} from "./types.js";
+
+/** Translate our generic ChatMessage[] to Anthropic SDK message params. */
+function toAnthropicMessages(
+  messages: ChatMessage[],
+): Anthropic.MessageParam[] {
+  return messages.map((m) => {
+    if (m.role === "assistant") {
+      return { role: "assistant", content: m.content };
+    }
+    if (typeof m.content === "string") {
+      return { role: "user", content: m.content };
+    }
+    return {
+      role: "user",
+      content: m.content.map((p) => {
+        if (p.type === "text") return { type: "text", text: p.text };
+        return {
+          type: "image",
+          source: {
+            type: "base64",
+            media_type: p.mediaType,
+            data: p.data.toString("base64"),
+          },
+        };
+      }),
+    };
+  });
+}
 
 export type CreateMessage = (
   params: Anthropic.MessageCreateParamsNonStreaming,
@@ -36,10 +69,19 @@ export function createAnthropicProvider(
       const started = performance.now();
       // modelOptions are spread last so caller-provided values (e.g.
       // `thinking: {type: "adaptive"}`) override defaults.
+      const messages: Anthropic.MessageParam[] = req.messages
+        ? toAnthropicMessages(req.messages)
+        : req.prompt != null
+          ? [{ role: "user", content: req.prompt }]
+          : (() => {
+              throw new Error(
+                "anthropic provider: either prompt or messages is required",
+              );
+            })();
       const params: Anthropic.MessageCreateParamsNonStreaming = {
         model: req.model,
         max_tokens: req.maxTokens ?? DEFAULT_MAX_TOKENS,
-        messages: [{ role: "user", content: req.prompt }],
+        messages,
         ...(req.systemPrompt ? { system: req.systemPrompt } : {}),
         ...(req.modelOptions ?? {}),
       } as Anthropic.MessageCreateParamsNonStreaming;

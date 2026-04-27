@@ -12,6 +12,7 @@ import {
   summary,
 } from "./format.js";
 import { runBare } from "./harnesses/bare.js";
+import type { ParentRunContext } from "./harnesses/types.js";
 import { getOpenscadVersion } from "./env.js";
 import { type Candidate, expandMatrix, loadBenchConfig } from "./matrix.js";
 import type { MatrixEntry } from "./schema.js";
@@ -128,27 +129,25 @@ Flags:
 `);
 }
 
-async function buildFingerprint(
-  candidate: Candidate,
-  openscadVersion: string,
-): Promise<Fingerprint> {
-  const taskHash = computeTaskHash(candidate.task);
-  const promptTemplateHash = createHash("sha256")
-    .update(PROMPT_TEMPLATE_VERSION)
-    .digest("hex");
-
-  return fingerprintFor(candidate, openscadVersion, taskHash, promptTemplateHash);
-}
-
 function fingerprintFor(
   candidate: Candidate,
   openscadVersion: string,
   taskHash: string,
   promptTemplateHash: string,
+  resolveParentSignature?: (parentMatrixId: string) => string,
 ): Fingerprint {
   const entry = candidate.entry;
   if (entry.harness.kind === "bare") {
     const e = entry as BareEntry;
+    let parentSignature: string | undefined;
+    if (e.harness.iterateFrom) {
+      if (!resolveParentSignature) {
+        throw new Error(
+          `fingerprintFor: ${e.id} has iterateFrom but no parent signature resolver was provided`,
+        );
+      }
+      parentSignature = resolveParentSignature(e.harness.iterateFrom);
+    }
     return {
       schemaVersion: 1,
       taskHash,
@@ -158,6 +157,11 @@ function fingerprintFor(
         model: e.model,
         ...(e.modelOptions ? { modelOptions: e.modelOptions } : {}),
         ...(e.revision ? { revision: e.revision } : {}),
+        ...(e.harness.iterateFrom
+          ? { iterateFrom: e.harness.iterateFrom }
+          : {}),
+        ...(e.harness.iteration ? { iteration: e.harness.iteration } : {}),
+        ...(parentSignature ? { parentSignature } : {}),
       },
       openscadVersion,
       promptTemplateHash,
@@ -296,18 +300,78 @@ const PERSISTED_STATUSES: ReadonlySet<RunStatus> = new Set<RunStatus>([
   "submit_missing",
 ]);
 
+/**
+ * Locate the most recent successful run for a (task, matrixId) pair so an
+ * iteration step can read its `final.scad`/`final.png` as feedback. Returns
+ * undefined if no successful predecessor exists.
+ */
+function findLatestSuccessfulRun(
+  resultsDir: string,
+  taskId: string,
+  matrixId: string,
+): RunMeta | undefined {
+  const idx = indexResults(resultsDir);
+  const candidates = idx.all
+    .filter(
+      (m) =>
+        m.taskId === taskId &&
+        m.matrixId === matrixId &&
+        m.status === "success",
+    )
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  return candidates[0];
+}
+
+function loadParentContext(
+  resultsDir: string,
+  parent: RunMeta,
+): ParentRunContext {
+  const runDir = join(resultsDir, parent.taskId, parent.runId);
+  const scad = readFileSync(join(runDir, "final.scad"), "utf8");
+  let png: Buffer | undefined;
+  try {
+    png = readFileSync(join(runDir, "final.png"));
+  } catch {
+    // PNG is optional — strategies that need it will fall back to text.
+  }
+  return {
+    runId: parent.runId,
+    scad,
+    ...(png ? { png } : {}),
+    ...(parent.error ? { errorMessage: parent.error } : {}),
+  };
+}
+
 async function executeBareRun(
   item: PlanItem,
   cfg: BenchConfig,
   resultsDir: string,
   prune: boolean,
 ): Promise<ExecutionOutcome> {
+  void cfg;
   const entry = item.candidate.entry;
   if (entry.harness.kind !== "bare") {
-    throw new Error("only bare harness is implemented in run.ts");
+    throw new Error(
+      `harness not implemented in run.ts: ${entry.harness.kind}`,
+    );
   }
   const bareEntry = entry as BareEntry;
   const provider = providerFor(bareEntry.provider);
+
+  let parent: ParentRunContext | undefined;
+  if (entry.harness.iterateFrom) {
+    const parentMeta = findLatestSuccessfulRun(
+      resultsDir,
+      item.candidate.task.id,
+      entry.harness.iterateFrom,
+    );
+    if (!parentMeta) {
+      throw new Error(
+        `iterateFrom: no successful run found for predecessor matrixId="${entry.harness.iterateFrom}" task="${item.candidate.task.id}". Run the predecessor first.`,
+      );
+    }
+    parent = loadParentContext(resultsDir, parentMeta);
+  }
 
   const result = await runBare({
     task: item.candidate.task,
@@ -318,8 +382,12 @@ async function executeBareRun(
       ...(bareEntry.modelOptions
         ? { modelOptions: bareEntry.modelOptions }
         : {}),
+      ...(entry.harness.iteration
+        ? { iteration: entry.harness.iteration }
+        : {}),
     },
     render: (scad) => renderScad(scad),
+    ...(parent ? { parent } : {}),
   });
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -348,6 +416,7 @@ async function executeBareRun(
     createdAt: new Date().toISOString(),
     ...(getGitCommit() ? { gitCommit: getGitCommit() } : {}),
     ...(result.errorMessage ? { error: result.errorMessage } : {}),
+    ...(parent ? { parentRunId: parent.runId } : {}),
   };
 
   const persisted = PERSISTED_STATUSES.has(result.status);
@@ -514,17 +583,45 @@ async function main(): Promise<void> {
   const promptTemplateHash = createHash("sha256")
     .update(PROMPT_TEMPLATE_VERSION)
     .digest("hex");
+  // Look up parent (entry, task) pairs from the full candidate set so that
+  // filtering with --filter doesn't break parent-signature resolution.
+  const candidatesByMatrixTask = new Map<string, Candidate>();
+  for (const c of candidates) {
+    candidatesByMatrixTask.set(`${c.entry.id}::${c.task.id}`, c);
+  }
+  const visiting = new Set<string>();
   const computeFingerprint = (c: Candidate): Fingerprint => {
     const cached = fingerprintCache.get(c);
     if (cached) return cached;
-    const fp = fingerprintFor(
-      c,
-      openscadVersion,
-      computeTaskHash(c.task),
-      promptTemplateHash,
-    );
-    fingerprintCache.set(c, fp);
-    return fp;
+    const key = `${c.entry.id}::${c.task.id}`;
+    if (visiting.has(key)) {
+      throw new Error(
+        `iterateFrom cycle detected involving "${c.entry.id}" (task "${c.task.id}"). Check bench-config.yml.`,
+      );
+    }
+    visiting.add(key);
+    try {
+      const fp = fingerprintFor(
+        c,
+        openscadVersion,
+        computeTaskHash(c.task),
+        promptTemplateHash,
+        (parentMatrixId) => {
+          const parentKey = `${parentMatrixId}::${c.task.id}`;
+          const parent = candidatesByMatrixTask.get(parentKey);
+          if (!parent) {
+            throw new Error(
+              `iterateFrom resolution failed: ${c.entry.id} references unknown predecessor matrixId="${parentMatrixId}" for task "${c.task.id}". Did you forget to add it to bench-config.yml?`,
+            );
+          }
+          return computeSignature(computeFingerprint(parent));
+        },
+      );
+      fingerprintCache.set(c, fp);
+      return fp;
+    } finally {
+      visiting.delete(key);
+    }
   };
 
   const existing = indexResults(resultsDir);
@@ -662,4 +759,3 @@ if (isMain) {
 
 // silence unused-warning noise
 void canonicalJson;
-void buildFingerprint;

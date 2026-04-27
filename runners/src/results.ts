@@ -8,15 +8,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import { type IterationMeta, type RunMeta, RunMetaSchema } from "./schema.js";
-
-export interface IterationArtifacts {
-  scad: string;
-  stl?: Buffer;
-  png?: Buffer;
-  /** Free-form prose dropped to <iteration>/note.md. */
-  note?: string;
-}
+import { type RunMeta, RunMetaSchema } from "./schema.js";
 
 export interface RunArtifacts {
   prompt: string;
@@ -24,8 +16,6 @@ export interface RunArtifacts {
   finalStl?: Buffer;
   finalPng?: Buffer;
   agentLog?: string;
-  /** Optional per-iteration artifacts written to iterations/NN/. */
-  iterations?: Array<{ meta: IterationMeta; artifacts: IterationArtifacts }>;
 }
 
 export function writeRunResult(
@@ -50,26 +40,6 @@ export function writeRunResult(
   if (artifacts.agentLog) {
     writeFileSync(join(runDir, "agent-log.jsonl"), artifacts.agentLog);
   }
-  if (artifacts.iterations && artifacts.iterations.length > 0) {
-    for (const it of artifacts.iterations) {
-      writeIterationArtifacts(runDir, it.meta.index, it.artifacts);
-    }
-  }
-}
-
-/** Write iteration artifacts under `<runDir>/iterations/NN/`. */
-export function writeIterationArtifacts(
-  runDir: string,
-  index: number,
-  artifacts: IterationArtifacts,
-): void {
-  const dirName = String(index).padStart(2, "0");
-  const iterDir = join(runDir, "iterations", dirName);
-  mkdirSync(iterDir, { recursive: true });
-  writeFileSync(join(iterDir, "input.scad"), artifacts.scad);
-  if (artifacts.stl) writeFileSync(join(iterDir, "render.stl"), artifacts.stl);
-  if (artifacts.png) writeFileSync(join(iterDir, "render.png"), artifacts.png);
-  if (artifacts.note) writeFileSync(join(iterDir, "note.md"), artifacts.note);
 }
 
 export function loadRunMeta(metaPath: string): RunMeta {

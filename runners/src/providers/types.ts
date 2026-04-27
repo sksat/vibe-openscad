@@ -1,5 +1,11 @@
 export interface CompletionRequest {
-  prompt: string;
+  /** Single-shot prompt. Mutually exclusive with `messages`. */
+  prompt?: string;
+  /**
+   * Multi-turn message history (used by iterative harnesses to feed
+   * render images back to the model). Mutually exclusive with `prompt`.
+   */
+  messages?: ChatMessage[];
   model: string;
   maxTokens?: number;
   systemPrompt?: string;
@@ -14,6 +20,14 @@ export interface CompletionRequest {
    */
   modelOptions?: Record<string, unknown>;
 }
+
+export type ChatMessage =
+  | { role: "user"; content: string | ChatContentPart[] }
+  | { role: "assistant"; content: string };
+
+export type ChatContentPart =
+  | { type: "text"; text: string }
+  | { type: "image"; mediaType: "image/png" | "image/jpeg"; data: Buffer };
 
 export interface CompletionResponse {
   /** Concatenated text content from all text blocks. */

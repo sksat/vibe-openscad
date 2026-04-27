@@ -177,25 +177,80 @@ tasks:
 - **追記オンリーの `results/`**: 履歴が見えるほうがベンチマークとして価値があるため
 - **MCP を agentic 境界面に**: ハーネスを別個のシステム(claude-code の CLI 等)として外部化することで、それ自体を評価対象にできる
 
-## 世代管理(iteration history)
+## Iteration: 各 step を独立した benchmark run として扱う
 
-ハーネスがレンダリング画像をモデルに見せて修正させるループを組む場合や、bare でも複数回フィードバックを与えて改善させたい場合に備え、`RunMeta.iterations: IterationMeta[]` で各イテレーションの状態を記録する:
+レンダリング結果を見せてモデルに修正させる loop は、**1 step = 1 run** として
+扱う。chain は bench-config.yml の matrix entry を `iterateFrom` で繋いで表現
+し、harness 自体は単一の `bare` のみ。
 
-- `index`(1-based)、`status`、`durationMs`、`tokens`、`cost_usd`、`note`、`error`、`scadSha256`
-- ファイル: `results/<task>/<run>/iterations/NN/{input.scad,render.png,render.stl,note.md}`
-- 最終イテレーションの SCAD/STL/PNG は `final.*` と同じ内容になる(冗長だが「単発 viewer は final だけ見れば良い」を保つ)
-- bare の単発実行では `iterations` フィールドは省略
+```yaml
+- id: bare/claude-sonnet-4-6
+  harness: { kind: bare }
+  provider: anthropic
+  model: claude-sonnet-4-6
+- id: iter-png-1/claude-sonnet-4-6
+  harness:
+    kind: bare
+    iterateFrom: bare/claude-sonnet-4-6
+    iteration: { kind: render-png-feedback }
+  provider: anthropic
+  model: claude-sonnet-4-6
+- id: iter-png-2/claude-sonnet-4-6
+  harness:
+    kind: bare
+    iterateFrom: iter-png-1/claude-sonnet-4-6
+    iteration: { kind: render-png-feedback }
+  ...
+```
 
-これによって以下の比較が可能になる:
+各 run の `meta.parentRunId` で前段にリンクし、UI は run 詳細ページで親/子を
+表示、ダッシュボードと `/harnesses/iter-png/` で chain として束ねて見せる。
 
-- **同じモデルの 1 回目 vs 2 回目 vs 3 回目** の改善度合い
-- **bare(1-shot) vs feedback loop** の効果
-- どこで詰まるか(初手で諦める / 何度試しても直せない / 2 回目で正解 等)
+**この設計を採用した理由**:
 
-ハーネス側の実装は段階的:
+- chain の枝分かれが自然に書ける(同じ root bare から render-png-feedback と
+  error-text-feedback の 2 系列を分岐させても root を再実行不要)
+- 各 step が独立した sample なので、同じ depth の複数試行・別モデルとの depth
+  比較が普通の `samples` 軸で扱える
+- iteration 履歴を「親 run の `final.{scad,png}` を読み込む」だけで再現できる
+  ので、artifact 重複が無い
 
-1. (済)スキーマ + 書き出し関数 + Web 表示の枠
-2. (M4)`bare-iterative` または `external-agent` ハーネスが iteration を実走中に書き出す
+### iteration strategy(`iteration.kind`)
+
+`iterateFrom` を持つ entry は `iteration` フィールドに戦略を指定する。
+discriminated union で、新しい variant 追加が既存 fingerprint を壊さない:
+
+- `{ kind: render-png-feedback }` — 親の `final.png` を画像として multimodal で
+  渡し、修正したコードを要求(現在実装している唯一)
+- `{ kind: error-text-feedback }` — 画像なしで親 run のエラー文字列だけ渡す。
+  コスト圧縮・テキストのみ反復のベースライン(配線は schema にあるが、harness
+  実装は親が `success` の chain しか見ていないので未配線)
+
+将来追加するなら同 union の variant として:
+`{ kind: render-png-multi-angle, angles: [...] }`、`{ kind: evaluator-judge,
+critic_model: "..." }` 等。
+
+### stale 連鎖
+
+子 entry の fingerprint には `parentSignature`(親 entry の signature)が
+埋め込まれる。親の model・options・revision 等を変えると親 signature が変わり、
+連鎖して子 signature も変わる → `bench plan` で stale 判定される。
+`parentSignature` は optional で、単発 bare の signature は iteration 導入前と
+**byte-identical**(既存 cache を壊さない)。
+
+### 反復ステップ数を増やしたくなったら
+
+bench-config.yml に `iter-png-4/...`, `iter-png-5/...` を追記して `bench run`。
+既存の 1〜3 はキャッシュ済みなので追加分のみ走る。多角的に分岐させたければ
+`iterateFrom: bare/...` を直接指す別 strategy 系列(例 error-text-1/...)を
+追加するだけで root bare の再実行不要。
+
+### 単独成果物のレイアウト
+
+各 run dir は単発 bare と同じ:
+`results/<task>/<runId>/{meta.json, prompt.md, final.scad, final.stl, final.png, agent-log.jsonl?}`。
+chain step では `meta.parentRunId` だけ追加で入る。`iterations/NN/` のような
+入れ子ディレクトリは廃止。
 
 ## 自動評価について(将来課題)
 

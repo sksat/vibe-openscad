@@ -13,6 +13,15 @@ export function getStaticPaths() {
   const ds = getDataset();
   const tasksById = new Map(ds.tasks.map((t) => [t.task.id, t.task]));
   const repoRoot = resolve(process.cwd(), "..");
+  // Reverse index: runId → list of children that iterate from it.
+  const childrenOf = new Map<string, string[]>();
+  for (const r of ds.runs.values()) {
+    if (r.meta.parentRunId) {
+      const list = childrenOf.get(r.meta.parentRunId) ?? [];
+      list.push(r.meta.runId);
+      childrenOf.set(r.meta.parentRunId, list);
+    }
+  }
   const out = [];
   for (const [runId, run] of ds.runs.entries()) {
     const task = tasksById.get(run.meta.taskId);
@@ -26,15 +35,22 @@ export function getStaticPaths() {
       // ignore
     }
     const parameters = scad ? extractParameters(scad) : [];
+    const parentRun = run.meta.parentRunId
+      ? ds.runs.get(run.meta.parentRunId)
+      : undefined;
+    const childIds = childrenOf.get(runId) ?? [];
+    const children = childIds
+      .map((id) => ds.runs.get(id))
+      .filter((r): r is NonNullable<typeof r> => !!r);
     out.push({
       params: { id: runId },
-      props: { run, task, scad, parameters },
+      props: { run, task, scad, parameters, parentRun, children },
     });
   }
   return out;
 }
 
-const { run, task, scad, parameters } = Astro.props;
+const { run, task, scad, parameters, parentRun, children } = Astro.props;
 const m = run.meta;
 const tweakable = parameters.filter(
   (p) => p.kind === "number" || p.kind === "boolean",
@@ -187,42 +203,42 @@ const subagents =
     </section>
   )}
 
-  {run.iterations.length > 0 && (
+  {(parentRun || children.length > 0) && (
     <section>
-      <h3>iterations ({run.iterations.length})</h3>
-      <p class="muted hint">レンダリング画像を見て修正させるループの履歴。最終 iteration が <code>final.*</code> と同一です。</p>
-      <ol class="iterations">
-        {run.iterations.map((it) => {
-          const itMeta = m.iterations?.find(
-            (im) => String(im.index).padStart(2, "0") === it.dir,
-          );
-          return (
-            <li class="iter">
-              <div class="iter-head">
-                <span class="iter-idx">#{it.dir}</span>
-                {itMeta && (
-                  <span class={statusBadgeClass(itMeta.status)}>{itMeta.status}</span>
-                )}
-                {itMeta && (
-                  <span class="muted small">
-                    {(itMeta.durationMs / 1000).toFixed(1)}s
-                    {itMeta.tokens && ` · ${itMeta.tokens.input}/${itMeta.tokens.output}t`}
-                    {typeof itMeta.cost_usd === "number" &&
-                      ` · ${formatCost(itMeta.cost_usd)}`}
-                  </span>
-                )}
-              </div>
-              {it.pngUrl && (
-                <img class="iter-thumb" src={it.pngUrl} alt={`iteration ${it.dir}`} loading="lazy" />
+      <h3>iteration chain</h3>
+      <p class="muted hint">
+        各 iteration step は独立した benchmark run です。<code>parentRunId</code> で前段にリンクします。
+      </p>
+      <div class="chain">
+        {parentRun && (
+          <div class="chain-row">
+            <span class="chain-label">← parent</span>
+            <a class="chain-card" href={`/benchmark/${parentRun.meta.runId}`}>
+              {parentRun.pngUrl && (
+                <img src={parentRun.pngUrl} alt={`parent ${parentRun.meta.runId}`} loading="lazy" />
               )}
-              {itMeta?.error && <pre class="iter-error">{itMeta.error}</pre>}
-              {itMeta?.note && (
-                <p class="muted small note">{itMeta.note}</p>
-              )}
-            </li>
-          );
-        })}
-      </ol>
+              <code>{parentRun.meta.matrixId}</code>
+              <span class={statusBadgeClass(parentRun.meta.status)}>{parentRun.meta.status}</span>
+            </a>
+          </div>
+        )}
+        {children.length > 0 && (
+          <div class="chain-row">
+            <span class="chain-label">→ children ({children.length})</span>
+            <div class="chain-children">
+              {children.map((c) => (
+                <a class="chain-card" href={`/benchmark/${c.meta.runId}`}>
+                  {c.pngUrl && (
+                    <img src={c.pngUrl} alt={`child ${c.meta.runId}`} loading="lazy" />
+                  )}
+                  <code>{c.meta.matrixId}</code>
+                  <span class={statusBadgeClass(c.meta.status)}>{c.meta.status}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </section>
   )}
 
@@ -372,34 +388,41 @@ const subagents =
     white-space: pre-wrap;
     word-break: break-word;
   }
-  .iterations {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  .chain {
+    display: flex;
+    flex-direction: column;
     gap: 12px;
   }
-  .iter {
-    background: var(--bg-2);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 10px;
+  .chain-row {
     display: flex;
     flex-direction: column;
     gap: 8px;
   }
-  .iter-head {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  .iter-idx {
+  .chain-label {
     font-family: var(--mono);
-    font-weight: 600;
+    font-size: 12px;
+    color: var(--fg-dim);
   }
-  .iter-thumb {
+  .chain-children {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+  }
+  .chain-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px;
+    color: var(--fg);
+    text-decoration: none;
+    font-size: 12px;
+  }
+  .chain-card:hover { border-color: var(--accent); }
+  .chain-card img {
     width: 100%;
     background: #fff;
     border-radius: 4px;
@@ -407,17 +430,6 @@ const subagents =
     aspect-ratio: 4/3;
     object-fit: contain;
   }
-  .iter-error {
-    font-size: 11px;
-    color: var(--bad);
-    background: rgba(239, 111, 108, 0.06);
-    border: 1px solid rgba(239, 111, 108, 0.4);
-    padding: 6px 8px;
-    margin: 0;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
   .small { font-size: 11px; }
-  .note { margin: 0; }
   .hint { font-size: 13px; }
 </style>

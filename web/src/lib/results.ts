@@ -4,24 +4,12 @@ import { indexResults } from "@vibe-openscad/runners/src/results.js";
 import type { RunMeta, Task } from "@vibe-openscad/runners/src/schema.js";
 import { loadAllTasks } from "@vibe-openscad/runners/src/tasks.js";
 
-export interface LoadedIteration {
-  /** Index, padded directory name (e.g. "01"). */
-  dir: string;
-  /** URL paths into iterations/NN/ when each artifact exists. */
-  scadUrl: string;
-  pngUrl?: string;
-  stlUrl?: string;
-  noteUrl?: string;
-}
-
 export interface LoadedRun {
   meta: RunMeta;
   /** URL paths under /results/ for the static asset symlink. */
   scadUrl: string;
   pngUrl?: string;
   stlUrl?: string;
-  /** Per-iteration artifacts (parallel to meta.iterations). */
-  iterations: LoadedIteration[];
 }
 
 export interface LoadedTask {
@@ -60,26 +48,6 @@ export function loadDataset(repoRoot: string): LoadedDataset {
   for (const meta of idx.all) {
     const runDir = join(resultsDir, meta.taskId, meta.runId);
     const urlBase = `/results/${meta.taskId}/${meta.runId}`;
-    const iterations: LoadedIteration[] = [];
-    for (const it of meta.iterations ?? []) {
-      const dir = String(it.index).padStart(2, "0");
-      const iterDir = join(runDir, "iterations", dir);
-      if (!existsSync(join(iterDir, "input.scad"))) continue;
-      const itBase = `${urlBase}/iterations/${dir}`;
-      iterations.push({
-        dir,
-        scadUrl: `${itBase}/input.scad`,
-        ...(existsSync(join(iterDir, "render.png"))
-          ? { pngUrl: `${itBase}/render.png` }
-          : {}),
-        ...(existsSync(join(iterDir, "render.stl"))
-          ? { stlUrl: `${itBase}/render.stl` }
-          : {}),
-        ...(existsSync(join(iterDir, "note.md"))
-          ? { noteUrl: `${itBase}/note.md` }
-          : {}),
-      });
-    }
     const loaded: LoadedRun = {
       meta,
       scadUrl: `${urlBase}/final.scad`,
@@ -89,7 +57,6 @@ export function loadDataset(repoRoot: string): LoadedDataset {
       ...(existsSync(join(runDir, "final.stl"))
         ? { stlUrl: `${urlBase}/final.stl` }
         : {}),
-      iterations,
     };
     runs.set(meta.runId, loaded);
     const list = byTask.get(meta.taskId) ?? [];

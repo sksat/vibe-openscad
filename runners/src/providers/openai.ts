@@ -38,6 +38,14 @@ export function createOpenaiProvider(
     name: "openai",
     async complete(req: CompletionRequest): Promise<CompletionResponse> {
       const started = performance.now();
+      if (req.messages) {
+        throw new Error(
+          "openai provider: ChatMessage[] history not yet supported (iterative harnesses are Anthropic-only for now)",
+        );
+      }
+      if (req.prompt == null) {
+        throw new Error("openai provider: prompt is required");
+      }
       // modelOptions spread last so e.g. { reasoning: { effort: "high" } }
       // gets through to the API on reasoning models.
       const params: ResponseCreateParamsNonStreaming = {

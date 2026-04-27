@@ -1,10 +1,21 @@
 ---
 import Base from "../layouts/Base.astro";
 import RunCard from "../components/RunCard.astro";
+import RunChainCard from "../components/RunChainCard.astro";
 import Filters from "../components/Filters.astro";
-import { formatCost, getDataset, runCostUsd } from "../lib/dataset.js";
+import type { LoadedRun } from "../lib/results.js";
+import {
+  chainDepthFor,
+  chainRootMatrixId,
+  fingerprintByMatrixId,
+  formatCost,
+  getDataset,
+  harnessGroupSlug,
+  runCostUsd,
+} from "../lib/dataset.js";
 
 const ds = getDataset();
+const fpByMatrix = fingerprintByMatrixId(ds.runs.values());
 const totalRuns = ds.runs.size;
 const completedTasks = ds.tasks.filter((t) => t.runs.length > 0).length;
 let totalCost = 0;
@@ -32,21 +43,94 @@ for (const r of ds.runs.values()) {
 const fmtMin = (ms: number) =>
   ms < 60000 ? `${(ms / 1000).toFixed(1)}s` : `${(ms / 60000).toFixed(1)}m`;
 
-/** Keep only the newest run per matrixId. Inputs already sorted newest-first. */
-function dedupeByMatrix<T extends { meta: { matrixId: string } }>(runs: T[]): T[] {
-  const seen = new Set<string>();
-  const out: T[] = [];
-  for (const r of runs) {
-    if (seen.has(r.meta.matrixId)) continue;
-    seen.add(r.meta.matrixId);
-    out.push(r);
+/**
+ * For each task, fold the run list into one tile per (model, harness group).
+ * Single-shot bare and external-agent tiles render as RunCard. Iter chains
+ * (`iter-png` etc.) render as RunChainCard, with the root bare prepended at
+ * depth 0 so before/after is visible in one strip.
+ */
+type TaskTile =
+  | { kind: "single"; key: string; run: LoadedRun }
+  | {
+      kind: "chain";
+      key: string;
+      groupSlug: string;
+      steps: Array<{ run: LoadedRun; depth: number }>;
+    };
+
+function buildTileRow(taskRuns: LoadedRun[]): {
+  tiles: TaskTile[];
+  older: number;
+} {
+  // taskRuns is already newest-first within (matrixId).
+  // 1) Pick the latest run per matrixId.
+  const latestByMatrix = new Map<string, LoadedRun>();
+  for (const r of taskRuns) {
+    if (!latestByMatrix.has(r.meta.matrixId)) {
+      latestByMatrix.set(r.meta.matrixId, r);
+    }
   }
-  return out;
+  const older = taskRuns.length - latestByMatrix.size;
+
+  // 2) Bucket by (model, groupSlug). Iter buckets gather the chain.
+  const buckets = new Map<
+    string,
+    { groupSlug: string; runs: LoadedRun[] }
+  >();
+  for (const r of latestByMatrix.values()) {
+    const groupSlug = harnessGroupSlug(r.meta);
+    const model = r.meta.model ?? "unknown";
+    const key = `${model}::${groupSlug}`;
+    const b = buckets.get(key) ?? { groupSlug, runs: [] };
+    b.runs.push(r);
+    buckets.set(key, b);
+  }
+
+  const tiles: TaskTile[] = [];
+  for (const [key, { groupSlug, runs }] of buckets.entries()) {
+    if (!groupSlug.startsWith("iter-")) {
+      // single-shot tile per matrixId
+      for (const r of runs) {
+        tiles.push({ kind: "single", key: `${key}::${r.meta.matrixId}`, run: r });
+      }
+      continue;
+    }
+    // Iter bucket: also surface the chain root bare from the same task,
+    // even though it lives in the "bare" bucket.
+    const rootIds = new Set(
+      runs.map((r) => chainRootMatrixId(r.meta.matrixId, fpByMatrix)),
+    );
+    const rootRuns: LoadedRun[] = [];
+    for (const rootMatrixId of rootIds) {
+      const root = latestByMatrix.get(rootMatrixId);
+      if (root) rootRuns.push(root);
+    }
+    const stepRuns = [...rootRuns, ...runs];
+    const seen = new Set<string>();
+    const dedup: LoadedRun[] = [];
+    for (const r of stepRuns) {
+      if (seen.has(r.meta.matrixId)) continue;
+      seen.add(r.meta.matrixId);
+      dedup.push(r);
+    }
+    const steps = dedup
+      .map((r) => ({ run: r, depth: chainDepthFor(r.meta.matrixId, fpByMatrix) }))
+      .sort((a, b) => a.depth - b.depth);
+    tiles.push({ kind: "chain", key, groupSlug, steps });
+  }
+
+  // Sort: chain tiles after single tiles, otherwise stable on insertion.
+  tiles.sort((a, b) => {
+    const ka = a.kind === "chain" ? 1 : 0;
+    const kb = b.kind === "chain" ? 1 : 0;
+    return ka - kb;
+  });
+  return { tiles, older };
 }
 
 const taskRows = ds.tasks.map((t) => {
-  const latest = dedupeByMatrix(t.runs);
-  return { task: t.task, latest, older: t.runs.length - latest.length };
+  const { tiles, older } = buildTileRow(t.runs);
+  return { task: t.task, tiles, older };
 });
 ---
 
@@ -86,7 +170,7 @@ const taskRows = ds.tasks.map((t) => {
   )}
 
   <div class="task-list">
-    {taskRows.map(({ task, latest, older }) => (
+    {taskRows.map(({ task, tiles, older }) => (
       <section class="task-row" data-tier={String(task.tier)}>
         <header>
           <h2>
@@ -98,11 +182,21 @@ const taskRows = ds.tasks.map((t) => {
             )}
           </h2>
         </header>
-        {latest.length === 0 ? (
+        {tiles.length === 0 ? (
           <p class="muted empty">まだ run がありません。<code>pnpm bench run</code> で実行してください。</p>
         ) : (
           <div class="grid">
-            {latest.map((run) => <RunCard run={run} tier={task.tier} />)}
+            {tiles.map((tile) =>
+              tile.kind === "single" ? (
+                <RunCard run={tile.run} tier={task.tier} />
+              ) : (
+                <RunChainCard
+                  steps={tile.steps}
+                  groupSlug={tile.groupSlug}
+                  tier={task.tier}
+                />
+              ),
+            )}
           </div>
         )}
       </section>

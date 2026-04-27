@@ -41,6 +41,12 @@ export interface MatrixSegment {
   title?: string;
   /** Vendor identifier — used for theme tinting. */
   vendor?: "claude" | "gemini" | "openai";
+  /**
+   * Override the default href derived from `kind` + `label`. Used when the
+   * harness label and the harness group slug differ — e.g., a label of
+   * `iter-png-2` linking back to `/harnesses/iter-png/`.
+   */
+  href?: string;
 }
 
 const HARNESS_NAMES = new Set([
@@ -155,10 +161,90 @@ export function runBadges(meta: RunMeta): MatrixSegment[] {
   const out: MatrixSegment[] = [];
   if (meta.model) out.push(...parseModelLabel(meta.model));
   const headPart = meta.matrixId.split("/")[0];
-  if (headPart && HARNESS_NAMES.has(headPart)) {
+  const groupSlug = harnessGroupSlug(meta);
+  // For iter runs the head (`iter-png-2`) is the visible label and the group
+  // slug (`iter-png`) drives the href so all chain steps land on one page.
+  if (headPart && headPart !== groupSlug) {
+    out.push({
+      kind: "harness",
+      label: headPart,
+      href: `/harnesses/${groupSlug}`,
+    });
+  } else if (headPart && HARNESS_NAMES.has(headPart)) {
     out.push({ kind: "harness", label: headPart });
   } else {
     out.push({ kind: "harness", label: meta.harness.kind });
+  }
+  return out;
+}
+
+/**
+ * Group runs into harness "buckets" for the /harnesses/[id]/ index.
+ *
+ *   single-shot bare                 → "bare"
+ *   bare iteration step              → matrixId 先頭セグメントから末尾の "-N" を
+ *                                      削った文字列(`iter-png-2` → `iter-png`)
+ *   external-agent                   → "external-agent"
+ *
+ * Slug は URL に入る都合で安全文字のみで構成される値を返す。
+ */
+export function harnessGroupSlug(meta: RunMeta): string {
+  if (meta.harness.kind === "external-agent") return "external-agent";
+  if (meta.harness.kind !== "bare") return meta.harness.kind;
+  // bare: 単発 vs iter step
+  const fpHarness = meta.fingerprint.harness;
+  const isIter = fpHarness.kind === "bare" && !!fpHarness.iteration;
+  if (!isIter) return "bare";
+  const prefix = meta.matrixId.split("/")[0] ?? "";
+  return prefix.replace(/-\d+$/, "");
+}
+
+/**
+ * Walk meta.fingerprint.harness.iterateFrom along the chain backwards using
+ * a matrixId → fingerprint lookup. Returns 0 for chain heads / single-shot.
+ */
+export function chainDepthFor(
+  matrixId: string,
+  fpByMatrixId: Map<string, RunMeta["fingerprint"]>,
+): number {
+  const seen = new Set<string>();
+  let depth = 0;
+  let cur: string | undefined = matrixId;
+  while (cur && !seen.has(cur)) {
+    seen.add(cur);
+    const fp = fpByMatrixId.get(cur);
+    if (!fp || fp.harness.kind !== "bare" || !fp.harness.iterateFrom) break;
+    depth += 1;
+    cur = fp.harness.iterateFrom;
+  }
+  return depth;
+}
+
+/** Walk back to the chain root matrixId (returns input for non-iter inputs). */
+export function chainRootMatrixId(
+  matrixId: string,
+  fpByMatrixId: Map<string, RunMeta["fingerprint"]>,
+): string {
+  const seen = new Set<string>();
+  let cur = matrixId;
+  while (!seen.has(cur)) {
+    seen.add(cur);
+    const fp = fpByMatrixId.get(cur);
+    if (!fp || fp.harness.kind !== "bare" || !fp.harness.iterateFrom) {
+      return cur;
+    }
+    cur = fp.harness.iterateFrom;
+  }
+  return cur;
+}
+
+/** Build matrixId → first-seen fingerprint map from a runs collection. */
+export function fingerprintByMatrixId(
+  runs: Iterable<{ meta: RunMeta }>,
+): Map<string, RunMeta["fingerprint"]> {
+  const out = new Map<string, RunMeta["fingerprint"]>();
+  for (const r of runs) {
+    if (!out.has(r.meta.matrixId)) out.set(r.meta.matrixId, r.meta.fingerprint);
   }
   return out;
 }

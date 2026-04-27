@@ -88,51 +88,27 @@ describe("writeRunResult", () => {
   });
 });
 
-describe("writeRunResult with iterations", () => {
-  it("writes iteration artifacts to iterations/NN/", () => {
+describe("writeRunResult with parentRunId", () => {
+  it("round-trips parentRunId through meta.json", () => {
     const meta: RunMeta = {
       ...baseMeta,
-      iterations: [
-        { index: 1, status: "render_error", durationMs: 100, error: "boom" },
-        { index: 2, status: "success", durationMs: 200 },
-      ],
+      parentRunId: "bare-claude-sonnet-4-6-abcdef-2026-04-01T00-00-00-000Z",
     };
-    writeRunResult(dir, meta, {
-      prompt: "p",
-      finalScad: "cube(); // v2",
-      iterations: [
-        {
-          meta: { index: 1, status: "render_error", durationMs: 100, error: "boom" },
-          artifacts: { scad: "cube(); // broken", note: "first attempt" },
-        },
-        {
-          meta: { index: 2, status: "success", durationMs: 200 },
-          artifacts: {
-            scad: "cube(); // v2",
-            stl: Buffer.from("STL"),
-            png: Buffer.from("PNG"),
-            note: "fixed via feedback",
-          },
-        },
-      ],
-    });
-    const runDir = join(dir, meta.taskId, meta.runId);
-    expect(existsSync(join(runDir, "iterations", "01", "input.scad"))).toBe(true);
-    expect(existsSync(join(runDir, "iterations", "01", "note.md"))).toBe(true);
-    expect(existsSync(join(runDir, "iterations", "02", "render.stl"))).toBe(true);
-    expect(existsSync(join(runDir, "iterations", "02", "render.png"))).toBe(true);
-    // round-trip via loadRunMeta
-    const loaded = loadRunMeta(join(runDir, "meta.json"));
-    expect(loaded.iterations?.length).toBe(2);
-    expect(loaded.iterations?.[1]?.status).toBe("success");
+    writeRunResult(dir, meta, { prompt: "p", finalScad: "s" });
+    const loaded = loadRunMeta(
+      join(dir, meta.taskId, meta.runId, "meta.json"),
+    );
+    expect(loaded.parentRunId).toBe(
+      "bare-claude-sonnet-4-6-abcdef-2026-04-01T00-00-00-000Z",
+    );
   });
 
-  it("works for bare runs without iterations (omits the field)", () => {
+  it("omits parentRunId for single-shot runs", () => {
     writeRunResult(dir, baseMeta, { prompt: "p", finalScad: "s" });
     const loaded = loadRunMeta(
       join(dir, baseMeta.taskId, baseMeta.runId, "meta.json"),
     );
-    expect(loaded.iterations).toBeUndefined();
+    expect(loaded.parentRunId).toBeUndefined();
   });
 });
 

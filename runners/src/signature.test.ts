@@ -140,6 +140,46 @@ describe("computeSignature", () => {
   });
 });
 
+describe("iteration parent-signature cascade", () => {
+  const child = (parentSignature?: string): Fingerprint => ({
+    schemaVersion: 1,
+    taskHash: baseBare.taskHash,
+    harness: {
+      kind: "bare",
+      provider: "anthropic",
+      model: "claude-sonnet-4-6",
+      iterateFrom: "bare/claude-sonnet-4-6",
+      iteration: { kind: "render-png-feedback" },
+      ...(parentSignature ? { parentSignature } : {}),
+    },
+    openscadVersion: baseBare.openscadVersion,
+    promptTemplateHash: baseBare.promptTemplateHash,
+  });
+
+  it("changes when parentSignature changes (cascade)", () => {
+    const a = computeSignature(child("a".repeat(64)));
+    const b = computeSignature(child("b".repeat(64)));
+    expect(a).not.toBe(b);
+  });
+
+  it("single-shot bare omitting iterateFrom is signature-compatible with pre-iteration data", () => {
+    // baseBare has no iterateFrom / iteration / parentSignature → must hash
+    // identically to a literal pre-iteration fingerprint.
+    const preIteration: Fingerprint = {
+      schemaVersion: 1,
+      taskHash: baseBare.taskHash,
+      harness: {
+        kind: "bare",
+        provider: "anthropic",
+        model: "claude-opus-4-7",
+      },
+      openscadVersion: baseBare.openscadVersion,
+      promptTemplateHash: baseBare.promptTemplateHash,
+    };
+    expect(computeSignature(baseBare)).toBe(computeSignature(preIteration));
+  });
+});
+
 describe("shortSignature", () => {
   it("returns first 12 chars of signature", () => {
     const sig = "0".repeat(60) + "abcdef";

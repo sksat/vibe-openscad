@@ -24,9 +24,8 @@ const cost = runCostUsd(m);
 const segments = runBadges(m);
 ---
 
-<a
+<article
   class="run-card"
-  href={`/benchmark/${m.runId}`}
   data-model={m.model ?? ""}
   data-models={dataModels}
   data-provider={m.provider ?? ""}
@@ -36,26 +35,47 @@ const segments = runBadges(m);
   data-task={m.taskId}
   data-tier={tier !== undefined ? String(tier) : ""}
 >
-  {run.pngUrl ? (
-    <div class="thumb"><img src={run.pngUrl} alt={`render of ${m.taskId} by ${m.matrixId}`} loading="lazy" /></div>
-  ) : (
-    <div class="thumb empty"><span>no render</span></div>
-  )}
+  <a class="thumb-link" href={`/benchmark/${m.runId}`} aria-label={`open run ${m.runId}`}>
+    {run.pngUrl ? (
+      <div class="thumb"><img src={run.pngUrl} alt={`render of ${m.taskId} by ${m.matrixId}`} loading="lazy" /></div>
+    ) : (
+      <div class="thumb empty"><span>no render</span></div>
+    )}
+  </a>
   <div class="meta">
     <div class="row matrix-row">
       <div class="matrix-badges" title={m.matrixId}>
-        {segments.map((s) => (
-          <span
-            class={`pill pill-${s.kind}`}
-            data-vendor={s.vendor ?? ""}
-            title={s.title ?? s.label}
-          >
-            {s.kind === "vendor" && s.vendor && <VendorIcon vendor={s.vendor} />}
-            {s.label}
-          </span>
-        ))}
+        {segments.map((s) => {
+          const inner = (
+            <Fragment>
+              {s.kind === "vendor" && s.vendor && <VendorIcon vendor={s.vendor} />}
+              {s.label}
+            </Fragment>
+          );
+          let href: string | null = null;
+          if (s.href) href = s.href;
+          else if (s.kind === "model" && m.model) href = `/models/${m.model}`;
+          else if (s.kind === "harness") href = `/harnesses/${s.label}`;
+          if (href) {
+            return (
+              <a
+                class={`pill pill-${s.kind}`}
+                data-vendor={s.vendor ?? ""}
+                title={s.title ?? s.label}
+                href={href}
+              >{inner}</a>
+            );
+          }
+          return (
+            <span
+              class={`pill pill-${s.kind}`}
+              data-vendor={s.vendor ?? ""}
+              title={s.title ?? s.label}
+            >{inner}</span>
+          );
+        })}
       </div>
-      <span class={statusBadgeClass(m.status)}>{m.status}</span>
+      <a class={`${statusBadgeClass(m.status)} status-link`} href={`/benchmark/${m.runId}`}>{m.status}</a>
     </div>
     {showTask && <div class="task muted">{m.taskId}</div>}
     <div class="row sub muted">
@@ -71,7 +91,7 @@ const segments = runBadges(m);
       </div>
     )}
   </div>
-</a>
+</article>
 
 <style>
   .run-card {
@@ -87,8 +107,13 @@ const segments = runBadges(m);
   .run-card:hover {
     transform: translateY(-1px);
     border-color: var(--accent);
-    text-decoration: none;
   }
+  .thumb-link {
+    display: block;
+    color: inherit;
+  }
+  .thumb-link:hover { text-decoration: none; }
+  .status-link { text-decoration: none; }
   .thumb {
     aspect-ratio: 4 / 3;
     background: #fff;
