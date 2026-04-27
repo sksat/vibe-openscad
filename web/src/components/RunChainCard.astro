@@ -77,14 +77,42 @@ const bareAriaLabel =
   data-task={m.taskId}
   data-tier={tier !== undefined ? String(tier) : ""}
 >
-  <a class="bare-link" href={bareHref} aria-label={bareAriaLabel} data-status={m.status}>
-    {bare.pngUrl ? (
-      <div class="bare-thumb"><img src={bare.pngUrl} alt={`bare render of ${m.taskId}`} loading="lazy" /></div>
-    ) : (
-      <div class="bare-thumb empty"><span>no render</span></div>
-    )}
-    <span class="bare-label">bare</span>
-  </a>
+  <div class="bare-wrap" data-status={m.status}>
+    <a class="bare-link" href={bareHref} aria-label={bareAriaLabel}>
+      {bare.pngUrl ? (
+        <div class="bare-thumb"><img src={bare.pngUrl} alt={`bare render of ${m.taskId}`} loading="lazy" /></div>
+      ) : (
+        <div class="bare-thumb empty"><span>no render</span></div>
+      )}
+      <span class="bare-label">bare</span>
+    </a>
+    <div class="bare-overlay" title={m.matrixId}>
+      {segments.map((s) => {
+        const inner = (
+          <Fragment>
+            {s.kind === "vendor" && s.vendor && <VendorIcon vendor={s.vendor} />}
+            {s.label}
+          </Fragment>
+        );
+        let href: string | null = null;
+        if (s.href) href = s.href;
+        else if (s.kind === "model" && m.model) href = `/models/${m.model}`;
+        else if (s.kind === "harness") href = `/harnesses/${s.label}`;
+        if (href) {
+          return (
+            <a class={`pill pill-${s.kind}`} data-vendor={s.vendor ?? ""} title={s.title ?? s.label} href={href}>
+              {inner}
+            </a>
+          );
+        }
+        return (
+          <span class={`pill pill-${s.kind}`} data-vendor={s.vendor ?? ""} title={s.title ?? s.label}>
+            {inner}
+          </span>
+        );
+      })}
+    </div>
+  </div>
 
   {strategies.map((s) => {
     const tailMeta = s.tail.meta;
@@ -123,34 +151,6 @@ const bareAriaLabel =
   })}
 
   <div class="meta">
-    <div class="row matrix-row">
-      <div class="matrix-badges" title={m.matrixId}>
-        {segments.map((s) => {
-          const inner = (
-            <Fragment>
-              {s.kind === "vendor" && s.vendor && <VendorIcon vendor={s.vendor} />}
-              {s.label}
-            </Fragment>
-          );
-          let href: string | null = null;
-          if (s.href) href = s.href;
-          else if (s.kind === "model" && m.model) href = `/models/${m.model}`;
-          else if (s.kind === "harness") href = `/harnesses/${s.label}`;
-          if (href) {
-            return (
-              <a class={`pill pill-${s.kind}`} data-vendor={s.vendor ?? ""} title={s.title ?? s.label} href={href}>
-                {inner}
-              </a>
-            );
-          }
-          return (
-            <span class={`pill pill-${s.kind}`} data-vendor={s.vendor ?? ""} title={s.title ?? s.label}>
-              {inner}
-            </span>
-          );
-        })}
-      </div>
-    </div>
     <div class="row sub muted">
       <span>{stepCount} step</span>
       <span>{(totalMs / 1000).toFixed(1)}s</span>
@@ -169,8 +169,10 @@ const bareAriaLabel =
     border-radius: 8px;
     overflow: hidden;
   }
-  .bare-link {
+  .bare-wrap {
     position: relative;
+  }
+  .bare-link {
     display: block;
     color: inherit;
     text-decoration: none;
@@ -203,10 +205,25 @@ const bareAriaLabel =
     font-size: 11px;
     padding: 1px 7px;
     border-radius: 3px;
+    pointer-events: none;
   }
-  .bare-link[data-status="render_error"]::after,
-  .bare-link[data-status="no_code"]::after,
-  .bare-link[data-status="submit_missing"]::after {
+  .bare-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 6px 8px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.65) 60%, rgba(0, 0, 0, 0));
+    /* gradient itself doesn't capture clicks; pills inside re-enable. */
+    pointer-events: none;
+  }
+  .bare-overlay > * { pointer-events: auto; }
+  .bare-wrap[data-status="render_error"]::after,
+  .bare-wrap[data-status="no_code"]::after,
+  .bare-wrap[data-status="submit_missing"]::after {
     content: "";
     position: absolute;
     inset: 0;
