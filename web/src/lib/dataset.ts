@@ -250,14 +250,22 @@ function defaultThinkingFor(
   provider: string | null | undefined,
   model: string | null | undefined,
 ): string | null {
-  if (provider !== "anthropic" || !model) return null;
+  if (!model) return null;
   const base = modelBaseName(model);
-  // Adaptive thinking is the default on Opus 4.6+/Sonnet 4.6+.
-  if (/^claude-opus-4-([6-9]|\d{2,})$/.test(base)) return "adaptive";
-  if (/^claude-sonnet-4-([6-9]|\d{2,})$/.test(base)) return "adaptive";
-  // Older Anthropic supports thinking via `enabled+budget_tokens` only when
-  // explicitly opted in. Default behaviour without `thinking` is "off".
-  if (/^claude-(opus|sonnet|haiku)-/.test(base)) return "off";
+  if (provider === "anthropic") {
+    // Adaptive thinking is the default on Opus 4.6+/Sonnet 4.6+.
+    if (/^claude-opus-4-([6-9]|\d{2,})$/.test(base)) return "adaptive";
+    if (/^claude-sonnet-4-([6-9]|\d{2,})$/.test(base)) return "adaptive";
+    // Older Anthropic supports thinking via `enabled+budget_tokens` only when
+    // explicitly opted in. Default behaviour without `thinking` is "off".
+    if (/^claude-(opus|sonnet|haiku)-/.test(base)) return "off";
+    return null;
+  }
+  if (provider === "google") {
+    // Gemini 2.5 and 3.x default to `thinkingBudget: -1` (dynamic).
+    if (/^gemini-(2\.5|3)/.test(base)) return "dynamic";
+    return null;
+  }
   return null;
 }
 
@@ -273,26 +281,49 @@ function defaultThinkingFor(
 export function thinkingInfoFor(
   meta: RunMeta,
 ): { value: string; isDefault: boolean } | null {
-  if (meta.provider !== "anthropic") return null;
   const fpHarness = meta.fingerprint.harness;
   if (fpHarness.kind !== "bare") return null;
   const opts = (fpHarness.modelOptions ?? {}) as Record<string, unknown>;
-  const explicit =
-    typeof opts["thinking"] === "object" && opts["thinking"] !== null
-      ? (opts["thinking"] as Record<string, unknown>)
-      : undefined;
-  if (explicit) {
-    const t = explicit["type"];
-    if (t === "disabled") return { value: "off", isDefault: false };
-    if (t === "adaptive") return { value: "adaptive", isDefault: false };
-    if (t === "enabled") {
-      const n = explicit["budget_tokens"];
-      const tag = typeof n === "number" ? `enabled-${n}` : "enabled";
-      return { value: tag, isDefault: false };
+  if (meta.provider === "anthropic") {
+    const explicit =
+      typeof opts["thinking"] === "object" && opts["thinking"] !== null
+        ? (opts["thinking"] as Record<string, unknown>)
+        : undefined;
+    if (explicit) {
+      const t = explicit["type"];
+      if (t === "disabled") return { value: "off", isDefault: false };
+      if (t === "adaptive") return { value: "adaptive", isDefault: false };
+      if (t === "enabled") {
+        const n = explicit["budget_tokens"];
+        const tag = typeof n === "number" ? `enabled-${n}` : "enabled";
+        return { value: tag, isDefault: false };
+      }
     }
+    const def = defaultThinkingFor(meta.provider, meta.model);
+    return def ? { value: def, isDefault: true } : null;
   }
-  const def = defaultThinkingFor(meta.provider, meta.model);
-  return def ? { value: def, isDefault: true } : null;
+  if (meta.provider === "google") {
+    const config =
+      typeof opts["config"] === "object" && opts["config"] !== null
+        ? (opts["config"] as Record<string, unknown>)
+        : undefined;
+    const tConfig =
+      config && typeof config["thinkingConfig"] === "object" &&
+      config["thinkingConfig"] !== null
+        ? (config["thinkingConfig"] as Record<string, unknown>)
+        : undefined;
+    if (tConfig && tConfig["thinkingBudget"] !== undefined) {
+      const b = tConfig["thinkingBudget"];
+      if (b === 0) return { value: "off", isDefault: false };
+      if (b === -1) return { value: "dynamic", isDefault: false };
+      if (typeof b === "number") {
+        return { value: `budget-${b}`, isDefault: false };
+      }
+    }
+    const def = defaultThinkingFor(meta.provider, meta.model);
+    return def ? { value: def, isDefault: true } : null;
+  }
+  return null;
 }
 
 /**

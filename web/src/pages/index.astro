@@ -102,7 +102,7 @@ function effortLabelsForTask(latestByMatrix: Map<string, LoadedRun>): string[] {
   return [...set].sort(compareEffortLabel);
 }
 
-const THINKING_ORDER = ["off", "adaptive"];
+const THINKING_ORDER = ["off", "adaptive", "dynamic"];
 function compareThinkingLabel(a: string, b: string): number {
   const ai = THINKING_ORDER.indexOf(a);
   const bi = THINKING_ORDER.indexOf(b);

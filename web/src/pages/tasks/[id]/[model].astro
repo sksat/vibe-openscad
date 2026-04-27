@@ -149,7 +149,7 @@ export function getStaticPaths() {
   }
 
   // Per task, the union of thinking labels across models.
-  const THINKING_ORDER = ["off", "adaptive"];
+  const THINKING_ORDER = ["off", "adaptive", "dynamic"];
   const compareThinkingLabel = (a: string, b: string): number => {
     const ai = THINKING_ORDER.indexOf(a);
     const bi = THINKING_ORDER.indexOf(b);

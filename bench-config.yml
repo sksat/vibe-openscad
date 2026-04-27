@@ -79,6 +79,14 @@ matrix:
     harness: { kind: bare }
     provider: google
     model: gemini-3.1-pro-preview
+  - id: bare-think-off/gemini-3.1-pro
+    harness: { kind: bare }
+    provider: google
+    model: gemini-3.1-pro-preview
+    modelOptions:
+      config:
+        thinkingConfig:
+          thinkingBudget: 0
   - id: bare/gemini-3-flash
     harness: { kind: bare }
     provider: google

@@ -490,11 +490,58 @@ describe("thinkingInfoFor", () => {
     ).toBeNull();
   });
 
-  it("returns null for Gemini (different thinking-budget axis, not modeled here)", () => {
+  it("returns dynamic default for Gemini 3.x / 2.5 models", () => {
     expect(
       thinkingInfoFor(
         makeBare({ provider: "google", model: "gemini-3.1-pro-preview" }),
       ),
-    ).toBeNull();
+    ).toEqual({ value: "dynamic", isDefault: true });
+    expect(
+      thinkingInfoFor(
+        makeBare({ provider: "google", model: "gemini-2.5-flash" }),
+      ),
+    ).toEqual({ value: "dynamic", isDefault: true });
+  });
+
+  it("returns 'off' when Gemini thinkingBudget=0", () => {
+    expect(
+      thinkingInfoFor(
+        makeBare({
+          provider: "google",
+          model: "gemini-3.1-pro-preview",
+          modelOptions: {
+            config: { thinkingConfig: { thinkingBudget: 0 } },
+          },
+        }),
+      ),
+    ).toEqual({ value: "off", isDefault: false });
+  });
+
+  it("returns budget-<N> when Gemini thinkingBudget is a positive number", () => {
+    expect(
+      thinkingInfoFor(
+        makeBare({
+          provider: "google",
+          model: "gemini-2.5-pro",
+          modelOptions: {
+            config: { thinkingConfig: { thinkingBudget: 4096 } },
+          },
+        }),
+      ),
+    ).toEqual({ value: "budget-4096", isDefault: false });
+  });
+
+  it("returns dynamic (explicit) when Gemini thinkingBudget=-1", () => {
+    expect(
+      thinkingInfoFor(
+        makeBare({
+          provider: "google",
+          model: "gemini-2.5-pro",
+          modelOptions: {
+            config: { thinkingConfig: { thinkingBudget: -1 } },
+          },
+        }),
+      ),
+    ).toEqual({ value: "dynamic", isDefault: false });
   });
 });
