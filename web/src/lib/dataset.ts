@@ -161,14 +161,16 @@ export function runBadges(meta: RunMeta): MatrixSegment[] {
   const out: MatrixSegment[] = [];
   if (meta.model) out.push(...parseModelLabel(meta.model));
   const headPart = meta.matrixId.split("/")[0];
-  const groupSlug = harnessGroupSlug(meta);
-  // For iter runs the head (`iter-png-2`) is the visible label and the group
-  // slug (`iter-png`) drives the href so all chain steps land on one page.
-  if (headPart && headPart !== groupSlug) {
+  const fpHarness = meta.fingerprint.harness;
+  const isIter = fpHarness.kind === "bare" && !!fpHarness.iteration;
+  if (isIter && headPart) {
+    // For iter runs the head (`iter-png-2`) is the visible label and the
+    // group slug (`iter-png`) drives the href so all chain steps land on one
+    // page.
     out.push({
       kind: "harness",
       label: headPart,
-      href: `/harnesses/${groupSlug}`,
+      href: `/harnesses/${harnessGroupSlug(meta)}`,
     });
   } else if (headPart && HARNESS_NAMES.has(headPart)) {
     out.push({ kind: "harness", label: headPart });
