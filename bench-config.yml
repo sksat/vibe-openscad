@@ -65,11 +65,8 @@ matrix:
     provider: anthropic
     model: claude-opus-4-5-20251101
     modelOptions: { output_config: { effort: low } }
-  - id: bare-max/claude-opus-4-5
-    harness: { kind: bare }
-    provider: anthropic
-    model: claude-opus-4-5-20251101
-    modelOptions: { output_config: { effort: max } }
+  # NOTE: max effort は Opus 4.6 以降のみ (4.5 は high が最高)。xhigh は
+  # さらに 4.7 のみ。bare-max / bare-xhigh は Opus 4.5 では API が拒絶する。
   - id: bare/claude-opus-4-1
     harness: { kind: bare }
     provider: anthropic

@@ -57,7 +57,11 @@ export interface OpenaiProviderDeps {
   apiKey?: string;
 }
 
-const DEFAULT_MAX_TOKENS = 16384;
+// reasoning effort=high の o-series / gpt-5 family はサンプリングだけでなく
+// 内部の reasoning tokens も output 上限に算入されるため、16k だと mug
+// 等の中等課題で incomplete:max_output_tokens に当たる。32k に上げて
+// 余裕を持たせる(billing は実消費分のみ)。
+const DEFAULT_MAX_TOKENS = 32768;
 
 export function createOpenaiProvider(
   deps: OpenaiProviderDeps = {},

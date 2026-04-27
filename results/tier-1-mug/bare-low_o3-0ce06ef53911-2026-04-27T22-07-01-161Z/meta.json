@@ -1,0 +1,38 @@
+{
+  "runId": "bare-low_o3-0ce06ef53911-2026-04-27T22-07-01-161Z",
+  "taskId": "tier-1-mug",
+  "matrixId": "bare-low/o3",
+  "signature": "0ce06ef539119ebdc469942f071b51ac4b3f3ae4a441e3ddecbd666b8f9827b5",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "883b512feb40f76c3fdcb332c7c513c491c27c8511f65b90fecbad6b6c197cd5",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "o3-2025-04-16",
+      "modelOptions": {
+        "reasoning": {
+          "effort": "low"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "o3-2025-04-16",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 32063
+  },
+  "tokens": {
+    "input": 168,
+    "output": 1918
+  },
+  "cost_usd": 0.01568,
+  "createdAt": "2026-04-27T22:07:01.161Z",
+  "gitCommit": "7b4e701995ea6de8526144fd4ba6d063eb2f115f"
+}
