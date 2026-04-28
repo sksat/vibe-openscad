@@ -68,8 +68,8 @@ const lines = scad.split("\n").length;
 <style>
   .bare-section header {
     display: flex;
-    align-items: baseline;
-    gap: 12px;
+    flex-direction: column;
+    gap: 4px;
     margin-bottom: 8px;
   }
   .bare-section h2 {
@@ -77,7 +77,7 @@ const lines = scad.split("\n").length;
     font-size: 15px;
     margin: 0;
   }
-  .runlink { font-size: 12px; margin-left: auto; }
+  .runlink { font-size: 12px; }
 
   .bare-body {
     display: grid;
@@ -169,16 +169,48 @@ const lines = scad.split("\n").length;
     display: flex;
     flex-direction: column;
     min-width: 0;
+    /* container query 単位を SCAD col の幅基準にする。container-type を
+       grid 親 (.bare-body) に置くと sibling col の aspect-ratio が
+       崩れる Chromium 挙動があったため、ここに scope する。 */
+    container-type: inline-size;
   }
-  /* SCAD column の縦方向上限を viewport 基準で。およそ render frame の
-     倍を狙うが、cqw + container-type は aspect-ratio と組み合わせると
-     render-frame が text 幅へ崩れることがあったので vh ベースに固定。 */
+  /* SCAD scroll max は 1.5 × column-width (= 2 × render-frame height,
+     render が aspect 4/3 で 0.75 × col-width のため)。100cqw =
+     bare-scad-col 幅。150cqw でちょうど render の倍を狙う。 */
   .scad-scroll {
     overflow: auto;
     border: 1px solid var(--line);
     border-radius: 6px;
     background: var(--bg-2);
-    max-height: 80vh;
+    max-height: 150cqw;
+    /* Firefox 用 */
+    scrollbar-color: var(--fg-dim) var(--bg-3);
+    scrollbar-width: auto;
+  }
+  /* Chromium / WebKit 用に太めのスクロールバーを明示 */
+  .scad-scroll::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  .scad-scroll::-webkit-scrollbar-track {
+    background: var(--bg-3);
+    border-radius: 6px;
+  }
+  .scad-scroll::-webkit-scrollbar-thumb {
+    background: var(--fg-dim);
+    border-radius: 6px;
+    border: 2px solid var(--bg-3);
+  }
+  .scad-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--fg);
+  }
+  .scad-scroll::-webkit-scrollbar-corner {
+    background: var(--bg-3);
+  }
+  /* モバイル(1 列レイアウト)では bare-scad-col 幅 ≒ viewport 幅、
+     150cqw だと縦に伸びすぎるので vh で抑える。 */
+  @media (max-width: 719px) {
+    .scad-scroll { max-height: 60vh; }
   }
   .scad-meta {
     position: sticky;

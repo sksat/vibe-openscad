@@ -82,19 +82,34 @@ describe("BareSection layout", () => {
     expect(html).toMatch(/Parser error/);
   });
 
-  it("does not combine container-type with aspect-ratio (broke render-frame collapse)", () => {
-    // Symptom: with `container-type: inline-size` on .bare-body the
-    // render-frame's aspect-ratio occasionally collapsed to its content
-    // width (= the "no render" text), squeezing the column and pushing
-    // meta panel content sideways. Use viewport-relative units instead.
-    expect(SRC).not.toMatch(/container-type:\s*inline-size/);
+  it("does not put container-type on .bare-body (broke render-frame aspect-ratio)", () => {
+    // Putting container-type: inline-size on .bare-body affected
+    // .render-frame in the sibling column — aspect-ratio occasionally
+    // collapsed to text width. Container-type may live on .bare-scad-col
+    // itself (no aspect-ratio child there), but never on the grid parent.
+    expect(SRC).not.toMatch(/\.bare-body\s*\{[^}]*container-type:\s*inline-size/);
   });
 
-  it("caps SCAD scroll height with a viewport-relative unit (vh) not cqw", () => {
-    // cqw depends on container-type which we drop above. Use vh as the
-    // primary cap so the layout is invariant across hot-reload + zoom.
-    expect(SRC).not.toMatch(/max-height:\s*\d+cqw/);
-    expect(SRC).toMatch(/\.scad-scroll[\s\S]{0,200}max-height:\s*\d+vh/);
+  it("caps SCAD scroll height proportional to column width (~ 2× render frame)", () => {
+    // render-frame is aspect-ratio 4/3 → render height = col-width × 0.75.
+    // SCAD scroll max should approximate 2 × that = col-width × 1.5
+    // = 150cqw, when container-type is scoped to .bare-scad-col.
+    expect(SRC).toMatch(/\.bare-scad-col[\s\S]*?container-type:\s*inline-size/);
+    expect(SRC).toMatch(/max-height:\s*150cqw/);
+  });
+
+  it("stacks the run-detail link below the title (not right-aligned in the same row)", () => {
+    // \"run detail →\" は h2 (bare ...) の直下に置きたい。flex-direction:
+    // column が指定されていて、.runlink の margin-left: auto が無いことを
+    // 担保する。
+    expect(SRC).toMatch(/\.bare-section header[\s\S]*?flex-direction:\s*column/);
+    expect(SRC).not.toMatch(/\.runlink[\s\S]*?margin-left:\s*auto/);
+  });
+
+  it("styles a visibly thicker scrollbar on .scad-scroll", () => {
+    // 既定の dark background だとスクロールバーが見えにくい。明示する。
+    expect(SRC).toMatch(/\.scad-scroll[\s\S]*?scrollbar-color:/);
+    expect(SRC).toMatch(/::-webkit-scrollbar/);
   });
 
   it("ensures the bare-scad-col cannot push the grid wider than its 1fr share", () => {
