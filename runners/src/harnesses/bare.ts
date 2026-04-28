@@ -13,6 +13,16 @@ import type {
 } from "./types.js";
 import type { IterationStrategy } from "../schema.js";
 
+/** ChatContentPart の `mediaType` は今のところ png/jpeg のみサポート。
+ *  YAML で書かれた画像パスから拡張子で MIME を当てる。 */
+function inferImageMimeType(path: string): "image/png" | "image/jpeg" {
+  const lower = path.toLowerCase();
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  // PDF / GIF 等に拡張するときはここに分岐を足し、ChatContentPart の
+  // mediaType union も拡張する。今は png / jpeg だけを受け付ける。
+  return "image/png";
+}
+
 const FEEDBACK_PNG_DEFAULT =
   "上の画像はあなたが書いた SCAD を OpenSCAD でレンダリングした結果です。" +
   "元の課題プロンプトと照らし合わせて、形状・寸法・配置に誤りや改善点があれば修正したコードを ```openscad ... ``` で出力してください。" +
@@ -99,6 +109,18 @@ export async function runBare(ctx: HarnessContext): Promise<HarnessResult> {
     });
   }
 
+  // 入力画像付き(vision)タスクは vision-capable モデルだけで走る前提。
+  // matrix.ts の expand 段階で非対応モデルは候補から除外しているが、
+  // 何かバグった場合のフェイルセーフでここでも 1 度ガードする。
+  const hasImages =
+    ctx.task.prompt_image_data && ctx.task.prompt_image_data.length > 0;
+  if (hasImages && !modelSupportsVision(ctx.config.model)) {
+    return finish({
+      status: "api_error",
+      errorMessage: `model "${ctx.config.model}" does not support image input but task "${ctx.task.id}" has prompt_images`,
+    });
+  }
+
   let response: CompletionResponse;
   try {
     if (ctx.parent && ctx.config.iteration) {
@@ -108,6 +130,26 @@ export async function runBare(ctx: HarnessContext): Promise<HarnessResult> {
         ctx.config.iteration,
       );
       response = await ctx.config.provider.complete({ ...baseReq, messages });
+    } else if (hasImages) {
+      // 単発 vision 呼び出し: text + image の content parts を 1 user
+      // メッセージにまとめる。画像は MIME を path から推定。
+      const imageParts = (ctx.task.prompt_image_data ?? []).map((buf, i) => {
+        const path = ctx.task.prompt_images?.[i] ?? "";
+        const mediaType = inferImageMimeType(path);
+        return { type: "image" as const, mediaType, data: buf };
+      });
+      response = await ctx.config.provider.complete({
+        ...baseReq,
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: ctx.task.prompt },
+              ...imageParts,
+            ],
+          },
+        ],
+      });
     } else {
       response = await ctx.config.provider.complete({
         ...baseReq,

@@ -6,7 +6,7 @@ import type { BenchConfig, Fingerprint, RunMeta, Task } from "./schema.js";
 const task: Task = { id: "tier-1-cube", tier: 1, title: "Cube", prompt: "p" };
 
 const cfg: BenchConfig = {
-  defaults: { samples: 1, timeoutSec: 300 },
+  defaults: { samples: 1, timeoutSec: 300, concurrency: { global: 4, perProvider: { anthropic: 2 } } },
   matrix: [
     {
       id: "claude-bare",
@@ -100,7 +100,7 @@ describe("planRuns", () => {
   it("treats samples shortage as missing", () => {
     const cfg2: BenchConfig = {
       ...cfg,
-      defaults: { samples: 3, timeoutSec: 300 },
+      defaults: { samples: 3, timeoutSec: 300, concurrency: { global: 4, perProvider: { anthropic: 2 } } },
     };
     const plan = planRuns(
       inputs({

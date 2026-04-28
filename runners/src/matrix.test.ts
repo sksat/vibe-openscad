@@ -56,7 +56,7 @@ describe("expandMatrix", () => {
   it("expands tier selectors to all tasks of that tier", () => {
     const candidates = expandMatrix(
       {
-        defaults: { samples: 1, timeoutSec: 300 },
+        defaults: { samples: 1, timeoutSec: 300, concurrency: { global: 4, perProvider: { anthropic: 2 } } },
         matrix: [
           {
             id: "claude-bare",
@@ -79,7 +79,7 @@ describe("expandMatrix", () => {
   it("expands id selectors to that single task", () => {
     const candidates = expandMatrix(
       {
-        defaults: { samples: 1, timeoutSec: 300 },
+        defaults: { samples: 1, timeoutSec: 300, concurrency: { global: 4, perProvider: { anthropic: 2 } } },
         matrix: [
           {
             id: "x",
@@ -99,7 +99,7 @@ describe("expandMatrix", () => {
   it("multiplies matrix entries with task selectors", () => {
     const candidates = expandMatrix(
       {
-        defaults: { samples: 1, timeoutSec: 300 },
+        defaults: { samples: 1, timeoutSec: 300, concurrency: { global: 4, perProvider: { anthropic: 2 } } },
         matrix: [
           {
             id: "claude-bare",
@@ -123,7 +123,7 @@ describe("expandMatrix", () => {
     expect(() =>
       expandMatrix(
         {
-          defaults: { samples: 1, timeoutSec: 300 },
+          defaults: { samples: 1, timeoutSec: 300, concurrency: { global: 4, perProvider: { anthropic: 2 } } },
           matrix: [
             {
               id: "x",
@@ -143,7 +143,7 @@ describe("expandMatrix", () => {
     expect(() =>
       expandMatrix(
         {
-          defaults: { samples: 1, timeoutSec: 300 },
+          defaults: { samples: 1, timeoutSec: 300, concurrency: { global: 4, perProvider: { anthropic: 2 } } },
           matrix: [
             {
               id: "x",

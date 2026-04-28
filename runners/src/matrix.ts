@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { parse as parseYaml } from "yaml";
+import { modelSupportsVision } from "./capabilities.js";
 import {
   type BenchConfig,
   BenchConfigSchema,
@@ -67,6 +68,36 @@ export function expandMatrix(cfg: BenchConfig, tasks: Task[]): Candidate[] {
   const candidates: Candidate[] = [];
   for (const entry of cfg.matrix) {
     for (const task of selectedTasks) {
+      // vision タスク × vision 非対応モデルの組み合わせは plan 段階で除外。
+      // プロバイダ API が画像入力を拒否して必ず api_error になるだけ
+      // (= 課金の無駄)なので、候補集合に入れない方がノイズが減る。
+      if (
+        task.prompt_images &&
+        task.prompt_images.length > 0 &&
+        entry.harness.kind === "bare" &&
+        "model" in entry &&
+        !modelSupportsVision(entry.model)
+      ) {
+        continue;
+      }
+      // pdf_source を持つ task は pdf-page harness 専用。それ以外の harness
+      // (bare / iter-png chain / external-agent)が紛れ込むと、PDF を読まずに
+      // text プロンプトだけで走って混乱の元になる。
+      if (task.pdf_source && entry.harness.kind !== "pdf-page") {
+        continue;
+      }
+      // 逆に pdf-page harness × pdf_source なし task も意味が無いので除外。
+      if (entry.harness.kind === "pdf-page" && !task.pdf_source) {
+        continue;
+      }
+      // pdf-page でも provider 側 vision 非対応モデルなら撥ねる。
+      if (
+        entry.harness.kind === "pdf-page" &&
+        "model" in entry &&
+        !modelSupportsVision(entry.model)
+      ) {
+        continue;
+      }
       candidates.push({ entry, task });
     }
   }

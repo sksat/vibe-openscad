@@ -13,7 +13,22 @@ export interface BareHarnessConfig {
   iteration?: IterationStrategy;
 }
 
-export type HarnessConfig = BareHarnessConfig;
+/**
+ * PDF の指定ページを画像として provider に渡すハーネス。bare と同じく
+ * 1 回 LLM を叩いて SCAD を抜くだけだが、前段に「task.pdf_source の
+ * URL を取ってきて pdftoppm で切り出す」 preprocessing が入る。
+ */
+export interface PdfPageHarnessConfig {
+  kind: "pdf-page";
+  provider: Provider;
+  model: string;
+  systemPrompt?: string;
+  maxTokens?: number;
+  modelOptions?: Record<string, unknown>;
+  iteration?: IterationStrategy;
+}
+
+export type HarnessConfig = BareHarnessConfig | PdfPageHarnessConfig;
 
 /** Predecessor run's artifacts, fed into an iteration step. */
 export interface ParentRunContext {
@@ -36,7 +51,14 @@ export interface HarnessLogBare {
   iteration?: IterationStrategy;
 }
 
-export type HarnessLog = HarnessLogBare;
+export interface HarnessLogPdfPage {
+  kind: "pdf-page";
+  iteration?: IterationStrategy;
+  pdfUrl?: string;
+  pages?: number[];
+}
+
+export type HarnessLog = HarnessLogBare | HarnessLogPdfPage;
 
 export interface HarnessResult {
   status: RunStatus;

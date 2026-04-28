@@ -12,9 +12,15 @@ import {
   summary,
 } from "./format.js";
 import { runBare } from "./harnesses/bare.js";
-import type { ParentRunContext } from "./harnesses/types.js";
+import { runPdfPage } from "./harnesses/pdf-page.js";
+import type {
+  HarnessConfig,
+  HarnessResult,
+  ParentRunContext,
+} from "./harnesses/types.js";
 import { getOpenscadVersion } from "./env.js";
 import { type Candidate, expandMatrix, loadBenchConfig } from "./matrix.js";
+import { runScheduled, type ScheduleItem } from "./scheduler.js";
 import type { MatrixEntry } from "./schema.js";
 
 type BareEntry = Extract<MatrixEntry, { harness: { kind: "bare" } }>;
@@ -46,6 +52,11 @@ interface Args {
   force: boolean;
   prune: boolean;
   samples?: number;
+  /** Override defaults.concurrency.global from bench-config.yml. */
+  concurrency?: number;
+  /** Override defaults.concurrency.perProvider from bench-config.yml.
+   *  e.g. `--concurrency-anthropic 2` → { anthropic: 2 } */
+  concurrencyPerProvider?: Record<string, number>;
   showRunId?: string;
   rootDir: string;
 }
@@ -97,6 +108,19 @@ function parseArgs(argv: string[]): Args {
       if (v !== undefined) args.filter = v;
     }
     else if (a === "--samples") args.samples = Number(rest[++i]);
+    else if (a === "--concurrency" || a === "-j") {
+      args.concurrency = Number(rest[++i]);
+    }
+    else if (a !== undefined && a.startsWith("--concurrency-")) {
+      // --concurrency-anthropic 2 / --concurrency-openai 4 形式。
+      const provider = a.slice("--concurrency-".length);
+      if (!provider) throw new Error(`malformed flag: ${a}`);
+      const v = Number(rest[++i]);
+      args.concurrencyPerProvider = {
+        ...(args.concurrencyPerProvider ?? {}),
+        [provider]: v,
+      };
+    }
     else if (a === "--root") args.rootDir = resolve(rest[++i] ?? ".");
     else throw new Error(`unknown flag: ${a}`);
   }
@@ -126,6 +150,13 @@ Flags:
   --prune              When persisting a run, delete prior runs for the same
                        (task, matrix). Default keeps history and warns.
   --samples N          Override defaults.samples from bench-config.yml.
+  --concurrency N, -j N
+                       Run up to N candidates in parallel (default 4).
+                       Use -j 1 for strictly serial. Override
+                       defaults.concurrency.global from bench-config.yml.
+  --concurrency-<provider> N
+                       Per-provider parallel cap (e.g. --concurrency-anthropic 2).
+                       Override defaults.concurrency.perProvider.<provider>.
 `);
 }
 
@@ -137,8 +168,12 @@ function fingerprintFor(
   resolveParentSignature?: (parentMatrixId: string) => string,
 ): Fingerprint {
   const entry = candidate.entry;
-  if (entry.harness.kind === "bare") {
-    const e = entry as BareEntry;
+  if (entry.harness.kind === "bare" || entry.harness.kind === "pdf-page") {
+    type ProviderEntry = Extract<
+      MatrixEntry,
+      { harness: { kind: "bare" | "pdf-page" } }
+    >;
+    const e = entry as ProviderEntry;
     let parentSignature: string | undefined;
     if (e.harness.iterateFrom) {
       if (!resolveParentSignature) {
@@ -152,7 +187,7 @@ function fingerprintFor(
       schemaVersion: 1,
       taskHash,
       harness: {
-        kind: "bare",
+        kind: e.harness.kind,
         provider: e.provider,
         model: e.model,
         ...(e.modelOptions ? { modelOptions: e.modelOptions } : {}),
@@ -374,13 +409,17 @@ async function executeBareRun(
 ): Promise<ExecutionOutcome> {
   void cfg;
   const entry = item.candidate.entry;
-  if (entry.harness.kind !== "bare") {
+  if (entry.harness.kind !== "bare" && entry.harness.kind !== "pdf-page") {
     throw new Error(
       `harness not implemented in run.ts: ${entry.harness.kind}`,
     );
   }
-  const bareEntry = entry as BareEntry;
-  const provider = providerFor(bareEntry.provider);
+  type ProviderEntry = Extract<
+    MatrixEntry,
+    { harness: { kind: "bare" | "pdf-page" } }
+  >;
+  const provEntry = entry as ProviderEntry;
+  const provider = providerFor(provEntry.provider);
 
   let parent: ParentRunContext | undefined;
   if (entry.harness.iterateFrom) {
@@ -398,22 +437,37 @@ async function executeBareRun(
     parent = loadParentContext(resultsDir, parentMeta);
   }
 
-  const result = await runBare({
-    task: item.candidate.task,
-    config: {
-      kind: "bare",
-      provider,
-      model: bareEntry.model,
-      ...(bareEntry.modelOptions
-        ? { modelOptions: bareEntry.modelOptions }
-        : {}),
-      ...(entry.harness.iteration
-        ? { iteration: entry.harness.iteration }
-        : {}),
-    },
-    render: (scad) => renderScad(scad),
-    ...(parent ? { parent } : {}),
-  });
+  const baseConfig = {
+    provider,
+    model: provEntry.model,
+    ...(provEntry.modelOptions
+      ? { modelOptions: provEntry.modelOptions }
+      : {}),
+    ...(entry.harness.iteration
+      ? { iteration: entry.harness.iteration }
+      : {}),
+  };
+  const harnessConfig: HarnessConfig =
+    entry.harness.kind === "pdf-page"
+      ? { kind: "pdf-page", ...baseConfig }
+      : { kind: "bare", ...baseConfig };
+
+  let result: HarnessResult;
+  if (harnessConfig.kind === "pdf-page") {
+    result = await runPdfPage({
+      task: item.candidate.task,
+      config: harnessConfig,
+      render: (scad) => renderScad(scad),
+      ...(parent ? { parent } : {}),
+    });
+  } else {
+    result = await runBare({
+      task: item.candidate.task,
+      config: harnessConfig,
+      render: (scad) => renderScad(scad),
+      ...(parent ? { parent } : {}),
+    });
+  }
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const sigShort = shortSignature(item.signature);
@@ -423,7 +477,7 @@ async function executeBareRun(
   const harnessLog = result.harnessLog;
   const cost =
     result.tokens != null
-      ? computeCostUsd(bareEntry.provider, bareEntry.model, result.tokens)
+      ? computeCostUsd(provEntry.provider, provEntry.model, result.tokens)
       : null;
   const meta: RunMeta = {
     runId,
@@ -431,8 +485,8 @@ async function executeBareRun(
     matrixId: entry.id,
     signature: item.signature,
     fingerprint: item.fingerprint,
-    provider: bareEntry.provider,
-    model: bareEntry.model,
+    provider: provEntry.provider,
+    model: provEntry.model,
     harness: harnessLog,
     status: result.status,
     timing: { totalMs: Math.round(result.durationMs) },
@@ -586,7 +640,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  const tasks = loadAllTasks(tasksDir);
+  const tasks = await loadAllTasks(tasksDir);
   let cfg = loadBenchConfig(configPath);
   if (args.samples !== undefined) {
     cfg = { ...cfg, defaults: { ...cfg.defaults, samples: args.samples } };
@@ -596,8 +650,14 @@ async function main(): Promise<void> {
   const filtered = args.filter
     ? candidates.filter((c) => {
         const extras: string[] = [];
-        if (c.entry.harness.kind === "bare") {
-          const e = c.entry as Extract<MatrixEntry, { harness: { kind: "bare" } }>;
+        if (
+          c.entry.harness.kind === "bare" ||
+          c.entry.harness.kind === "pdf-page"
+        ) {
+          const e = c.entry as Extract<
+            MatrixEntry,
+            { harness: { kind: "bare" | "pdf-page" } }
+          >;
           extras.push(e.provider, e.model);
         } else if (c.entry.harness.kind === "external-agent") {
           extras.push(c.entry.harness.agent);
@@ -711,25 +771,101 @@ async function main(): Promise<void> {
   const failures: Failure[] = [];
   const runStarted = performance.now();
 
-  for (const item of todo) {
-    const name = candidateName(item);
-    process.stdout.write(`bench ${name} ... `);
-    try {
-      const outcome = await executeBareRun(item, cfg, resultsDir, args.prune);
+  // 並列実行のセットアップ。
+  // - dependsOn: iterateFrom が指す parent を todo の中に含む場合、その
+  //   parent の完了を待つ(parent 出力 SCAD/PNG を読む必要があるため)。
+  //   parent が todo に居ない(= 既に results/ にある up-to-date)なら依存不要。
+  // - bucket: bare entry は provider 別に分ける。external-agent は当面 bucket
+  //   未指定(将来必要なら埋める)。
+  // - concurrency: CLI > bench-config.yml > default(global=1, perProvider 無し)。
+  const todoKeys = new Set(todo.map((it) => candidateName(it)));
+  const scheduleItems: ScheduleItem<PlanItem>[] = todo.map((it) => {
+    const entry = it.candidate.entry;
+    const dependsOn: string[] = [];
+    if (
+      (entry.harness.kind === "bare" || entry.harness.kind === "pdf-page") &&
+      entry.harness.iterateFrom
+    ) {
+      const parentKey = `${entry.harness.iterateFrom}::${it.candidate.task.id}`;
+      if (todoKeys.has(parentKey)) dependsOn.push(parentKey);
+    }
+    let bucket: string | undefined;
+    if (entry.harness.kind === "bare" || entry.harness.kind === "pdf-page") {
+      type ProviderEntry = Extract<
+        MatrixEntry,
+        { harness: { kind: "bare" | "pdf-page" } }
+      >;
+      bucket = (entry as ProviderEntry).provider;
+    }
+    const out: ScheduleItem<PlanItem> = {
+      key: candidateName(it),
+      data: it,
+      dependsOn,
+    };
+    if (bucket !== undefined) out.bucket = bucket;
+    return out;
+  });
+  // schema が default を埋めるので concurrency は常に存在する。
+  const cfgConcurrency = cfg.defaults.concurrency;
+  const globalCap = args.concurrency ?? cfgConcurrency.global;
+  const perBucket: Record<string, number> = {
+    ...cfgConcurrency.perProvider,
+    ...(args.concurrencyPerProvider ?? {}),
+  };
+
+  // 並列時は 1 行ずつ完了次第出力。直列時は従来同様 "bench foo ... " を
+  // 開始時に出して結果で 1 行に閉じる体裁が読みやすいので分岐する。
+  const isParallel = globalCap > 1;
+  if (isParallel) {
+    console.log(
+      `running with concurrency=${globalCap}` +
+        (Object.keys(perBucket).length > 0
+          ? ` perProvider=${JSON.stringify(perBucket)}`
+          : ""),
+    );
+  }
+
+  await runScheduled(
+    scheduleItems,
+    {
+      concurrency: globalCap,
+      ...(Object.keys(perBucket).length > 0 ? { perBucket } : {}),
+    },
+    async (sched) => {
+      const item = sched.data;
+      const name = candidateName(item);
+      if (!isParallel) process.stdout.write(`bench ${name} ... `);
+      let outcome: Awaited<ReturnType<typeof executeBareRun>> | undefined;
+      try {
+        outcome = await executeBareRun(item, cfg, resultsDir, args.prune);
+      } catch (e) {
+        failed++;
+        const line = itemLine(
+          { verb: "bench", name, status: "FAILED", hint: "exception" },
+          { color },
+        );
+        if (isParallel) console.log(line);
+        else console.log(line.replace(/^bench .* \.\.\. /, ""));
+        failures.push({
+          name,
+          detail: (e as Error).stack ?? (e as Error).message,
+        });
+        return;
+      }
       if (outcome.kind === "chain-break") {
         runSkipped++;
-        console.log(
-          itemLine(
-            {
-              verb: "bench",
-              name,
-              status: "skipped",
-              hint: `chain-break: ${outcome.reason}`,
-            },
-            { color },
-          ).replace(/^bench .* \.\.\. /, ""),
+        const line = itemLine(
+          {
+            verb: "bench",
+            name,
+            status: "skipped",
+            hint: `chain-break: ${outcome.reason}`,
+          },
+          { color },
         );
-        continue;
+        if (isParallel) console.log(line);
+        else console.log(line.replace(/^bench .* \.\.\. /, ""));
+        return;
       }
       const meta = outcome.meta;
       if (meta.status === "success") {
@@ -742,12 +878,12 @@ async function main(): Promise<void> {
         if (typeof meta.cost_usd === "number") {
           parts.push(formatCostShort(meta.cost_usd));
         }
-        console.log(
-          itemLine(
-            { verb: "bench", name, status: "ok", hint: parts.join(", ") },
-            { color },
-          ).replace(/^bench .* \.\.\. /, ""),
+        const line = itemLine(
+          { verb: "bench", name, status: "ok", hint: parts.join(", ") },
+          { color },
         );
+        if (isParallel) console.log(line);
+        else console.log(line.replace(/^bench .* \.\.\. /, ""));
       } else {
         failed++;
         if (typeof meta.cost_usd === "number") totalCost += meta.cost_usd;
@@ -755,28 +891,26 @@ async function main(): Promise<void> {
           typeof meta.cost_usd === "number"
             ? `${meta.status}, ${formatCostShort(meta.cost_usd)}`
             : meta.status;
-        console.log(
-          itemLine(
-            { verb: "bench", name, status: "FAILED", hint },
-            { color },
-          ).replace(/^bench .* \.\.\. /, ""),
+        const line = itemLine(
+          { verb: "bench", name, status: "FAILED", hint },
+          { color },
         );
+        if (isParallel) console.log(line);
+        else console.log(line.replace(/^bench .* \.\.\. /, ""));
         failures.push({
           name,
-          detail: outcome.errorDetail ?? `(no detail; status=${meta.status})`,
+          detail:
+            outcome.errorDetail ?? `(no detail; status=${meta.status})`,
         });
       }
-    } catch (e) {
-      failed++;
-      console.log(
-        itemLine(
-          { verb: "bench", name, status: "FAILED", hint: "exception" },
-          { color },
-        ).replace(/^bench .* \.\.\. /, ""),
-      );
-      failures.push({ name, detail: (e as Error).stack ?? (e as Error).message });
-    }
-  }
+    },
+  ).catch((e) => {
+    // Scheduler that aggregated errors propagates here. 既に各 item で
+    // failures.push 済みなので、追加メッセージは出さず、終了コードだけ
+    // 失敗にする。
+    void e;
+    process.exitCode = 1;
+  });
 
   const elapsed = performance.now() - runStarted;
   const failuresOut = failuresSection(failures, { color });
