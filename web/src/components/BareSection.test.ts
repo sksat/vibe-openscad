@@ -98,12 +98,11 @@ describe("BareSection layout", () => {
     expect(SRC).toMatch(/max-height:\s*150cqw/);
   });
 
-  it("stacks the run-detail link below the title (not right-aligned in the same row)", () => {
-    // \"run detail →\" は h2 (bare ...) の直下に置きたい。flex-direction:
-    // column が指定されていて、.runlink の margin-left: auto が無いことを
-    // 担保する。
-    expect(SRC).toMatch(/\.bare-section header[\s\S]*?flex-direction:\s*column/);
-    expect(SRC).not.toMatch(/\.runlink[\s\S]*?margin-left:\s*auto/);
+  it("aligns the run-detail link to the right of the title in the same row", () => {
+    // header は flex 横並び、.runlink は margin-left: auto で右寄せ。
+    expect(SRC).toMatch(/\.bare-section header\s*\{[^}]*display:\s*flex/);
+    expect(SRC).not.toMatch(/\.bare-section header\s*\{[^}]*flex-direction:\s*column/);
+    expect(SRC).toMatch(/\.runlink[\s\S]*?margin-left:\s*auto/);
   });
 
   it("styles a visibly thicker scrollbar on .scad-scroll", () => {
@@ -119,7 +118,36 @@ describe("BareSection layout", () => {
     expect(SRC).toMatch(/\.bare-scad-col[\s\S]*?min-width:\s*0/);
   });
 
-  it("places scad-meta INSIDE the scroll container (not as a sibling above)", async () => {
+  it("aligns the top of the SCAD scroll with the top of the render frame via matched-height column labels", async () => {
+    // SCAD 列と render 列の両方が、最初の要素として同じ意味の小さい
+    // ラベル(.col-label)を持っていれば、scad-scroll の top と
+    // render-frame の top が同じ y 座標にそろう。
+    const c = await AstroContainer.create();
+    const html = await c.renderToString(BareSection, {
+      props: {
+        pngUrl: "/img.png",
+        scad: SAMPLE_SCAD,
+        runId: "r-1",
+        status: "success",
+        taskId: "tier-1-mug",
+        durationMs: 1000,
+      },
+    });
+    // bare-render-col の中で render-frame より前に col-label が出る
+    const renderColIdx = html.indexOf("bare-render-col");
+    const renderFrameIdx = html.indexOf("render-frame", renderColIdx);
+    const renderLabelIdx = html.indexOf("col-label", renderColIdx);
+    expect(renderLabelIdx).toBeGreaterThan(renderColIdx);
+    expect(renderLabelIdx).toBeLessThan(renderFrameIdx);
+    // bare-scad-col の中でも col-label が scad-scroll より前
+    const scadColIdx = html.indexOf("bare-scad-col");
+    const scadScrollIdx = html.indexOf("scad-scroll", scadColIdx);
+    const scadLabelIdx = html.indexOf("col-label", scadColIdx);
+    expect(scadLabelIdx).toBeGreaterThan(scadColIdx);
+    expect(scadLabelIdx).toBeLessThan(scadScrollIdx);
+  });
+
+  it("places scad-meta ABOVE the scroll container (sibling, not nested)", async () => {
     const c = await AstroContainer.create();
     const html = await c.renderToString(BareSection, {
       props: {
@@ -134,6 +162,8 @@ describe("BareSection layout", () => {
     const scrollIdx = html.indexOf("scad-scroll");
     const metaIdx = html.indexOf("scad-meta");
     expect(scrollIdx).toBeGreaterThan(0);
-    expect(metaIdx).toBeGreaterThan(scrollIdx);
+    expect(metaIdx).toBeGreaterThan(0);
+    // meta が scroll の前 (above) に出てくる
+    expect(metaIdx).toBeLessThan(scrollIdx);
   });
 });
