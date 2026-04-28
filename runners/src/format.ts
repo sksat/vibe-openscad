@@ -69,7 +69,12 @@ export type Summary =
   | {
       kind: "bench";
       ok: boolean;
-      counts: { passed: number; failed: number; skipped: number };
+      counts: {
+        passed: number;
+        failed: number;
+        skipped: number;
+        blocked?: number;
+      };
       durationMs: number;
     }
   | {
@@ -88,7 +93,9 @@ export function summary(s: Summary, opts: ColorOptions = {}): string {
       ? paint("ok", ANSI.green, opts)
       : paint("FAILED", ANSI.red, opts);
     const secs = (s.durationMs / 1000).toFixed(2);
-    return `bench result: ${verdict}. ${s.counts.passed} passed; ${s.counts.failed} failed; ${s.counts.skipped} skipped; finished in ${secs}s`;
+    const blocked = s.counts.blocked ?? 0;
+    const tail = blocked > 0 ? `; ${blocked} blocked` : "";
+    return `bench result: ${verdict}. ${s.counts.passed} passed; ${s.counts.failed} failed; ${s.counts.skipped} skipped${tail}; finished in ${secs}s`;
   }
   const blocked = s.counts.blocked ?? 0;
   const tail = blocked > 0 ? `; ${blocked} blocked` : "";

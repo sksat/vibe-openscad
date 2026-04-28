@@ -67,6 +67,41 @@ describe("summary", () => {
       }),
     ).toBe("plan result: 2 missing; 1 stale; 4 up-to-date");
   });
+
+  it("plan summary appends blocked when present", () => {
+    expect(
+      summary({
+        kind: "plan",
+        counts: { missing: 0, stale: 0, upToDate: 380, blocked: 2 },
+      }),
+    ).toBe("plan result: 0 missing; 0 stale; 380 up-to-date; 2 blocked");
+  });
+
+  it("bench summary appends blocked separately from skipped", () => {
+    expect(
+      summary({
+        kind: "bench",
+        ok: true,
+        counts: { passed: 5, failed: 0, skipped: 3, blocked: 2 },
+        durationMs: 1000,
+      }),
+    ).toBe(
+      "bench result: ok. 5 passed; 0 failed; 3 skipped; 2 blocked; finished in 1.00s",
+    );
+  });
+
+  it("bench summary omits blocked when zero", () => {
+    expect(
+      summary({
+        kind: "bench",
+        ok: true,
+        counts: { passed: 5, failed: 0, skipped: 3, blocked: 0 },
+        durationMs: 1000,
+      }),
+    ).toBe(
+      "bench result: ok. 5 passed; 0 failed; 3 skipped; finished in 1.00s",
+    );
+  });
 });
 
 describe("failuresSection", () => {

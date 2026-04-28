@@ -669,7 +669,14 @@ async function main(): Promise<void> {
     : items.filter(
         (i) => i.status !== "up-to-date" && i.status !== "blocked",
       );
-  const skipped = items.length - todo.length;
+  // Track skipped (cached/up-to-date) vs blocked (chain-break) separately
+  // so the summary can show them on their own lines.
+  const skippedCached = args.force
+    ? 0
+    : items.filter((i) => i.status === "up-to-date").length;
+  const blockedAtPlan = args.force
+    ? 0
+    : items.filter((i) => i.status === "blocked").length;
 
   const color = isColorTty();
   console.log(header(todo.length, todo.length === 1 ? "candidate" : "candidates"));
@@ -680,7 +687,12 @@ async function main(): Promise<void> {
         {
           kind: "bench",
           ok: true,
-          counts: { passed: 0, failed: 0, skipped },
+          counts: {
+            passed: 0,
+            failed: 0,
+            skipped: skippedCached,
+            blocked: blockedAtPlan,
+          },
           durationMs: 0,
         },
         { color },
@@ -772,7 +784,12 @@ async function main(): Promise<void> {
       {
         kind: "bench",
         ok: failed === 0,
-        counts: { passed, failed, skipped: skipped + runSkipped },
+        counts: {
+          passed,
+          failed,
+          skipped: skippedCached + runSkipped,
+          blocked: blockedAtPlan,
+        },
         durationMs: elapsed,
       },
       { color },
