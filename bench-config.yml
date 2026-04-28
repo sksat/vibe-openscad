@@ -313,6 +313,38 @@ matrix:
     provider: openai
     model: gpt-5.3-codex
 
+  # --- pdf-page (tier-4 vision tasks: PDF page → image → bare-style call) ---
+  # bare の単発と同形だが、task 側 `pdf_source` を pdftoppm で PNG に切り出して
+  # provider に投げる前段が入る。vision capable な現行世代モデルだけ並べる。
+  - id: pdf-page/claude-opus-4-7
+    harness: { kind: pdf-page }
+    provider: anthropic
+    model: claude-opus-4-7
+  - id: pdf-page/claude-sonnet-4-6
+    harness: { kind: pdf-page }
+    provider: anthropic
+    model: claude-sonnet-4-6
+  - id: pdf-page/claude-haiku-4-5
+    harness: { kind: pdf-page }
+    provider: anthropic
+    model: claude-haiku-4-5-20251001
+  - id: pdf-page/gpt-5.5
+    harness: { kind: pdf-page }
+    provider: openai
+    model: gpt-5.5-2026-04-23
+  - id: pdf-page/gpt-5.4
+    harness: { kind: pdf-page }
+    provider: openai
+    model: gpt-5.4-2026-03-05
+  - id: pdf-page/gemini-3.1-pro
+    harness: { kind: pdf-page }
+    provider: google
+    model: gemini-3.1-pro-preview
+  - id: pdf-page/gemini-3-flash
+    harness: { kind: pdf-page }
+    provider: google
+    model: gemini-3-flash-preview
+
   # --- iteration chain (PNG feedback) ---
   # 各 iteration step は独立した benchmark run。iter-png-1 は bare の出力を
   # 見せて修正させ、iter-png-2 は iter-png-1 の出力を見せて、… と数珠繋ぎ。
@@ -719,3 +751,5 @@ matrix:
 tasks:
   - tier: 1
   - tier: 2
+  - tier: 3
+  - tier: 4
