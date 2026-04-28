@@ -35,7 +35,7 @@ const segments = runBadges(m);
   data-task={m.taskId}
   data-tier={tier !== undefined ? String(tier) : ""}
 >
-  <a class="thumb-link" href={`/benchmark/${m.runId}`} aria-label={`open run ${m.runId}`}>
+  <a class="thumb-link" href={`/run/${m.runId}`} aria-label={`open run ${m.runId}`}>
     {run.pngUrl ? (
       <div class="thumb"><img src={run.pngUrl} alt={`render of ${m.taskId} by ${m.matrixId}`} loading="lazy" /></div>
     ) : (
@@ -75,7 +75,7 @@ const segments = runBadges(m);
           );
         })}
       </div>
-      <a class={`${statusBadgeClass(m.status)} status-link`} href={`/benchmark/${m.runId}`}>{m.status}</a>
+      <a class={`${statusBadgeClass(m.status)} status-link`} href={`/run/${m.runId}`}>{m.status}</a>
     </div>
     {showTask && <div class="task muted">{m.taskId}</div>}
     <div class="row sub muted">

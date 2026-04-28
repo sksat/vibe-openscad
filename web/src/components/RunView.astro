@@ -5,8 +5,8 @@ import StlViewer from "./StlViewer.astro";
 
 interface Props {
   pngUrl: string | undefined;
-  /** Final STL artifact. When given the render col gets a PNG/STL toggle
-   *  (interactive 3D viewer). */
+  /** Final STL artifact。あると render col に StlViewer(slot 経由で
+   *  ParametricStlViewer 等にも差し替え可)が PNG の下に積まれる。 */
   stlUrl?: string | undefined;
   scad: string;
   runId: string;
@@ -19,6 +19,14 @@ interface Props {
   /** LLM が出した生 text(prose + fences + code 全部)。あれば SCAD/raw
    *  切替トグルが表示される。 */
   rawText?: string | undefined;
+  /** ヘッダ左の見出し。harness 名や iter ラベル等。例: "bare", "claude-code",
+   *  "iter-1"。省略時は "run"。 */
+  title?: string | undefined;
+  /** title の右に小さく付ける副題。例: "(provider default effort)"。 */
+  subtitle?: string | undefined;
+  /** run detail へのリンクを出すかどうか。run detail ページ自身では
+   *  自己リンクになるので false にする。 */
+  showRunLink?: boolean | undefined;
 }
 
 const {
@@ -33,6 +41,9 @@ const {
   costUsd,
   errorMessage,
   rawText,
+  title = "run",
+  subtitle,
+  showRunLink = true,
 } = Astro.props;
 const lines = scad.split("\n").length;
 const rawLines = rawText ? rawText.split("\n").length : 0;
@@ -40,23 +51,19 @@ const hasRaw = typeof rawText === "string" && rawText.length > 0;
 const hasStl = typeof stlUrl === "string" && stlUrl.length > 0;
 ---
 
-<section class="bare-section">
+<section class="run-view">
   <header>
-    <h2>bare <span class="muted small">(provider default effort)</span></h2>
-    <a class="muted runlink" href={`/benchmark/${runId}`}>run detail →</a>
+    <h2>{title}{subtitle && <span class="muted small"> {subtitle}</span>}</h2>
+    {showRunLink && (
+      <a class="muted runlink" href={`/run/${runId}`}>run detail →</a>
+    )}
   </header>
-  <div class="bare-body">
-    <div class="bare-render-col" data-active-render-view="png">
+  <div class="run-view-body">
+    <div class="run-view-render-col">
       <div class="col-label muted small">
         <span>render</span>
-        {hasStl && (
-          <span class="view-toggle" role="tablist" aria-label="render mode">
-            <button type="button" class="toggle-btn" data-target="png" aria-pressed="true">PNG</button>
-            <button type="button" class="toggle-btn" data-target="stl" aria-pressed="false">STL</button>
-          </span>
-        )}
       </div>
-      <div class="render-frame" data-status={status} data-render-view="png">
+      <div class="render-frame" data-status={status}>
         {pngUrl ? (
           <img src={pngUrl} alt={`bare render of ${taskId}`} />
         ) : (
@@ -64,8 +71,10 @@ const hasStl = typeof stlUrl === "string" && stlUrl.length > 0;
         )}
       </div>
       {hasStl && (
-        <div class="render-frame stl-frame" data-render-view="stl" hidden aria-hidden="true">
-          <StlViewer src={stlUrl!} height={420} />
+        <div class="render-frame stl-frame">
+          <slot name="stl-viewer">
+            <StlViewer src={stlUrl!} />
+          </slot>
         </div>
       )}
       <div class="render-meta">
@@ -82,7 +91,7 @@ const hasStl = typeof stlUrl === "string" && stlUrl.length > 0;
         )}
       </div>
     </div>
-    <div class="bare-scad-col" data-active-view="scad">
+    <div class="run-view-scad-col" data-active-view="scad">
       <div class="col-label scad-meta muted small">
         <span class="scad-meta-text">SCAD ({lines} lines)</span>
         {hasRaw && (
@@ -105,29 +114,29 @@ const hasStl = typeof stlUrl === "string" && stlUrl.length > 0;
 </section>
 
 <style>
-  .bare-section header {
+  .run-view header {
     display: flex;
     align-items: baseline;
     gap: 12px;
     margin-bottom: 8px;
   }
-  .bare-section h2 {
+  .run-view h2 {
     font-family: var(--mono);
     font-size: 15px;
     margin: 0;
   }
   .runlink { font-size: 12px; margin-left: auto; }
 
-  .bare-body {
+  .run-view-body {
     display: grid;
     grid-template-columns: 1fr;
     gap: 16px;
   }
   @media (min-width: 720px) {
-    .bare-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .run-view-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   }
 
-  .bare-render-col {
+  .run-view-render-col {
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -153,6 +162,21 @@ const hasStl = typeof stlUrl === "string" && stlUrl.length > 0;
   .render-frame[data-status]:not([data-status="success"]) {
     background: var(--bg-3);
     border-style: dashed;
+  }
+  /* STL viewer は PNG と同じ 4:3 ボックスにそろえる(縦に積んだ高さの
+     合計 = col-width × 1.5、SCAD scroll の max-height: 150cqw と一致)。
+     StlViewer 内部の .stl-host は 100% を取って親に追従させる。 */
+  .stl-frame {
+    padding: 0;
+    background: transparent;
+    border: none;
+  }
+  .stl-frame :global(.stl-host),
+  .stl-frame :global(.viewer-host) {
+    height: 100% !important;
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 6px;
   }
   .no-render {
     font-family: var(--mono);
@@ -204,7 +228,7 @@ const hasStl = typeof stlUrl === "string" && stlUrl.length > 0;
     word-break: break-word;
   }
 
-  .bare-scad-col {
+  .run-view-scad-col {
     display: flex;
     flex-direction: column;
     /* render col と同じ gap を当てて col-label の下端から bordered box
@@ -212,13 +236,13 @@ const hasStl = typeof stlUrl === "string" && stlUrl.length > 0;
     gap: 10px;
     min-width: 0;
     /* container query 単位を SCAD col の幅基準にする。container-type を
-       grid 親 (.bare-body) に置くと sibling col の aspect-ratio が
+       grid 親 (.run-view-body) に置くと sibling col の aspect-ratio が
        崩れる Chromium 挙動があったため、ここに scope する。 */
     container-type: inline-size;
   }
   /* SCAD scroll max は 1.5 × column-width (= 2 × render-frame height,
      render が aspect 4/3 で 0.75 × col-width のため)。100cqw =
-     bare-scad-col 幅。150cqw でちょうど render の倍を狙う。 */
+     run-view-scad-col 幅。150cqw でちょうど render の倍を狙う。 */
   .scad-scroll {
     /* SCAD ファイルの規模を視覚化するため縦バーは常時表示。横は wrap
        済みなので必要時のみ。 */
@@ -252,7 +276,7 @@ const hasStl = typeof stlUrl === "string" && stlUrl.length > 0;
   .scad-scroll::-webkit-scrollbar-corner {
     background: var(--bg-3);
   }
-  /* モバイル(1 列レイアウト)では bare-scad-col 幅 ≒ viewport 幅、
+  /* モバイル(1 列レイアウト)では run-view-scad-col 幅 ≒ viewport 幅、
      150cqw だと縦に伸びすぎるので vh で抑える。 */
   @media (max-width: 719px) {
     .scad-scroll { max-height: 60vh; }
@@ -319,54 +343,32 @@ const hasStl = typeof stlUrl === "string" && stlUrl.length > 0;
 </style>
 
 <script>
-  // 列単位の view 切替。SCAD 列(scad/raw)と render 列(png/stl)で
-  // 同じ仕組みを共有する。data-view-axis 属性で対応する pane 属性名を
-  // 切替える。
-  type Spec = {
-    selector: string;
-    paneAttr: string; // pane 側の data 属性名
-    activeAttr: string; // 列側の active marker 属性名
-  };
-  const SPECS: Spec[] = [
-    {
-      selector: ".bare-scad-col",
-      paneAttr: "data-view",
-      activeAttr: "data-active-view",
-    },
-    {
-      selector: ".bare-render-col",
-      paneAttr: "data-render-view",
-      activeAttr: "data-active-render-view",
-    },
-  ];
-
-  for (const spec of SPECS) {
-    for (const col of document.querySelectorAll<HTMLElement>(spec.selector)) {
-      const buttons = col.querySelectorAll<HTMLButtonElement>(".toggle-btn");
-      const views = col.querySelectorAll<HTMLElement>(`[${spec.paneAttr}]`);
-      for (const btn of buttons) {
-        btn.addEventListener("click", () => {
-          const target = btn.dataset["target"];
-          if (!target) return;
-          col.setAttribute(spec.activeAttr, target);
-          for (const b of buttons) {
-            b.setAttribute(
-              "aria-pressed",
-              b.dataset["target"] === target ? "true" : "false",
-            );
+  // SCAD 列(scad/raw)の view 切替。
+  for (const col of document.querySelectorAll<HTMLElement>(".run-view-scad-col")) {
+    const buttons = col.querySelectorAll<HTMLButtonElement>(".toggle-btn");
+    const views = col.querySelectorAll<HTMLElement>("[data-view]");
+    for (const btn of buttons) {
+      btn.addEventListener("click", () => {
+        const target = btn.dataset["target"];
+        if (!target) return;
+        col.setAttribute("data-active-view", target);
+        for (const b of buttons) {
+          b.setAttribute(
+            "aria-pressed",
+            b.dataset["target"] === target ? "true" : "false",
+          );
+        }
+        for (const v of views) {
+          const visible = v.getAttribute("data-view") === target;
+          if (visible) {
+            v.removeAttribute("hidden");
+            v.removeAttribute("aria-hidden");
+          } else {
+            v.setAttribute("hidden", "");
+            v.setAttribute("aria-hidden", "true");
           }
-          for (const v of views) {
-            const visible = v.getAttribute(spec.paneAttr) === target;
-            if (visible) {
-              v.removeAttribute("hidden");
-              v.removeAttribute("aria-hidden");
-            } else {
-              v.setAttribute("hidden", "");
-              v.setAttribute("aria-hidden", "true");
-            }
-          }
-        });
-      }
+        }
+      });
     }
   }
 </script>

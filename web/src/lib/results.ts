@@ -33,15 +33,15 @@ export interface DatasetFacets {
 
 export interface LoadedDataset {
   tasks: LoadedTask[];
-  /** All runs keyed by runId for quick lookup (e.g. /benchmark/[id] page). */
+  /** All runs keyed by runId for quick lookup (e.g. /run/[id] page). */
   runs: Map<string, LoadedRun>;
   facets: DatasetFacets;
 }
 
-export function loadDataset(repoRoot: string): LoadedDataset {
+export async function loadDataset(repoRoot: string): Promise<LoadedDataset> {
   const tasksDir = join(repoRoot, "tasks");
   const resultsDir = join(repoRoot, "results");
-  const tasks = loadAllTasks(tasksDir);
+  const tasks = await loadAllTasks(tasksDir);
   const idx = indexResults(resultsDir);
 
   const byTask = new Map<string, LoadedRun[]>();

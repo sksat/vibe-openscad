@@ -59,7 +59,13 @@ export default defineConfig({
   },
   vite: {
     optimizeDeps: {
-      exclude: ["three"],
+      exclude: ["three", "openscad-wasm"],
+    },
+    // worker 内で dynamic import (openscad-wasm を console 差し替え後に
+    // 評価したいため)するので code-splitting が必要。default の iife は
+    // それを許さないので es module 出力にする。
+    worker: {
+      format: "es",
     },
     plugins: [watchResults()],
   },

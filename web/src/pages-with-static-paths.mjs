@@ -11,9 +11,9 @@ import { resolve } from "node:path";
 /** web/ project root から見た page パスのリスト。watcher が invalidate
  *  対象として使う。getStaticPaths を持つ全 page を網羅する。 */
 export const PAGES_WITH_STATIC_PATHS = [
-  "./src/pages/benchmark/[id].astro",
-  "./src/pages/tasks/[id].astro",
-  "./src/pages/tasks/[id]/[model].astro",
+  "./src/pages/run/[id].astro",
+  "./src/pages/task/[slug].astro",
+  "./src/pages/task/[slug]/[model].astro",
   "./src/pages/models/[id].astro",
   "./src/pages/harnesses/[id].astro",
   "./src/pages/index.astro",

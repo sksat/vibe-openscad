@@ -1,0 +1,142 @@
+---
+import Base from "../../layouts/Base.astro";
+import Breadcrumb from "../../components/Breadcrumb.astro";
+import { getDataset, taskSlug } from "../../lib/dataset.js";
+
+const ds = await getDataset();
+
+// task ごとに代表サムネイル(bare の default effort run)を 1 枚拾う。
+// 何も無いタスク(まだ走らせてない)はサムネ無しで card だけ並ぶ。
+function pickThumb(runs: typeof ds.tasks[number]["runs"]): string | undefined {
+  const bareDefault = runs.filter(
+    (r) => r.pngUrl && r.meta.matrixId.startsWith("bare/"),
+  );
+  return bareDefault[0]?.pngUrl ?? runs.find((r) => r.pngUrl)?.pngUrl;
+}
+
+const rows = ds.tasks.map((t) => ({
+  task: t.task,
+  runCount: t.runs.length,
+  thumb: pickThumb(t.runs),
+}));
+
+// tier 昇順 → id 昇順
+rows.sort((a, b) => {
+  if (a.task.tier !== b.task.tier) return a.task.tier - b.task.tier;
+  return a.task.id.localeCompare(b.task.id);
+});
+---
+
+<Base
+  title="tasks — vibe-openscad"
+  description={`${rows.length} 個の課題(tier 1〜)を一覧表示`}
+>
+  <Breadcrumb items={[
+    { label: "home", href: "/" },
+    { label: "tasks" },
+  ]} />
+
+  <h1 class="title">tasks</h1>
+  <p class="muted small">
+    {rows.length} task / {rows.filter((r) => r.runCount > 0).length} に run あり
+  </p>
+
+  <div class="task-grid">
+    {rows.map(({ task, runCount, thumb }) => (
+      <a class="task-card" href={`/task/${taskSlug(task)}`}>
+        <div class="thumb-frame" data-empty={runCount === 0 ? "true" : "false"}>
+          {thumb ? (
+            <img src={thumb} alt={`thumbnail of ${task.id}`} loading="lazy" />
+          ) : (
+            <span class="muted small">no run yet</span>
+          )}
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <span class="title-text">{task.title}</span>
+            <span class="badge tier">tier {task.tier}</span>
+          </div>
+          <code class="task-id muted small">{task.id}</code>
+          <div class="muted small">
+            {runCount === 0 ? "no run yet" : `${runCount} run`}
+          </div>
+        </div>
+      </a>
+    ))}
+  </div>
+</Base>
+
+<style>
+  .title {
+    font-family: var(--mono);
+    font-size: 18px;
+    margin: 0 0 4px;
+  }
+  .task-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+  }
+  .task-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    color: var(--fg);
+    text-decoration: none;
+    transition: border-color 0.1s;
+  }
+  .task-card:hover { border-color: var(--accent); }
+  .thumb-frame {
+    aspect-ratio: 4 / 3;
+    width: 100%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-bottom: 1px solid var(--line);
+  }
+  .thumb-frame[data-empty="true"] {
+    background: var(--bg-3);
+    border-bottom-style: dashed;
+  }
+  .thumb-frame img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+  .card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+  }
+  .card-body .row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .title-text {
+    font-size: 14px;
+    flex: 1;
+  }
+  .badge.tier {
+    flex: 0 0 auto;
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: var(--bg-3);
+    color: var(--fg-dim);
+    border: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .task-id {
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+</style>

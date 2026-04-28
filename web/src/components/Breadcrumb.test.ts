@@ -23,13 +23,13 @@ describe("Breadcrumb", () => {
       props: {
         items: [
           { label: "home", href: "/" },
-          { label: "task A", href: "/tasks/A" },
+          { label: "task A", href: "/task/A" },
           { label: "claude opus 4.7" }, // current — no href
         ],
       },
     });
     expect(html).toContain('href="/"');
-    expect(html).toContain('href="/tasks/A"');
+    expect(html).toContain('href="/task/A"');
     // current page has aria-current
     expect(html).toMatch(/aria-current="page"[^>]*>claude opus 4\.7/);
     // current page should not be a link
@@ -44,7 +44,7 @@ describe("Breadcrumb", () => {
       props: {
         items: [
           { label: "home", href: "/" },
-          { label: "tasks", href: "/tasks" },
+          { label: "tasks", href: "/task" },
           { label: "tier-1-mug" },
         ],
       },

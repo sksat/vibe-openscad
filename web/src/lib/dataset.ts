@@ -1,7 +1,118 @@
 import { resolve } from "node:path";
 import { computeCostUsd } from "@vibe-openscad/runners/src/pricing.js";
-import type { RunMeta } from "@vibe-openscad/runners/src/schema.js";
+import type { RunMeta, Task } from "@vibe-openscad/runners/src/schema.js";
 import { loadDataset } from "./results.js";
+
+/**
+ * モデル id を「並べたい順」のキーに変換する。一覧表示で
+ *   Claude: opus > sonnet > haiku、新しい version が先
+ *   OpenAI: gpt-5.5 > gpt-5.4 > gpt-5 > gpt-4.x、 mini/nano は後ろ、o3 / o4 系は別バケツ
+ *   Gemini: pro > flash > flash-lite、新しい version が先
+ * の順になるようにする。`compareModelsByRank` を sort callback として使う。
+ *
+ * 戻り値は [familyRank, -version, sizeRank, model] の数列。タイブレーク
+ * 用に最後に model 文字列を入れて辞書順 fallback。
+ */
+export function modelSortKey(model: string): [number, number, number, string] {
+  // Anthropic: claude-{opus|sonnet|haiku}-X-Y[-...]
+  let m = /^claude-(opus|sonnet|haiku)-(\d+)-(\d+)/.exec(model);
+  if (m) {
+    const familyMap: Record<string, number> = { opus: 0, sonnet: 1, haiku: 2 };
+    const major = Number(m[2]);
+    const minor = Number(m[3]);
+    return [familyMap[m[1]!] ?? 99, -(major * 1000 + minor), 0, model];
+  }
+  // Gemini: gemini-X[.Y]-{pro|flash-lite|flash}[-...]
+  // flash-lite を flash より先に検査(部分一致を避ける)。
+  m = /^gemini-(\d+)(?:\.(\d+))?-(pro|flash-lite|flash)/.exec(model);
+  if (m) {
+    const familyMap: Record<string, number> = {
+      pro: 0,
+      flash: 1,
+      "flash-lite": 2,
+    };
+    const major = Number(m[1]);
+    const minor = m[2] ? Number(m[2]) : 0;
+    return [familyMap[m[3]!] ?? 99, -(major * 1000 + minor), 0, model];
+  }
+  // OpenAI gpt-X[.Y][-suffix...] (codex / mini / nano / pro)。
+  m = /^gpt-(\d+)(?:\.(\d+))?/.exec(model);
+  if (m) {
+    const major = Number(m[1]);
+    const minor = m[2] ? Number(m[2]) : 0;
+    const isCodex = /-codex(\b|-)/.test(model);
+    let size = 0;
+    if (/-pro(\b|-)/.test(model)) size = -1;
+    else if (/-mini(\b|-)/.test(model)) size = 1;
+    else if (/-nano(\b|-)/.test(model)) size = 2;
+    // codex ファミリは別塊として後ろに(version 比較は同等)。
+    const family = isCodex ? 1 : 0;
+    return [family, -(major * 1000 + minor), size, model];
+  }
+  // OpenAI o-series reasoning: o3 / o3-pro / o4-mini など。
+  m = /^o(\d+)/.exec(model);
+  if (m) {
+    const major = Number(m[1]);
+    let size = 0;
+    if (/-pro(\b|-)/.test(model)) size = -1;
+    else if (/-mini(\b|-)/.test(model)) size = 1;
+    return [2, -major * 1000, size, model];
+  }
+  // 該当なし: 末尾扱いで辞書順。
+  return [99, 0, 0, model];
+}
+
+export function compareModelsByRank(a: string, b: string): number {
+  const ka = modelSortKey(a);
+  const kb = modelSortKey(b);
+  for (let i = 0; i < 4; i++) {
+    const va = ka[i] as number | string;
+    const vb = kb[i] as number | string;
+    if (va === vb) continue;
+    if (typeof va === "number" && typeof vb === "number") return va - vb;
+    return String(va).localeCompare(String(vb));
+  }
+  return 0;
+}
+
+/**
+ * task の URL に使う slug を返す。
+ * - YAML で `slug:` を明示していればそれを使う
+ * - 無ければ `id` から `tier-N-` prefix を剥がす(`tier-1-mug` → `mug`)
+ *
+ * URL に tier 番号を入れたくないが、内部 id は signature fingerprint に
+ * 効くので不用意に変えたくない、というポリシーを反映。slug 衝突は
+ * `taskSlugById` 構築時に検出する(複数 task が同 slug にマップする
+ * 構成は無効)。
+ */
+export function taskSlug(task: Pick<Task, "id" | "slug">): string {
+  if (task.slug) return task.slug;
+  return task.id.replace(/^tier-\d+-/, "");
+}
+
+/**
+ * 全 task について `taskId → slug` の map を返す。URL 生成側がこれを
+ * 持っておけば、`meta.taskId` だけ持っている文脈(Run 詳細など)からも
+ * 即 slug を引ける。同時に slug 衝突を assert する。
+ */
+export function buildTaskSlugMap(
+  tasks: Pick<Task, "id" | "slug">[],
+): Map<string, string> {
+  const map = new Map<string, string>();
+  const reverse = new Map<string, string>();
+  for (const t of tasks) {
+    const s = taskSlug(t);
+    const collision = reverse.get(s);
+    if (collision && collision !== t.id) {
+      throw new Error(
+        `slug "${s}" maps to multiple task ids: ${collision}, ${t.id}. Set explicit slug: in YAML to disambiguate.`,
+      );
+    }
+    map.set(t.id, s);
+    reverse.set(s, t.id);
+  }
+  return map;
+}
 
 /**
  * Locate the repo root from the web/ package and load the dataset.
@@ -11,7 +122,7 @@ import { loadDataset } from "./results.js";
  * page module to `web/dist/.prerender/chunks/` at build time and the
  * relative path from there points into dist/, not the repo.
  */
-export function getDataset() {
+export async function getDataset() {
   const repoRoot = resolve(process.cwd(), "..");
   return loadDataset(repoRoot);
 }

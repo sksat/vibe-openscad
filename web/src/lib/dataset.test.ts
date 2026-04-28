@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { RunMeta } from "@vibe-openscad/runners/src/schema.js";
 import {
+  buildTaskSlugMap,
+  compareModelsByRank,
   effortInfoFor,
   formatCost,
   parseMatrixId,
   runBadges,
   shortModelLabel,
+  taskSlug,
   thinkingInfoFor,
 } from "./dataset.js";
 
@@ -603,5 +606,138 @@ describe("shortModelLabel", () => {
 
   it("falls back to the input string for unknown shapes", () => {
     expect(shortModelLabel("local-llama-7b")).toBe("local-llama-7b");
+  });
+});
+
+describe("taskSlug", () => {
+  it("strips tier-N- prefix from id when slug is unspecified", () => {
+    expect(taskSlug({ id: "tier-1-mug" })).toBe("mug");
+    expect(taskSlug({ id: "tier-2-hex-bolt" })).toBe("hex-bolt");
+    expect(taskSlug({ id: "tier-3-butt-hinge" })).toBe("butt-hinge");
+  });
+
+  it("returns the explicit slug when provided", () => {
+    // id 自体は signature fingerprint に効くので変えたくないが、URL は
+    // 具体的な名前にしたい(`mug` だけだと曖昧、`simple-mug` にしたい)
+    // ケースで slug を明示する。
+    expect(taskSlug({ id: "tier-1-mug", slug: "simple-mug" })).toBe("simple-mug");
+  });
+
+  it("falls back to id when neither slug nor tier-prefix matches", () => {
+    expect(taskSlug({ id: "custom-task" })).toBe("custom-task");
+  });
+});
+
+describe("buildTaskSlugMap", () => {
+  it("maps each task id to its slug", () => {
+    const m = buildTaskSlugMap([
+      { id: "tier-1-mug", slug: "simple-mug" },
+      { id: "tier-2-offset-handle-mug" },
+      { id: "tier-3-butt-hinge" },
+    ]);
+    expect(m.get("tier-1-mug")).toBe("simple-mug");
+    expect(m.get("tier-2-offset-handle-mug")).toBe("offset-handle-mug");
+    expect(m.get("tier-3-butt-hinge")).toBe("butt-hinge");
+  });
+
+  it("throws when two tasks would collide on the same slug", () => {
+    // tier-1-mug と tier-2-mug が両方 slug 未指定だと両方 `mug` になる。
+    // どちらかに explicit slug を付けないと一意な URL を作れないので
+    // ビルド時に弾く。
+    expect(() =>
+      buildTaskSlugMap([
+        { id: "tier-1-mug" },
+        { id: "tier-2-mug" },
+      ]),
+    ).toThrow(/slug "mug" maps to multiple task ids/);
+  });
+});
+
+describe("compareModelsByRank", () => {
+  function sorted(models: string[]): string[] {
+    return [...models].sort(compareModelsByRank);
+  }
+
+  it("sorts Claude models opus > sonnet > haiku, then newest version first", () => {
+    expect(
+      sorted([
+        "claude-haiku-4-5-20251001",
+        "claude-sonnet-4-6",
+        "claude-opus-4-5-20251101",
+        "claude-opus-4-7",
+        "claude-sonnet-4-5-20250929",
+      ]),
+    ).toEqual([
+      "claude-opus-4-7",
+      "claude-opus-4-5-20251101",
+      "claude-sonnet-4-6",
+      "claude-sonnet-4-5-20250929",
+      "claude-haiku-4-5-20251001",
+    ]);
+  });
+
+  it("sorts Gemini models pro > flash > flash-lite, newer version first", () => {
+    expect(
+      sorted([
+        "gemini-2.5-flash-lite",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview",
+        "gemini-3-flash-preview",
+        "gemini-2.5-pro",
+        "gemini-2.5-flash",
+      ]),
+    ).toEqual([
+      "gemini-3.1-pro-preview",
+      "gemini-2.5-pro",
+      "gemini-3-flash-preview",
+      "gemini-2.5-flash",
+      "gemini-3.1-flash-lite-preview",
+      "gemini-2.5-flash-lite",
+    ]);
+  });
+
+  it("sorts OpenAI gpt-* by version desc, with mini/nano after the base", () => {
+    expect(
+      sorted([
+        "gpt-5-nano-2025-08-07",
+        "gpt-5.4-mini-2026-03-17",
+        "gpt-5",
+        "gpt-5.5-2026-04-23",
+        "gpt-5.4-2026-03-05",
+        "gpt-4.1-2025-04-14",
+      ]),
+    ).toEqual([
+      "gpt-5.5-2026-04-23",
+      "gpt-5.4-2026-03-05",
+      "gpt-5.4-mini-2026-03-17",
+      "gpt-5",
+      "gpt-5-nano-2025-08-07",
+      "gpt-4.1-2025-04-14",
+    ]);
+  });
+
+  it("groups OpenAI codex variants together, after non-codex of same version line", () => {
+    // codex は family=1、非 codex (gpt) は family=0。同じプロバイダ内では
+    // gpt-5.X のあとに codex ブロックが来る。
+    const out = sorted(["gpt-5.4-2026-03-05", "gpt-5.3-codex", "gpt-5"]);
+    expect(out[0]).toBe("gpt-5.4-2026-03-05");
+    expect(out[1]).toBe("gpt-5");
+    expect(out[2]).toBe("gpt-5.3-codex");
+  });
+
+  it("places o-series after gpt-* and codex within OpenAI group", () => {
+    const out = sorted(["o3-2025-04-16", "gpt-5", "o4-mini-2025-04-16"]);
+    expect(out[0]).toBe("gpt-5");
+    // o4 は major=4、o3 は major=3、降順なので o4 → o3
+    expect(out[1]).toBe("o4-mini-2025-04-16");
+    expect(out[2]).toBe("o3-2025-04-16");
+  });
+
+  it("falls back to lexical order for unknown model ids", () => {
+    expect(sorted(["zebra-7b", "alpaca-13b", "llama-2"])).toEqual([
+      "alpaca-13b",
+      "llama-2",
+      "zebra-7b",
+    ]);
   });
 });

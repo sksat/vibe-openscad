@@ -2,8 +2,10 @@
 import type { ScadParameter } from "../lib/scad-parameters.js";
 
 interface Props {
-  /** Initial STL URL — shown immediately, before any parameter change. */
-  stlUrl: string;
+  /** Initial STL URL — used only by the default slot (when no slot content
+   *  is provided). The page typically supplies its own viewer-host inside a
+   *  RunView slot, in which case this prop is unused. */
+  stlUrl?: string;
   /** Full SCAD source — used as the base for parametric re-renders. */
   scad: string;
   /** Parsed top-level parameters. Numbers/booleans are interactive. */
@@ -20,16 +22,25 @@ const hasTweakable = tweakable.length > 0;
 ---
 
 <div class="param-viewer" data-component="param-viewer">
-  <div class="viewer-host" data-stl-host data-stl-src={stlUrl} style={`height: ${height}px`}>
-    <div class="overlay loading">loading STL…</div>
-  </div>
+  <slot>
+    {/* default: a self-contained viewer-host. 親が独自の viewer-host
+        (例: RunView の stl-viewer slot 内)を渡してきた場合は
+        slot がそれで上書きされる。スクリプトは
+        `[data-component='param-viewer']` の中にある `[data-stl-host]` と
+        `[data-param]` をそのまま掴むので、レイアウトの自由度がある。 */}
+    {stlUrl && (
+      <div class="viewer-host" data-stl-host data-stl-src={stlUrl} style={`height: ${height}px`}>
+        <div class="overlay loading">loading STL…</div>
+      </div>
+    )}
+  </slot>
 
   {hasTweakable && (
-    <details class="controls" open>
-      <summary>
-        パラメータ ({tweakable.length})
+    <div class="controls">
+      <div class="controls-header">
+        <span>パラメータ ({tweakable.length})</span>
         <span class="status muted" data-wasm-status>—</span>
-      </summary>
+      </div>
       <div class="param-grid">
         {tweakable.map((p) =>
           p.kind === "number" ? (
@@ -43,6 +54,7 @@ const hasTweakable = tweakable.length > 0;
                 max={p.range?.max ?? Math.max(p.value * 2, p.value + 1)}
                 step={p.range?.step ?? (Number.isInteger(p.value) ? 1 : 0.1)}
                 value={p.value}
+                disabled
               />
               <input
                 type="number"
@@ -50,6 +62,7 @@ const hasTweakable = tweakable.length > 0;
                 data-param-numeric={p.name}
                 step={p.range?.step ?? (Number.isInteger(p.value) ? 1 : 0.1)}
                 value={p.value}
+                disabled
               />
             </label>
           ) : (
@@ -60,16 +73,18 @@ const hasTweakable = tweakable.length > 0;
                 data-param={p.name}
                 data-param-kind="boolean"
                 checked={p.value}
+                disabled
               />
             </label>
           ),
         )}
       </div>
       <div class="actions">
-        <button type="button" data-action="reset">リセット</button>
+        <button type="button" data-action="reset" disabled>リセット</button>
         <span class="muted hint">スライダを動かすと openscad-wasm で再レンダリング</span>
       </div>
-    </details>
+      <pre class="error-detail" data-wasm-error hidden></pre>
+    </div>
   )}
 
   <script is:inline type="application/json" data-scad-source set:html={JSON.stringify(scad)}></script>
@@ -197,10 +212,26 @@ const hasTweakable = tweakable.length > 0;
       if (paramInputs.length === 0) continue;
 
       const statusEl = root.querySelector<HTMLElement>("[data-wasm-status]");
+      const errorEl = root.querySelector<HTMLElement>("[data-wasm-error]");
       function setStatus(text: string, error = false) {
         if (!statusEl) return;
-        statusEl.textContent = text;
-        statusEl.style.color = error ? "var(--bad)" : "";
+        // status pill 自体は短く保つ。長い error メッセージは下の
+        // .error-detail ブロックに流して複数行で見せる。
+        if (error) {
+          statusEl.textContent = "error";
+          statusEl.style.color = "var(--bad)";
+          if (errorEl) {
+            errorEl.textContent = text.replace(/^error:\s*/, "");
+            errorEl.removeAttribute("hidden");
+          }
+        } else {
+          statusEl.textContent = text;
+          statusEl.style.color = "";
+          if (errorEl) {
+            errorEl.textContent = "";
+            errorEl.setAttribute("hidden", "");
+          }
+        }
       }
 
       const initial: ParamMap = {};
@@ -216,60 +247,87 @@ const hasTweakable = tweakable.length > 0;
         current[name] = initial[name]!;
       });
 
-      // Lazy-init wasm only on first parameter change
-      let wasmInstance: Awaited<ReturnType<typeof import("openscad-wasm").createOpenSCAD>> | null = null;
-      let wasmLoading: Promise<void> | null = null;
-      async function ensureWasm() {
-        if (wasmInstance) return;
-        if (!wasmLoading) {
-          setStatus("openscad-wasm を読み込み中…");
-          wasmLoading = (async () => {
-            const mod = await import("openscad-wasm");
-            wasmInstance = await mod.createOpenSCAD();
-            setStatus("ready");
-          })();
-        }
-        await wasmLoading;
-      }
+      // openscad-wasm は callMain がメインスレッドを同期ブロックする
+      // ため、worker に逃がす。worker は起動と同時に wasm 初期化を開始
+      // するので、最初のスライダー操作までに大抵は ready になる。
+      const worker = new Worker(
+        new URL("./openscad-render.worker.ts", import.meta.url),
+        { type: "module" },
+      );
+      setStatus("openscad-wasm を読み込み中…");
+      // 空 SCAD を投げてみて初期化完了を検知し ready 表示にする
+      // (wasm のロード自体は worker 起動時に始まっている)。
+      const readyProbeId = -1;
+      worker.postMessage({ id: readyProbeId, scad: "cube(1);" });
 
-      let pending = 0;
-      let scheduled: ReturnType<typeof setTimeout> | null = null;
-      function scheduleRerender() {
-        if (scheduled) clearTimeout(scheduled);
-        scheduled = setTimeout(() => {
-          scheduled = null;
-          rerender();
-        }, 200);
+      type RenderResponse =
+        | { id: number; stlText: string }
+        | { id: number; error: string };
+      const inflight = new Map<
+        number,
+        { resolve: (stl: string) => void; reject: (e: Error) => void }
+      >();
+      // wasm ロード完了で param 入力を有効化する。SSR 時は disabled
+       // にしてあり、moving slider before wasm が ready で「動かない」
+       // 体験を回避する。
+      const setControlsEnabled = (enabled: boolean) => {
+        const inputs = root.querySelectorAll<
+          HTMLInputElement | HTMLButtonElement
+        >("[data-param], [data-param-numeric], [data-action='reset']");
+        for (const el of inputs) {
+          el.disabled = !enabled;
+        }
+      };
+
+      worker.onmessage = (ev: MessageEvent<RenderResponse>) => {
+        const { id } = ev.data;
+        if (id === readyProbeId) {
+          if ("error" in ev.data) {
+            setStatus(`wasm load failed: ${ev.data.error}`, true);
+          } else {
+            setStatus("ready");
+            setControlsEnabled(true);
+          }
+          return;
+        }
+        const handler = inflight.get(id);
+        if (!handler) return;
+        inflight.delete(id);
+        if ("error" in ev.data) handler.reject(new Error(ev.data.error));
+        else handler.resolve(ev.data.stlText);
+      };
+
+      let nextRequestId = 0;
+      function renderInWorker(scadSource: string): Promise<string> {
+        const id = nextRequestId++;
+        return new Promise<string>((resolve, reject) => {
+          inflight.set(id, { resolve, reject });
+          worker.postMessage({ id, scad: scadSource });
+        });
       }
 
       function buildOverriddenSource(): string {
         const overrides: string[] = [];
         for (const [name, value] of Object.entries(current)) {
-          if (typeof value === "boolean") {
-            overrides.push(`${name} = ${value};`);
-          } else {
-            overrides.push(`${name} = ${value};`);
-          }
+          overrides.push(`${name} = ${value};`);
         }
         return `${scad}\n\n// --- runtime overrides ---\n${overrides.join("\n")}\n`;
       }
 
-      async function rerender() {
-        try {
-          await ensureWasm();
-          if (!wasmInstance) return;
-          const my = ++pending;
-          setStatus("rendering…");
-          const stlText = await wasmInstance.renderToStl(buildOverriddenSource());
-          if (my !== pending) return; // newer one in flight
+      const { createParamRenderController } = await import(
+        "./param-render-controller.js"
+      );
+      const controller = createParamRenderController({
+        buildSource: buildOverriddenSource,
+        render: renderInWorker,
+        applyResult: (stlText: string) => {
           const buf = new TextEncoder().encode(stlText).buffer;
           const geom = loader.parse(buf as ArrayBuffer);
           setGeometry(geom);
-          setStatus("ready");
-        } catch (e) {
-          setStatus(`error: ${e instanceof Error ? e.message : String(e)}`, true);
-        }
-      }
+        },
+        setStatus,
+      });
+      const scheduleRerender = () => controller.scheduleRerender();
 
       paramInputs.forEach((el) => {
         const name = el.getAttribute("data-param")!;
@@ -322,6 +380,10 @@ const hasTweakable = tweakable.length > 0;
               current[name] = Boolean(initialValue);
             }
           });
+          // パラメータを default に戻したので、前回出ていた error
+          // pill は即時クリアする(再 render の結果が来てから消えるのを
+          // 待たない)。デフォルトで通常 render は通る前提。
+          setStatus("ready");
           scheduleRerender();
         });
       }
@@ -367,19 +429,35 @@ const hasTweakable = tweakable.length > 0;
     border-radius: 8px;
     padding: 12px 16px;
   }
-  .controls summary {
-    cursor: pointer;
+  .controls-header {
     font-size: 13px;
     font-family: var(--mono);
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 12px;
-    user-select: none;
   }
   .controls .status {
     font-size: 11px;
     color: var(--fg-dim);
+  }
+  /* render エラー時、status pill には短い "error" を出して、実メッセージ
+     (openscad の "ERROR: ..." 等)はこのブロックに複数行で見せる。
+     run detail / RunView の error pre とトーンを合わせる。 */
+  .controls .error-detail {
+    margin: 8px 0 0;
+    padding: 8px 12px;
+    border: 1px solid rgba(239, 111, 108, 0.4);
+    border-radius: 4px;
+    background: rgba(239, 111, 108, 0.08);
+    color: var(--bad);
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 200px;
+    overflow: auto;
   }
   .param-grid {
     display: grid;
@@ -429,4 +507,11 @@ const hasTweakable = tweakable.length > 0;
   }
   .actions button:hover { border-color: var(--accent); }
   .actions .hint { font-size: 11px; }
+  /* wasm 読み込み中は全 input/button を disabled にして、操作しても
+     何も起きない不思議体験を防ぐ。ready 確認後に script で有効化。 */
+  .param input:disabled,
+  .actions button:disabled {
+    opacity: 0.5;
+    cursor: progress;
+  }
 </style>

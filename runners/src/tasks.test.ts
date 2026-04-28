@@ -23,30 +23,30 @@ prompt: |
 `;
 
 describe("loadTaskFile", () => {
-  it("parses a valid YAML task file", () => {
+  it("parses a valid YAML task file", async () => {
     const p = join(dir, "task.yml");
     writeFileSync(p, validTaskYaml);
-    const task = loadTaskFile(p);
+    const task = await loadTaskFile(p);
     expect(task.id).toBe("tier-1-cube-with-hole");
     expect(task.tier).toBe(1);
     expect(task.title).toBe("Cube with through hole");
   });
 
-  it("rejects malformed YAML with a helpful error", () => {
+  it("rejects malformed YAML with a helpful error", async () => {
     const p = join(dir, "broken.yml");
     writeFileSync(p, "id: x\ntier: not-a-number\n");
-    expect(() => loadTaskFile(p)).toThrow(/broken\.yml/);
+    await expect(loadTaskFile(p)).rejects.toThrow(/broken\.yml/);
   });
 
-  it("rejects YAML missing required fields", () => {
+  it("rejects YAML missing required fields", async () => {
     const p = join(dir, "empty.yml");
     writeFileSync(p, "id: x\n");
-    expect(() => loadTaskFile(p)).toThrow();
+    await expect(loadTaskFile(p)).rejects.toThrow();
   });
 });
 
 describe("loadAllTasks", () => {
-  it("walks tier directories and loads every task YAML", () => {
+  it("walks tier directories and loads every task YAML", async () => {
     mkdirSync(join(dir, "tier-1"));
     mkdirSync(join(dir, "tier-2"));
     writeFileSync(join(dir, "tier-1", "01-cube.yml"), validTaskYaml);
@@ -54,27 +54,29 @@ describe("loadAllTasks", () => {
       join(dir, "tier-2", "01-mug.yml"),
       `id: tier-2-mug\ntier: 2\ntitle: Mug\nprompt: make a mug\n`,
     );
-    const tasks = loadAllTasks(dir);
+    const tasks = await loadAllTasks(dir);
     expect(tasks.map((t) => t.id).sort()).toEqual([
       "tier-1-cube-with-hole",
       "tier-2-mug",
     ]);
   });
 
-  it("rejects duplicate task ids across files", () => {
+  it("rejects duplicate task ids across files", async () => {
     writeFileSync(join(dir, "a.yml"), validTaskYaml);
     writeFileSync(join(dir, "b.yml"), validTaskYaml);
-    expect(() => loadAllTasks(dir)).toThrow(/duplicate.*tier-1-cube-with-hole/);
+    await expect(loadAllTasks(dir)).rejects.toThrow(
+      /duplicate.*tier-1-cube-with-hole/,
+    );
   });
 
-  it("returns [] when tasks directory is empty", () => {
-    expect(loadAllTasks(dir)).toEqual([]);
+  it("returns [] when tasks directory is empty", async () => {
+    await expect(loadAllTasks(dir)).resolves.toEqual([]);
   });
 
-  it("ignores non-yaml files", () => {
+  it("ignores non-yaml files", async () => {
     writeFileSync(join(dir, "README.md"), "ignore me");
     writeFileSync(join(dir, "task.yml"), validTaskYaml);
-    expect(loadAllTasks(dir)).toHaveLength(1);
+    await expect(loadAllTasks(dir)).resolves.toHaveLength(1);
   });
 });
 
@@ -109,5 +111,17 @@ describe("computeTaskHash", () => {
       id: "x",
     } as never);
     expect(a).toBe(b);
+  });
+
+  it("ignores slug — adding/changing slug does not invalidate signatures of past runs", () => {
+    // slug は URL の人間可読名で意味的な内容ではない。fingerprint に
+    // 効かせると「mug → simple-mug」と URL を直すだけで全 run が
+    // stale 扱いになって再実行コストがかかる。除外する。
+    const base = { id: "x", tier: 1, title: "t", prompt: "p" };
+    const a = computeTaskHash(base);
+    const b = computeTaskHash({ ...base, slug: "simple-mug" });
+    const c = computeTaskHash({ ...base, slug: "different" });
+    expect(a).toBe(b);
+    expect(a).toBe(c);
   });
 });

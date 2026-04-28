@@ -3,15 +3,14 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { resolve } from "node:path";
 import Base from "../../layouts/Base.astro";
-import StlViewer from "../../components/StlViewer.astro";
 import ParametricStlViewer from "../../components/ParametricStlViewer.astro";
-import { Code } from "astro:components";
-import { formatCost, getDataset, runCostUsd, shortModelLabel, statusBadgeClass } from "../../lib/dataset.js";
+import RunView from "../../components/RunView.astro";
+import { formatCost, getDataset, runCostUsd, shortModelLabel, statusBadgeClass, taskSlug } from "../../lib/dataset.js";
 import { extractParameters } from "../../lib/scad-parameters.js";
 import Breadcrumb from "../../components/Breadcrumb.astro";
 
-export function getStaticPaths() {
-  const ds = getDataset();
+export async function getStaticPaths() {
+  const ds = await getDataset();
   const tasksById = new Map(ds.tasks.map((t) => [t.task.id, t.task]));
   const repoRoot = resolve(process.cwd(), "..");
   // Reverse index: runId → list of children that iterate from it.
@@ -35,6 +34,15 @@ export function getStaticPaths() {
     } catch {
       // ignore
     }
+    let rawText: string | undefined;
+    try {
+      rawText = readFileSync(
+        join(repoRoot, "results", run.meta.taskId, runId, "raw.txt"),
+        "utf8",
+      );
+    } catch {
+      // ignore
+    }
     const parameters = scad ? extractParameters(scad) : [];
     const parentRun = run.meta.parentRunId
       ? ds.runs.get(run.meta.parentRunId)
@@ -45,13 +53,21 @@ export function getStaticPaths() {
       .filter((r): r is NonNullable<typeof r> => !!r);
     out.push({
       params: { id: runId },
-      props: { run, task, scad, parameters, parentRun, children },
+      props: {
+        run,
+        task,
+        scad,
+        ...(rawText !== undefined ? { rawText } : {}),
+        parameters,
+        parentRun,
+        children,
+      },
     });
   }
   return out;
 }
 
-const { run, task, scad, parameters, parentRun, children } = Astro.props;
+const { run, task, scad, rawText, parameters, parentRun, children } = Astro.props;
 const m = run.meta;
 const tweakable = parameters.filter(
   (p) => p.kind === "number" || p.kind === "boolean",
@@ -67,13 +83,6 @@ const ogDescription = [
   .filter(Boolean)
   .join(" · ");
 
-const placeholderHint: Record<string, string> = {
-  render_error: "OpenSCAD のレンダリングに失敗しました(下のエラー / SCAD を参照)",
-  no_code: "モデルが SCAD コードを返さなかったため何もレンダリングできません",
-  submit_missing: "ハーネスが submit_final を呼ばずに終了しました",
-  timeout: "タイムアウトで打ち切られました",
-};
-const failureHint = placeholderHint[m.status] ?? null;
 const subagents =
   m.harness.kind === "external-agent" ? m.harness.subagents ?? [] : [];
 ---
@@ -86,9 +95,12 @@ const subagents =
 >
   <Breadcrumb items={[
     { label: "home", href: "/" },
-    { label: m.taskId, href: `/tasks/${m.taskId}` },
-    ...(m.model
-      ? [{ label: shortModelLabel(m.model), href: `/tasks/${m.taskId}/${m.model}` }]
+    { label: "task", href: "/task" },
+    ...(task
+      ? [{ label: m.taskId, href: `/task/${taskSlug(task)}` }]
+      : [{ label: m.taskId }]),
+    ...(m.model && task
+      ? [{ label: shortModelLabel(m.model), href: `/task/${taskSlug(task)}/${m.model}` }]
       : []),
     { label: m.runId.slice(0, 16) + "…" },
   ]} />
@@ -113,43 +125,52 @@ const subagents =
     </div>
   )}
 
-  <section class="grid-2">
-    <div>
-      <h3>render</h3>
-      {run.pngUrl ? (
-        <img class="render" src={run.pngUrl} alt={`render of ${m.taskId}`} />
-      ) : failureHint ? (
-        <div class="empty failed">
-          <span class="status-tag">{m.status}</span>
-          <span>{failureHint}</span>
-        </div>
-      ) : (
-        <div class="empty">no render</div>
-      )}
-    </div>
-    <div>
-      <h3>3D viewer{tweakable.length > 0 && <span class="muted"> ({tweakable.length} 個のパラメータ)</span>}</h3>
-      {run.stlUrl ? (
-        tweakable.length > 0 ? (
-          <ParametricStlViewer
-            stlUrl={run.stlUrl}
-            scad={scad}
-            parameters={parameters}
-            height={420}
-          />
-        ) : (
-          <StlViewer src={run.stlUrl} height={420} />
-        )
-      ) : failureHint ? (
-        <div class="empty failed">
-          <span class="status-tag">{m.status}</span>
-          <span>{failureHint}</span>
-        </div>
-      ) : (
-        <div class="empty">no STL</div>
-      )}
-    </div>
-  </section>
+  {run.stlUrl && tweakable.length > 0 ? (
+    /* parametric: RunView を ParametricStlViewer で包み、RunView 内の
+       STL viewer 位置に viewer-host を slot 経由で差し込む。slider は
+       RunView(render + SCAD)の下に出る。 */
+    <ParametricStlViewer scad={scad} parameters={parameters}>
+      <RunView
+        pngUrl={run.pngUrl}
+        stlUrl={run.stlUrl}
+        scad={scad}
+        runId={m.runId}
+        status={m.status}
+        taskId={m.taskId}
+        durationMs={m.timing.totalMs}
+        tokens={m.tokens}
+        costUsd={cost}
+        errorMessage={m.error}
+        rawText={rawText}
+        title={m.harness.kind}
+        subtitle={m.model ? `(${shortModelLabel(m.model)})` : undefined}
+        showRunLink={false}
+      >
+        <Fragment slot="stl-viewer">
+          <div class="viewer-host" data-stl-host data-stl-src={run.stlUrl}>
+            <div class="overlay loading">loading STL…</div>
+          </div>
+        </Fragment>
+      </RunView>
+    </ParametricStlViewer>
+  ) : (
+    <RunView
+      pngUrl={run.pngUrl}
+      stlUrl={run.stlUrl}
+      scad={scad}
+      runId={m.runId}
+      status={m.status}
+      taskId={m.taskId}
+      durationMs={m.timing.totalMs}
+      tokens={m.tokens}
+      costUsd={cost}
+      errorMessage={m.error}
+      rawText={rawText}
+      title={m.harness.kind}
+      subtitle={m.model ? `(${shortModelLabel(m.model)})` : undefined}
+      showRunLink={false}
+    />
+  )}
 
   <section class="meta-table">
     <h3>meta</h3>
@@ -217,7 +238,7 @@ const subagents =
         {parentRun && (
           <div class="chain-row">
             <span class="chain-label">← parent</span>
-            <a class="chain-card" href={`/benchmark/${parentRun.meta.runId}`}>
+            <a class="chain-card" href={`/run/${parentRun.meta.runId}`}>
               {parentRun.pngUrl && (
                 <img src={parentRun.pngUrl} alt={`parent ${parentRun.meta.runId}`} loading="lazy" />
               )}
@@ -231,7 +252,7 @@ const subagents =
             <span class="chain-label">→ children ({children.length})</span>
             <div class="chain-children">
               {children.map((c) => (
-                <a class="chain-card" href={`/benchmark/${c.meta.runId}`}>
+                <a class="chain-card" href={`/run/${c.meta.runId}`}>
                   {c.pngUrl && (
                     <img src={c.pngUrl} alt={`child ${c.meta.runId}`} loading="lazy" />
                   )}
@@ -253,19 +274,6 @@ const subagents =
     </section>
   )}
 
-  <section>
-    <h3>generated SCAD</h3>
-    {scad ? (
-      <Code code={scad} lang="c" theme="github-dark" wrap />
-    ) : m.status === "no_code" ? (
-      <div class="empty failed">
-        <span class="status-tag">no_code</span>
-        <span>モデルが SCAD コードブロックを返さなかった</span>
-      </div>
-    ) : (
-      <div class="empty">no SCAD</div>
-    )}
-  </section>
 </Base>
 
 <style>
@@ -284,52 +292,6 @@ const subagents =
     display: flex;
     gap: 8px;
     margin-bottom: 24px;
-  }
-  .grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-  @media (max-width: 700px) {
-    .grid-2 { grid-template-columns: 1fr; }
-  }
-  .render {
-    width: 100%;
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-  }
-  .empty {
-    background: var(--bg-3);
-    color: var(--fg-dim);
-    border: 1px dashed var(--line);
-    border-radius: 8px;
-    padding: 16px;
-    text-align: center;
-    font-family: var(--mono);
-    font-size: 13px;
-    min-height: 120px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
-  .empty.failed {
-    background: rgba(239, 111, 108, 0.06);
-    border-color: rgba(239, 111, 108, 0.4);
-    color: var(--fg);
-  }
-  .empty.failed .status-tag {
-    display: inline-block;
-    padding: 2px 10px;
-    border-radius: 999px;
-    background: rgba(239, 111, 108, 0.15);
-    color: var(--bad);
-    border: 1px solid rgba(239, 111, 108, 0.4);
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
   }
   .meta-table table {
     width: 100%;

@@ -63,9 +63,12 @@ interface Props {
    */
   variantRows?: VariantRow[];
   tier?: number;
+  /** URL に使う task slug。`meta.taskId` (内部 id) と独立に親が解決する。
+   *  未指定なら taskId をそのまま使う(下位互換)。 */
+  taskSlug?: string;
 }
 
-const { bare, strategies, variantRows = [], tier } = Astro.props;
+const { bare, strategies, variantRows = [], tier, taskSlug } = Astro.props;
 const m = bare.meta;
 // Aggregate stats across bare + every iter step.
 let totalMs = m.timing.totalMs;
@@ -92,12 +95,12 @@ for (const row of variantRows) for (const v of row.variants) accumulate(v.run);
 const segments = runBadges(m);
 const dataModels = m.model ?? "";
 // bare サムネ / strategy ラベルクリック先: card 全体の detail
-// (= /tasks/<task>/<model>/)。bare run 単独の detail は detail 上の
+// (= /task/<task>/<model>/)。bare run 単独の detail は detail 上の
 // \"run detail →\" から到達できる。
 const cardHref =
   m.model != null
-    ? `/tasks/${m.taskId}/${m.model}`
-    : `/benchmark/${m.runId}`;
+    ? `/task/${taskSlug ?? m.taskId}/${m.model}`
+    : `/run/${m.runId}`;
 const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrixId}`;
 ---
 
@@ -186,7 +189,7 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
           return (
             <a
               class="iter-thumb"
-              href={`/benchmark/${sm.runId}`}
+              href={`/run/${sm.runId}`}
               aria-label={`open ${row.familySlug}=${lbl} run ${sm.runId}`}
               data-status={sm.status}
             >
@@ -253,7 +256,7 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
             return (
               <a
                 class="iter-thumb"
-                href={`/benchmark/${sm.runId}`}
+                href={`/run/${sm.runId}`}
                 aria-label={`open iter ${d} run ${sm.runId}`}
                 data-status={sm.status}
               >

@@ -2,19 +2,56 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { experimental_AstroContainer as AstroContainer } from "astro/container";
 import { describe, expect, it } from "vitest";
-import BareSection from "./BareSection.astro";
+import RunView from "./RunView.astro";
 
 const SRC = readFileSync(
-  resolve("src/components/BareSection.astro"),
+  resolve("src/components/RunView.astro"),
   "utf8",
 );
 
 const SAMPLE_SCAD = "cube(10);\nsphere(5);\n";
 
-describe("BareSection layout", () => {
-  it("has render and scad columns as direct siblings of .bare-body", async () => {
+describe("RunView layout", () => {
+  it("uses the title prop as the section heading and renders the optional subtitle", async () => {
     const c = await AstroContainer.create();
-    const html = await c.renderToString(BareSection, {
+    const html = await c.renderToString(RunView, {
+      props: {
+        pngUrl: "/img.png",
+        scad: SAMPLE_SCAD,
+        runId: "r-1",
+        status: "success",
+        taskId: "tier-1-mug",
+        durationMs: 1000,
+        title: "claude-code",
+        subtitle: "(8 turns)",
+      },
+    });
+    // h2 タグが title を含み、subtitle が小さく付随する
+    const h2 = html.match(/<h2[^>]*>([\s\S]*?)<\/h2>/)?.[1] ?? "";
+    expect(h2).toContain("claude-code");
+    expect(h2).toContain("(8 turns)");
+  });
+
+  it("hides the run-detail link when showRunLink is false", async () => {
+    const c = await AstroContainer.create();
+    const html = await c.renderToString(RunView, {
+      props: {
+        pngUrl: "/img.png",
+        scad: SAMPLE_SCAD,
+        runId: "r-1",
+        status: "success",
+        taskId: "tier-1-mug",
+        durationMs: 1000,
+        showRunLink: false,
+      },
+    });
+    expect(html).not.toContain("runlink");
+    expect(html).not.toContain("run detail →");
+  });
+
+  it("has render and scad columns as direct siblings of .run-view-body", async () => {
+    const c = await AstroContainer.create();
+    const html = await c.renderToString(RunView, {
       props: {
         pngUrl: "/img.png",
         scad: SAMPLE_SCAD,
@@ -23,15 +60,15 @@ describe("BareSection layout", () => {
         taskId: "tier-1-mug",
       },
     });
-    expect(html).toContain("bare-render-col");
-    expect(html).toContain("bare-scad-col");
+    expect(html).toContain("run-view-render-col");
+    expect(html).toContain("run-view-scad-col");
   });
 
   it("wraps the render in a fixed-aspect frame so 'no render' keeps shape", async () => {
     // Both rendered and not-rendered states should occupy the same 4:3
     // box so the layout below (meta panel, sibling SCAD col) is stable.
     const c = await AstroContainer.create();
-    const withImg = await c.renderToString(BareSection, {
+    const withImg = await c.renderToString(RunView, {
       props: {
         pngUrl: "/img.png",
         scad: SAMPLE_SCAD,
@@ -41,7 +78,7 @@ describe("BareSection layout", () => {
         durationMs: 1000,
       },
     });
-    const noImg = await c.renderToString(BareSection, {
+    const noImg = await c.renderToString(RunView, {
       props: {
         pngUrl: undefined,
         scad: SAMPLE_SCAD,
@@ -61,7 +98,7 @@ describe("BareSection layout", () => {
 
   it("renders a meta panel with duration, tokens, cost, and error", async () => {
     const c = await AstroContainer.create();
-    const html = await c.renderToString(BareSection, {
+    const html = await c.renderToString(RunView, {
       props: {
         pngUrl: undefined,
         scad: SAMPLE_SCAD,
@@ -82,26 +119,26 @@ describe("BareSection layout", () => {
     expect(html).toMatch(/Parser error/);
   });
 
-  it("does not put container-type on .bare-body (broke render-frame aspect-ratio)", () => {
-    // Putting container-type: inline-size on .bare-body affected
+  it("does not put container-type on .run-view-body (broke render-frame aspect-ratio)", () => {
+    // Putting container-type: inline-size on .run-view-body affected
     // .render-frame in the sibling column — aspect-ratio occasionally
-    // collapsed to text width. Container-type may live on .bare-scad-col
+    // collapsed to text width. Container-type may live on .run-view-scad-col
     // itself (no aspect-ratio child there), but never on the grid parent.
-    expect(SRC).not.toMatch(/\.bare-body\s*\{[^}]*container-type:\s*inline-size/);
+    expect(SRC).not.toMatch(/\.run-view-body\s*\{[^}]*container-type:\s*inline-size/);
   });
 
   it("caps SCAD scroll height proportional to column width (~ 2× render frame)", () => {
     // render-frame is aspect-ratio 4/3 → render height = col-width × 0.75.
     // SCAD scroll max should approximate 2 × that = col-width × 1.5
-    // = 150cqw, when container-type is scoped to .bare-scad-col.
-    expect(SRC).toMatch(/\.bare-scad-col[\s\S]*?container-type:\s*inline-size/);
+    // = 150cqw, when container-type is scoped to .run-view-scad-col.
+    expect(SRC).toMatch(/\.run-view-scad-col[\s\S]*?container-type:\s*inline-size/);
     expect(SRC).toMatch(/max-height:\s*150cqw/);
   });
 
   it("aligns the run-detail link to the right of the title in the same row", () => {
     // header は flex 横並び、.runlink は margin-left: auto で右寄せ。
-    expect(SRC).toMatch(/\.bare-section header\s*\{[^}]*display:\s*flex/);
-    expect(SRC).not.toMatch(/\.bare-section header\s*\{[^}]*flex-direction:\s*column/);
+    expect(SRC).toMatch(/\.run-view header\s*\{[^}]*display:\s*flex/);
+    expect(SRC).not.toMatch(/\.run-view header\s*\{[^}]*flex-direction:\s*column/);
     expect(SRC).toMatch(/\.runlink[\s\S]*?margin-left:\s*auto/);
   });
 
@@ -112,11 +149,11 @@ describe("BareSection layout", () => {
   });
 
   it("uses identical flex gap on both columns so col-label + box top aligns", () => {
-    // .bare-render-col に gap: 10px があり .bare-scad-col に無いと、
+    // .run-view-render-col に gap: 10px があり .run-view-scad-col に無いと、
     // col-label の下端から render-frame までと scad-scroll までで
     // 10px ずれる。両 col に同じ gap を当てて揃える。
-    const gapOnRender = SRC.match(/\.bare-render-col[\s\S]*?gap:\s*(\d+px)/);
-    const gapOnScad = SRC.match(/\.bare-scad-col[\s\S]*?gap:\s*(\d+px)/);
+    const gapOnRender = SRC.match(/\.run-view-render-col[\s\S]*?gap:\s*(\d+px)/);
+    const gapOnScad = SRC.match(/\.run-view-scad-col[\s\S]*?gap:\s*(\d+px)/);
     expect(gapOnRender?.[1]).toBeDefined();
     expect(gapOnScad?.[1]).toBe(gapOnRender?.[1]);
   });
@@ -128,11 +165,11 @@ describe("BareSection layout", () => {
     expect(SRC).toMatch(/\.scad-scroll[\s\S]*?overflow-y:\s*scroll/);
   });
 
-  it("ensures the bare-scad-col cannot push the grid wider than its 1fr share", () => {
+  it("ensures the run-view-scad-col cannot push the grid wider than its 1fr share", () => {
     // The Code (Shiki) output can include long unwrappable lines; without
     // min-width: 0 on the grid item, it can blow out past the column and
     // squeeze the render column.
-    expect(SRC).toMatch(/\.bare-scad-col[\s\S]*?min-width:\s*0/);
+    expect(SRC).toMatch(/\.run-view-scad-col[\s\S]*?min-width:\s*0/);
   });
 
   it("aligns the top of the SCAD scroll with the top of the render frame via matched-height column labels", async () => {
@@ -140,7 +177,7 @@ describe("BareSection layout", () => {
     // ラベル(.col-label)を持っていれば、scad-scroll の top と
     // render-frame の top が同じ y 座標にそろう。
     const c = await AstroContainer.create();
-    const html = await c.renderToString(BareSection, {
+    const html = await c.renderToString(RunView, {
       props: {
         pngUrl: "/img.png",
         scad: SAMPLE_SCAD,
@@ -150,23 +187,23 @@ describe("BareSection layout", () => {
         durationMs: 1000,
       },
     });
-    // bare-render-col の中で render-frame より前に col-label が出る
-    const renderColIdx = html.indexOf("bare-render-col");
+    // run-view-render-col の中で render-frame より前に col-label が出る
+    const renderColIdx = html.indexOf("run-view-render-col");
     const renderFrameIdx = html.indexOf("render-frame", renderColIdx);
     const renderLabelIdx = html.indexOf("col-label", renderColIdx);
     expect(renderLabelIdx).toBeGreaterThan(renderColIdx);
     expect(renderLabelIdx).toBeLessThan(renderFrameIdx);
-    // bare-scad-col の中でも col-label が scad-scroll より前
-    const scadColIdx = html.indexOf("bare-scad-col");
+    // run-view-scad-col の中でも col-label が scad-scroll より前
+    const scadColIdx = html.indexOf("run-view-scad-col");
     const scadScrollIdx = html.indexOf("scad-scroll", scadColIdx);
     const scadLabelIdx = html.indexOf("col-label", scadColIdx);
     expect(scadLabelIdx).toBeGreaterThan(scadColIdx);
     expect(scadLabelIdx).toBeLessThan(scadScrollIdx);
   });
 
-  it("renders a PNG/STL toggle on the render col when stlUrl is provided, defaulting to PNG", async () => {
+  it("stacks the STL viewer below the PNG when stlUrl is provided (no toggle)", async () => {
     const c = await AstroContainer.create();
-    const html = await c.renderToString(BareSection, {
+    const html = await c.renderToString(RunView, {
       props: {
         pngUrl: "/img.png",
         stlUrl: "/img.stl",
@@ -177,19 +214,51 @@ describe("BareSection layout", () => {
         durationMs: 1000,
       },
     });
-    // 切替ボタンの構造
-    expect(html).toMatch(/data-target="png"/);
-    expect(html).toMatch(/data-target="stl"/);
-    // デフォルト PNG: png ボタン aria-pressed="true"、stl 側 hidden
-    const pngBtn = html.match(/data-target="png"[^>]+>/)?.[0] ?? "";
-    expect(pngBtn).toMatch(/aria-pressed="true"/);
-    const stlPanel = html.match(/data-render-view="stl"[\s\S]{0,500}/)?.[0] ?? "";
-    expect(stlPanel).toMatch(/hidden/);
+    // PNG/STL 切替ボタンは作らない
+    expect(html).not.toMatch(/data-target="png"/);
+    expect(html).not.toMatch(/data-target="stl"/);
+    // PNG の下に STL viewer が出る(順序チェック)
+    const renderColIdx = html.indexOf("run-view-render-col");
+    const pngIdx = html.indexOf("/img.png", renderColIdx);
+    const stlIdx = html.indexOf("/img.stl", renderColIdx);
+    expect(pngIdx).toBeGreaterThan(renderColIdx);
+    expect(stlIdx).toBeGreaterThan(pngIdx);
+    // STL pane は hidden ではない(常時表示)
+    const stlFrame = html.match(/stl-frame[\s\S]{0,500}/)?.[0] ?? "";
+    expect(stlFrame).not.toMatch(/\bhidden\b/);
   });
 
-  it("does not render PNG/STL toggle when stlUrl is missing", async () => {
+  it("renders custom slot content in place of the default StlViewer when given", async () => {
+    // 「stl-viewer」slot を渡せば run detail の ParametricStlViewer 等を
+    // 差し込める。slot を埋めない場合は default の StlViewer が出る。
     const c = await AstroContainer.create();
-    const html = await c.renderToString(BareSection, {
+    const html = await c.renderToString(RunView, {
+      props: {
+        pngUrl: "/img.png",
+        stlUrl: "/img.stl",
+        scad: SAMPLE_SCAD,
+        runId: "r-1",
+        status: "success",
+        taskId: "tier-1-mug",
+        durationMs: 1000,
+      },
+      slots: {
+        "stl-viewer": '<div class="custom-stl-marker">slotted</div>',
+      },
+    });
+    expect(html).toContain("custom-stl-marker");
+    // default StlViewer の data-stl-src は出ない(slot に置き換わったため)
+    expect(html).not.toMatch(/data-stl-src=/);
+    // PNG → STL の縦並びは維持
+    const pngIdx = html.indexOf("/img.png");
+    const customIdx = html.indexOf("custom-stl-marker");
+    expect(pngIdx).toBeGreaterThan(0);
+    expect(customIdx).toBeGreaterThan(pngIdx);
+  });
+
+  it("does not render the STL viewer when stlUrl is missing", async () => {
+    const c = await AstroContainer.create();
+    const html = await c.renderToString(RunView, {
       props: {
         pngUrl: "/img.png",
         scad: SAMPLE_SCAD,
@@ -199,12 +268,12 @@ describe("BareSection layout", () => {
         durationMs: 1000,
       },
     });
-    expect(html).not.toMatch(/data-target="stl"/);
+    expect(html).not.toContain("stl-frame");
   });
 
   it("renders a SCAD/raw toggle when rawText is provided, defaulting to SCAD", async () => {
     const c = await AstroContainer.create();
-    const html = await c.renderToString(BareSection, {
+    const html = await c.renderToString(RunView, {
       props: {
         pngUrl: "/img.png",
         scad: SAMPLE_SCAD,
@@ -229,7 +298,7 @@ describe("BareSection layout", () => {
 
   it("does not render a toggle when rawText is not provided", async () => {
     const c = await AstroContainer.create();
-    const html = await c.renderToString(BareSection, {
+    const html = await c.renderToString(RunView, {
       props: {
         pngUrl: "/img.png",
         scad: SAMPLE_SCAD,
@@ -244,7 +313,7 @@ describe("BareSection layout", () => {
 
   it("places scad-meta ABOVE the scroll container (sibling, not nested)", async () => {
     const c = await AstroContainer.create();
-    const html = await c.renderToString(BareSection, {
+    const html = await c.renderToString(RunView, {
       props: {
         pngUrl: "/img.png",
         scad: SAMPLE_SCAD,

@@ -15,11 +15,16 @@ import {
   runBadges,
   runCostUsd,
   statusBadgeClass,
+  taskSlug,
 } from "../../../lib/dataset.js";
 import VendorIcon from "../../../components/VendorIcon.astro";
 import DiffView from "../../../components/DiffView.astro";
 import Breadcrumb from "../../../components/Breadcrumb.astro";
-import BareSection from "../../../components/BareSection.astro";
+import RunView from "../../../components/RunView.astro";
+import ParametricStlViewer from "../../../components/ParametricStlViewer.astro";
+import { extractParameters } from "../../../lib/scad-parameters.js";
+// "bare" は harness 種別の表示。task detail での主タイル位置(代表 run)は
+// bare の default effort が選ばれているので、以前と互換の見出しを与える。
 import { shortModelLabel } from "../../../lib/dataset.js";
 import type { LoadedRun } from "../../../lib/results.js";
 
@@ -53,7 +58,7 @@ function errorBadgeFor(status: string): string | null {
   }
 }
 
-export function getStaticPaths() {
+export async function getStaticPaths() {
   // Astro extracts getStaticPaths into a separate prerender chunk that
   // can't see frontmatter-outer-scope helpers, so inline EFFORT_ORDER /
   // compareEffortLabel here.
@@ -67,7 +72,7 @@ export function getStaticPaths() {
     return a.localeCompare(b);
   };
 
-  const ds = getDataset();
+  const ds = await getDataset();
   const tasksById = new Map(ds.tasks.map((t) => [t.task.id, t.task]));
   const fpByMatrix = fingerprintByMatrixId(ds.runs.values());
   const repoRoot = resolve(process.cwd(), "..");
@@ -216,9 +221,11 @@ export function getStaticPaths() {
     totalMs: number;
     runCount: number;
   };
-  const out: Array<{ params: { id: string; model: string }; props: Props }> = [];
+  const out: Array<{ params: { slug: string; model: string }; props: Props }> = [];
 
   for (const [taskId, tb] of taskBuckets.entries()) {
+    if (!tb.task) continue;
+    const taskUrlSlug = taskSlug(tb.task);
     const labels = taskEffortLabels.get(taskId) ?? [];
     for (const [model, mb] of tb.byModel.entries()) {
       if (!mb.bare) continue;
@@ -297,7 +304,7 @@ export function getStaticPaths() {
       for (const row of variantRows) for (const v of row.variants) accumulate(v.run);
 
       out.push({
-        params: { id: taskId, model },
+        params: { slug: taskUrlSlug, model },
         props: {
           bare,
           bareScad,
@@ -319,7 +326,7 @@ const props = Astro.props as {
   bare: LoadedRun;
   bareScad: string;
   bareRaw?: string;
-  task: ReturnType<Map<string, ReturnType<typeof getDataset>["tasks"][number]["task"]>["get"]>;
+  task: ReturnType<Map<string, Awaited<ReturnType<typeof getDataset>>["tasks"][number]["task"]>["get"]>;
   strategies: ChainStrategy[];
   variantRows: VariantRow[];
   totalCost: number;
@@ -328,6 +335,10 @@ const props = Astro.props as {
 };
 const { bare, bareScad, bareRaw, task, strategies, variantRows, totalCost, totalMs, runCount } = props;
 const m = bare.meta;
+const bareParameters = bareScad ? extractParameters(bareScad) : [];
+const bareTweakable = bareParameters.filter(
+  (p) => p.kind === "number" || p.kind === "boolean",
+);
 const segments = runBadges(m);
 const ogTitle = `${m.model} on ${m.taskId}`;
 const ogDescription = [
@@ -340,7 +351,10 @@ const ogDescription = [
 <Base title={`${ogTitle} — vibe-openscad`} description={ogDescription} ogImage={bare.pngUrl} ogType="article">
   <Breadcrumb items={[
     { label: "home", href: "/" },
-    { label: m.taskId, href: `/tasks/${m.taskId}` },
+    { label: "task", href: "/task" },
+    ...(task
+      ? [{ label: m.taskId, href: `/task/${taskSlug(task)}` }]
+      : [{ label: m.taskId }]),
     { label: m.model ? shortModelLabel(m.model) : m.matrixId },
   ]} />
 
@@ -362,19 +376,47 @@ const ogDescription = [
     ))}
   </div>
 
-  <BareSection
-    pngUrl={bare.pngUrl}
-    stlUrl={bare.stlUrl}
-    scad={bareScad}
-    runId={m.runId}
-    status={m.status}
-    taskId={m.taskId}
-    durationMs={m.timing.totalMs}
-    tokens={m.tokens}
-    costUsd={runCostUsd(m)}
-    errorMessage={m.error}
-    rawText={bareRaw}
-  />
+  {bare.stlUrl && bareTweakable.length > 0 ? (
+    <ParametricStlViewer scad={bareScad} parameters={bareParameters}>
+      <RunView
+        pngUrl={bare.pngUrl}
+        stlUrl={bare.stlUrl}
+        scad={bareScad}
+        runId={m.runId}
+        status={m.status}
+        taskId={m.taskId}
+        durationMs={m.timing.totalMs}
+        tokens={m.tokens}
+        costUsd={runCostUsd(m)}
+        errorMessage={m.error}
+        rawText={bareRaw}
+        title="bare"
+        subtitle="(provider default effort)"
+      >
+        <Fragment slot="stl-viewer">
+          <div class="viewer-host" data-stl-host data-stl-src={bare.stlUrl}>
+            <div class="overlay loading">loading STL…</div>
+          </div>
+        </Fragment>
+      </RunView>
+    </ParametricStlViewer>
+  ) : (
+    <RunView
+      pngUrl={bare.pngUrl}
+      stlUrl={bare.stlUrl}
+      scad={bareScad}
+      runId={m.runId}
+      status={m.status}
+      taskId={m.taskId}
+      durationMs={m.timing.totalMs}
+      tokens={m.tokens}
+      costUsd={runCostUsd(m)}
+      errorMessage={m.error}
+      rawText={bareRaw}
+      title="bare"
+      subtitle="(provider default effort)"
+    />
+  )}
 
   {task && (
     <section class="prompt-section">
@@ -406,7 +448,7 @@ const ogDescription = [
                 <span class="step-label">{lbl}{v.isDefault ? <span class="default-suffix"> (default)</span> : null}</span>
                 <span class={statusBadgeClass(sm.status)}>{sm.status}</span>
                 {errBadge && <span class="iter-err">{errBadge}</span>}
-                <a class="muted runlink" href={`/benchmark/${sm.runId}`}>→</a>
+                <a class="muted runlink" href={`/run/${sm.runId}`}>→</a>
               </header>
               {v.run.pngUrl ? (
                 <img class="step-img" src={v.run.pngUrl} alt={lbl} loading="lazy" />
@@ -457,7 +499,7 @@ const ogDescription = [
                 <span class="step-label">i{d}</span>
                 <span class={statusBadgeClass(sm.status)}>{sm.status}</span>
                 {errBadge && <span class="iter-err">{errBadge}</span>}
-                <a class="muted runlink" href={`/benchmark/${sm.runId}`}>→</a>
+                <a class="muted runlink" href={`/run/${sm.runId}`}>→</a>
               </header>
               {step.run.pngUrl ? (
                 <img class="step-img" src={step.run.pngUrl} alt={`iter ${d}`} loading="lazy" />

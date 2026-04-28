@@ -4,8 +4,8 @@ import RunCard from "../../components/RunCard.astro";
 import Breadcrumb from "../../components/Breadcrumb.astro";
 import { formatCost, getDataset, runCostUsd, shortModelLabel } from "../../lib/dataset.js";
 
-export function getStaticPaths() {
-  const ds = getDataset();
+export async function getStaticPaths() {
+  const ds = await getDataset();
   const byModel = new Map<string, { task: string; matrixId: string; runId: string }[]>();
   for (const run of ds.runs.values()) {
     const m = run.meta.model;
@@ -50,7 +50,7 @@ export function getStaticPaths() {
 }
 
 const { model, variants, tasks, grid } = Astro.props;
-const ds = getDataset();
+const ds = await getDataset();
 let totalCost = 0;
 let runCount = 0;
 for (const r of ds.runs.values()) {
@@ -88,7 +88,7 @@ for (const r of ds.runs.values()) {
         {tasks.map((t) => (
           <tr>
             <th class="task-col">
-              <a href={`/tasks/${t.id}`}>{t.title}</a>
+              <a href={`/task/${t.id}`}>{t.title}</a>
               <div class="muted small">tier {t.tier}</div>
             </th>
             {variants.map((v) => {

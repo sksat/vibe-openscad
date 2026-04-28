@@ -7,16 +7,18 @@ import type { LoadedRun } from "../lib/results.js";
 import {
   chainDepthFor,
   chainRootMatrixId,
+  compareModelsByRank,
   effortInfoFor,
   fingerprintByMatrixId,
   formatCost,
   getDataset,
   harnessGroupSlug,
   runCostUsd,
+  taskSlug,
   thinkingInfoFor,
 } from "../lib/dataset.js";
 
-const ds = getDataset();
+const ds = await getDataset();
 const fpByMatrix = fingerprintByMatrixId(ds.runs.values());
 const totalRuns = ds.runs.size;
 const completedTasks = ds.tasks.filter((t) => t.runs.length > 0).length;
@@ -351,6 +353,82 @@ const taskRows = ds.tasks.map((t) => {
   const { tiles, older } = buildTileRow(t.runs);
   return { task: t.task, tiles, older };
 });
+
+/* ─── 階層グループ表示 ─────────────────────────────────────────────
+ * (harness × provider) で 2 階層にネストして表示する。toggle で
+ * 並び順を `harness > provider > model` ↔ `provider > harness > model`
+ * に切り替えできる。サーバ側で両方レンダリングして CSS で片方を
+ * 隠すだけにすると、JS で DOM を組み直す必要が無くて単純。
+ */
+type Grouping = "harness-first" | "provider-first";
+interface OuterGroup {
+  outerKey: string;
+  innerGroups: { innerKey: string; tiles: TaskTile[] }[];
+}
+const HARNESS_ORDER = ["bare", "external-agent"];
+const PROVIDER_ORDER = ["anthropic", "openai", "google", "ollama"];
+function compareInOrder(order: string[]): (a: string, b: string) => number {
+  return (a, b) => {
+    const ai = order.indexOf(a);
+    const bi = order.indexOf(b);
+    if (ai !== -1 || bi !== -1) {
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    }
+    return a.localeCompare(b);
+  };
+}
+function tileHarness(tile: TaskTile): string {
+  const r = tile.kind === "single" ? tile.run : tile.bare;
+  return r.meta.harness.kind;
+}
+function tileProvider(tile: TaskTile): string {
+  const r = tile.kind === "single" ? tile.run : tile.bare;
+  return r.meta.provider ?? "unknown";
+}
+function groupTiles(tiles: TaskTile[], mode: Grouping): OuterGroup[] {
+  const outer = mode === "harness-first" ? tileHarness : tileProvider;
+  const inner = mode === "harness-first" ? tileProvider : tileHarness;
+  const cmpOuter = compareInOrder(
+    mode === "harness-first" ? HARNESS_ORDER : PROVIDER_ORDER,
+  );
+  const cmpInner = compareInOrder(
+    mode === "harness-first" ? PROVIDER_ORDER : HARNESS_ORDER,
+  );
+  const buckets = new Map<string, Map<string, TaskTile[]>>();
+  for (const t of tiles) {
+    const o = outer(t);
+    const i = inner(t);
+    let inMap = buckets.get(o);
+    if (!inMap) {
+      inMap = new Map();
+      buckets.set(o, inMap);
+    }
+    let arr = inMap.get(i);
+    if (!arr) {
+      arr = [];
+      inMap.set(i, arr);
+    }
+    arr.push(t);
+  }
+  // タイル並べ替えで使う model id 抽出。
+  const tileModel = (t: TaskTile): string => {
+    const r = t.kind === "single" ? t.run : t.bare;
+    return r.meta.model ?? "";
+  };
+  return [...buckets.entries()]
+    .sort(([a], [b]) => cmpOuter(a, b))
+    .map(([outerKey, inMap]) => ({
+      outerKey,
+      innerGroups: [...inMap.entries()]
+        .sort(([a], [b]) => cmpInner(a, b))
+        .map(([innerKey, tiles]) => ({
+          innerKey,
+          tiles: [...tiles].sort((a, b) =>
+            compareModelsByRank(tileModel(a), tileModel(b)),
+          ),
+        })),
+    }));
+}
 ---
 
 <Base title="vibe-openscad — dashboard">
@@ -388,40 +466,137 @@ const taskRows = ds.tasks.map((t) => {
     <p class="muted">tasks/ にタスク YAML がありません。</p>
   )}
 
-  <div class="task-list">
-    {taskRows.map(({ task, tiles, older }) => (
-      <section class="task-row" data-tier={String(task.tier)}>
-        <header>
-          <h2>
-            <a href={`/tasks/${task.id}`}>{task.title}</a>
-            <span class="badge">tier {task.tier}</span>
-            <span class="muted task-id">{task.id}</span>
-            {older > 0 && (
-              <a class="muted older" href={`/tasks/${task.id}`}>+{older} 過去 run</a>
-            )}
-          </h2>
-        </header>
-        {tiles.length === 0 ? (
-          <p class="muted empty">まだ run がありません。<code>pnpm bench run</code> で実行してください。</p>
-        ) : (
-          <div class="grid">
-            {tiles.map((tile) =>
-              tile.kind === "single" ? (
-                <RunCard run={tile.run} tier={task.tier} />
-              ) : (
-                <ModelTaskCard
-                  bare={tile.bare}
-                  strategies={tile.strategies}
-                  variantRows={tile.variantRows}
-                  tier={task.tier}
-                />
-              ),
-            )}
-          </div>
-        )}
-      </section>
-    ))}
+  <div class="task-list" data-hierarchy-mode="harness-first">
+    {taskRows.map(({ task, tiles, older }) => {
+      const harnessFirst = groupTiles(tiles, "harness-first");
+      const providerFirst = groupTiles(tiles, "provider-first");
+      return (
+        <section class="task-row" data-tier={String(task.tier)}>
+          <header>
+            <h2>
+              <a href={`/task/${taskSlug(task)}`}>{task.title}</a>
+              <span class="badge">tier {task.tier}</span>
+              <span class="muted task-id">{task.id}</span>
+              {older > 0 && (
+                <a class="muted older" href={`/task/${taskSlug(task)}`}>+{older} 過去 run</a>
+              )}
+              {tiles.length > 0 && (
+                <button
+                  type="button"
+                  class="hierarchy-toggle"
+                  data-hierarchy-toggle
+                  title="グループ順を切替"
+                  aria-label="グループ順を切替(ハーネス先 / プロバイダ先)"
+                >
+                  <span class="mode-harness">harness ▸ provider</span>
+                  <span class="mode-provider">provider ▸ harness</span>
+                </button>
+              )}
+            </h2>
+          </header>
+          {tiles.length === 0 ? (
+            <p class="muted empty">まだ run がありません。<code>pnpm bench run</code> で実行してください。</p>
+          ) : (
+            <>
+              <div class="hierarchy" data-mode="harness-first">
+                {harnessFirst.map((og) => (
+                  <section class="outer-group" data-outer={og.outerKey}>
+                    <header class="group-label outer">{og.outerKey}</header>
+                    {og.innerGroups.map((ig) => (
+                      <section class="inner-group" data-inner={ig.innerKey}>
+                        <header class="group-label inner">{ig.innerKey}</header>
+                        <div class="grid">
+                          {ig.tiles.map((tile) =>
+                            tile.kind === "single" ? (
+                              <RunCard run={tile.run} tier={task.tier} />
+                            ) : (
+                              <ModelTaskCard
+                                bare={tile.bare}
+                                strategies={tile.strategies}
+                                variantRows={tile.variantRows}
+                                tier={task.tier}
+                                taskSlug={taskSlug(task)}
+                              />
+                            ),
+                          )}
+                        </div>
+                      </section>
+                    ))}
+                  </section>
+                ))}
+              </div>
+              <div class="hierarchy" data-mode="provider-first" hidden>
+                {providerFirst.map((og) => (
+                  <section class="outer-group" data-outer={og.outerKey}>
+                    <header class="group-label outer">{og.outerKey}</header>
+                    {og.innerGroups.map((ig) => (
+                      <section class="inner-group" data-inner={ig.innerKey}>
+                        <header class="group-label inner">{ig.innerKey}</header>
+                        <div class="grid">
+                          {ig.tiles.map((tile) =>
+                            tile.kind === "single" ? (
+                              <RunCard run={tile.run} tier={task.tier} />
+                            ) : (
+                              <ModelTaskCard
+                                bare={tile.bare}
+                                strategies={tile.strategies}
+                                variantRows={tile.variantRows}
+                                tier={task.tier}
+                                taskSlug={taskSlug(task)}
+                              />
+                            ),
+                          )}
+                        </div>
+                      </section>
+                    ))}
+                  </section>
+                ))}
+              </div>
+            </>
+          )}
+        </section>
+      );
+    })}
   </div>
+
+  <script>
+    /* ハーネス先 / プロバイダ先トグル。状態は localStorage に保持して
+       全 task row を同期させる(ボタンはどの行から押しても同じ効果)。 */
+    (function () {
+      type Mode = "harness-first" | "provider-first";
+      const KEY = "vibe-hierarchy-mode";
+      const root = document.querySelector<HTMLElement>(".task-list");
+      if (!root) return;
+
+      function applyMode(mode: Mode) {
+        root!.setAttribute("data-hierarchy-mode", mode);
+        for (const grid of root!.querySelectorAll<HTMLElement>("[data-mode]")) {
+          if (grid.getAttribute("data-mode") === mode) {
+            grid.removeAttribute("hidden");
+          } else {
+            grid.setAttribute("hidden", "");
+          }
+        }
+      }
+
+      const saved = localStorage.getItem(KEY) as Mode | null;
+      if (saved === "harness-first" || saved === "provider-first") {
+        applyMode(saved);
+      }
+
+      for (const btn of document.querySelectorAll<HTMLButtonElement>(
+        "[data-hierarchy-toggle]",
+      )) {
+        btn.addEventListener("click", () => {
+          const cur = root!.getAttribute("data-hierarchy-mode") as Mode;
+          const next: Mode =
+            cur === "harness-first" ? "provider-first" : "harness-first";
+          applyMode(next);
+          localStorage.setItem(KEY, next);
+        });
+      }
+    })();
+  </script>
 </Base>
 
 <style>
@@ -445,6 +620,62 @@ const taskRows = ds.tasks.map((t) => {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 12px;
+  }
+  /* harness > provider > model または provider > harness > model の
+     2 階層ネスト表示。outer / inner にラベルを出して、その中に
+     既存の .grid タイル群を入れる。 */
+  .hierarchy {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .hierarchy .outer-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .hierarchy .inner-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-left: 12px;
+    border-left: 2px solid var(--line);
+  }
+  .group-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--fg-dim);
+    text-transform: lowercase;
+    letter-spacing: 0.02em;
+  }
+  .group-label.outer {
+    font-size: 13px;
+    color: var(--fg);
+    font-weight: 600;
+  }
+  /* トグルボタン: タスクタイトル横、harness ↔ provider 切替。
+     mode-harness/mode-provider の片方だけ表示。 */
+  .hierarchy-toggle {
+    background: var(--bg-3);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--fg-dim);
+    cursor: pointer;
+  }
+  .hierarchy-toggle:hover {
+    color: var(--fg);
+    border-color: var(--accent);
+  }
+  /* 親 .task-list の data-hierarchy-mode を読んで、ボタン内のラベルを
+     現在モードのものだけ見せる。 */
+  .task-list[data-hierarchy-mode="harness-first"]
+    .hierarchy-toggle .mode-provider,
+  .task-list[data-hierarchy-mode="provider-first"]
+    .hierarchy-toggle .mode-harness {
+    display: none;
   }
   .empty {
     font-size: 13px;

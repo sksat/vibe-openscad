@@ -66,9 +66,9 @@ function setup(): { repoRoot: string; tasksDir: string; resultsDir: string } {
 }
 
 describe("loadDataset", () => {
-  it("returns empty runs and intact tasks when results/ is empty", () => {
+  it("returns empty runs and intact tasks when results/ is empty", async () => {
     const { repoRoot } = setup();
-    const ds = loadDataset(repoRoot);
+    const ds = await loadDataset(repoRoot);
     expect(ds.tasks.map((t) => t.task.id).sort()).toEqual([
       "tier-1-cube",
       "tier-1-mug",
@@ -77,7 +77,7 @@ describe("loadDataset", () => {
     for (const t of ds.tasks) expect(t.runs).toEqual([]);
   });
 
-  it("loads runs and groups them under their tasks", () => {
+  it("loads runs and groups them under their tasks", async () => {
     const { repoRoot, resultsDir } = setup();
     writeRun(resultsDir, meta({ runId: "r1", taskId: "tier-1-cube" }));
     writeRun(
@@ -90,7 +90,7 @@ describe("loadDataset", () => {
       }),
     );
 
-    const ds = loadDataset(repoRoot);
+    const ds = await loadDataset(repoRoot);
     const cube = ds.tasks.find((t) => t.task.id === "tier-1-cube");
     const mug = ds.tasks.find((t) => t.task.id === "tier-1-mug");
     expect(cube?.runs.map((r) => r.meta.runId)).toEqual(["r1"]);
@@ -98,29 +98,29 @@ describe("loadDataset", () => {
     expect(ds.runs.get("r1")?.meta.taskId).toBe("tier-1-cube");
   });
 
-  it("exposes pngUrl and stlUrl pointing under /results/", () => {
+  it("exposes pngUrl and stlUrl pointing under /results/", async () => {
     const { repoRoot, resultsDir } = setup();
     writeRun(resultsDir, meta({ runId: "r1", taskId: "tier-1-cube" }));
-    const ds = loadDataset(repoRoot);
+    const ds = await loadDataset(repoRoot);
     const r = ds.runs.get("r1");
     expect(r?.pngUrl).toBe("/results/tier-1-cube/r1/final.png");
     expect(r?.stlUrl).toBe("/results/tier-1-cube/r1/final.stl");
     expect(r?.scadUrl).toBe("/results/tier-1-cube/r1/final.scad");
   });
 
-  it("omits pngUrl/stlUrl when those files are missing (e.g. no_code, render_error)", () => {
+  it("omits pngUrl/stlUrl when those files are missing (e.g. no_code, render_error)", async () => {
     const { repoRoot, resultsDir } = setup();
     writeRun(
       resultsDir,
       meta({ runId: "r1", taskId: "tier-1-cube", status: "no_code" }),
       { png: false, stl: false },
     );
-    const r = loadDataset(repoRoot).runs.get("r1");
+    const r = (await loadDataset(repoRoot)).runs.get("r1");
     expect(r?.pngUrl).toBeUndefined();
     expect(r?.stlUrl).toBeUndefined();
   });
 
-  it("surfaces sub-agent models in facets", () => {
+  it("surfaces sub-agent models in facets", async () => {
     const { repoRoot, resultsDir } = setup();
     const m: RunMeta = meta({
       runId: "r-ea",
@@ -165,12 +165,12 @@ describe("loadDataset", () => {
       },
     });
     writeRun(resultsDir, m);
-    const ds = loadDataset(repoRoot);
+    const ds = await loadDataset(repoRoot);
     expect(ds.facets.subagentModels).toContain("claude-haiku-4-5");
     expect(ds.facets.harnessKinds).toContain("external-agent");
   });
 
-  it("collects unique facets useful for client-side filtering", () => {
+  it("collects unique facets useful for client-side filtering", async () => {
     const { repoRoot, resultsDir } = setup();
     writeRun(resultsDir, meta({ runId: "r1", taskId: "tier-1-cube" }));
     writeRun(
@@ -182,7 +182,7 @@ describe("loadDataset", () => {
         matrixId: "bare/claude-haiku-4-5",
       }),
     );
-    const ds = loadDataset(repoRoot);
+    const ds = await loadDataset(repoRoot);
     expect(ds.facets.models.sort()).toEqual([
       "claude-haiku-4-5",
       "claude-opus-4-7",
@@ -195,7 +195,7 @@ describe("loadDataset", () => {
     ]);
   });
 
-  it("sorts runs within a task by createdAt descending", () => {
+  it("sorts runs within a task by createdAt descending", async () => {
     const { repoRoot, resultsDir } = setup();
     writeRun(
       resultsDir,
@@ -205,7 +205,7 @@ describe("loadDataset", () => {
       resultsDir,
       meta({ runId: "r-new", taskId: "tier-1-cube", createdAt: "2026-04-27T00:00:00Z" }),
     );
-    const ds = loadDataset(repoRoot);
+    const ds = await loadDataset(repoRoot);
     const cube = ds.tasks.find((t) => t.task.id === "tier-1-cube");
     expect(cube?.runs.map((r) => r.meta.runId)).toEqual(["r-new", "r-old"]);
   });

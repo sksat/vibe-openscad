@@ -12,8 +12,8 @@ import {
   runCostUsd,
 } from "../../lib/dataset.js";
 
-export function getStaticPaths() {
-  const ds = getDataset();
+export async function getStaticPaths() {
+  const ds = await getDataset();
   const tasksById = new Map(ds.tasks.map((t) => [t.task.id, t.task]));
   const fpByMatrix = fingerprintByMatrixId(ds.runs.values());
 
@@ -131,7 +131,7 @@ export function getStaticPaths() {
 }
 
 const { slug, mode, models, tasks, grid, modelSections, depths } = Astro.props;
-const ds = getDataset();
+const ds = await getDataset();
 
 let totalCost = 0;
 let runCount = 0;
@@ -181,7 +181,7 @@ const description =
           {tasks.map((t) => (
             <tr>
               <th class="task-col">
-                <a href={`/tasks/${t.id}`}>{t.title}</a>
+                <a href={`/task/${t.id}`}>{t.title}</a>
                 <div class="muted small">tier {t.tier}</div>
               </th>
               {models.map((mdl) => {
@@ -223,7 +223,7 @@ const description =
             {tasks.map((t) => (
               <tr>
                 <th class="task-col">
-                  <a href={`/tasks/${t.id}`}>{t.title}</a>
+                  <a href={`/task/${t.id}`}>{t.title}</a>
                   <div class="muted small">tier {t.tier}</div>
                 </th>
                 {depths.map((d) => {
