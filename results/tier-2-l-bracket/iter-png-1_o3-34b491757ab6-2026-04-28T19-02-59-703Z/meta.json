@@ -1,0 +1,42 @@
+{
+  "runId": "iter-png-1_o3-34b491757ab6-2026-04-28T19-02-59-703Z",
+  "taskId": "tier-2-l-bracket",
+  "matrixId": "iter-png-1/o3",
+  "signature": "34b491757ab63fe07e5b89c5c837a197a9f451bd0208e32f12ac080d3e5d85fa",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "b20dcf3dd07e532496944d76485b954e0ab614f3cda1919fee5dc406f59b3ea5",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "o3-2025-04-16",
+      "iterateFrom": "bare/o3",
+      "iteration": {
+        "kind": "render-png-feedback"
+      },
+      "parentSignature": "5d9a9ef32c1f585a25ba2bd5f9d69f80f5355f02bd6087e9c7c67d7bc9dff622"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "o3-2025-04-16",
+  "harness": {
+    "kind": "bare",
+    "iteration": {
+      "kind": "render-png-feedback"
+    }
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 69569
+  },
+  "tokens": {
+    "input": 1562,
+    "output": 3365
+  },
+  "cost_usd": 0.030044,
+  "createdAt": "2026-04-28T19:02:59.703Z",
+  "gitCommit": "781e6c683dda9349da96561361d4da5f2c54975e",
+  "parentRunId": "bare_o3-5d9a9ef32c1f-2026-04-28T14-06-46-564Z"
+}

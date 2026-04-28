@@ -1,0 +1,71 @@
+```openscad
+module l_bracket(length_x = 50, length_y = 40, thickness = 3) {
+    // 水平面
+    cube([length_x, length_y, thickness]);
+    // 垂直面
+    // 水平面からのオフセットを考慮して配置
+    translate([0, 0, thickness])
+    rotate([90, 0, 0])
+    cube([length_x, thickness, length_y]);
+}
+
+module countersunk_hole(screw_size = "M4") {
+    $fn=60; // 円の滑らかさを向上
+
+    // M4 ねじ用貫通穴
+    if (screw_size == "M4") {
+        hole_diameter = 4.5;
+        countersink_diameter = 8;
+        countersink_depth = 2;
+    } else {
+        // デフォルトまたはエラー処理
+        hole_diameter = 4.5;
+        countersink_diameter = 8;
+        countersink_depth = 2;
+    }
+
+    // 皿座面 (外側に向けるため、Y軸反転を考慮)
+    // 皿座面は外側 (ボルト頭が当たる側) に向ける
+    // 水平面の穴は Z 軸正方向、垂直面の穴は Y 軸正方向が外側
+    
+    // 貫通穴
+    cylinder(h = countersink_depth + 1, d = hole_diameter); // 十分な長さを確保
+    // 皿座面
+    translate([0, 0, countersink_depth])
+    cylinder(h = countersink_depth, d1 = countersink_diameter, d2 = countersink_diameter);
+}
+
+// パラメータ設定
+bracket_length_x = 50;
+bracket_length_y = 40;
+bracket_thickness = 3;
+hole_margin_from_edge = 10;
+
+// 穴をくり抜くための差分モジュール
+module subtract_holes() {
+    // 水平面の穴 (Z軸方向、皿座面は +Z 方向)
+    // 左側
+    translate([hole_margin_from_edge, bracket_length_y / 2, 0]) // 水平面の上面に配置
+    rotate([0, 90, 0]) // 水平面の上面に配置するため Y 軸回転
+    countersunk_hole();
+    // 右側
+    translate([bracket_length_x - hole_margin_from_edge, bracket_length_y / 2, 0]) // 水平面の上面に配置
+    rotate([0, 90, 0]) // 水平面の上面に配置するため Y 軸回転
+    countersunk_hole();
+
+    // 垂直面の穴 (Y軸方向、皿座面は +Y 方向)
+    // 下側
+    translate([bracket_length_x / 2, 0, hole_margin_from_edge]) // 垂直面の外側に配置
+    rotate([90, 0, 0]) // 垂直面の外側に配置するため X 軸回転
+    countersunk_hole();
+    // 上側
+    translate([bracket_length_x / 2, 0, bracket_length_y - hole_margin_from_edge]) // 垂直面の外側に配置
+    rotate([90, 0, 0]) // 垂直面の外側に配置するため X 軸回転
+    countersunk_hole();
+}
+
+difference() {
+    l_bracket(bracket_length_x, bracket_length_y, bracket_thickness);
+    subtract_holes();
+}
+```

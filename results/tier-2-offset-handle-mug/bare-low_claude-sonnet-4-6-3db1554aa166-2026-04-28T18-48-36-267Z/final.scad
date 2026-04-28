@@ -1,0 +1,83 @@
+// Mug with handle on +X side
+
+$fn = 128;
+
+// Body dimensions
+outer_r = 40;
+inner_r = 35;
+height = 90;
+bottom_thick = 6;
+
+// Handle dimensions
+handle_inner_h = 30;
+handle_inner_w = 25;
+handle_thick = 5;
+
+module mug_body() {
+    difference() {
+        cylinder(r = outer_r, h = height);
+        translate([0, 0, bottom_thick])
+            cylinder(r = inner_r, h = height);
+    }
+}
+
+module handle() {
+    // The handle is a D-shape on the +X side
+    // Inner space: 30mm tall x 25mm wide
+    // Handle tube thickness: 5mm
+    
+    // Center height of mug
+    center_z = height / 2;
+    
+    // The handle spans from outer surface outward
+    // Inner cavity width (in X) = handle_inner_w = 25
+    // Inner cavity height (in Z) = handle_inner_h = 30
+    
+    // Outer radius of the D arc
+    // The arc center is at x = outer_r (on the mug surface)
+    // Inner radius of arc = handle_inner_w / 2 = 12.5
+    // Outer radius of arc = inner + thick = 17.5
+    
+    arc_inner_r = handle_inner_w / 2;
+    arc_outer_r = arc_inner_r + handle_thick;
+    
+    bar_half_h = handle_inner_h / 2;
+    
+    translate([0, 0, center_z]) {
+        difference() {
+            union() {
+                // Outer D torus half (semicircle, +X side)
+                // Rotate_extrude only +X half
+                intersection() {
+                    rotate_extrude(angle = 360)
+                        translate([outer_r + arc_inner_r, 0, 0])
+                            circle(r = arc_outer_r);
+                    translate([outer_r, -500, -500])
+                        cube([1000, 1000, 1000]);
+                }
+                // Top bar
+                translate([outer_r, -arc_outer_r, bar_half_h])
+                    cube([arc_inner_r, arc_outer_r * 2, handle_thick]);
+                // Bottom bar
+                translate([outer_r, -arc_outer_r, -bar_half_h - handle_thick])
+                    cube([arc_inner_r, arc_outer_r * 2, handle_thick]);
+            }
+            // Hollow inner arc
+            intersection() {
+                rotate_extrude(angle = 360)
+                    translate([outer_r + arc_inner_r, 0, 0])
+                        circle(r = arc_inner_r);
+                translate([outer_r, -500, -500])
+                    cube([1000, 1000, 1000]);
+            }
+            // Remove inner space between bars
+            translate([outer_r, -arc_inner_r, -bar_half_h])
+                cube([arc_inner_r + arc_outer_r, arc_inner_r * 2, handle_inner_h]);
+        }
+    }
+}
+
+union() {
+    mug_body();
+    handle();
+}

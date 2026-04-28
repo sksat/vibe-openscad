@@ -1,0 +1,97 @@
+```openscad
+$fn = 96;
+
+leaf_y = 30;
+leaf_w = 25;
+plate_t = 2;
+
+pin_d = 4;
+pin_len = 32;
+
+knuckle_od = 8;
+knuckle_id = 4.6;
+knuckle_r = knuckle_od / 2;
+seg_len = 6;
+
+through_d = 3.2;
+cs_d = 6;
+cs_depth = 1;
+
+eps = 0.02;
+overlap = 0.2;
+
+screw_edge_margin = 7;
+screw_x = knuckle_r + leaf_w - screw_edge_margin - overlap;
+
+module y_cylinder(h, d, center=true) {
+    rotate([-90, 0, 0])
+        cylinder(h=h, d=d, center=center);
+}
+
+module screw_hole(x, y) {
+    translate([x, y, 0])
+        cylinder(h=plate_t + 2 * eps, d=through_d, center=true);
+
+    translate([x, y, plate_t / 2 - cs_depth])
+        cylinder(h=cs_depth + eps, d1=through_d, d2=cs_d, center=false);
+}
+
+module knuckle(yc) {
+    translate([0, yc, 0])
+        difference() {
+            y_cylinder(seg_len, knuckle_od, center=true);
+            y_cylinder(seg_len + 2 * eps, knuckle_id, center=true);
+        }
+}
+
+module left_plate() {
+    xmin = -(knuckle_r + leaf_w - overlap);
+    xmax = -(knuckle_r - overlap);
+    translate([(xmin + xmax) / 2, 0, 0])
+        cube([leaf_w, leaf_y, plate_t], center=true);
+}
+
+module right_plate() {
+    xmin = knuckle_r - overlap;
+    xmax = knuckle_r + leaf_w - overlap;
+    translate([(xmin + xmax) / 2, 0, 0])
+        cube([leaf_w, leaf_y, plate_t], center=true);
+}
+
+module left_leaf() {
+    difference() {
+        union() {
+            left_plate();
+            for (yc = [-12, 0, 12])
+                knuckle(yc);
+        }
+        for (yh = [-8, 0, 8])
+            screw_hole(-screw_x, yh);
+    }
+}
+
+module right_leaf() {
+    difference() {
+        union() {
+            right_plate();
+            for (yc = [-6, 6])
+                knuckle(yc);
+        }
+        for (yh = [-8, 0, 8])
+            screw_hole(screw_x, yh);
+    }
+}
+
+module pin_axis() {
+    y_cylinder(pin_len, pin_d, center=true);
+}
+
+color([0.50, 0.50, 0.50])
+    left_leaf();
+
+color([0.62, 0.62, 0.62])
+    right_leaf();
+
+color([0.18, 0.18, 0.18])
+    pin_axis();
+```

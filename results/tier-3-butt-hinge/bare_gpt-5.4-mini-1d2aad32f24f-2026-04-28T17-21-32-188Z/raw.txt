@@ -1,0 +1,102 @@
+```openscad
+$fn = 96;
+
+// Parameters
+leaf_len = 30;
+leaf_w   = 25;
+leaf_th  = 2;
+
+pin_d = 4;
+pin_len = 32;
+
+knuckle_od = 8;
+knuckle_id  = 4.6;
+knuckle_len = 6;
+
+clear_x = 0.05;   // tiny assembly clearance
+clear_z = 0.02;
+
+m3_through_d = 3.2;
+m3_csk_top_d = 6;
+m3_csk_depth = 1;
+
+leaf_hole_y = [-8, 0, 8];   // 8 mm pitch, 3 holes
+
+// Derived positions
+y_min = -leaf_len/2;
+y_max =  leaf_len/2;
+
+module leaf_base(side=1) {
+    // side: -1 left, +1 right
+    translate([side*(pin_len/2 + leaf_w/2 - clear_x), 0, 0])
+        cube([leaf_w, leaf_len, leaf_th], center=true);
+}
+
+module knuckle_segment(yc) {
+    translate([0, yc, 0])
+    difference() {
+        cylinder(d=knuckle_od, h=knuckle_len, center=true);
+        cylinder(d=knuckle_id, h=knuckle_len + 2, center=true);
+    }
+}
+
+module pin_axis() {
+    translate([0, 0, 0])
+        cylinder(d=pin_d, h=pin_len, center=true);
+}
+
+module countersunk_holes(side=1) {
+    // side: -1 left leaf, +1 right leaf
+    // holes are on the side far from knuckles
+    x_hole = side*(pin_len/2 + leaf_w - 6);  // near outer edge, inside plate
+    for (yy = leaf_hole_y) {
+        translate([x_hole, yy, 0]) {
+            // through hole
+            translate([0, 0, -leaf_th/2 - 0.1])
+                cylinder(d=m3_through_d, h=leaf_th + 0.2, center=false);
+            // countersink from outer surface
+            translate([0, 0, leaf_th/2 - m3_csk_depth])
+                cylinder(d1=m3_csk_top_d, d2=m3_through_d, h=m3_csk_depth, center=false);
+        }
+    }
+}
+
+module leaf_with_knuckles(side=1) {
+    // side: -1 left leaf, +1 right leaf
+    difference() {
+        union() {
+            // plate
+            leaf_base(side);
+
+            // knuckles: left leaf gets 3 segments, right leaf gets 2 segments
+            if (side < 0) {
+                // outer, middle, outer
+                knuckle_segment(-9);
+                knuckle_segment(0);
+                knuckle_segment(9);
+            } else {
+                // two middle segments
+                knuckle_segment(-4.5);
+                knuckle_segment(4.5);
+            }
+        }
+        countersunk_holes(side);
+    }
+}
+
+// Assemble opened state (180°): both leaf flats on same plane
+// Pin axis is along Y and centered at X=0, Z=0.
+union() {
+    // Left leaf extends to -X
+    translate([-(pin_len/2 + leaf_w/2), 0, 0])
+        rotate([0, 180, 0])
+            leaf_with_knuckles(-1);
+
+    // Right leaf extends to +X
+    translate([ (pin_len/2 + leaf_w/2), 0, 0])
+        leaf_with_knuckles(+1);
+
+    // Pin axis
+    pin_axis();
+}
+```

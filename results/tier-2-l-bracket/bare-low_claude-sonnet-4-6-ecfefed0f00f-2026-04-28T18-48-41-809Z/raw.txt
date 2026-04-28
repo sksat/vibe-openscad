@@ -1,0 +1,83 @@
+```openscad
+// L-Bracket
+
+// Parameters
+w = 50;   // width (X)
+hf = 40;  // horizontal flange depth (Y)
+vf = 40;  // vertical flange height (Z)
+t = 3;    // thickness
+
+// Hole parameters
+hole_d = 4.5;
+cs_d = 8;
+cs_depth = 2;
+hole_offset_edge = 10;  // from edge along flange direction
+hole_offset_side = w/2 - (w/4); // left/right: symmetric, at w/4 from center each side
+// holes at X = -w/4 and X = +w/4 ... actually "left-right symmetric, 2 holes"
+// Let's place at X = ±(w/2 - 10) ... no, "center line, left-right symmetric 2 holes"
+// "各面の中心線上で、面の縁から10mm内側、左右対称に2個"
+// I'll interpret: along width, symmetric about center, at X = ±(w/4) 
+// Actually let's use X = ±(w/2 - 10) for nice placement
+hx1 = -(w/2 - 10);
+hx2 =  (w/2 - 10);
+
+module countersunk_hole_vertical(depth_total) {
+    // hole along Z, countersink at top (Z = depth_total, i.e., outside face going down)
+    // Used for horizontal flange: outside is -Z face
+    union() {
+        cylinder(h = depth_total, d = hole_d, $fn=32);
+        translate([0, 0, -cs_depth])
+            cylinder(h = cs_depth + 0.01, d1 = cs_d, d2 = hole_d, $fn=32);
+    }
+}
+
+module countersunk_hole_horizontal(depth_total) {
+    // hole along Y, countersink at -Y face (outside of vertical flange)
+    union() {
+        cylinder(h = depth_total, d = hole_d, $fn=32);
+        cylinder(h = cs_depth, d1 = cs_d, d2 = hole_d, $fn=32);
+    }
+}
+
+difference() {
+    union() {
+        // Horizontal flange: extends in +Y, lies in XY plane, thickness in Z (0 to -t)
+        translate([-w/2, 0, -t])
+            cube([w, hf, t]);
+        
+        // Vertical flange: extends in +Z, lies in XZ plane, thickness in Y (0 to -t)  
+        // Wait: inner corner at origin, vertical goes +Z, horizontal goes +Y
+        // Vertical flange: X from -w/2 to w/2, Z from 0 to vf, Y from -t to 0
+        translate([-w/2, -t, 0])
+            cube([w, t, vf]);
+    }
+    
+    // Holes in horizontal flange (along Z)
+    // Outside face is at Z = -t (bottom), countersink opens downward
+    // Holes at Y = hf - 10 (10mm from far edge), X = hx1, hx2
+    for (hx = [hx1, hx2]) {
+        translate([hx, hf - hole_offset_edge, 0]) {
+            // drill from Z=0 down to Z=-t
+            translate([0, 0, -t])
+                union() {
+                    cylinder(h = t, d = hole_d, $fn=32);
+                    // countersink at bottom (outside = -t face)
+                    cylinder(h = cs_depth, d1 = cs_d, d2 = hole_d, $fn=32);
+                }
+        }
+    }
+    
+    // Holes in vertical flange (along Y)
+    // Outside face is at Y = -t, countersink opens outward (-Y direction)
+    // Holes at Z = vf - 10, X = hx1, hx2
+    for (hx = [hx1, hx2]) {
+        translate([hx, -t, vf - hole_offset_edge]) {
+            rotate([-90, 0, 0]) {
+                cylinder(h = t, d = hole_d, $fn=32);
+                // countersink at start (Y = -t face, outside)
+                cylinder(h = cs_depth, d1 = cs_d, d2 = hole_d, $fn=32);
+            }
+        }
+    }
+}
+```

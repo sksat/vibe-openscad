@@ -1,0 +1,18 @@
+```openscad
+$fn = 96;
+
+module hex_head(af = 13, h = 5.3) {
+    r = af / (2 * cos(30));
+    cylinder(h = h, r = r, $fn = 6);
+}
+
+module shank(d = 8, l = 30) {
+    translate([0, 0, -l])
+        cylinder(h = l, d = d);
+}
+
+union() {
+    hex_head(af = 13, h = 5.3);
+    shank(d = 8, l = 30);
+}
+```

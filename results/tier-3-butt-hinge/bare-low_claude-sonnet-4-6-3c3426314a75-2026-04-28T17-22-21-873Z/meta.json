@@ -1,0 +1,38 @@
+{
+  "runId": "bare-low_claude-sonnet-4-6-3c3426314a75-2026-04-28T17-22-21-873Z",
+  "taskId": "tier-3-butt-hinge",
+  "matrixId": "bare-low/claude-sonnet-4-6",
+  "signature": "3c3426314a75d978f40d80883bbf291c4f93e132afa753af9868aca011796134",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dd7199030a8827a181914869189fc45a2e5637023f0c8c59532d442557036e7c",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-6",
+      "modelOptions": {
+        "output_config": {
+          "effort": "low"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-sonnet-4-6",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 21662
+  },
+  "tokens": {
+    "input": 707,
+    "output": 1324
+  },
+  "cost_usd": 0.021981,
+  "createdAt": "2026-04-28T17:22:21.873Z",
+  "gitCommit": "be87c9f2adaf51be5e9ccb7f63eb95c7bc456929"
+}

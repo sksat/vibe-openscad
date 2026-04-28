@@ -1,0 +1,148 @@
+// Butt Hinge - 180° open position
+// Pin axis along Y, leaves extend in -X and +X directions
+
+$fn = 64;
+
+// Parameters
+leaf_width  = 25;
+leaf_length = 30;
+leaf_thick  = 2;
+
+pin_dia    = 4;
+pin_r      = pin_dia / 2;
+pin_length = 32;
+
+knuckle_od = 8;
+knuckle_or = knuckle_od / 2;
+knuckle_id = pin_dia + 0.3;
+knuckle_ir = knuckle_id / 2;
+knuckle_h  = 6;
+
+// Knuckle Y start positions (each 6mm segment)
+// Left leaf  (3 knuckles): segments 0,2,4 → Y start 0, 12, 24
+// Right leaf (2 knuckles): segments 1,3   → Y start 6, 18
+left_knuckle_y_starts  = [0, 12, 24];
+right_knuckle_y_starts = [6, 18];
+
+// Pin axis is at Z = knuckle_or above plate top face (Z=0)
+knuckle_z = knuckle_or;
+
+// Screw holes (M3 countersunk)
+screw_cs_dia   = 6;
+screw_cs_depth = 1;
+screw_thru_dia = 3.2;
+screw_count    = 3;
+screw_pitch    = 8;
+
+function screw_y(i) =
+    (leaf_length - (screw_count - 1) * screw_pitch) / 2 + i * screw_pitch;
+
+// ─────────────────────────────────────────────
+// Single knuckle: cylinder + web connecting it to the plate
+// y0 = Y start of this 6mm segment
+module single_knuckle(y0) {
+    yc = y0 + knuckle_h / 2;   // centre of knuckle in Y
+
+    // Knuckle tube
+    translate([0, yc, knuckle_z])
+        rotate([90, 0, 0])
+            difference() {
+                cylinder(h = knuckle_h, r = knuckle_or, center = true);
+                cylinder(h = knuckle_h + 0.1, r = knuckle_ir, center = true);
+            }
+
+    // Web / gusset: hull between flat plate rect and knuckle circle,
+    // extruded along Y for the length of this knuckle
+    translate([0, y0, 0])
+        linear_extrude(height = knuckle_h)
+            hull() {
+                // footprint at plate top (Z=0): thin wide rect
+                translate([0, 0])
+                    square([knuckle_od, 0.01], center = true);
+                // knuckle cross-section at axis height
+                translate([0, knuckle_z])
+                    circle(r = knuckle_or);
+            }
+}
+
+// ─────────────────────────────────────────────
+// Countersunk hole, opening at Z=0, going into -Z
+module cs_hole() {
+    // Countersink cone (wide at top, narrow at bottom)
+    translate([0, 0, 0.01])
+        cylinder(h = screw_cs_depth + 0.01,
+                 r1 = screw_cs_dia / 2,
+                 r2 = screw_thru_dia / 2,
+                 $fn = 32);
+    // Through shaft
+    translate([0, 0, -(leaf_thick + 0.01)])
+        cylinder(h = leaf_thick + screw_cs_depth + 0.02,
+                 r = screw_thru_dia / 2,
+                 $fn = 32);
+}
+
+// ─────────────────────────────────────────────
+// Left leaf
+module left_leaf() {
+    difference() {
+        union() {
+            // Flat plate (extends in -X)
+            translate([-leaf_width, 0, -leaf_thick])
+                cube([leaf_width, leaf_length, leaf_thick]);
+
+            // 3 knuckles
+            for (y0 = left_knuckle_y_starts)
+                single_knuckle(y0);
+        }
+
+        // Screw holes on the plate (centred in X over plate)
+        for (i = [0 : screw_count - 1])
+            translate([-leaf_width / 2, screw_y(i), 0])
+                cs_hole();
+
+        // Pin bore along entire Y span
+        translate([0, -1, knuckle_z])
+            rotate([-90, 0, 0])
+                cylinder(h = pin_length + 2, r = knuckle_ir);
+    }
+}
+
+// ─────────────────────────────────────────────
+// Right leaf
+module right_leaf() {
+    difference() {
+        union() {
+            // Flat plate (extends in +X)
+            translate([0, 0, -leaf_thick])
+                cube([leaf_width, leaf_length, leaf_thick]);
+
+            // 2 knuckles
+            for (y0 = right_knuckle_y_starts)
+                single_knuckle(y0);
+        }
+
+        // Screw holes
+        for (i = [0 : screw_count - 1])
+            translate([leaf_width / 2, screw_y(i), 0])
+                cs_hole();
+
+        // Pin bore
+        translate([0, -1, knuckle_z])
+            rotate([-90, 0, 0])
+                cylinder(h = pin_length + 2, r = knuckle_ir);
+    }
+}
+
+// ─────────────────────────────────────────────
+// Pin: Y from -1 to +31 (1mm overhang each end: 0..30 + margins)
+module pin() {
+    translate([0, -1, knuckle_z])
+        rotate([-90, 0, 0])
+            cylinder(h = pin_length, r = pin_r);
+}
+
+// ─────────────────────────────────────────────
+// Assembly
+color([0.75, 0.75, 0.78]) left_leaf();
+color([0.75, 0.75, 0.78]) right_leaf();
+color([0.85, 0.70, 0.20]) pin();

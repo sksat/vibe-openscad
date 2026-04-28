@@ -1,0 +1,62 @@
+$fn = 128;
+
+// Mug dimensions
+outer_d   = 80;
+inner_d   = 70;
+mug_h     = 90;
+bottom_t  = 6;
+
+// Handle opening (clear space)
+handle_open_w = 25;   // width in radial direction
+handle_open_h = 30;   // height in Z direction
+
+// Handle thickness / depth
+handle_t = 5;         // band thickness and Y extrusion thickness
+
+// Derived
+outer_r = outer_d / 2;
+inner_r = inner_d / 2;
+
+handle_outer_h = handle_open_h + 2 * handle_t;   // 40
+handle_outer_w = handle_open_w + handle_t;       // 30
+handle_center_z = mug_h / 2;
+
+// 2D D-shape with flat side on the left, round side on the right
+module d_shape_2d(total_w, total_h) {
+    r = total_h / 2;
+    rect_w = total_w - r;
+    union() {
+        translate([0, -r])
+            square([rect_w, total_h], center = false);
+        translate([rect_w, 0])
+            circle(r = r);
+    }
+}
+
+module mug_body() {
+    difference() {
+        cylinder(h = mug_h, r = outer_r);
+        translate([0, 0, bottom_t])
+            cylinder(h = mug_h - bottom_t + 0.01, r = inner_r);
+    }
+}
+
+module handle() {
+    // Put the D shape in XZ plane and extrude along Y.
+    // Flat side intersects the mug body to guarantee a solid manifold union.
+    translate([outer_r - handle_t, 0, handle_center_z])
+    rotate([90, 0, 0])
+    difference() {
+        linear_extrude(height = handle_t, center = true)
+            d_shape_2d(handle_outer_w, handle_outer_h);
+
+        translate([handle_t, 0, 0])
+            linear_extrude(height = handle_t + 2, center = true)
+                d_shape_2d(handle_open_w, handle_open_h);
+    }
+}
+
+union() {
+    mug_body();
+    handle();
+}

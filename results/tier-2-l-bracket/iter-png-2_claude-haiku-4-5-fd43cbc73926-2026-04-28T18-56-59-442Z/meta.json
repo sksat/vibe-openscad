@@ -1,0 +1,42 @@
+{
+  "runId": "iter-png-2_claude-haiku-4-5-fd43cbc73926-2026-04-28T18-56-59-442Z",
+  "taskId": "tier-2-l-bracket",
+  "matrixId": "iter-png-2/claude-haiku-4-5",
+  "signature": "fd43cbc73926491bb156f8e580e9c7a99624d965173da186d659021c1cb28bc0",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "b20dcf3dd07e532496944d76485b954e0ab614f3cda1919fee5dc406f59b3ea5",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-haiku-4-5-20251001",
+      "iterateFrom": "iter-png-1/claude-haiku-4-5",
+      "iteration": {
+        "kind": "render-png-feedback"
+      },
+      "parentSignature": "d87be2be0e990179d3bdae9f89ac38236c6d66c843a12024f1187ad7218d07da"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-haiku-4-5-20251001",
+  "harness": {
+    "kind": "bare",
+    "iteration": {
+      "kind": "render-png-feedback"
+    }
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 6389
+  },
+  "tokens": {
+    "input": 1922,
+    "output": 920
+  },
+  "cost_usd": 0.006522,
+  "createdAt": "2026-04-28T18:56:59.442Z",
+  "gitCommit": "781e6c683dda9349da96561361d4da5f2c54975e",
+  "parentRunId": "iter-png-1_claude-haiku-4-5-d87be2be0e99-2026-04-28T18-56-51-115Z"
+}

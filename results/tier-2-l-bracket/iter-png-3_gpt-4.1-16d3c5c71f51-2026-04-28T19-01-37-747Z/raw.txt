@@ -1,0 +1,59 @@
+```openscad
+// パラメータ
+bracket_w = 50;   // 幅
+bracket_h = 40;   // 奥行・高さ
+thickness = 3;
+
+// 皿穴パラメータ
+hole_d = 4.5;      // 貫通穴径
+cs_d = 8;          // 皿座径
+cs_depth = 2;      // 皿座深さ
+edge_offset = 10;  // フランジ面の縁から穴中心までの距離
+
+// 2つ穴のY/Z座標
+hole_pos = [edge_offset, bracket_h - edge_offset];
+
+// 内側コーナーが原点
+module flange_horizontal() {
+    // 原点コーナーから +Y 方向へ
+    difference() {
+        cube([bracket_w, bracket_h, thickness]);
+        // 穴: 原点からY方向へ広がる、皿頭外側（Z=0側が外面）
+        for (y = hole_pos)
+            translate([bracket_w/2, y, 0])
+                countersunk_hole_down();
+    }
+}
+module flange_vertical() {
+    // 原点から +Z方向へ
+    difference() {
+        cube([bracket_w, thickness, bracket_h]);
+        // 穴: 原点からZ方向へ広がる、皿頭外側（Y=0側が外面）
+        for (z = hole_pos)
+            translate([bracket_w/2, 0, z])
+                countersunk_hole_front();
+    }
+}
+
+// 水平面側: 下側が皿座
+module countersunk_hole_down() {
+    // 貫通穴
+    cylinder(d=hole_d, h=thickness+0.5, $fn=48);
+    // 皿座
+    cylinder(d=cs_d, h=cs_depth, $fn=48);
+}
+
+// 垂直面側: 正面(Y=0)側が皿座
+module countersunk_hole_front() {
+    rotate([-90,0,0])
+    {
+        cylinder(d=hole_d, h=thickness+0.5, $fn=48);
+        cylinder(d=cs_d, h=cs_depth, $fn=48);
+    }
+}
+
+// 組立（内側コーナーが原点!）
+flange_horizontal();
+translate([0, thickness, 0]) // 水平板のY端の真上(Z=0)に垂直板
+    flange_vertical();
+```

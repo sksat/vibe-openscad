@@ -1,0 +1,126 @@
+```openscad
+// OpenSCAD: マグカップ（指定向きの D 字ハンドル：+X 側のみ）
+// 本体: 外径 80mm、内径 70mm、肉厚 5mm、高さ 90mm、底厚 6mm
+// 取手: +X 側のみ、D 字形状、内側の開口高さ 30mm × 幅 25mm、マグ高さ中央付近に配置
+// 本体と取手は確実に union（オーバーラップを持たせて接続）
+
+$fn = 96; // なめらかさ
+
+// 基本パラメータ
+outer_diam = 80;
+inner_diam = 70;
+thickness = (outer_diam - inner_diam) / 2; // 5 mm
+cup_height = 90;
+bottom_thickness = 6;
+
+cup_outer_r = outer_diam / 2;
+cup_inner_r = inner_diam / 2;
+cup_inner_height = cup_height - bottom_thickness; // 飲み物を入れられる高さ
+
+// 取手パラメータ
+handle_open_h = 30; // 取手の内側の高さ (Z方向)
+handle_open_w = 25; // 取手の内側の幅 (Y方向, マグ本体側から外向きの距離)
+handle_center_z = cup_height / 2; // 高さ方向中央付近
+// 取手の外形（半円＋直線の D 字）。平面 (Y,Z) で作り、X方向に押し出す。
+handle_penetration = 6; // マグ本体へめり込ませる量（確実に接続させる）
+handle_extrude_neg = -8; // 押し出しの負側（マグ中心方向へめり込む）
+handle_extrude_pos = 20; // 押し出しのプラス側（外側への厚み）
+handle_outer_radius = 24; // 取手外側の半円半径（見た目と強度用）
+
+// 取手の平面配置（Y方向）
+handle_flat_y = cup_outer_r - handle_penetration; // 平らな内側がこの y に来る（本体に近接）
+handle_circle_center_y = handle_flat_y + handle_outer_radius; // 半円の中心位置（Y）
+
+// 取手の垂直方向（Z）境界（外側の形状の余裕を持たせる）
+handle_extra_h = 8; // 上下に余裕を持たせる（面取り用）
+handle_outer_z1 = handle_center_z - (handle_open_h/2) - handle_extra_h;
+handle_outer_z2 = handle_center_z + (handle_open_h/2) + handle_extra_h;
+
+// 取手内側切り欠き（指を入れる空間）の矩形（Y,Z）
+handle_cut_y1 = handle_flat_y;
+handle_cut_y2 = handle_flat_y + handle_open_w;
+handle_cut_z1 = handle_center_z - (handle_open_h/2);
+handle_cut_z2 = handle_center_z + (handle_open_h/2);
+
+// メイン
+module mug_body() {
+    // 外殻
+    difference() {
+        // 外側筒（底付き）
+        union() {
+            // 外筒
+            translate([0,0,0])
+                cylinder(h = cup_height, r = cup_outer_r);
+            // 底板（底の厚みを明示的に付け足す必要は無いが確実化）
+            translate([0,0,0])
+                cylinder(h = bottom_thickness, r = cup_outer_r);
+        }
+        // 内側くり抜き（中空）
+        translate([0,0,bottom_thickness])
+            cylinder(h = cup_inner_height, r = cup_inner_r);
+    }
+}
+
+module handle_solid() {
+    // 2D プロファイルを作って X 方向に線形押し出し
+    // Y-Z 平面で作業する（ここでは 2D を作るために translate で平面調整）
+    translate([0,0,0]) {
+        linear_extrude(height = handle_extrude_pos - handle_extrude_neg, center = false, convexity = 10)
+            translate([0,0]) // no-op, keep coords clear
+                difference() {
+                    // 外形: 半円 (右側) と矩形（左側の平ら部分を含む）
+                    union() {
+                        // 半円（円の上半分＋下半分を合わせるが、矩形と和を取ることで D 字になる）
+                        translate([handle_circle_center_y, handle_center_z])
+                            circle(r = handle_outer_radius);
+                        // 平らな左側を埋める矩形（半円の左端から左側へ伸ばす）
+                        translate([handle_flat_y, handle_outer_z1])
+                            square([ (handle_circle_center_y + handle_outer_radius) - handle_flat_y, (handle_outer_z2 - handle_outer_z1) ], center = false);
+                    }
+                    // 指を入れるための切り欠き（矩形で切る）
+                    translate([handle_cut_y1, handle_cut_z1])
+                        square([ handle_cut_y2 - handle_cut_y1, handle_cut_z2 - handle_cut_z1 ], center = false);
+                    // また縦方向の角を少し丸めたい場合はここで更に小さな丸を差し引く等できる（今回は矩形切り抜きで要件満たす）
+                }
+            ;
+    }
+}
+
+// 全体配置
+module mug_with_handle() {
+    // 本体
+    mug_body();
+    // 取手（押し出しは X 方向なので、2D プロファイルの原点を X=handle_extrude_neg に合わせる）
+    // linear_extrude のデフォルトは Z 方向押し出しなので、上で Z を使ったがここは X に押し出すため rotate する
+}
+
+// 実体化：座標系を合わせて union (確実に接続するために取手を少しめり込ませてある)
+union() {
+    // マグ本体（Z 方向が高さ）
+    translate([0,0,0])
+        mug_body();
+
+    // 取手：先に作った 2D を X 押し出しにするため rotate と translate を適用
+    // ここでは作りやすさのため、上で定義した linear_extrude は Z 押し出しなので rotate して X 方向へ
+    translate([handle_extrude_neg, 0, 0]) // 押し出しの負側をマイナス X へオフセット
+        rotate([0, -90, 0]) // Z 押し出しを X 押し出しに変換
+            translate([0, -handle_circle_center_y, -handle_center_z]) // 2D プロファイルの中心位置調整
+                handle_solid();
+}
+
+// 内部空洞（飲み物領域）を最後に差し引いて完成（取手は本体とユニオン済みのため問題なし）
+difference() {
+    // これまでの union（本体+取手）はすでに描かれているため再描画
+    // To ensure correct boolean ordering, recreate base solids then subtract interior
+    union() {
+        mug_body();
+        translate([handle_extrude_neg, 0, 0])
+            rotate([0, -90, 0])
+                translate([0, -handle_circle_center_y, -handle_center_z])
+                    handle_solid();
+    }
+    // 内側くり抜き（飲み物領域）
+    translate([0,0,bottom_thickness])
+        cylinder(h = cup_inner_height, r = cup_inner_r);
+}
+```

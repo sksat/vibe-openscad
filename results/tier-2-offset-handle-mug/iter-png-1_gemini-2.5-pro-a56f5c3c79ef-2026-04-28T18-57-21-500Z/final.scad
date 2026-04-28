@@ -1,0 +1,66 @@
+$fn = 100; // 滑らかな曲線にするための解像度
+
+// --- 本体パラメータ ---
+mug_outer_d = 80;
+mug_inner_d = 70;
+mug_h = 90;
+mug_bottom_thickness = 6;
+
+// --- 取手パラメータ ---
+handle_inner_h = 30;        // 指を入れる空間の高さ
+handle_inner_w = 25;        // 指を入れる空間の幅 (本体からの距離)
+handle_thickness = 8;       // 取手の肉厚
+handle_y_width = 12;        // 取手の奥行き (Y軸方向の太さ)
+
+// 本体と取手を結合
+union() {
+    // 1. マグ本体
+    difference() {
+        // 外側の円筒
+        cylinder(h = mug_h, d = mug_outer_d);
+        
+        // 内側をくり抜くための円筒
+        // 底面の厚みを残すために Z 方向にずらす
+        translate([0, 0, mug_bottom_thickness])
+            cylinder(h = mug_h + 1, d = mug_inner_d); // 確実に貫通させるため少し高くする
+    }
+
+    // 2. 取手
+    // 取手全体の高さを計算
+    handle_total_h = handle_inner_h + 2 * handle_thickness;
+    // 取手をマグカップの高さ方向中央に配置するためのZ座標を計算
+    handle_z_pos = (mug_h - handle_total_h) / 2;
+
+    // difference() を使って、ソリッドのD字形状から内側の穴をくり抜く
+    difference() {
+        // 外側のD字形状 (ソリッド)
+        // 本体側面の薄い板と、外側の円筒を hull() で滑らかに繋いで作成
+        hull() {
+            // 本体との接続部分 (アンカーとなる薄い直方体)
+            // 確実に結合させるためにX方向に1mmめり込ませる
+            translate([mug_outer_d/2 - 1, -handle_y_width/2, handle_z_pos])
+                cube([1, handle_y_width, handle_total_h]);
+
+            // D字のカーブ部分 (円筒)
+            // 中心を handle_inner_w だけ離れた位置に置くことで、内側の空間幅を確保
+            translate([mug_outer_d/2 + handle_inner_w, 0, handle_z_pos + handle_total_h/2])
+                rotate([0, 90, 0])
+                    cylinder(h = handle_y_width, r = handle_total_h/2, center = true);
+        }
+        
+        // 【修正点】くり抜く内側の穴もD字形状にする
+        // 直方体と円筒を union して作成
+        union() {
+            // 指が入る主要な空間 (直方体)
+            // マグ本体に少しめり込ませ、Y方向に少し大きくして確実に貫通させる
+            translate([mug_outer_d/2 - 1, -handle_y_width/2 - 1, handle_z_pos + handle_thickness])
+                cube([handle_inner_w + 1, handle_y_width + 2, handle_inner_h]);
+
+            // 指先のカーブに合わせた空間 (円筒)
+            // Y軸方向に少し大きくして確実に貫通させる
+            translate([mug_outer_d/2 + handle_inner_w, 0, handle_z_pos + handle_thickness + handle_inner_h/2])
+                rotate([0, 90, 0])
+                    cylinder(h = handle_y_width + 2, r = handle_inner_h/2, center = true);
+        }
+    }
+}

@@ -1,0 +1,142 @@
+$fn = 72;
+
+// GP2Y0D413K0F outline model (unit: mm)
+// Coordinate: main case center = origin, +Y = lens/front, +Z = up
+
+eps = 0.02;
+
+// Main dimensions read from outline drawing
+case_w = 29.45;
+overall_d = 13.5;
+lens_case_d = 2.0;
+case_d = overall_d - lens_case_d;
+case_h = 13.05;
+
+pwb_t = 1.2;
+connector_w = 10.1;
+connector_d = 6.3;
+connector_h = 4.65;
+
+// Lens/window reference dimensions
+left_edge = -case_w / 2;
+emitter_x  = left_edge + 4.5;    // * reference: light emitter lens center
+detector_x = left_edge + 19.7;   // * reference: light detector lens center
+
+lens_center_z = 0.75;
+lens_case_h = 8.4;
+lens_inner_h = 7.2;
+
+emitter_case_w = 7.5;
+gap_w = 4.15;
+detector_case_w = 16.3;
+
+emitter_case_x  = left_edge + emitter_case_w / 2;
+detector_case_x = left_edge + emitter_case_w + gap_w + detector_case_w / 2;
+
+front_y = case_d / 2;
+lens_front_y = case_d / 2 + lens_case_d;
+
+module rounded_box(size, r=0.25) {
+    minkowski() {
+        cube([size[0]-2*r, size[1]-2*r, size[2]-2*r], center=true);
+        sphere(r=r, $fn=18);
+    }
+}
+
+module y_cylinder(r, h, center=true) {
+    rotate([90, 0, 0])
+        cylinder(r=r, h=h, center=center);
+}
+
+module main_case() {
+    color([0.03, 0.03, 0.03])
+        rounded_box([case_w, case_d, case_h], 0.25);
+
+    // front lower/upper face details
+    color([0.015, 0.015, 0.015])
+        translate([0, front_y + eps, lens_center_z])
+            cube([case_w - 1.0, 0.08, lens_case_h + 0.8], center=true);
+}
+
+module lens_cases() {
+    color([0.02, 0.02, 0.02]) {
+        translate([emitter_case_x, front_y + lens_case_d/2, lens_center_z])
+            rounded_box([emitter_case_w, lens_case_d, lens_case_h], 0.18);
+
+        translate([detector_case_x, front_y + lens_case_d/2, lens_center_z])
+            rounded_box([detector_case_w, lens_case_d, lens_case_h], 0.18);
+    }
+}
+
+module lenses_and_windows() {
+    // emitter circular window, left
+    translate([emitter_x, lens_front_y + eps, lens_center_z]) {
+        color([0.0, 0.0, 0.0])
+            y_cylinder(r=3.15, h=0.18);
+        color([0.08, 0.11, 0.13, 0.72])
+            translate([0, 0.05, 0])
+                y_cylinder(r=2.55, h=0.16);
+        color([0.45, 0.55, 0.60, 0.28])
+            translate([0, 0.14, 0])
+                y_cylinder(r=2.10, h=0.05);
+    }
+
+    // detector rectangular window, right
+    translate([detector_x, lens_front_y + eps, lens_center_z]) {
+        color([0.0, 0.0, 0.0])
+            cube([14.0, 0.18, 5.3], center=true);
+        color([0.08, 0.11, 0.13, 0.72])
+            translate([0, 0.06, 0])
+                cube([12.6, 0.14, 4.35], center=true);
+        color([0.45, 0.55, 0.60, 0.22])
+            translate([0, 0.14, 0])
+                cube([10.8, 0.05, 3.45], center=true);
+    }
+}
+
+module pwb() {
+    pwb_y = lens_case_d / 2;
+    pwb_z = -case_h/2 - pwb_t/2;
+
+    color([0.55, 0.36, 0.13])
+        translate([0, pwb_y, pwb_z])
+            cube([case_w, overall_d, pwb_t], center=true);
+}
+
+module connector() {
+    conn_z = -case_h/2 - pwb_t - connector_h/2;
+    conn_bottom_z = conn_z - connector_h/2;
+
+    color([0.86, 0.82, 0.70])
+        translate([0, 0, conn_z])
+            rounded_box([connector_w, connector_d, connector_h], 0.18);
+
+    // bottom opening
+    color([0.03, 0.03, 0.03])
+        translate([0, 0, conn_bottom_z - eps])
+            cube([8.3, 4.6, 0.12], center=true);
+
+    // three terminal contacts
+    for (x = [-2.2, 0, 2.2]) {
+        color([0.80, 0.72, 0.55])
+            translate([x, 0, conn_bottom_z + 0.02])
+                cube([0.55, 3.2, 0.16], center=true);
+    }
+
+    // simplified front latch/step
+    color([0.74, 0.70, 0.60])
+        translate([0, connector_d/2 + 0.05, conn_z + 0.65])
+            cube([connector_w - 1.2, 0.35, 1.25], center=true);
+}
+
+module sensor() {
+    union() {
+        main_case();
+        lens_cases();
+        lenses_and_windows();
+        pwb();
+        connector();
+    }
+}
+
+sensor();

@@ -1,0 +1,58 @@
+```openscad
+$fn = 100;
+
+// マグ本体のパラメータ
+outer_d = 80;
+inner_d = 70;
+height = 90;
+bottom_thick = 6;
+
+// 取手のパラメータ
+handle_inner_h = 30; // 縦の空間
+handle_inner_w = 25; // 横の張り出し空間
+handle_thick = 10;   // 取手自体の肉厚
+handle_width = 15;   // 取手の奥行き(押し出し厚み)
+
+module mug_body() {
+    difference() {
+        cylinder(d = outer_d, h = height);
+        translate([0, 0, bottom_thick])
+            cylinder(d = inner_d, h = height - bottom_thick + 0.1);
+    }
+}
+
+module handle() {
+    // 取手の中心をマグの高さ中央に合わせる
+    // D字形状をプロファイルとして作成
+    translate([outer_d / 2 - 2, 0, height / 2]) {
+        rotate([90, 0, 90]) {
+            linear_extrude(height = handle_width) {
+                difference() {
+                    // 外形: 半円(幅は空間+肉厚*2)と直線部
+                    union() {
+                        translate([0, handle_inner_h/2]) circle(d = handle_inner_h + handle_thick * 2);
+                        translate([-(handle_inner_h/2 + handle_thick), -handle_inner_h/2]) 
+                            square([handle_inner_h/2 + handle_thick, handle_inner_h + handle_thick * 2]);
+                    }
+                    // 内穴: 半円
+                    union() {
+                        translate([0, handle_inner_h/2]) circle(d = handle_inner_h);
+                        translate([-handle_inner_w, -handle_inner_h/2]) 
+                            square([handle_inner_w, handle_inner_h]);
+                    }
+                }
+            }
+        }
+    }
+}
+
+union() {
+    mug_body();
+    // 取手が本体と重なるように少しだけめり込ませてunion
+    intersection() {
+        handle();
+        translate([outer_d/2 - 5, -50, 0]) cube([50, 100, 200]);
+    }
+    handle();
+}
+```

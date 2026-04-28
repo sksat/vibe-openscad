@@ -1,0 +1,52 @@
+// マグカップのパラメータ
+outer_d = 80;
+inner_d = 70;
+height = 90;
+wall = 5;
+bottom = 6;
+
+handle_h = 30;
+handle_w = 25;
+handle_thickness = 10;
+
+// マグ本体の作成
+module mug_body() {
+    difference() {
+        // 外形
+        cylinder(d = outer_d, h = height, $fn = 100);
+        // 内側のくり抜き
+        translate([0, 0, bottom])
+            cylinder(d = inner_d, h = height, $fn = 100);
+    }
+}
+
+// 取手の作成
+module handle() {
+    translate([outer_d / 2 - 1, 0, height / 2]) {
+        rotate([0, 90, 0]) {
+            difference() {
+                // 取手の外形 (D字型)
+                union() {
+                    cylinder(d = handle_h + handle_thickness * 2, h = handle_thickness, $fn = 50);
+                    translate([0, -(handle_h + handle_thickness * 2) / 2, 0])
+                        cube([ (handle_h + handle_thickness * 2) / 2, handle_h + handle_thickness * 2, handle_thickness]);
+                }
+                // 取手の内側の空洞
+                translate([0, 0, -1])
+                    linear_extrude(handle_thickness + 2)
+                        hull() {
+                            translate([0, handle_h / 2]) circle(d = handle_thickness);
+                            translate([0, -handle_h / 2]) circle(d = handle_thickness);
+                            translate([handle_w, handle_h / 2]) circle(d = handle_thickness);
+                            translate([handle_w, -handle_h / 2]) circle(d = handle_thickness);
+                        }
+            }
+        }
+    }
+}
+
+// 本体と取手の結合
+union() {
+    mug_body();
+    handle();
+}

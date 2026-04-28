@@ -1,0 +1,40 @@
+```openscad
+outer_d = 80;
+height = 100;
+wall_thickness = 4;
+bottom_thickness = 6;
+
+outer_r = outer_d / 2;
+inner_r = outer_r - wall_thickness;
+inner_h = height - bottom_thickness;
+
+handle_major = 12;
+handle_minor = 4;
+handle_overlap = 1;
+
+handle_offset_x = outer_r - handle_overlap - (handle_major - handle_minor);
+handle_center_height = height / 2;
+
+$fn = 96;
+
+module torus(R, r) {
+    rotate_extrude(convexity = 10, $fn = 128)
+        translate([R, 0, 0])
+            circle(r = r, $fn = 64);
+}
+
+module mug() {
+    difference() {
+        union() {
+            cylinder(r = outer_r, h = height);
+            translate([handle_offset_x, 0, handle_center_height])
+                rotate([90, 0, 0])
+                    torus(handle_major, handle_minor);
+        }
+        translate([0, 0, bottom_thickness])
+            cylinder(r = inner_r, h = inner_h + 0.2);
+    }
+}
+
+mug();
+```

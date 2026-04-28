@@ -1,0 +1,44 @@
+$fn = 32;
+
+// Parameters
+flange_width = 50;
+flange_depth = 40;
+flange_height = 40;
+thickness = 3;
+
+hole_dia = 4.5;
+countersink_dia = 8;
+countersink_depth = 2;
+edge_offset = 10;
+
+module countersunk_hole() {
+    cylinder(d=hole_dia, h=thickness+1);
+    translate([0, 0, thickness - countersink_depth])
+        cylinder(d1=hole_dia, d2=countersink_dia, h=countersink_depth + 0.01);
+}
+
+difference() {
+    union() {
+        // Horizontal flange (+Y direction)
+        translate([0, 0, 0])
+            cube([flange_width, flange_depth, thickness]);
+        
+        // Vertical flange (+Z direction)
+        translate([0, 0, 0])
+            cube([flange_width, thickness, flange_height]);
+    }
+    
+    // Holes in horizontal flange (countersink on bottom, -Z side)
+    for (x = [edge_offset, flange_width - edge_offset]) {
+        translate([x, flange_depth - edge_offset, thickness])
+            rotate([180, 0, 0])
+                countersunk_hole();
+    }
+    
+    // Holes in vertical flange (countersink on front, -Y side)
+    for (x = [edge_offset, flange_width - edge_offset]) {
+        translate([x, thickness, flange_height - edge_offset])
+            rotate([90, 0, 0])
+                countersunk_hole();
+    }
+}

@@ -1,0 +1,137 @@
+```openscad
+// OpenSCAD Mug with Handle
+// Global rendering quality (higher value = smoother curves)
+$fn = 64;
+
+// Mug body parameters
+mug_outer_radius = 80 / 2; // 40mm
+mug_inner_radius = 70 / 2; // 35mm
+mug_height = 90;
+mug_bottom_thickness = 6;
+
+// Handle parameters
+handle_thickness = 10;          // Thickness of the handle material
+handle_inner_width = 25;        // Internal width of the finger hole (X direction)
+handle_inner_height = 30;       // Internal height of the finger hole (Z direction)
+
+// Overlap for robust union between handle and mug body, and between handle components
+// A small positive value ensures parts slightly penetrate each other,
+// which helps OpenSCAD create a manifold solid and avoids Z-fighting artifacts.
+handle_overlap_epsilon = 0.5; // Example: 0.5mm overlap
+
+// Calculate handle positioning
+handle_z_center = mug_height / 2; // Center of the handle vertically on the mug
+handle_y_center = 0;              // Center of the handle horizontally (aligned with mug's Y axis)
+
+module mug_body() {
+    difference() {
+        // Outer cylinder of the mug
+        cylinder(h = mug_height, r = mug_outer_radius);
+
+        // Inner hollow part
+        // Lifted by mug_bottom_thickness to create the solid bottom
+        // Slightly increased height to avoid Z-fighting artifacts on the top surface
+        translate([0, 0, mug_bottom_thickness])
+            cylinder(h = mug_height - mug_bottom_thickness + handle_overlap_epsilon, r = mug_inner_radius);
+    }
+}
+
+module mug_handle() {
+    // Define key X-coordinates for the handle construction for clarity and precision.
+    // The X-coordinate where the handle's outermost surface (if no overlap) would meet the mug.
+    x_mug_outer_surface = mug_outer_radius;
+
+    // The X-coordinate where the handle's vertical bar starts, embedded into the mug.
+    x_handle_start_embedded = x_mug_outer_surface - handle_overlap_epsilon;
+
+    // The X-coordinate of the inner face of the handle material, after the mug connection.
+    // This is also where the horizontal bars of the D-shape begin.
+    x_handle_inner_material_face = x_mug_outer_surface + handle_thickness;
+
+    // The X-coordinate where the straight part of the finger hole ends and the arc begins.
+    // This is the X-coordinate of the "straight edge" of the D-arc.
+    x_handle_arc_straight_edge = x_handle_inner_material_face + handle_inner_width;
+
+    union() {
+        // 1. Vertical connecting bar (connects handle to mug)
+        // This bar spans the full height of the D-shaped handle.
+        // Its X-dimension extends from x_handle_start_embedded to x_handle_inner_material_face.
+        translate([
+            x_handle_start_embedded,                         // Starts slightly inside the mug (X)
+            handle_y_center - handle_thickness / 2,          // Centered on Y axis
+            handle_z_center - (handle_inner_height / 2 + handle_thickness) // Bottom Z of the handle
+        ]) {
+            cube([
+                handle_thickness + handle_overlap_epsilon,   // X-dimension (handle_thickness + the overlap into mug)
+                handle_thickness,                            // Y-dimension (handle's thickness)
+                handle_inner_height + 2 * handle_thickness   // Z-dimension (total height of the handle)
+            ]);
+        }
+
+        // 2. Top horizontal bar
+        // This bar forms the top part of the D-shape, connecting the vertical bar to the arc.
+        // It's extended slightly into the arc region to ensure robust union.
+        translate([
+            x_handle_inner_material_face,                    // Starts after the vertical connecting bar (X)
+            handle_y_center - handle_thickness / 2,          // Centered on Y axis
+            handle_z_center + handle_inner_height / 2        // Top Z of the finger hole
+        ]) {
+            cube([
+                handle_inner_width + handle_overlap_epsilon, // X-dimension (width of the finger hole part + overlap)
+                handle_thickness,                            // Y-dimension (handle's thickness)
+                handle_thickness                             // Z-dimension (height of this bar)
+            ]);
+        }
+
+        // 3. Bottom horizontal bar
+        // This bar forms the bottom part of the D-shape.
+        // It's extended slightly into the arc region to ensure robust union.
+        translate([
+            x_handle_inner_material_face,                    // Starts after the vertical connecting bar (X)
+            handle_y_center - handle_thickness / 2,          // Centered on Y axis
+            handle_z_center - handle_inner_height / 2 - handle_thickness // Bottom Z of the finger hole
+        ]) {
+            cube([
+                handle_inner_width + handle_overlap_epsilon, // X-dimension (width of the finger hole part + overlap)
+                handle_thickness,                            // Y-dimension (handle's thickness)
+                handle_thickness                             // Z-dimension (height of this bar)
+            ]);
+        }
+
+        // 4. Outer D-shape arc
+        // This creates the curved part of the D-shape handle.
+        // It's formed by differencing two concentric cylinders and then cutting one half.
+        outer_arc_radius = handle_inner_height / 2 + handle_thickness; // Radius of the outer curve
+        inner_arc_radius = handle_inner_height / 2;                   // Radius of the inner cut for the arc
+
+        // The arc is generated such that its straight (left) edge is at X=0 in its local coordinates
+        // after the difference and cutting operations.
+        // We translate it so its straight edge overlaps with the horizontal bars.
+        translate([x_handle_arc_straight_edge - handle_overlap_epsilon, handle_y_center, handle_z_center])
+        rotate([90, 0, 0]) { // Rotate so the cylinder's height is along Y, and the arc is in the XZ plane
+            difference() {
+                // Outer cylinder that defines the overall arc shape (centered in XZ plane)
+                cylinder(r = outer_arc_radius, h = handle_thickness, center = true);
+                
+                // Inner cylinder to cut out the inside of the arc, creating a ring shape
+                // Use a slightly larger height to ensure a clean cut through the entire handle_thickness
+                cylinder(r = inner_arc_radius, h = handle_thickness * 1.01, center = true);
+                
+                // Cutting cube to remove the 'negative X' half of the ring, forming the D-shape arc.
+                // The cylinders are centered at [0,0,0] in this rotated coordinate system.
+                // We want to keep the positive X half (right side), so we cut the negative X half (left side).
+                // This cube effectively cuts everything from X < ~0.
+                // The cube is positioned to cover the negative X half, ensuring a clean cut.
+                translate([-outer_arc_radius - 0.1, 0, 0])
+                    cube([outer_arc_radius + 0.2, handle_thickness * 1.01, outer_arc_radius * 2 + 0.2], center=true);
+            }
+        }
+    }
+}
+
+// Assemble the complete mug by combining the body and the handle
+union() {
+    mug_body();
+    mug_handle();
+}
+```

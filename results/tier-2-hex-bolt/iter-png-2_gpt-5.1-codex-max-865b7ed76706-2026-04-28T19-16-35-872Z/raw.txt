@@ -1,0 +1,18 @@
+```openscad
+// Parameters
+head_across = 13;    // across-flats distance for hex head (mm)
+head_height = 5.3;   // head height (mm)
+shank_d    = 8;      // shank diameter (mm)
+shank_len  = 30;     // shank length (mm)
+
+// Compute circumscribed diameter for hexagon to achieve desired across-flats
+head_d = head_across * 2 / sqrt(3);
+
+union() {
+    // Hex head, from z=0 to z=head_height
+    cylinder(h = head_height, d = head_d, $fn = 6);
+    // Shank, from z=-shank_len to z=0
+    translate([0, 0, -shank_len])
+        cylinder(h = shank_len, d = shank_d, $fn = 64);
+}
+```

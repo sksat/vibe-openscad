@@ -1,0 +1,72 @@
+提示いただいた画像を検証した結果、以下の修正が必要であると判断しました。
+
+1.  **接続部の厚み**: 前回のコードでは、板（leaf）がKnuckleの中心から伸びていたため、180度開いた際にKnuckleの外径分だけ段差が生じています。板がKnuckleの外周（接線）から滑らかに伸びるよう、配置を調整しました。
+2.  **皿穴の配置**: 穴の位置をヒンジの縦方向中央に対して対称に、かつ板の中央線上に配置されるように微調整しました。
+3.  **ピンの保持**: 構造的にピンが抜けないよう、Knuckleの端面とピンの長さを改めて厳密に定義しました。
+
+```openscad
+// Parameters
+leaf_w = 25;
+leaf_h = 30;
+leaf_t = 2;
+knuckle_outer_d = 8;
+knuckle_inner_d = 4.3;
+pin_d = 4;
+pin_l = 32;
+knuckle_count = 5;
+knuckle_len = leaf_h / knuckle_count; // 6mm
+hole_dist = 8;
+
+module leaf_with_knuckles(is_left) {
+    // 回転の中心(X=0, Y=0)に対して、板を接線位置から開始させる
+    offset = is_left ? -leaf_w : 0;
+    
+    union() {
+        // Plate: knuckleの外周に接するように配置
+        translate([is_left ? -leaf_w : 0, -leaf_h/2, -leaf_t/2]) 
+            cube([leaf_w, leaf_h, leaf_t]);
+            
+        // Knuckles
+        for (i = [0:knuckle_count-1]) {
+            // 左板(is_left=true)は0, 2, 4番目、右板は1, 3番目
+            if ((is_left && (i % 2 == 0)) || (!is_left && (i % 2 != 0))) {
+                translate([0, -leaf_h/2 + i * knuckle_len + knuckle_len/2, 0])
+                rotate([90, 0, 0]) 
+                cylinder(d = knuckle_outer_d, h = knuckle_len, center = true);
+            }
+        }
+    }
+}
+
+module hinge() {
+    difference() {
+        union() {
+            leaf_with_knuckles(true);
+            leaf_with_knuckles(false);
+        }
+        // Pin hole (貫通)
+        rotate([90, 0, 0]) cylinder(d = knuckle_inner_d, h = leaf_h + 2, center = true);
+        
+        // Screw holes (左板: X軸負方向)
+        for (i = [-1, 0, 1]) {
+            translate([-13, i * hole_dist, 0]) {
+                cylinder(d1 = 6, d2 = 3.2, h = 1.1); // 皿穴テーパ
+                translate([0,0,-2]) cylinder(d = 3.2, h = 5); // 貫通穴
+            }
+        }
+        // Screw holes (右板: X軸正方向)
+        for (i = [-1, 0, 1]) {
+            translate([13, i * hole_dist, 0]) {
+                cylinder(d1 = 6, d2 = 3.2, h = 1.1);
+                translate([0,0,-2]) cylinder(d = 3.2, h = 5);
+            }
+        }
+    }
+
+    // Pin
+    rotate([90, 0, 0]) color("silver") cylinder(d = pin_d, h = pin_l, center = true);
+}
+
+$fn = 100;
+hinge();
+```

@@ -1,0 +1,91 @@
+// Butt hinge - opened 180 degrees
+// Pin axis along Y, leaves in XY plane (Z=0 mid-plane of leaves)
+
+$fn = 64;
+
+leaf_w = 25;     // x extent of leaf (from knuckle edge outward)
+leaf_h = 30;     // y extent (along pin axis)
+leaf_t = 2;      // thickness
+knuckle_od = 8;
+knuckle_id = 4.6;
+pin_d = 4;
+pin_len = 32;
+seg = 6;         // each knuckle segment length (30/5)
+
+// Screw holes: 3 per leaf, pitch 8mm along Y, centered on leaf
+screw_pitch = 8;
+screw_through_d = 3.2;
+csk_d = 6;
+csk_depth = 1;
+
+// Leaf: flat plate from x=knuckle_od/2 outward (no, plate extends from x=0 to x=leaf_w on right, mirrored on left)
+// But plate must connect to knuckle. Plate centered on z=0, thickness leaf_t.
+// Plate spans x in [knuckle_od/2 ... knuckle_od/2 + leaf_w] roughly, but knuckle radius 4 so plate starts at x=4.
+// We'll make plate from x=0 to x=leaf_w (the part inside knuckle gets unioned with knuckle).
+
+module leaf_plate(side) {
+    // side = +1 (right, x>0) or -1 (left, x<0)
+    // plate: width leaf_w in x, height leaf_h in y, thickness leaf_t in z
+    // Screw hole center: place 3 holes along y, centered, at x near far end
+    screw_x = side * (leaf_w - 5); // 5mm from outer edge
+    difference() {
+        translate([side > 0 ? 0 : -leaf_w, -leaf_h/2, -leaf_t/2])
+            cube([leaf_w, leaf_h, leaf_t]);
+        // screw holes (countersunk from top, +Z face)
+        for (i = [-1, 0, 1]) {
+            translate([screw_x, i*screw_pitch, 0]) {
+                // through hole
+                translate([0,0,-leaf_t/2 - 0.1])
+                    cylinder(d=screw_through_d, h=leaf_t + 0.2);
+                // countersink (taper) on top face
+                translate([0,0,leaf_t/2 - csk_depth])
+                    cylinder(d1=screw_through_d, d2=csk_d, h=csk_depth + 0.01);
+            }
+        }
+    }
+}
+
+module knuckle_seg(y0) {
+    translate([0, y0, 0])
+        rotate([-90,0,0])
+            difference() {
+                cylinder(d=knuckle_od, h=seg);
+                translate([0,0,-0.1])
+                    cylinder(d=knuckle_id, h=seg+0.2);
+            }
+}
+
+// Left leaf: knuckles at segments 0,2,4 (outer two + center)
+module left_leaf() {
+    color("silver") {
+        union() {
+            leaf_plate(-1);
+            // segments y in [-15,-9], [-3,3], [9,15] => y0 = -15, -3, 9
+            knuckle_seg(-15);
+            knuckle_seg(-3);
+            knuckle_seg(9);
+        }
+    }
+}
+
+// Right leaf: knuckles at segments 1,3 => y0 = -9, 3
+module right_leaf() {
+    color("silver") {
+        union() {
+            leaf_plate(+1);
+            knuckle_seg(-9);
+            knuckle_seg(3);
+        }
+    }
+}
+
+module pin() {
+    color("gold")
+        translate([0, -pin_len/2, 0])
+            rotate([-90,0,0])
+                cylinder(d=pin_d, h=pin_len);
+}
+
+left_leaf();
+right_leaf();
+pin();

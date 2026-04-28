@@ -1,0 +1,39 @@
+```openscad
+$fn = 64;
+
+width = 50;
+depth = 40;
+height = 40;
+thickness = 3;
+
+hole_d = 4.5;
+csk_d = 8;
+csk_depth = 2;
+
+difference() {
+    union() {
+        // Horizontal flange (X-Y plane, thickness in Z)
+        cube([width, depth, thickness]);
+        // Vertical flange (X-Z plane, thickness in Y)
+        cube([width, thickness, height]);
+    }
+
+    // Holes on horizontal flange (countersink on top, z=thickness)
+    for (y = [10, depth-10]) {
+        translate([width/2, y, 0])
+            cylinder(h = thickness, d = hole_d);
+        translate([width/2, y, thickness - csk_depth])
+            cylinder(h = csk_depth, d = csk_d);
+    }
+
+    // Holes on vertical flange (countersink on outer side, y=thickness)
+    for (z = [10, height-10]) {
+        translate([width/2, 0, z])
+            rotate([90, 0, 0])
+                cylinder(h = thickness, d = hole_d);
+        translate([width/2, thickness - csk_depth, z])
+            rotate([90, 0, 0])
+                cylinder(h = csk_depth, d = csk_d);
+    }
+}
+```

@@ -1,0 +1,44 @@
+// M8 Hex Bolt (shank only)
+
+module bolt() {
+    // Bolt head
+    head_across_flats = 13;
+    head_height = 5.3;
+
+    // Shank
+    shank_diameter = 8;
+    shank_length = 30;
+
+    // Hex head using hull and cylinders
+    // The angle of rotation for each face is calculated
+    // For a hexagon, 360 degrees / 6 faces = 60 degrees per face
+    // We need to rotate by half of that to center the faces on the axes
+    hex_radius = head_across_flats / 2;
+    difference() {
+        union() {
+            // Create a cylinder for the top surface of the head
+            cylinder(h = head_height, r = hex_radius, $fn = 6);
+            // Create the hexagonal sides by rotating and hulling cylinders
+            for (i = [0:5]) {
+                rotate([0, 0, i * 60 + 30]) { // Rotate to center faces on axes
+                    translate([hex_radius, 0, 0]) {
+                        cylinder(h = head_height, r = 0.1, $fn = 6); // Tiny cylinder to define the edge
+                    }
+                }
+            }
+            // Create the base of the head using a cylinder
+            cylinder(h = 0.1, r = hex_radius, $fn = 6); // Thin cylinder for the base
+        }
+        // Chamfer the top edge of the hex head slightly (optional but realistic)
+        // You can adjust this or remove it if not needed.
+        // For simplicity, we'll omit chamfering here to strictly follow the prompt.
+    }
+
+
+    // Shank
+    translate([0, 0, -shank_length]) {
+        cylinder(h = shank_length, d = shank_diameter);
+    }
+}
+
+bolt();

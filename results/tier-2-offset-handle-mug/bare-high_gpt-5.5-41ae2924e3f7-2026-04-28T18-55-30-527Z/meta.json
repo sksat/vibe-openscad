@@ -1,0 +1,38 @@
+{
+  "runId": "bare-high_gpt-5.5-41ae2924e3f7-2026-04-28T18-55-30-527Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "bare-high/gpt-5.5",
+  "signature": "41ae2924e3f757cc6a00edc0645e6b71b2444bc61a1702658606e2ad8467f390",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5.5-2026-04-23",
+      "modelOptions": {
+        "reasoning": {
+          "effort": "high"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5.5-2026-04-23",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 100653
+  },
+  "tokens": {
+    "input": 273,
+    "output": 5061
+  },
+  "cost_usd": 0.050951250000000003,
+  "createdAt": "2026-04-28T18:55:30.528Z",
+  "gitCommit": "781e6c683dda9349da96561361d4da5f2c54975e"
+}

@@ -1,0 +1,24 @@
+// M8 hex bolt (thread omitted)
+
+$fn = 180;
+
+// Parameters
+af = 13;      // across-flats of hex head [mm]
+h  = 5.3;     // head height [mm]
+d  = 8;       // shank diameter [mm]
+L  = 30;      // shank length [mm]
+
+// Regular hexagon prism where across-flats = af
+module hex_prism(flat_to_flat, height) {
+  r = flat_to_flat / sqrt(3); // circumradius from across-flats
+  cylinder(h=height, r=r, center=false, $fn=6);
+}
+
+union() {
+  // Head: bottom face at z=0
+  hex_prism(af, h);
+
+  // Shank: extend into z<0
+  translate([0, 0, -L])
+    cylinder(h=L, d=d, center=false, $fn=$fn);
+}

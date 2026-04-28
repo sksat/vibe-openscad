@@ -1,0 +1,74 @@
+// パラメータ設定
+leaf_w = 25;
+leaf_h = 30;
+leaf_t = 2;
+pin_dia = 4;
+clearance = 0.3;
+hole_dia = 3.2;
+knuckle_od = 8;
+knuckle_id = pin_dia + clearance;
+knuckle_h = 6;
+num_segments = 5;
+
+// メインモデル
+union() {
+    // 左板
+    color("silver")
+    difference() {
+        union() {
+            translate([-leaf_w, -leaf_h/2, 0]) cube([leaf_w, leaf_h, leaf_t]);
+            // Knuckle (左板: 外側2個 + 中央1個 -> 0, 2, 4番目)
+            for (i = [0, 2, 4]) {
+                translate([0, -leaf_h/2 + i * knuckle_h + knuckle_h/2, 0])
+                rotate([-90, 0, 0])
+                cylinder(d = knuckle_od, h = knuckle_h, center = true);
+            }
+        }
+        // 貫通穴
+        for (i = [0, 2, 4]) {
+            translate([0, -leaf_h/2 + i * knuckle_h + knuckle_h/2, 0])
+            rotate([-90, 0, 0])
+            cylinder(d = knuckle_id, h = knuckle_h + 0.1, center = true);
+        }
+        // 皿穴と貫通穴 (左板)
+        for (i = [-1, 0, 1]) {
+            translate([-leaf_w/2, i * 8, -1]) {
+                cylinder(d = 3.2, h = 4);
+                cylinder(d1 = 6, d2 = 3.2, h = 1);
+            }
+        }
+    }
+
+    // 右板
+    color("gray")
+    difference() {
+        union() {
+            translate([0, -leaf_h/2, 0]) cube([leaf_w, leaf_h, leaf_t]);
+            // Knuckle (右板: 中間2個 -> 1, 3番目)
+            for (i = [1, 3]) {
+                translate([0, -leaf_h/2 + i * knuckle_h + knuckle_h/2, 0])
+                rotate([-90, 0, 0])
+                cylinder(d = knuckle_od, h = knuckle_h, center = true);
+            }
+        }
+        // 貫通穴
+        for (i = [1, 3]) {
+            translate([0, -leaf_h/2 + i * knuckle_h + knuckle_h/2, 0])
+            rotate([-90, 0, 0])
+            cylinder(d = knuckle_id, h = knuckle_h + 0.1, center = true);
+        }
+        // 皿穴と貫通穴 (右板)
+        for (i = [-1, 0, 1]) {
+            translate([leaf_w/2, i * 8, -1]) {
+                cylinder(d = 3.2, h = 4);
+                cylinder(d1 = 6, d2 = 3.2, h = 1);
+            }
+        }
+    }
+
+    // ピン軸
+    color("lightgray")
+    translate([0, 0, 0])
+    rotate([-90, 0, 0])
+    cylinder(d = pin_dia, h = 32, center = true);
+}

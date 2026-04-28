@@ -1,0 +1,19 @@
+```openscad
+$fn = 128;
+
+module handle() {
+    translate([0, 0, 50])
+        rotate_extrude()
+            translate([52, 0, 0])
+                circle(r = 12);
+}
+
+difference() {
+    union() {
+        cylinder(h = 100, r = 40);
+        handle();
+    }
+    translate([0, 0, 6])
+        cylinder(h = 94, r = 36);
+}
+```

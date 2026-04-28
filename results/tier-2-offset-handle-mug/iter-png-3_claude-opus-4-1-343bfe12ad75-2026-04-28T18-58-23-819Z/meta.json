@@ -1,0 +1,42 @@
+{
+  "runId": "iter-png-3_claude-opus-4-1-343bfe12ad75-2026-04-28T18-58-23-819Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "iter-png-3/claude-opus-4-1",
+  "signature": "343bfe12ad75726430fc54366bb9ea54c96980427b448eab8356b3b4ad822886",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-opus-4-1-20250805",
+      "iterateFrom": "iter-png-2/claude-opus-4-1",
+      "iteration": {
+        "kind": "render-png-feedback"
+      },
+      "parentSignature": "9bd406df6600f14adb74b2a8a555127c142bf1e608dfc8b4d6305fb571329d4e"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-opus-4-1-20250805",
+  "harness": {
+    "kind": "bare",
+    "iteration": {
+      "kind": "render-png-feedback"
+    }
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 9636
+  },
+  "tokens": {
+    "input": 1543,
+    "output": 381
+  },
+  "cost_usd": 0.05172,
+  "createdAt": "2026-04-28T18:58:23.819Z",
+  "gitCommit": "781e6c683dda9349da96561361d4da5f2c54975e",
+  "parentRunId": "iter-png-2_claude-opus-4-1-9bd406df6600-2026-04-28T18-58-13-894Z"
+}

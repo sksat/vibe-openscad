@@ -1,0 +1,39 @@
+{
+  "runId": "bare-think-off_claude-sonnet-4-6-c1cd06bba879-2026-04-28T18-49-49-177Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "bare-think-off/claude-sonnet-4-6",
+  "signature": "c1cd06bba879a40d7edd7f61f3e318038de47c84714beed725b1eb8da3cfd876",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-6",
+      "modelOptions": {
+        "thinking": {
+          "type": "disabled"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-sonnet-4-6",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "no_code",
+  "timing": {
+    "totalMs": 67349
+  },
+  "tokens": {
+    "input": 330,
+    "output": 4096
+  },
+  "cost_usd": 0.06242999999999999,
+  "createdAt": "2026-04-28T18:49:49.177Z",
+  "gitCommit": "781e6c683dda9349da96561361d4da5f2c54975e",
+  "error": "no SCAD code block in response (stopReason=max_tokens)"
+}

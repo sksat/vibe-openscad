@@ -1,0 +1,30 @@
+// OpenSCAD: M8 hex bolt (thread omitted), hex head + cylindrical shank
+// Improvement: rotate hex head so across-flats aligns with X axis (flat faces facing left/right)
+
+D = 13; // across-flats of hex head (mm)
+R = D / sqrt(3); // hexagon circumradius for regular hex with given across-flats
+
+points_hex = [
+    for (i = [0 : 5])
+        [ R * cos(i * 60 * PI / 180),
+          R * sin(i * 60 * PI / 180) ]
+];
+
+// Head: hex prism, 5.3 mm tall, bottom at z = 0, rotated so flats align with X
+module head() {
+    rotate([0, 0, 30])
+        linear_extrude(height = 5.3, center = false)
+            polygon(points = points_hex);
+}
+
+// Shank: cylinder, diameter 8 mm (radius 4 mm), length 30 mm, extending into z < 0
+module shank() {
+    cylinder(h = 30, r = 4, center = false);
+}
+
+// Assemble: head on top (z 0..5.3), shank from z -30 .. 0
+union() {
+    head(); // z = 0 .. 5.3
+    translate([0, 0, -30])
+        shank(); // z = -30 .. 0
+}

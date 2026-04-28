@@ -1,0 +1,49 @@
+// openscad
+$fn = 128;
+
+// Parameters
+w = 50;             // width (X)
+len = 40;           // flange length (Y for horizontal, Z for vertical)
+t = 3;              // thickness
+hole_d = 4.5;       // through hole diameter for M4
+cs_d = 8;           // countersink seat diameter (top)
+cs_depth = 2;       // countersink depth
+eps = 0.1;          // small margin for boolean robustness
+
+// Hole X positions: 10mm from each lateral edge (symmetric)
+hole_x = [10, w - 10];
+
+// Centers along the face midline
+h_y = len/2;    // horizontal flange holes: Y coordinate (centerline of horizontal face)
+v_z = len/2;    // vertical flange holes: Z coordinate (centerline of vertical face)
+
+module bracket() {
+    // Horizontal flange: X:0..w, Y:0..len, Z:0..t
+    translate([0,0,0]) cube([w, len, t], center=false);
+    // Vertical flange: X:0..w, Y:0..t, Z:0..len
+    translate([0,0,0]) cube([w, t, len], center=false);
+}
+
+module subtract_holes() {
+    // Horizontal flange holes (axis Z), countersink on outer side (+Z)
+    for (x = hole_x) {
+        // through hole (along Z)
+        translate([x, h_y, -eps]) cylinder(h=t + 2*eps, r=hole_d/2, center=false);
+        // conical countersink pocket from outer face (+Z): top radius cs_d/2 -> bottom radius hole_d/2
+        translate([x, h_y, t - cs_depth]) cylinder(h=cs_depth, r1=cs_d/2, r2=hole_d/2, center=false);
+    }
+
+    // Vertical flange holes (axis Y), countersink on outer side (+Y)
+    for (x = hole_x) {
+        // through hole along Y (rotate cylinder)
+        translate([x, -eps, v_z]) rotate([90,0,0]) cylinder(h=t + 2*eps, r=hole_d/2, center=false);
+        // conical countersink pocket from outer face (+Y): top radius cs_d/2 -> bottom radius hole_d/2
+        translate([x, t - cs_depth, v_z]) rotate([90,0,0]) cylinder(h=cs_depth, r1=cs_d/2, r2=hole_d/2, center=false);
+    }
+}
+
+// Final part: union of flanges minus holes/countersinks
+difference() {
+    bracket();
+    subtract_holes();
+}

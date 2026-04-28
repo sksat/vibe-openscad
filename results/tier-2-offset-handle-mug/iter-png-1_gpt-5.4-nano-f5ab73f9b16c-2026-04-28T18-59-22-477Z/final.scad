@@ -1,0 +1,185 @@
+// Mug + +X side D-handle (OpenSCAD)
+// Dimensions (mm):
+// Mug: outer Ø80, inner Ø70 (wall 5), height 90, bottom thickness 6
+// Handle: only on +X side, D-shape (outer half-cylinder with flat inner side),
+// inner void ~ 30 (height) x 25 (width in Y). Positioned around middle of mug height.
+
+$fn = 128;
+
+// ---- Mug parameters ----
+outer_d = 80;
+inner_d = 70;
+t_wall  = (outer_d - inner_d)/2; // 5
+h_mug   = 90;
+t_bottom= 6;
+
+mug_outer_r = outer_d/2;
+mug_inner_r = inner_d/2;
+
+// ---- Handle parameters ----
+handle_void_w = 25;   // width in Y (requested)
+handle_void_h = 30;   // height in Z (requested)
+
+handle_center_z = h_mug/2;
+
+// Handle grip depth along +X (how far it extends from the mug)
+handle_depth = 20;
+
+// Handle wall thickness (for D shell)
+handle_wall = 4;
+
+// How much extra overlap to avoid manifold gaps
+overlap = 0.6;
+
+// For D-shape outer half-circle radius in YZ:
+r_outer = handle_void_h/2 + handle_wall;   // gives outer size; inner will be r_inner = r_outer-handle_wall
+r_inner = r_outer - handle_wall;
+
+// Mug contact plane for handle:
+x_mug_outer = mug_outer_r; // x = +40 touches outer wall
+
+// Small helper: 2D half-circle polygon (Y-Z plane) with flat at Y=0
+module half_circle_2d(r=10, yflip=false) {
+  // Creates points for a semicircle in +Y direction, from Z=-r..+r, with Y>=0
+  pts = [
+    for (i=[0:64])
+      let(
+        a = -90 + i*(180/64),
+        y = r*cos(a),   // cos maps -90..+90 -> 0..r..0
+        z = r*sin(a)    // sin maps -90..+90 -> -r..+r
+      )
+      [yflip ? -y : y, z]
+  ];
+  // Close with flat edge on Y=0 (connect ends)
+  polygon(concat(pts, [[0,-r],[0,r]]));
+}
+
+// Build D-shaped handle as an extrusion along X (depth).
+// D is defined in YZ cross-section:
+// - Outer: semicircle (Y>=0) with flat at Y=0
+// - Inner void: smaller semicircle (Y>=0) with flat at Y=0
+// Then we clip in Y (width) to ~handle_void_w and in Z to ~handle_void_h.
+module handle_d() {
+
+  // Cross-section extents:
+  // We'll clip the D in Y to control void width.
+  // Our semicircle is centered at Y=0; flat at Y=0 implies curved bulges toward +Y.
+  // For inner void width ~25, we clip y from 0..(handle_void_w).
+  clip_y_max = handle_void_w; // void width along Y
+
+  // For Z we center at handle_center_z with requested height
+  z0 = handle_center_z - handle_void_h/2;
+  z1 = handle_center_z + handle_void_h/2;
+
+  // Outer half-circle in YZ plane, extruded along +X.
+  // We position the flat face at Y=0 and place the semicircle bulge toward +Y.
+  difference() {
+    // Outer handle (D shell)
+    translate([x_mug_outer - overlap, 0, 0])
+      linear_extrude(height=handle_depth, center=false)
+        translate([0,0,0]) // already in YZ in 2D
+          intersection() {
+            half_circle_2d(r=r_outer, yflip=false);
+            // Clip to achieve target void width/shape (keep only y in [0..clip_y_max])
+            // and allow enough thickness above/below due to wall thickness.
+            // We'll clip in the 2D stage by intersecting with a rectangle.
+            translate([0,0])
+              square([clip_y_max, 2*r_outer + 1], center=false);
+          }
+
+    // Inner void: subtract a smaller D (so wall remains)
+    translate([x_mug_outer - overlap, 0, 0])
+      // Move inner void so its Z span is centered correctly
+      translate([0,0,0])
+      linear_extrude(height=handle_depth + 2*overlap, center=false)
+        intersection() {
+          // Smaller half-circle
+          half_circle_2d(r=r_inner, yflip=false);
+          // Clip in Y to target width:
+          square([clip_y_max, 2*r_inner + 1], center=false);
+        }
+
+    // Finally clip inner void in Z to exact requested height by subtracting a 3D box
+    // (easier than precise 2D Z offsets).
+    translate([x_mug_outer - overlap - 0.5, 0, z0])
+      cube([handle_depth + 2*overlap + 1, clip_y_max, handle_void_h], center=false);
+  }
+}
+
+// Place handle so its flat face is toward mug center (i.e., at Y=0 plane).
+// Requirement: attach only to +X side, and connect to mug outer wall.
+// We'll also ensure it doesn't appear on -X.
+module mug_with_handle() {
+  union() {
+    // Mug body: outer cylinder minus inner cavity, leaving bottom thickness.
+    difference() {
+      cylinder(d=outer_d, h=h_mug, center=false);
+      translate([0,0,t_bottom])
+        cylinder(d=inner_d, h=h_mug - t_bottom, center=false);
+    }
+
+    // Handle: build D handle shell and clip in X to ensure only +X attachment.
+    // Position so D is centered at mug's middle height.
+    translate([0,0,0]) {
+      // The handle_d() is centered around handle_center_z by subtractive Z box,
+      // but its outer half-cylinder extrusion exists from Z=-r_outer..+r_outer around origin.
+      // So we shift Z of the whole handle to mug center.
+      translate([0,0,handle_center_z]) {
+        // Our handle_d() expects Z clipping box at absolute z0..z1 in mug coords,
+        // so we implement by shifting handle_z logic inside handle_d via absolute z0/z1
+        // already computed. Thus set origin accordingly: handle_d includes absolute z0/z1
+        // but we are shifting; to avoid double-shift, redefine approach:
+        // We'll implement a dedicated shifted handle below (simpler).
+
+      }
+    }
+  }
+}
+
+// Dedicated handle with correct Z placement (no double-shift):
+module handle_d_placed() {
+  clip_y_max = handle_void_w;
+  // Z limits in absolute coordinates of mug
+  z0 = handle_center_z - handle_void_h/2;
+
+  // We'll create outer and inner D extrusions centered around Z=0,
+  // then shift to z0 appropriately using linear_extrude base at Z=-r_outer.
+  // Since half_circle_2d spans Z in [-r_outer, +r_outer] (in 2D), shifting by handle_center_z
+  // will put the Z center at handle_center_z.
+  difference() {
+    // Outer
+    translate([x_mug_outer - overlap, 0, handle_center_z])
+      linear_extrude(height=handle_depth, center=false)
+        intersection() {
+          half_circle_2d(r=r_outer, yflip=false);
+          square([clip_y_max, 2*r_outer + 1], center=false);
+        }
+
+    // Inner: smaller D
+    translate([x_mug_outer - overlap, 0, handle_center_z])
+      linear_extrude(height=handle_depth + 2*overlap, center=false)
+        intersection() {
+          half_circle_2d(r=r_inner, yflip=false);
+          square([clip_y_max, 2*r_inner + 1], center=false);
+        }
+
+    // Ensure inner void height is exactly handle_void_h
+    // (Also prevents the inner D from exceeding requested vertical size.)
+    translate([x_mug_outer - overlap - 0.5, 0, z0])
+      cube([handle_depth + 2*overlap + 1, clip_y_max, handle_void_h], center=false);
+  }
+}
+
+module mug_with_handle_fixed() {
+  union() {
+    difference() {
+      cylinder(d=outer_d, h=h_mug, center=false);
+      translate([0,0,t_bottom])
+        cylinder(d=inner_d, h=h_mug - t_bottom, center=false);
+    }
+    // Add handle only on +X side
+    handle_d_placed();
+  }
+}
+
+mug_with_handle_fixed();

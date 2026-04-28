@@ -1,0 +1,105 @@
+// 修正後 OpenSCAD: 家具用小型 butt hinge (180° 開き) - 左板/右板/ピン軸
+// 前提仕様を厳密に反映するよう knuckle を中空構造で再実装し、
+// knuckle 内径 4.6mm（ピン径 4mm に対する 0.3mmクリアランス）を確保します。
+
+// 基本寸法
+leaf_W = 25;      // 板の横幅 (X方向)
+leaf_H = 30;      // 縦寸法 (Y方向)
+leaf_T = 2;       // 厚さ (Z方向)
+
+// knuckle / ピン
+knuckle_OD = 8;     // 外径
+knuckle_R  = knuckle_OD/2;
+hole_d     = 4.6;   // knuckle 内径
+hole_R     = hole_d/2;
+pin_D      = 4;     // ピン径
+pin_R      = pin_D/2;
+
+// knuckle のY方向分割
+left_knuckles_Y  = [-12, 0, 12];  // 左板: 外側2個 + 中央1個
+right_knuckles_Y = [-6, 6];       // 右板: 中間2個
+
+// knuckle から離れた側の皿穴位置（M3）
+M3_pocket_Y_left  = [-12, -4, 4];
+M3_pocket_Y_right = [-12, -4, 4];
+
+// 筐体カラーのための座標系に合わせたオフセット
+// 左板: X=-25〜0、右板: X=0〜25、Z=0〜2
+// knuckle は X 軸方向に -4（左）/ +4（右）を中心とする
+$fn = 60;
+
+// knuckle: 単一の knuckle を左・右で使い分け、外径 8mm/内径 4.6mm の中空筒を Y 軸方向に配置
+module hollow_knuckle(isLeft, y) {
+    x = isLeft ? -4 : 4;
+    translate([x, y, 1])
+        rotate([90, 0, 0])
+            difference() {
+                // 外筒 (knuckle 外径)
+                cylinder(h = leaf_H, r = knuckle_R, center = true);
+                // 内穴 (ピン軸径 + 0.3mm クリアランス → 4.6mm)
+                cylinder(h = leaf_H, r = hole_R, center = true);
+            }
+}
+
+// M3 皿穴 + テーパ付き countersink
+module m3_hole_at(x, y) {
+    // countersink: 表面から depth 1mm, dia 6mm
+    translate([x, y, leaf_T - 1])
+        cylinder(h = 1, r1 = 3, r2 = 0, center = false);
+
+    // 貫通穴: 3.2mm dia
+    translate([x, y, 0])
+        cylinder(h = leaf_T, r = 1.6, center = false);
+}
+
+// 左板 (X<0)
+module left_leaf() {
+    union() {
+        // 左板本体
+        translate([-25, -15, 0])
+            cube([25, 30, 2], center = false);
+
+        // knuckle（左板: 外側2個 + 中央1個）
+        for (y = left_knuckles_Y)
+            hollow_knuckle(true, y);
+
+        // knuckle から離れた側の M3 皿穴
+        for (y = M3_pocket_Y_left)
+            m3_hole_at(-20, y);
+    }
+}
+
+// 右板 (X>0)
+module right_leaf() {
+    union() {
+        // 右板本体
+        translate([0, -15, 0])
+            cube([25, 30, 2], center = false);
+
+        // knuckle（右板: 中間2個）
+        for (y = right_knuckles_Y)
+            hollow_knuckle(false, y);
+
+        // knuckle から離れた側の M3 皿穴
+        for (y = M3_pocket_Y_right)
+            m3_hole_at(20, y);
+    }
+}
+
+// ピン軸（Y軸方向、+Y 方向に伸びる）
+module pin_axis() {
+    rotate([90, 0, 0])
+        cylinder(h = 32, r = pin_R, center = true);
+}
+
+// 完成した180°開きの状態
+module hinge_open_state() {
+    union() {
+        left_leaf();
+        rotate([0, 180, 0]) right_leaf();
+        pin_axis();
+    }
+}
+
+// 出力
+hinge_open_state();

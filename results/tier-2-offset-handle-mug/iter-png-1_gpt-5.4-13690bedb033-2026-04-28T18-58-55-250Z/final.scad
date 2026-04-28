@@ -1,0 +1,68 @@
+$fn = 128;
+
+// Mug dimensions
+outer_d   = 80;
+inner_d   = 70;
+mug_h     = 90;
+bottom_t  = 6;
+
+// Handle inner opening dimensions
+handle_open_w = 25;   // width in radial (X) direction
+handle_open_h = 30;   // height in Z direction
+
+// Handle thickness
+handle_wall = 5;
+
+// Derived mug radii
+outer_r = outer_d / 2;
+inner_r = inner_d / 2;
+
+// Handle dimensions
+handle_outer_w = handle_open_w + handle_wall;   // D-shape total width (straight side to farthest point)
+handle_outer_h = handle_open_h + 2 * handle_wall;
+
+handle_inner_r = handle_open_h / 2;
+handle_outer_r = handle_outer_h / 2;
+
+handle_center_z = mug_h / 2;
+
+// Slight overlap into mug body to guarantee manifold union
+attach_overlap = 1.0;
+
+// 2D D-shape in XZ plane:
+// left side is the straight attachment side, right side is the semicircular outer side
+module d2d(x_left, z_center, total_w, total_h) {
+    r = total_h / 2;
+    union() {
+        square_w = total_w - r;
+        translate([x_left, z_center - r])
+            square([square_w, total_h], center = false);
+        translate([x_left + square_w, z_center])
+            circle(r = r);
+    }
+}
+
+module mug_body() {
+    difference() {
+        cylinder(h = mug_h, r = outer_r);
+        translate([0, 0, bottom_t])
+            cylinder(h = mug_h - bottom_t + 0.01, r = inner_r);
+    }
+}
+
+module handle() {
+    difference() {
+        // Outer handle body
+        linear_extrude(height = handle_outer_h, center = true)
+            d2d(outer_r - attach_overlap, handle_center_z, handle_outer_w + attach_overlap, handle_outer_h);
+
+        // Inner finger opening
+        linear_extrude(height = handle_open_h, center = true)
+            d2d(outer_r + handle_wall, handle_center_z, handle_open_w, handle_open_h);
+    }
+}
+
+union() {
+    mug_body();
+    handle();
+}

@@ -1,0 +1,37 @@
+{
+  "runId": "pdf-page_claude-opus-4-7-51f519866355-2026-04-28T17-51-58-742Z",
+  "taskId": "tier-4-gp2y0d413k",
+  "matrixId": "pdf-page/claude-opus-4-7",
+  "signature": "51f5198663553dfc7d34af162dfedc0c2e3daf5ea3e0125106082f65048774dc",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "7e6fa16f202f13fec95f52e82a3fdae7e470b031753647eea0c4491422ab78ab",
+    "harness": {
+      "kind": "pdf-page",
+      "provider": "anthropic",
+      "model": "claude-opus-4-7"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-opus-4-7",
+  "harness": {
+    "kind": "pdf-page",
+    "pdfUrl": "https://jp.sharp/products/device/doc/opto/gp2y0d413k_e.pdf",
+    "pages": [
+      2
+    ]
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 26536
+  },
+  "tokens": {
+    "input": 3357,
+    "output": 1691
+  },
+  "cost_usd": 0.05906,
+  "createdAt": "2026-04-28T17:51:58.742Z",
+  "gitCommit": "be87c9f2adaf51be5e9ccb7f63eb95c7bc456929"
+}

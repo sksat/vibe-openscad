@@ -1,0 +1,49 @@
+```openscad
+$fn = 100;
+
+// Mug body: outer cylinder and hollow inner with bottom thickness 6
+module mug_body() {
+    difference() {
+        cylinder(h = 90, r = 40, $fn = $fn);
+        translate([0, 0, 6]) cylinder(h = 84, r = 35, $fn = $fn);
+    }
+}
+
+// Handle cross-section (D-shape) in XY plane with inner hollow
+module handle_cross_section() {
+    Th = 30;        // thickness into +X direction
+    Hh = 70;        // total height
+    hole_w = 25;    // inner hollow width
+    hole_h = 30;    // inner hollow height
+    hole_x = Th - hole_w;
+    hole_y = (Hh - hole_h) / 2;
+
+    difference() {
+        union() {
+            // D-shape: left straight edge, right semicircular edge
+            square([Th, Hh], center = false);
+            translate([Th, Hh/2]) circle(r = Th, $fn = $fn);
+        }
+        translate([hole_x, hole_y])
+            square([hole_w, hole_h], center = false);
+    }
+}
+
+// Extrude the 2D handle cross-section along the X axis
+module handle3d() {
+    // Move the cross-section into the YZ plane, then extrude along X by rotating
+    rotate([0, -90, 0]) {
+        linear_extrude(height = 18) {
+            handle_cross_section();
+        }
+    }
+}
+
+// Assemble mug with handle on the +X side
+union() {
+    mug_body();
+
+    // Position the handle near the outer surface on the +X side, at mid-height
+    translate([40, 0, 45]) handle3d();
+}
+```

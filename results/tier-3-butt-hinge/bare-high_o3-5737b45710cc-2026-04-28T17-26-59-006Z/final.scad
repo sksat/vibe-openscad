@@ -1,0 +1,72 @@
+$fn = 64;
+
+// ---------- Parameters ----------
+leaf_w            = 25;      // width (X direction)
+leaf_h            = 30;      // height (Y direction)
+plate_t           = 2;       // thickness (Z direction)
+
+knuckle_od        = 8;       // outer diameter
+knuckle_id        = 4.6;     // inner diameter (pin clearance)
+knuckle_len       = 6;       // length of each knuckle segment
+segments_total    = 5;       // total knuckles (fixed)
+
+pin_d             = 4;       // pin diameter
+pin_len           = leaf_h + 2; // 32 mm (1 mm overhang per end)
+
+hole_cs_d         = 6;       // countersink diameter
+hole_cs_depth     = 1;       // countersink depth
+hole_thru_d       = 3.2;     // through-hole diameter
+hole_ypos         = [6,14,22]; // Y positions of screw holes
+
+// ---------- Modules ----------
+module knuckle(y0){
+    translate([0,y0,0])
+        rotate([-90,0,0])
+            difference(){
+                cylinder(d=knuckle_od, h=knuckle_len, center=false);
+                cylinder(d=knuckle_id, h=knuckle_len, center=false);
+            }
+}
+
+module screw_hole(){
+    union(){
+        // countersink (taper simplified as cone)
+        translate([0,0,plate_t - hole_cs_depth])
+            cylinder(h=hole_cs_depth, d1=hole_cs_d, d2=hole_thru_d, center=false);
+        // through hole
+        cylinder(h=plate_t - hole_cs_depth, d=hole_thru_d, center=false);
+    }
+}
+
+module leaf(side="left"){
+    s         = (side=="left") ? -1 :  1;           // -1 for left, +1 for right
+    plate_x0  = (s==-1)        ? -4 - leaf_w : 4;   // plate origin X
+    plate_xc  = plate_x0 + leaf_w/2;                // hole center X
+    segs      = (side=="left") ? [0,2,4]  : [1,3];  // knuckle indices
+
+    difference(){
+        union(){
+            // plate
+            translate([plate_x0,0,0])
+                cube([leaf_w, leaf_h, plate_t]);
+            // knuckles
+            for(i = segs)
+                knuckle(i * knuckle_len);
+        }
+        // screw holes
+        for(yh = hole_ypos)
+            translate([plate_xc, yh, 0])
+                screw_hole();
+    }
+}
+
+module pin(){
+    translate([0,-1,0])          // 1 mm overhang at each end
+        rotate([-90,0,0])
+            cylinder(d=pin_d, h=pin_len, center=false);
+}
+
+// ---------- Assembly ----------
+leaf("left");
+leaf("right");
+pin();

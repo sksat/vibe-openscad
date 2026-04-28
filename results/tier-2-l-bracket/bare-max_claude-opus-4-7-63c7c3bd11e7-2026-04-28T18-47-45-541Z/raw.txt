@@ -1,0 +1,74 @@
+```openscad
+// L-bracket with countersunk holes
+// Inner corner at origin
+// Horizontal flange extends in +Y direction
+// Vertical flange extends in +Z direction
+
+// Parameters
+width = 50;          // Width (X direction)
+depth = 40;          // Horizontal flange depth (Y direction)
+height = 40;         // Vertical flange height (Z direction)
+thickness = 3;       // Plate thickness
+
+// Hole parameters (M4 countersunk)
+hole_dia = 4.5;      // Through hole diameter
+csk_dia = 8;         // Countersink diameter
+csk_depth = 2;       // Countersink depth
+edge_offset = 10;    // Distance from edge to hole center
+
+$fn = 64;
+
+module countersunk_hole_z() {
+    // Hole along Z axis, countersink on top (+Z side)
+    union() {
+        // Through hole
+        translate([0, 0, -1])
+            cylinder(d = hole_dia, h = thickness + 2);
+        // Countersink (cylindrical counterbore for simplicity per spec)
+        translate([0, 0, thickness - csk_depth])
+            cylinder(d = csk_dia, h = csk_depth + 1);
+    }
+}
+
+module countersunk_hole_y() {
+    // Hole along Y axis, countersink on -Y side (outside of vertical flange)
+    union() {
+        // Through hole
+        translate([0, -1, 0])
+            rotate([-90, 0, 0])
+                cylinder(d = hole_dia, h = thickness + 2);
+        // Countersink on outside (-Y side)
+        translate([0, -csk_depth - 0.001, 0])
+            rotate([-90, 0, 0])
+                cylinder(d = csk_dia, h = csk_depth + 1);
+    }
+}
+
+difference() {
+    union() {
+        // Horizontal flange: extends in +Y, thickness in -Z
+        translate([-width/2, 0, -thickness])
+            cube([width, depth, thickness]);
+        
+        // Vertical flange: extends in +Z, thickness in -Y
+        translate([-width/2, -thickness, 0])
+            cube([width, thickness, height]);
+    }
+    
+    // Holes in horizontal flange (along Z axis)
+    // Center line is X = 0, holes offset symmetrically along X
+    // Hole position in Y: edge_offset from far edge, and edge_offset from near edge (corner)
+    // Two holes on horizontal flange centerline (Y direction)
+    translate([0, edge_offset, 0])
+        countersunk_hole_z();
+    translate([0, depth - edge_offset, 0])
+        countersunk_hole_z();
+    
+    // Holes in vertical flange (along Y axis)
+    // Two holes on vertical flange centerline (Z direction)
+    translate([0, 0, edge_offset])
+        countersunk_hole_y();
+    translate([0, 0, height - edge_offset])
+        countersunk_hole_y();
+}
+```

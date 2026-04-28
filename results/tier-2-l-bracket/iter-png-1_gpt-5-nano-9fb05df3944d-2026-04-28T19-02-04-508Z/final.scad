@@ -1,0 +1,45 @@
+// 修正版 OpenSCAD: L字金具 (水平板 XY 平面, 垂直板 YZ 平面)、内側コーナー原点
+// 内側コーナーを原点 (0,0,0) に配置
+// 水平板: 50 (X) × 40 (Y) × 3 (Z)
+// 垂直板: 3 (X) × 50 (Y) × 40 (Z)
+// 皿穴は各面に2個ずつ、合計4個 (M4, 貫通穴 Φ4.5, 皿座面 Φ8, 深さ 2)
+// 皿座面は外側へ向ける
+difference() {
+  union() {
+    // 水平板: XY 平面, 薄さ 3
+    cube([50, 40, 3], center=false);
+
+    // 垂直板: YZ 平面, 薄さ 3 (X方向に厚さ 3)
+    cube([3, 50, 40], center=false);
+  }
+
+  // 水平板の皿穴2個 (Z軸方向に貫通)
+  translate([10, 20, 0])
+    cylinder(h=3, r=2.25, center=false); // Φ4.5 貫通穴
+  translate([40, 20, 0])
+    cylinder(h=3, r=2.25, center=false);
+
+  // 皿座面は外側(上部面 z = 3) に向ける
+  translate([10, 20, 1])
+    cylinder(h=2, r1=2.25, r2=4, center=false); // 皿座面 Φ8 深さ 2
+  translate([40, 20, 1])
+    cylinder(h=2, r1=2.25, r2=4, center=false);
+
+  // 垂直板の皿穴2個 (X軸方向に貫通)
+  // 中心点: 貫通方向は X、中心は X = 0 から厚さ 3 の範囲を貫通
+  translate([0, 10, 20])
+    rotate([0, 90, 0])
+    cylinder(h=3, r=2.25, center=false);
+  translate([0, 40, 20])
+    rotate([0, 90, 0])
+    cylinder(h=3, r=2.25, center=false);
+
+  // 皿座面は外側へ向ける (X方向の外側は x = 3 面)
+  // bottom of countersink at x = 1, top at x = 3 (depth 2)
+  translate([1, 10, 20])
+    rotate([0, 90, 0])
+    cylinder(h=2, r1=2.25, r2=4, center=false);
+  translate([1, 40, 20])
+    rotate([0, 90, 0])
+    cylinder(h=2, r1=2.25, r2=4, center=false);
+}

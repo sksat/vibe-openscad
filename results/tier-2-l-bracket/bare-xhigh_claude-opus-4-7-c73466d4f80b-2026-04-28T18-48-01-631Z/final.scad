@@ -1,0 +1,62 @@
+// L-bracket with countersunk holes
+
+$fn = 64;
+
+width      = 50;   // 幅 (X方向)
+depth      = 40;   // 水平面の奥行き (Y方向)
+height     = 40;   // 垂直面の高さ (Z方向)
+thickness  = 3;    // 板厚
+
+hole_dia       = 4.5;  // 貫通穴径
+csk_dia        = 8;    // 皿座面径
+csk_depth      = 2;    // 皿座面深さ
+edge_offset    = 10;   // 面の縁からの距離
+
+module countersunk_hole_z() {
+    // Z軸方向の穴(水平面用)、皿座面は下側(外側=Z-)
+    union() {
+        // 貫通穴
+        translate([0, 0, -thickness - 1])
+            cylinder(h = thickness + 2, d = hole_dia);
+        // 皿座面(外側=下面側)
+        translate([0, 0, -thickness - 0.01])
+            cylinder(h = csk_depth + 0.01, d = csk_dia);
+    }
+}
+
+module countersunk_hole_y() {
+    // Y軸方向の穴(垂直面用)、皿座面は -Y 側(外側)
+    union() {
+        // 貫通穴
+        translate([0, -1, 0])
+            rotate([-90, 0, 0])
+                cylinder(h = thickness + 2, d = hole_dia);
+        // 皿座面(外側=-Y側)
+        translate([0, -0.01, 0])
+            rotate([90, 0, 0])
+                cylinder(h = csk_depth + 0.01, d = csk_dia);
+    }
+}
+
+difference() {
+    union() {
+        // 水平面フランジ (内側コーナー=原点、+Y方向、外側は -Z 側)
+        translate([-width/2, 0, -thickness])
+            cube([width, depth, thickness]);
+        // 垂直面フランジ (内側コーナー=原点、+Z方向、外側は -Y 側)
+        translate([-width/2, -thickness, 0])
+            cube([width, thickness, height]);
+    }
+
+    // 水平面の穴 2 個 (X方向に左右対称、Y方向は縁から10mm内側 = Y = depth - 10)
+    for (x = [-width/4, width/4]) {
+        translate([x, depth - edge_offset, 0])
+            countersunk_hole_z();
+    }
+
+    // 垂直面の穴 2 個 (X方向に左右対称、Z方向は縁から10mm内側 = Z = height - 10)
+    for (x = [-width/4, width/4]) {
+        translate([x, 0, height - edge_offset])
+            countersunk_hole_y();
+    }
+}

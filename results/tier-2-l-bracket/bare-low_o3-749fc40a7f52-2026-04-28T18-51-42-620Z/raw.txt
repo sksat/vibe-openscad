@@ -1,0 +1,48 @@
+```openscad
+// Parameters
+plate_w   = 50;   // width (X)
+plate_d   = 40;   // depth / height (Y or Z)
+thickness = 3;    // plate thickness
+hole_d    = 4.5;  // through hole
+csk_d     = 8;    // countersink diameter
+csk_h     = 2;    // countersink depth
+edge_off  = 10;   // hole offset from free edge
+hole_pos  = 15;   // half pitch in X
+
+// Main model
+difference() {
+    union() {
+        // Horizontal flange (lies in +Y, thickness -Z)
+        translate([-plate_w/2, 0, -thickness])
+            cube([plate_w, plate_d, thickness]);
+
+        // Vertical flange (lies in +Z, thickness +Y)
+        translate([-plate_w/2, 0, 0])
+            cube([plate_w, thickness, plate_d]);
+    }
+
+    // Horizontal holes & countersinks (axis Z)
+    for (x = [-hole_pos, hole_pos]) {
+        translate([x, plate_d - edge_off, 0]) {
+            // through hole
+            cylinder(d = hole_d, h = thickness + 2, center = false);
+            // countersink (outer side, bottom)
+            translate([0, 0, -thickness])
+                cylinder(d = csk_d, h = csk_h, center = false);
+        }
+    }
+
+    // Vertical holes & countersinks (axis Y)
+    for (x = [-hole_pos, hole_pos]) {
+        translate([x, 0, plate_d - edge_off]) {
+            // through hole
+            rotate([0, 90, 0])
+                cylinder(d = hole_d, h = thickness + 2, center = false);
+            // countersink (outer side, +Y)
+            translate([0, thickness, 0])
+                rotate([0, 90, 0])
+                    cylinder(d = csk_d, h = csk_h, center = false);
+        }
+    }
+}
+```

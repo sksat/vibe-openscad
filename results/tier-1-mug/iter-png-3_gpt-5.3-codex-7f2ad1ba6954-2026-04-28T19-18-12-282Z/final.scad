@@ -1,0 +1,39 @@
+$fn = 128;
+
+// Cup dimensions
+outer_d  = 80;
+outer_r  = outer_d / 2;
+height   = 100;
+wall_t   = 4;
+bottom_t = 6;
+
+inner_r = outer_r - wall_t;
+
+// Handle (ring/torus) dimensions
+handle_tube_r  = 12;   // specified radius 12mm
+handle_major_r = 20;   // ring radius (creates finger hole)
+handle_z       = height / 2;
+
+// Position so the handle intersects the cup wall and protrudes outward
+handle_center_x = outer_r + handle_major_r; // gives robust overlap with cup
+
+module mug_body() {
+    difference() {
+        cylinder(h = height, r = outer_r);
+        translate([0, 0, bottom_t])
+            cylinder(h = height - bottom_t + 0.2, r = inner_r);
+    }
+}
+
+module handle_ring() {
+    translate([handle_center_x, 0, handle_z])
+        rotate([90, 0, 0])  // torus axis along Y
+            rotate_extrude(convexity = 10)
+                translate([handle_major_r, 0, 0])
+                    circle(r = handle_tube_r);
+}
+
+union() {
+    mug_body();
+    handle_ring();
+}

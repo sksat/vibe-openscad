@@ -1,0 +1,52 @@
+```openscad
+// L-bracket with counterbored holes
+width = 50;      // X: plate width
+length = 40;     // Y (horizontal depth) / Z (vertical height)
+thickness = 3;
+
+hole_d = 4.5;        // through-hole diameter
+cbore_d = 8;         // counterbore diameter
+cbore_depth = 2;     // counterbore depth
+edge_inset = 10;     // inset from side edges along X
+$fn = 64;
+eps = 0.01;
+
+module ycyl(d, h) { rotate([-90, 0, 0]) cylinder(d=d, h=h, center=false); }
+
+module l_bracket() {
+  translate([-width/2, 0, 0])
+  difference() {
+    // Base geometry: inner corner at (x: any, y=0, z=0), flanges to +Y and +Z
+    union() {
+      // Horizontal flange (extends +Y)
+      cube([width, length, thickness], center=false);
+      // Vertical flange (extends +Z)
+      cube([width, thickness, length], center=false);
+    }
+
+    // Holes on horizontal flange (counterbore on top, z = thickness side)
+    for (sx = [-1, 1]) {
+      x = width/2 + sx*(width/2 - edge_inset);
+      y = length/2;
+      // Through hole
+      translate([x, y, -eps]) cylinder(d=hole_d, h=thickness + 2*eps);
+      // Counterbore (from outer/top face)
+      translate([x, y, thickness - cbore_depth - eps])
+        cylinder(d=cbore_d, h=cbore_depth + 2*eps);
+    }
+
+    // Holes on vertical flange (counterbore on outer side, y = thickness side)
+    for (sx = [-1, 1]) {
+      x = width/2 + sx*(width/2 - edge_inset);
+      z = length/2;
+      // Through hole along Y
+      translate([x, -eps, z]) ycyl(d=hole_d, h=thickness + 2*eps);
+      // Counterbore from outer face (y = thickness)
+      translate([x, thickness - cbore_depth - eps, z])
+        ycyl(d=cbore_d, h=cbore_depth + 2*eps);
+    }
+  }
+}
+
+l_bracket();
+```

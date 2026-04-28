@@ -1,0 +1,53 @@
+// M8 Hex Bolt
+
+// Dimensions for the M8 hex bolt
+// Standard dimensions for M8 bolts (ISO 4017/DIN 933 or similar)
+// Head across-flats (s): 13 mm
+// Head height (k): 5.3 mm
+// Shank diameter (nominal thread diameter, d): 8 mm
+// Shank length (l): 30 mm
+
+// --- Parameters ---
+// Head dimensions
+head_across_flats = 13;   // 対辺距離 (across-flats)
+head_height = 5.3;        // 頭部の高さ
+
+// Shank dimensions
+shank_diameter = 8;       // シャンクの直径
+shank_length = 30;        // シャンクの長さ
+
+// --- Calculated values ---
+// Radius of the circumcircle for the hexagonal head
+// For a regular hexagon, the across-flats distance (s) is related to the circumcircle radius (R) by:
+// s = 2 * R * cos(30 degrees)
+// R = s / (2 * cos(30 degrees)) = s / sqrt(3)
+head_radius_circumcircle = head_across_flats / sqrt(3);
+
+// Shank radius
+shank_radius = shank_diameter / 2;
+
+
+// --- Bolt Assembly ---
+union() {
+    // 1. Hexagonal Head
+    // Placed such that its bottom face is at z=0 and extends upwards (+Z direction).
+    // $fn=6 specifies a hexagon (6 faces).
+    // center=false makes the cylinder extend from z=0 to z=height.
+    cylinder(
+        h = head_height,
+        r = head_radius_circumcircle,
+        $fn = 6,
+        center = false
+    );
+
+    // 2. Shank (Cylindrical part)
+    // Placed such that it starts from z=0 and extends downwards (-Z direction).
+    // The cylinder itself is defined from z=0 to z=shank_length (center=false).
+    // It is then translated downwards by its full length to align its top face with z=0.
+    translate([0, 0, -shank_length])
+    cylinder(
+        h = shank_length,
+        r = shank_radius,
+        center = false
+    );
+}

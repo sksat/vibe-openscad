@@ -1,0 +1,42 @@
+```openscad
+// 修正 OpenSCAD: L字金具 (水平板 XY 平面, 垂直板 YZ 平面)、内側コーナー原点
+// 内側コーナーを原点 (0,0,0) に配置
+difference() {
+  union() {
+    // 水平板: 50 × 40 × 3 (X × Y × Z)
+    cube([50, 40, 3], center=false);
+
+    // 垂直板: 3 × 50 × 40 (X × Y × Z)
+    cube([3, 50, 40], center=false);
+  }
+
+  // 水平板の貫通穴 (Z 軸方向)
+  translate([25, 10, 0])
+    cylinder(h=3, r=2.25, center=false);
+  translate([25, 30, 0])
+    cylinder(h=3, r=2.25, center=false);
+
+  // 水平穴の皿座面 (外側へ向ける: 上面 z=3 側)
+  translate([25, 10, 1])
+    cylinder(h=2, r1=2.25, r2=4, center=false);
+  translate([25, 30, 1])
+    cylinder(h=2, r1=2.25, r2=4, center=false);
+
+  // 垂直板の貫通穴 (X 方向に貫通)
+  // 厚さ 3 で X 軸方向に長さ 3 の穴をあける
+  translate([0, 10, 20])
+    rotate([0, 90, 0])
+    cylinder(h=3, r=2.25, center=false);
+  translate([0, 40, 20])
+    rotate([0, 90, 0])
+    cylinder(h=3, r=2.25, center=false);
+
+  // 垂直板の皿穴の皿座面 (外側は X = 3 面)
+  translate([1, 10, 20])
+    rotate([0, 90, 0])
+    cylinder(h=2, r1=2.25, r2=4, center=false);
+  translate([1, 40, 20])
+    rotate([0, 90, 0])
+    cylinder(h=2, r1=2.25, r2=4, center=false);
+}
+```

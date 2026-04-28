@@ -1,0 +1,125 @@
+```openscad
+// Parameters
+leaf_width = 25;
+leaf_height = 30;
+leaf_thickness = 2;
+pin_diameter = 4;
+pin_length = 32;
+knuckle_outer_diameter = 8;
+knuckle_inner_diameter = pin_diameter + 0.3;
+knuckle_height = 6; // 30mm / 5 equal parts
+num_knuckles_left = 3;
+num_knuckles_right = 2;
+m3_countersink_diameter = 6;
+m3_countersink_depth = 1;
+m3_hole_diameter = 3.2;
+m3_hole_spacing = 8;
+
+module pin() {
+    cylinder(h = pin_length, d = pin_diameter, center = true);
+}
+
+module knuckle(side) {
+    difference() {
+        cylinder(h = knuckle_height, d = knuckle_outer_diameter, center = true);
+        cylinder(h = knuckle_height + 0.1, d = knuckle_inner_diameter, center = true); // +0.1 to ensure clean cut
+    }
+}
+
+// Helper module for creating a conical void
+module conical_void(depth, d1, d2) {
+    hull() {
+        circle(d = d1);
+        translate([depth, 0, 0]) circle(d = d2);
+    }
+}
+
+module m3_countersink(side) {
+    // The countersink void is created on the outer face of the leaf.
+    // The current coordinate system has X-axis pointing outwards from the leaf face.
+
+    // Frustum part of the countersink
+    conical_void(m3_countersink_depth, m3_countersink_diameter, m3_hole_diameter);
+
+    // Cylinder part for the through hole
+    // This cylinder starts where the frustum ends.
+    translate([m3_countersink_depth, 0, 0]) {
+        cylinder(h = leaf_thickness - m3_countersink_depth, d = m3_hole_diameter, center = false);
+    }
+}
+
+
+module leaf(side) {
+    // Base leaf shape
+    cube([leaf_thickness, leaf_width, leaf_height], center = true);
+
+    // Mount holes
+    // Position for mount holes along the leaf's height.
+    // The leaf is centered at Y=0 and extends from -leaf_width/2 to leaf_width/2.
+    // The height is along the Z-axis.
+    // The prompt states "板の縦方向に 8mm 間隔" -> this refers to the leaf's height (30mm).
+    // The current leaf shape is oriented with its 30mm dimension along the Z-axis.
+    // The knuckles are along the Y-axis.
+    // So the holes are on the flat face (YZ plane).
+    // The positions should be along the Z-axis.
+
+    // Leaf height is 30mm, centered at Z=0. So from -15 to 15.
+    // Holes at -m3_hole_spacing, 0, m3_hole_spacing.
+    // This is relative to the center of the leaf.
+    // The mount holes are on the surface of the leaf, so we need to translate them to the face.
+    // The X-position of the face is `side * leaf_thickness / 2`.
+
+    // Corrected positioning of mount holes:
+    translate([side * (leaf_thickness / 2), 0, -m3_hole_spacing]) {
+        m3_countersink(side);
+    }
+    translate([side * (leaf_thickness / 2), 0, 0]) {
+        m3_countersink(side);
+    }
+    translate([side * (leaf_thickness / 2), 0, m3_hole_spacing]) {
+        m3_countersink(side);
+    }
+}
+
+// Assemble the hinge in 180 degree open state
+module butt_hinge() {
+    // Pin
+    pin();
+
+    // Left knuckles and leaf plate
+    // Knuckle Y-positions for left leaf: [-12, 0, 12]
+    // These positions are relative to the center of the hinge barrel stack.
+    // The knuckle centers are offset from the Y-axis.
+    // The left knuckles are on the X < 0 side of the pin's YZ plane.
+    // Their X-center position is -(knuckle_outer_diameter/2).
+    for (i = [0 : num_knuckles_left - 1]) {
+        translate([-knuckle_outer_diameter/2, [-12, 0, 12][i], 0]) {
+            knuckle(-1); // -1 indicates left side
+        }
+    }
+    // Left leaf plate positioned to the outside of its knuckles.
+    // The leaf plate's face is aligned with the outer edge of the knuckles.
+    translate([-(knuckle_outer_diameter/2 + leaf_thickness/2), 0, 0]) {
+        leaf(-1); // -1 indicates left side
+    }
+
+    // Right knuckles and leaf plate
+    // Knuckle Y-positions for right leaf: [-6, 6]
+    // The right knuckles are on the X > 0 side of the pin's YZ plane.
+    // Their X-center position is +(knuckle_outer_diameter/2).
+    for (i = [0 : num_knuckles_right - 1]) {
+        translate([knuckle_outer_diameter/2, [-6, 6][i], 0]) {
+            knuckle(1); // 1 indicates right side
+        }
+    }
+    // Right leaf plate positioned to the outside of its knuckles.
+    translate([knuckle_outer_diameter/2 + leaf_thickness/2, 0, 0]) {
+        leaf(1); // 1 indicates right side
+    }
+}
+
+// Position the hinge at the origin for final rendering
+translate([0, 0, 0]) {
+    butt_hinge();
+}
+```

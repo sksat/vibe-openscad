@@ -1,0 +1,136 @@
+```openscad
+// Mug + handle (OpenSCAD)
+// Parameters
+$fn = 128;
+
+cup_outer_d = 80;
+cup_inner_d = 70;
+cup_outer_r = cup_outer_d/2;
+cup_inner_r = cup_inner_d/2;
+
+cup_height = 90;
+bottom_thickness = 6;
+wall_thickness = (cup_outer_d - cup_inner_d)/2; // 5mm
+
+handle_width = 25;   // width (Y direction)
+handle_inner_h = 30; // height along Z
+handle_outer_d = 20;  // D-shape outer half-circle diameter
+handle_thickness = wall_thickness; // connector thickness into the cup
+
+handle_center_z = cup_height/2; // middle of mug height
+
+// --- Main mug body (hollow cylinder with bottom) ---
+module mug_body() {
+    difference() {
+        // Outer cylinder
+        cylinder(h=cup_height, r=cup_outer_r);
+
+        // Inner cavity: starts at bottom thickness, leaving bottom solid
+        translate([0,0,bottom_thickness])
+            cylinder(h=cup_height-bottom_thickness, r=cup_inner_r);
+    }
+}
+
+// --- D-shaped handle aligned at +X side ---
+// D-shape: half-circle outer, flat side toward cup, connected to cup wall.
+module handle_plus_x() {
+    // Place handle at +X side of the mug
+    // The handle's flat face should attach to the mug outer surface.
+    // For a half-cylinder with radius R, center line is at +X = cup_outer_r + R
+    // (flat face at x = cup_outer_r).
+    R = handle_outer_d/2;
+
+    // Ensure connector has enough thickness into/out of the cup without gaps.
+    // We'll build handle as a solid half-cylinder extruded in Y (width),
+    // then subtract the rectangular inner void.
+    //
+    // Local coordinates for handle solid:
+    // - X axis extends outward from the mug
+    // - Y axis is width
+    // - Z axis is height
+    //
+    // We'll create a half-cylinder "D" using intersection of:
+    // - a full cylinder (radius R) with diameter along X,
+    // - a half-space (Y? no, we need flat side in X, so use X>=0 half-space via translate and cube)
+    //
+    // Better: Create half-cylinder by intersecting with a cube plane that keeps the "outer" half.
+    // The half we want has flat face toward the cup (negative X side of handle local).
+    // Build in local frame where flat face is at x=0 and outer is x in [0..R*?].
+    // We'll then translate to attach at cup_outer_r.
+
+    // Handle local origin: at flat face centerline (x=0 plane), centered in Y, at z=0
+    // We'll place the handle by translating so that local z=0 aligns to desired center height.
+
+    // Solid outer half-D + width extrusion
+    module outer_half_d() {
+        // Base block to define the solid volume shape
+        // We'll generate a half-cylinder with its flat face at x=0:
+        // Use intersection between a cylinder centered at (x=R, y=0) and a half-space x>=0.
+        // Cylinder axis is along Z; but we want D shape in X-Y plane with width in Y.
+        // Use cylinder axis along Z and treat X-Y as plane: cylinder has radius R in X-Y.
+        // Then "half" is selected by keeping points with X>=0 in local space.
+        intersection() {
+            // Full cylinder in X-Y with radius R, spanning Z thickness=handle_inner_h + some allowance
+            // We'll span enough and later subtract inner cavity.
+            cylinder(h=handle_inner_h + 2*handle_thickness, r=R, center=false);
+
+            // Keep only points with X>=0 by using an infinite half-space approximation with cube:
+            // Since cylinder already occupies x in [center_x-R .. center_x+R] relative to its own center,
+            // we shift cylinder center so that its leftmost point touches x=0.
+        }
+    }
+
+    // The above intersection needs correct placement: We'll do it explicitly without that inner module.
+
+    // Build in local space:
+    // - Cylinder axis along Z, centered in Y at 0, centered in X at R so that its flat face at x=0
+    // - Keep only x >= 0 by intersecting with a large cube that includes only x>=0.
+    // Then limit Z to full handle thickness region, and also limit Y width with a bounding cube.
+    union() {
+        // Outer half-D shell
+        difference() {
+            // Outer shape (half-cylinder with width limited)
+            intersection() {
+                // Half of cylinder in X-Y plane:
+                // Cylinder centered at (R,0) in X-Y, axis along Z
+                translate([R, 0, 0])
+                    cylinder(h=handle_inner_h + 2*handle_thickness, r=R, center=false);
+
+                // Keep only x >= 0 (local)
+                translate([0, -handle_width/2, 0])
+                    cube([R + handle_thickness + 1, handle_width, handle_inner_h + 2*handle_thickness], center=false);
+            }
+
+            // Cut inner cavity (rectangular) to create D-shape opening
+            // Local cavity: x from (handle_thickness) to (R + ...) to remove
+            // y within handle_width, z within handle_inner_h
+            translate([handle_thickness, -handle_width/2, handle_thickness])
+                cube([R + handle_thickness + 2, handle_width, handle_inner_h], center=false);
+        }
+
+        // Connector to ensure solid union with the mug body:
+        // Add a block that overlaps the mug exterior so there is no "宙吊り"/gap.
+        // This block spans a bit into the cup wall and outwards.
+        connector_len_x = 3.0; // overlap depth into mug
+        translate([cup_outer_r - handle_thickness/2, -handle_width/2, handle_center_z - handle_inner_h/2])
+            cube([handle_thickness + connector_len_x, handle_width, handle_inner_h], center=false);
+    }
+
+    // Note: union() includes both outer and connector; outer already has half-D shape.
+}
+
+// --- Final assembly ---
+difference() {
+    union() {
+        mug_body();
+
+        // Place handle at +X side.
+        // Handle flat face at cup_outer_r in world coordinates.
+        // Local handle flat plane is at x=0; outer half extends positive X.
+        // So world x = cup_outer_r + 0 for flat face.
+        translate([cup_outer_r, 0, 0])
+            translate([0, 0, handle_center_z - handle_inner_h/2])
+                handle_plus_x();
+    }
+}
+```

@@ -1,0 +1,106 @@
+$fn = 96;
+
+leaf_y = 30;
+leaf_x = 25;
+leaf_t = 2;
+
+pin_d = 4;
+pin_len = 32;
+
+knuckle_od = 8;
+knuckle_id = 4.6;
+knuckle_r = knuckle_od / 2;
+seg = leaf_y / 5;
+
+root_overlap = 0.25;
+
+hole_d = 3.2;
+csk_d = 6;
+csk_depth = 1;
+screw_edge_margin = 7;
+screw_ys = [-8, 0, 8];
+
+eps = 0.02;
+
+function seg_y(i) =
+    -leaf_y / 2 + seg / 2 + i * seg;
+
+function plate_outer_x(side) =
+    side < 0 ? -(knuckle_r + leaf_x) : (knuckle_r + leaf_x);
+
+function screw_x(side) =
+    side < 0
+        ? plate_outer_x(side) + screw_edge_margin
+        : plate_outer_x(side) - screw_edge_margin;
+
+module screw_cut(x, y) {
+    translate([x, y, 0])
+        cylinder(h = leaf_t + 2 * eps, d = hole_d, center = true);
+
+    translate([x, y, leaf_t / 2 - csk_depth])
+        cylinder(h = csk_depth, d1 = hole_d, d2 = csk_d, center = false);
+
+    translate([x, y, leaf_t / 2 - eps])
+        cylinder(h = 2 * eps, d = csk_d, center = false);
+}
+
+module knuckle_segment(yc) {
+    translate([0, yc, 0])
+        rotate([-90, 0, 0])
+            difference() {
+                cylinder(h = seg, d = knuckle_od, center = true);
+                cylinder(h = seg + 2 * eps, d = knuckle_id, center = true);
+            }
+}
+
+module flat_plate(side) {
+    if (side < 0) {
+        translate([-knuckle_r - leaf_x, -leaf_y / 2, -leaf_t / 2])
+            cube([leaf_x, leaf_y, leaf_t]);
+    } else {
+        translate([knuckle_r, -leaf_y / 2, -leaf_t / 2])
+            cube([leaf_x, leaf_y, leaf_t]);
+    }
+}
+
+module knuckle_root(side, yc) {
+    if (side < 0) {
+        translate([-knuckle_r, yc - seg / 2, -leaf_t / 2])
+            cube([root_overlap, seg, leaf_t]);
+    } else {
+        translate([knuckle_r - root_overlap, yc - seg / 2, -leaf_t / 2])
+            cube([root_overlap, seg, leaf_t]);
+    }
+}
+
+module hinge_leaf(side) {
+    ids = side < 0 ? [0, 2, 4] : [1, 3];
+
+    difference() {
+        union() {
+            flat_plate(side);
+
+            for (i = ids) {
+                knuckle_root(side, seg_y(i));
+                knuckle_segment(seg_y(i));
+            }
+        }
+
+        for (yy = screw_ys)
+            screw_cut(screw_x(side), yy);
+    }
+}
+
+module hinge_pin() {
+    rotate([-90, 0, 0])
+        cylinder(h = pin_len, d = pin_d, center = true);
+}
+
+color([0.55, 0.57, 0.60])
+    hinge_leaf(-1);
+
+color([0.48, 0.50, 0.53])
+    hinge_leaf(1);
+
+color([0.12, 0.12, 0.12])
+    hinge_pin();

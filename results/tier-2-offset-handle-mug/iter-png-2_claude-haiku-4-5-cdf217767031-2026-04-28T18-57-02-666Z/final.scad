@@ -1,0 +1,64 @@
+// マグカップ本体
+module mug() {
+    difference() {
+        // 外側円筒：外径80mm(半径40mm)、高さ90mm
+        cylinder(h = 90, r = 40, center = false, $fn = 100);
+        
+        // 内側の空洞：底面6mm残す
+        translate([0, 0, 6]) {
+            cylinder(h = 84, r = 35, center = false, $fn = 100);
+        }
+    }
+}
+
+// D字形取手
+module handle() {
+    // 取手の内側寸法：高さ30mm、幅25mm
+    handle_inner_height = 30;
+    handle_inner_width = 25;
+    handle_inner_depth = 20;  // 指が入る奥行き
+    
+    // 取手開始高さ(マグの中央付近)
+    handle_z = (90 - handle_inner_height) / 2;  // 30mm
+    
+    // 取手の外側半径
+    handle_outer_r = 50;  // 外側が円形で本体から十分に離れる
+    
+    union() {
+        // 本体側の直線部分（接続部）
+        translate([35, -handle_inner_width/2, handle_z]) {
+            cube([8, handle_inner_width, handle_inner_height]);
+        }
+        
+        // 外側の半円形部分
+        difference() {
+            // 取手全体の円形セクション（X >= 40の部分）
+            intersection() {
+                cylinder(h = handle_inner_height, r = handle_outer_r, center = false, $fn = 100);
+                translate([0, 0, handle_z]) {
+                    cube([200, 200, handle_inner_height]);
+                }
+                // +X軸側のみ
+                translate([40, -200, handle_z]) {
+                    cube([200, 400, handle_inner_height]);
+                }
+            }
+            
+            // 内側をくり抜く：D字形状の内側空間
+            translate([40, -handle_inner_width/2, handle_z - 0.5]) {
+                cube([handle_inner_depth + 1, handle_inner_width, handle_inner_height + 1]);
+            }
+            
+            // マグ本体との干渉部分を削除
+            translate([0, 0, handle_z - 1]) {
+                cylinder(h = handle_inner_height + 2, r = 40, center = false, $fn = 100);
+            }
+        }
+    }
+}
+
+// 完成品
+union() {
+    mug();
+    handle();
+}

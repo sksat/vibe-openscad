@@ -1,0 +1,23 @@
+```openscad
+// M8 Hex Bolt
+
+// Dimensions
+head_across_flats = 13; // Across-flats distance for the hexagonal head
+head_height = 5.3;      // Height of the hexagonal head
+shank_diameter = 8;     // Diameter of the cylindrical shank
+shank_length = 30;      // Length of the cylindrical shank
+
+// Calculate radius for hexagonal head
+// A hexagon with across-flats 'a' has a radius 'r' such that r = a / sqrt(3)
+head_radius = head_across_flats / sqrt(3);
+
+// Head
+translate([0, 0, -head_height]) { // Position the head so its bottom is at z=0 after head is translated up.
+    cylinder(h = head_height, r = head_radius, $fn = 6);
+}
+
+// Shank
+translate([0, 0, -shank_length]) { // Position the shank so its top is at z=0 after shank is translated up.
+    cylinder(h = shank_length, r = shank_diameter / 2, $fn = 64);
+}
+```

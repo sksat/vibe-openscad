@@ -1,0 +1,161 @@
+// openscad
+// Corrected small butt hinge (assembled, 180° open)
+// - Two leaves (30 x 25 x 2 mm), pin along Y, leaves lie flat in same plane (Z)
+// - Knuckles: 5 segments (each 6 mm long along Y) at Y = [-12, -6, 0, 6, 12]
+//   Left leaf knuckles at [-12, 0, 12], right leaf at [-6, 6]
+// - Knuckle outer Ø8 mm, inner bore Ø4.6 mm
+// - Pin Ø4 mm, length 32 mm (1 mm protruding each end)
+// - Countersunk M3 holes (3 per leaf) at Y = [-8, 0, 8], 5 mm from outer edge
+//   Countersink Ø6 mm x depth 1 mm (from top surface) + through Ø3.2 mm
+
+$fn = 64;
+
+// Dimensions
+plate_len = 30;       // along Y
+plate_w = 25;         // along X (from hinge outward)
+thickness = 2;        // along Z
+half_th = thickness / 2;
+
+knuckle_seg = 6;      // each segment length along Y
+knuckle_positions = [-12, -6, 0, 6, 12];
+left_knuckles = [-12, 0, 12];
+right_knuckles = [-6, 6];
+
+knuckle_r_out = 4;    // outer radius (Ø8)
+knuckle_r_in = 2.3;   // inner bore radius (Ø4.6)
+
+pin_dia = 4;
+pin_r = pin_dia / 2;
+pin_len = 32;         // along Y
+
+screw_hole_positions = [-8, 0, 8];
+screw_countersink_diam = 6;    // top diameter
+screw_countersink_depth = 1;
+screw_through_dia = 3.2;       // through hole
+screw_offset_from_outer_edge = 5; // mm inward from outer edge along X
+
+// Main assembly: left (x<0), right (x>0), pin along Y at X=0
+union() {
+    // Left leaf: spans X = -plate_w .. 0, Y = -plate_len/2 .. +plate_len/2, Z = -half_th .. +half_th
+    color("silver") left_leaf();
+
+    // Right leaf: spans X = 0 .. +plate_w
+    color("silver") right_leaf();
+
+    // Pin (separate part), centered at origin, axis along Y
+    color("gray") pin();
+}
+
+
+// Modules
+
+module left_leaf() {
+    // Base plate
+    translate([-plate_w, -plate_len/2, -half_th])
+        union() {
+            cube([plate_w, plate_len, thickness]); // X: -plate_w..0
+
+            // Left knuckles (cylinders along Y), centered at X = 0
+            for (ypos = left_knuckles) {
+                // place cylinder so its centerline is at X=0 (so translate by +0 in this local coords),
+                // but since plate origin is at X = -plate_w, knuckle X in world = 0 => local X = plate_w
+                translate([plate_w, ypos + plate_len/2, 0])  // adjust Y because cube origin is at -plate_len/2
+                    // rotate so cylinder axis is along Y: default is along Z, rotate X by 90 degrees
+                    rotate([90, 0, 0])
+                        cylinder(h = knuckle_seg, r = knuckle_r_out, center=true);
+            }
+
+            // Subtract inner bores of left knuckles (make them tubular)
+            // Use difference outside union by doing a subtraction block after union
+        }
+
+    // Subtract bores and screw holes (perform difference)
+    // We'll reconstruct with difference: plate+knuckles minus bores and screw holes
+    // Build plate+knuckles again and subtract
+    translate([0,0,0]) difference() {
+        // plate+knuckles
+        translate([-plate_w, -plate_len/2, -half_th]) {
+            union() {
+                cube([plate_w, plate_len, thickness]);
+
+                for (ypos = left_knuckles) {
+                    translate([plate_w, ypos + plate_len/2, 0])
+                        rotate([90, 0, 0])
+                            cylinder(h = knuckle_seg, r = knuckle_r_out, center=true);
+                }
+            }
+        }
+
+        // subtract knuckle bores: long cylinders along Y centered at X=0 (world coords)
+        for (ypos = left_knuckles) {
+            // Bore center at X=0, Y=ypos
+            translate([0, ypos, -10]) // start below plates
+                rotate([90, 0, 0])
+                    cylinder(h = 20 + plate_len + 40, r = knuckle_r_in, center=false);
+        }
+
+        // subtract screw through holes and countersinks (on outward face X = -plate_w)
+        for (hy = screw_hole_positions) {
+            hole_x = -plate_w + screw_offset_from_outer_edge;
+            // through hole (extend beyond plate thickness)
+            translate([hole_x, hy, -half_th - 1])
+                cylinder(h = thickness + 2, r = screw_through_dia/2, center=false);
+            // countersink from top surface down screw_countersink_depth
+            translate([hole_x, hy, half_th - screw_countersink_depth])
+                cylinder(h = screw_countersink_depth, r1 = screw_countersink_diam/2, r2 = screw_through_dia/2, center=false);
+        }
+    }
+}
+
+module right_leaf() {
+    // Base plate spanning X=0..+plate_w
+    translate([0, -plate_len/2, -half_th])
+        union() {
+            cube([plate_w, plate_len, thickness]); // X: 0..plate_w
+
+            // Right knuckles at world X=0 -> local X = 0
+            for (ypos = right_knuckles) {
+                translate([0, ypos + plate_len/2, 0])
+                    rotate([90, 0, 0])
+                        cylinder(h = knuckle_seg, r = knuckle_r_out, center=true);
+            }
+        }
+
+    // Subtract bores and screw holes
+    translate([0,0,0]) difference() {
+        translate([0, -plate_len/2, -half_th]) {
+            union() {
+                cube([plate_w, plate_len, thickness]);
+
+                for (ypos = right_knuckles) {
+                    translate([0, ypos + plate_len/2, 0])
+                        rotate([90, 0, 0])
+                            cylinder(h = knuckle_seg, r = knuckle_r_out, center=true);
+                }
+            }
+        }
+
+        // subtract knuckle bores at world X=0
+        for (ypos = right_knuckles) {
+            translate([0, ypos, -10])
+                rotate([90, 0, 0])
+                    cylinder(h = 20 + plate_len + 40, r = knuckle_r_in, center=false);
+        }
+
+        // screw holes on outer face X = +plate_w
+        for (hy = screw_hole_positions) {
+            hole_x = plate_w - screw_offset_from_outer_edge;
+            translate([hole_x, hy, -half_th - 1])
+                cylinder(h = thickness + 2, r = screw_through_dia/2, center=false);
+            translate([hole_x, hy, half_th - screw_countersink_depth])
+                cylinder(h = screw_countersink_depth, r1 = screw_countersink_diam/2, r2 = screw_through_dia/2, center=false);
+        }
+    }
+}
+
+module pin() {
+    // Pin axis along Y, center at origin. Rotate cylinder (Z->Y).
+    translate([0, 0, 0])
+        rotate([90, 0, 0])
+            cylinder(h = pin_len, r = pin_r, center=true);
+}

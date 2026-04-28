@@ -1,0 +1,53 @@
+$fn = 128;
+
+mug_od = 80;
+mug_id = 70;
+mug_h = 90;
+bottom_t = 6;
+
+handle_open_w = 25;
+handle_open_h = 30;
+handle_wall = 5;
+handle_depth = 12;
+
+outer_r = mug_od / 2;
+inner_r = mug_id / 2;
+
+handle_outer_w = handle_open_w + 2 * handle_wall;
+handle_outer_h = handle_open_h + 2 * handle_wall;
+
+handle_x = outer_r - 2.5;
+handle_z = (mug_h - handle_outer_h) / 2;
+
+module d_shape(w, h) {
+    r = h / 2;
+    union() {
+        square([w - r, h], center = false);
+        translate([w - r, h / 2])
+            circle(r = r);
+    }
+}
+
+module mug_body() {
+    difference() {
+        cylinder(h = mug_h, r = outer_r);
+        translate([0, 0, bottom_t])
+            cylinder(h = mug_h - bottom_t + 0.1, r = inner_r);
+    }
+}
+
+module handle() {
+    translate([handle_x, 0, handle_z])
+        rotate([90, 0, 0])
+            linear_extrude(height = handle_depth, center = true, convexity = 10)
+                difference() {
+                    d_shape(handle_outer_w, handle_outer_h);
+                    translate([handle_wall, handle_wall])
+                        d_shape(handle_open_w, handle_open_h);
+                }
+}
+
+union() {
+    mug_body();
+    handle();
+}

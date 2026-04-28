@@ -1,0 +1,84 @@
+// マグカップ
+$fn = 100;
+
+// パラメータ
+outer_d = 80;       // 外径
+inner_d = 70;       // 内径
+height = 90;        // 高さ
+bottom_t = 6;       // 底厚
+wall_t = (outer_d - inner_d) / 2;  // 肉厚 5mm
+
+// 取手のパラメータ
+handle_inner_h = 30;   // 取手内側の高さ
+handle_inner_w = 25;   // 取手内側の幅
+handle_thickness = 8;  // 取手の太さ(断面の厚み)
+
+module mug_body() {
+    difference() {
+        cylinder(d = outer_d, h = height);
+        translate([0, 0, bottom_t])
+            cylinder(d = inner_d, h = height - bottom_t + 1);
+    }
+}
+
+module handle() {
+    // D字形取手:外側が半円、本体側が直線
+    // 取手の中心はマグ高さの中央
+    handle_outer_h = handle_inner_h + 2 * handle_thickness;
+    handle_outer_w = handle_inner_w + handle_thickness;
+    
+    translate([outer_d/2 - 1, 0, height/2])
+        rotate([90, 0, 90])
+            linear_extrude(height = handle_outer_w + 1)
+                difference() {
+                    // 外形:D字(半円+直線で閉じた形)
+                    union() {
+                        // 上下の長方形を含めた外形
+                        square([handle_outer_h, handle_outer_h/2 + 1], center = false);
+                        translate([0, 0])
+                            square([handle_outer_h, 1], center = false);
+                        // 半円部分は外側に
+                        translate([handle_outer_h/2, 0])
+                            scale([1, 1])
+                                difference() {
+                                    union() {
+                                        translate([-handle_outer_h/2, 0])
+                                            square([handle_outer_h, handle_outer_h/2]);
+                                    }
+                                }
+                    }
+                }
+}
+
+// よりシンプルで確実な取手の実装
+module handle_simple() {
+    handle_outer_h = handle_inner_h + 2 * handle_thickness;
+    
+    translate([0, 0, height/2])
+        rotate([90, 0, 0])
+            linear_extrude(height = handle_thickness, center = true)
+                difference() {
+                    // 外形:本体側が直線、外側が半円のD字
+                    hull() {
+                        // 本体側の長方形
+                        translate([outer_d/2 - 1, -handle_outer_h/2])
+                            square([1, handle_outer_h]);
+                        // 外側の半円(D字の丸い部分)
+                        translate([outer_d/2 + handle_inner_w/2 + handle_thickness/2, 0])
+                            circle(d = handle_outer_h);
+                    }
+                    // 内側の空間(指が入る部分)
+                    hull() {
+                        translate([outer_d/2 + handle_thickness - 1, -handle_inner_h/2])
+                            square([1, handle_inner_h]);
+                        translate([outer_d/2 + handle_inner_w/2 + handle_thickness/2, 0])
+                            circle(d = handle_inner_h);
+                    }
+                }
+}
+
+// 全体の組み立て
+union() {
+    mug_body();
+    handle_simple();
+}

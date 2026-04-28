@@ -1,0 +1,59 @@
+```openscad
+$fn = 64;
+
+w = 50;        // 幅 (X)
+d = 40;        // 水平面 奥行き (Y)
+h = 40;        // 垂直面 高さ (Z)
+t = 3;         // 板厚
+hole_d = 4.5;  // 貫通穴径
+cb_d = 8;      // 皿座面径
+cb_depth = 2; // 皿座面深さ
+offset = 10;   // 面の縁から内側
+eps = 0.01;
+
+xs = [offset, w - offset];
+y_center = d / 2;
+z_center = h / 2;
+
+module countersunk_hole_through_Z(x, y, z0, plate_t) {
+  // 貫通穴 (Z方向)
+  translate([x, y, -eps + z0])
+    cylinder(d = hole_d, h = plate_t + 2 * eps);
+
+  // 皿座面 (外側 = +Z側)
+  translate([x, y, plate_t - cb_depth + z0])
+    cylinder(d = cb_d, h = cb_depth);
+}
+
+module countersunk_hole_through_Y(x, z, y0, plate_t) {
+  // 貫通穴 (Y方向) : 回転してY軸へ
+  translate([x, y0 + plate_t + eps, z])
+    rotate([90, 0, 0])
+      cylinder(d = hole_d, h = plate_t + 2 * eps);
+
+  // 皿座面 (外側 = +Y側)
+  translate([x, y0 + plate_t, z])
+    rotate([90, 0, 0])
+      cylinder(d = cb_d, h = cb_depth);
+}
+
+difference() {
+  union() {
+    // 水平フランジ: X(0..w), Y(0..d), Z(0..t)
+    cube([w, d, t]);
+
+    // 垂直フランジ: X(0..w), Y(0..t), Z(0..h)
+    cube([w, t, h]);
+  }
+
+  // 水平面の皿穴 2個 (合計4個中2個)
+  for (x = xs) {
+    countersunk_hole_through_Z(x, y_center, 0, t);
+  }
+
+  // 垂直面の皿穴 2個 (合計4個中2個)
+  for (x = xs) {
+    countersunk_hole_through_Y(x, z_center, 0, t);
+  }
+}
+```

@@ -1,0 +1,69 @@
+```openscad
+// Parameters
+$fn = 128;
+
+//------------------
+// Mug body
+//------------------
+module mug_body() {
+    outer_radius = 40;        // 80 mm outer diameter
+    inner_radius = 35;        // 70 mm inner diameter
+    height       = 90;
+    bottom_thk   = 6;
+    
+    difference() {
+        // Outer shell
+        cylinder(h = height, r = outer_radius);
+        
+        // Inner cavity (raised by bottom thickness)
+        translate([0, 0, bottom_thk])
+            cylinder(h = height - bottom_thk, r = inner_radius);
+    }
+}
+
+//------------------
+// Handle
+//------------------
+module handle() {
+    inner_h   = 30;   // inner vertical clearance
+    inner_w   = 25;   // inner horizontal clearance
+    wall_thk  = 5;    // handle wall thickness
+    depth     = 10;   // thickness (depth) of handle along Y
+    
+    // 2-D inner void of the handle (D-shape) in the X–Z plane
+    module inner_shape() {
+        union() {
+            // Rectangle part
+            translate([0, -inner_h/2])
+                square([inner_w, inner_h], center = false);
+            // Semicircular end
+            translate([inner_w, 0])
+                circle(r = inner_h/2);
+        }
+    }
+    
+    // 2-D outer profile (offset of inner shape)
+    module outer_shape() {
+        offset(delta = wall_thk) inner_shape();
+    }
+    
+    // Build 3-D handle by extruding the 2-D profiles along Y
+    translate([40, 0, 45])  // attach to +X side, centered vertically
+    difference() {
+        // Solid outer shell
+        linear_extrude(height = depth, center = true)
+            outer_shape();
+        // Hollow out the finger space
+        linear_extrude(height = depth, center = true)
+            inner_shape();
+    }
+}
+
+//------------------
+// Assembly
+//------------------
+union() {
+    mug_body();
+    handle();
+}
+```

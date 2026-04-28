@@ -1,0 +1,139 @@
+```openscad
+// OpenSCAD: 向き指定のマグカップ with D字形取手 (＋X 側面のみ)
+
+// ===== 設定 =====
+outer_r = 40;            // 外径 / 半径
+inner_r = 35;            // 内径 / 半径
+height_total = 90;       // 高さ
+bottom_thickness = 6;      // 底厚
+wall_thickness = outer_r - inner_r; // 5 mm
+
+// 取手のパラメータ
+handle_thickness = 12;     // 取手の奥行き（＋X方向の厚さ感）
+handle_height = 60;        // 取手の高さ（全体の目安）
+handle_slot_h = 30;        // 取手内側空間の高さ（y方向）
+handle_slot_w = 25;        // 取手内側空間の幅（x方向の内側空間をY,Zで表現する想定）
+
+// 取手の取り付け位置
+attach_x = outer_r + 1.5;    // 本体側から取手の付け根までのX位置
+attach_y = 0;                   // 垂直中心に取り付け
+attach_z = 0;
+
+// ===== マグ本体（中空マグ） =====
+module mug_body() {
+    // 外側円筒
+    outer = cylinder(h = height_total, r = outer_r, $fn=200);
+
+    // 内部空間（中空化）
+    // 内部空洞は高さ height_total - bottom_thickness、底は6mm
+    inner_h = height_total - bottom_thickness;
+    translate([0,0,bottom_thickness])
+        inner = cylinder(h = inner_h, r = inner_r, $fn=200);
+
+    difference() {
+        outer;
+        translate([0,0,bottom_thickness])
+            inner;
+    }
+}
+
+// ===== 取手（D字形） =====
+module handle() {
+    // 2D D形断面を作成し、X方向に押し出して3D化
+    // ここでは、左端を本体の外周面に接する「平な直線端」を作成し、
+    // 右端を半円状にしてD字の形状とする。
+    // 2D_PROFILE: 左辺が直線、右辺が半円（外側が半円、内側は直線的）
+    // Y軸方向に高さ handle_height、Z方向に後退する形で厚みを付与
+    module d_profile() {
+        points = [
+            [0, -handle_height/2],           // 左下
+            [0,  handle_height/2],           // 左上
+            [handle_slot_w, handle_height/2], // 右上（平面部）
+            [handle_slot_w, handle_height/2 - (handle_height/2 - 5)], // 微調整
+            // ここから半円状の外縁（右側を丸く）
+            // 追加の点は円弧として後で補完
+        ];
+        // 代替的に、左直線・右半円の形状をパスで実装
+        // 2D path を円弧で近似
+        // 実質的には以下の単純な形でD字風にします
+        polygon(points = [
+            [0, -handle_height/2],
+            [0,  handle_height/2],
+            [handle_slot_w,  handle_height/2],
+            [handle_slot_w, -handle_height/2],
+            // 半円の円弧を近似するための補助点を追加
+            // (右端で丸くつなぐ)
+        ], paths = [
+            [0,1,2,3,0]
+        ]);
+    }
+
+    // より実用的な D 字形の実装（2D profileを用意して押し出し）
+    module d_shape() {
+        // 左端を垂直に直線、右端を半円にするためのパスを構成
+        // 左直線の幅を handle_slot_w とし、右端を半径 handle_height/2 の半円で連結
+        // ここでは見た目を整えるため、シンプルなD字断面を用意
+        difference() {
+            // 外形（D字の外側）
+            union() {
+                translate([0, -handle_height/2])
+                    rounded_rectangle(h = handle_height, w = handle_slot_w, r = handle_height/2);
+                // 右半円の外側を作るための閉じ領域
+            }
+            // 内側空間（指3本分の空間）
+            translate([10, -handle_slot_h/2])
+                square([handle_slot_w - 20, handle_slot_h], center = true);
+        }
+    }
+
+    // 代用として、実装を簡略化した厚みのあるD字風の取手を作成
+    // 外形を丸みを帯びた長方形＋半円の組み合わせ
+    difference() {
+        // 外形
+        translate([0, -handle_height/2, -handle_thickness/2])
+            rotate([90,0,0])
+                linear_extrude(height = handle_thickness)
+                    // D字風の断面（長方形＋半円の組み合わせ）
+                    // 簡易実装: 左を直線、右を半円で結ぶ形に近い
+                    union() {
+                        // 直線部
+                        translate([0, -handle_height/2])
+                            square([handle_slot_w, handle_height], center = false);
+                        // 右側の半円
+                        translate([handle_slot_w, 0])
+                            circle(r = handle_height/2, $fn=100);
+                    }
+
+        // 内部空間をくり抜く（指が入る空間）
+        translate([6, -handle_slot_h/2, -handle_thickness/2])
+            rotate([90,0,0])
+                linear_extrude(height = handle_thickness)
+                    // 内部空間は幅 handle_slot_w-12、高さ handle_slot_h
+                    square([handle_slot_w - 12, handle_slot_h], center = true);
+    }
+}
+
+// シンプルな丸み付き長方形を作るサポート
+module rounded_rectangle(h, w, r) {
+    // h: 高さ, w: 幅, r: 角の半径
+    // 2Dの丸み付き長方形を近似
+    minkowski() {
+        square([w, h], center = true);
+        circle(r = r);
+    }
+}
+
+// ===== 組み立て =====
+union() {
+    // 本体
+    mug_body();
+
+    // 取手を +X 側面の外側に配置
+    // mug の外周表面に沿って取り付け
+    translate([attach_x, attach_y, 0])
+        // 取手は3D形状として作成
+        // ここでは薄肉のD字風に近い形状を押し出し
+        // 実体として結合させる
+        handle();
+}
+```

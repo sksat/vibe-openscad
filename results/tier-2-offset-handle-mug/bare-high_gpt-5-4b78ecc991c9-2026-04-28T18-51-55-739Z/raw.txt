@@ -1,0 +1,55 @@
+```openscad
+// Parameters
+$fn = 128;
+
+outer_d = 80;
+inner_d = 70;
+height = 90;
+bottom_thickness = 6;
+outer_r = outer_d/2;
+inner_r = inner_d/2;
+
+handle_inner_h = 30;   // inner void height
+handle_inner_w = 25;   // inner void width
+handle_t       = 6;    // handle ring thickness
+handle_depth   = 16;   // handle thickness along Y
+handle_embed   = 1.0;  // embed into mug wall for solid union
+
+eps = 0.2;
+
+// 2D D-shape in XY (flat side at x=0, centered in Y)
+module d_shape2d(w, h) {
+    R = h/2;
+    union() {
+        translate([0, -R]) square([w - R, h], center = false);
+        translate([w - R, 0]) circle(r = R);
+    }
+}
+
+// 3D handle placed on +X side, centered in Z
+module handle3d() {
+    w_o = handle_inner_w + 2*handle_t;
+    h_o = handle_inner_h + 2*handle_t;
+
+    translate([outer_r - handle_embed, 0, height/2])
+        rotate([-90, 0, 0])  // extrude along Y
+            linear_extrude(height = handle_depth, center = true, convexity = 10)
+                difference() {
+                    d_shape2d(w_o, h_o);
+                    translate([handle_t, 0]) d_shape2d(handle_inner_w, handle_inner_h);
+                }
+}
+
+// Mug with handle
+difference() {
+    union() {
+        // Outer mug body
+        cylinder(r = outer_r, h = height);
+        // D-shaped handle on +X side
+        handle3d();
+    }
+    // Hollow interior, leaving 6mm bottom
+    translate([0, 0, bottom_thickness])
+        cylinder(r = inner_r, h = height - bottom_thickness + eps);
+}
+```

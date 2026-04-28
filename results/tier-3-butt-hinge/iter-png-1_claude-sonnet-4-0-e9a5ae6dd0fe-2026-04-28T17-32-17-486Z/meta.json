@@ -1,0 +1,42 @@
+{
+  "runId": "iter-png-1_claude-sonnet-4-0-e9a5ae6dd0fe-2026-04-28T17-32-17-486Z",
+  "taskId": "tier-3-butt-hinge",
+  "matrixId": "iter-png-1/claude-sonnet-4-0",
+  "signature": "e9a5ae6dd0fea5e7679a5b5ad141a988436c2dabad12f789ac7289066f8fbe7b",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dd7199030a8827a181914869189fc45a2e5637023f0c8c59532d442557036e7c",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "iterateFrom": "bare/claude-sonnet-4-0",
+      "iteration": {
+        "kind": "render-png-feedback"
+      },
+      "parentSignature": "97838e5d890e26057a245d70dae50c74839384f64b47e071d6c501e7dc8b9060"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-sonnet-4-20250514",
+  "harness": {
+    "kind": "bare",
+    "iteration": {
+      "kind": "render-png-feedback"
+    }
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 12249
+  },
+  "tokens": {
+    "input": 2341,
+    "output": 989
+  },
+  "cost_usd": 0.021858000000000002,
+  "createdAt": "2026-04-28T17:32:17.486Z",
+  "gitCommit": "be87c9f2adaf51be5e9ccb7f63eb95c7bc456929",
+  "parentRunId": "bare_claude-sonnet-4-0-97838e5d890e-2026-04-28T17-23-38-143Z"
+}

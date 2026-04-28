@@ -1,0 +1,69 @@
+// Parameters
+outer_diameter = 80;
+inner_diameter = 70;
+height = 90;
+bottom_thickness = 6;
+
+handle_inner_height = 30;
+handle_inner_width = 25;
+handle_wall = 5;
+handle_depth = 12;
+handle_overlap = 1;
+$fn = 100;
+
+// Mug body
+module mug_body() {
+    difference() {
+        cylinder(h = height, r = outer_diameter / 2);
+        translate([0, 0, bottom_thickness])
+            cylinder(h = height - bottom_thickness, r = inner_diameter / 2);
+    }
+}
+
+// 2D D-shape for handle in the X (radial) and Y (vertical) plane, centered vertically
+module handle_shape2d() {
+    outer_h = handle_inner_height + 2 * handle_wall;
+    inner_h = handle_inner_height;
+    outer_r = outer_h / 2;
+    inner_r = inner_h / 2;
+    outer_w_total = handle_inner_width + 2 * handle_wall;
+    inner_w_total = handle_inner_width;
+    outer_w_str = outer_w_total - outer_r;
+    inner_w_str = inner_w_total - inner_r;
+    difference() {
+        intersection() {
+            union() {
+                translate([0, -outer_h / 2])
+                    square([outer_w_str, outer_h], center = false);
+                translate([outer_w_str, 0])
+                    circle(r = outer_r);
+            }
+            translate([0, -outer_h / 2])
+                square([outer_w_total, outer_h], center = false);
+        }
+        intersection() {
+            union() {
+                translate([0, -inner_h / 2])
+                    square([inner_w_str, inner_h], center = false);
+                translate([inner_w_str, 0])
+                    circle(r = inner_r);
+            }
+            translate([0, -outer_h / 2])
+                square([outer_w_total, outer_h], center = false);
+        }
+    }
+}
+
+// Handle 3D
+module handle() {
+    translate([outer_diameter / 2 - handle_overlap, 0, height / 2])
+        rotate([-90, 0, 0])
+            linear_extrude(height = handle_depth, center = true, convexity = 10)
+                handle_shape2d();
+}
+
+// Assemble mug and handle
+union() {
+    mug_body();
+    handle();
+}

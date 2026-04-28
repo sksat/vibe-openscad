@@ -1,0 +1,121 @@
+// Small butt hinge (3 parts assembled) in open position (180deg)
+
+$fn = 96;
+
+// ---- Parameters ----
+t = 2;                 // leaf thickness (Z)
+Ylen = 30;             // leaf length along hinge axis (Y)
+Xspan = 25;            // leaf length along opening direction (X)
+
+pin_d = 4;
+pin_len = 32;          // total pin length (centered)
+
+knuckle_len = 30;     // along Y
+knuckle_segments = 5; // split into 6mm each (=> 6mm)
+seg = knuckle_len/knuckle_segments; // 6mm
+
+clear = 0.3;
+bore_d = pin_d + clear; // 4.6mm
+
+kn_outer = 8;
+kn_inner = bore_d;
+
+gap = 0.2;             // boolean robustness
+
+// M3 countersunk holes (3 pcs per leaf)
+cs_d_top = 6;         // countersink cone top diameter (mm)
+cs_depth = 1;         // countersink depth (mm)
+through_d = 3.2;     // through hole diameter (mm)
+hole_ys = [8, 16, 24];// pitch 8mm along Y
+
+// ---- Helper: cylinder whose axis is along Y ----
+module cyl_y(d=1, h=1, center=true) {
+    rotate([90,0,0]) cylinder(d=d, h=h, center=center);
+}
+
+// Leaf plate: centered at X=0; left at x<0, right at x>0.
+// In this model leaves are cubes in X-Y plane with thickness along Z.
+module leaf_plate(x_sign=1) {
+    translate([x_sign * (Xspan/2), 0, 0])
+        cube([Xspan, Ylen, t], center=true);
+}
+
+// Knuckle sleeve along Y at X=0, centered at y_pos.
+// Bore is along Y.
+module knuckle(y_pos=0) {
+    difference() {
+        translate([0, y_pos, 0])
+            cyl_y(d=kn_outer, h=knuckle_len, center=true);
+        translate([0, y_pos, 0])
+            cyl_y(d=kn_inner, h=knuckle_len + 2*gap, center=true);
+    }
+}
+
+// M3 countersunk hole aligned along Z, centered at current origin.
+// Countersink machined from +Z face.
+module m3_hole_z() {
+    // Through hole
+    cylinder(d=through_d, h=t + 6*gap, center=true);
+
+    // Countersink cone from the +Z surface.
+    // Plate top surface is at z = +t/2
+    // Cone height is cs_depth. Place cone so its top is at +t/2.
+    translate([0,0, (t/2 - cs_depth/2)])
+        cylinder(h=cs_depth, d1=cs_d_top, d2=through_d, center=true);
+}
+
+// One leaf with knuckles and screw holes.
+// We subtract the pin bore here so the final assembly has the correct clearance.
+module leaf_with_knuckles_and_holes(x_sign=1, kn_positions=[]) {
+    difference() {
+        union() {
+            leaf_plate(x_sign);
+
+            // Knuckles
+            for (y in kn_positions)
+                knuckle(y);
+        }
+
+        // Subtract pin bore through knuckles (shared between both leaves)
+        for (y in kn_positions)
+            translate([0, y, 0])
+                cyl_y(d=kn_inner, h=kn_outer + 4*gap, center=true);
+
+        // Subtract 3 M3 holes at far side from knuckles:
+        // knuckles are at x=0 plane; far side is at x = x_sign*(Xspan/2)
+        for (yy in hole_ys) {
+            translate([x_sign * (Xspan/2), yy, 0])
+                m3_hole_z();
+        }
+    }
+}
+
+// Pin: cylinder along Y
+module pin() {
+    cyl_y(d=pin_d, h=pin_len, center=true);
+}
+
+// ---- Knuckle Y positions ----
+// centers spanning 30mm: [-12, -6, 0, 6, 12]
+kn_centers = [-12, -6, 0, 6, 12];
+
+// Left: outer 2 + central 1 => [-12, 0, 12]
+// Right: middle 2 => [-6, 6]
+left_kn = [kn_centers[0], kn_centers[2], kn_centers[4]];
+right_kn = [kn_centers[1], kn_centers[3]];
+
+// ---- Assembly in open position (180deg) ----
+// Place both leaves so their flat faces are coplanar.
+// With our leaves centered at X=±Xspan/2, both faces at z=0? Actually leaves are both centered at z=0,
+// and their flat faces already coincide in z because both are modeled as thickness along Z.
+// At 180deg open, we only need they are on opposite sides of the hinge axis.
+// Using simple placement at x= -Xspan/2 and +Xspan/2 already matches the requested layout.
+module butt_hinge_open180() {
+    union() {
+        leaf_with_knuckles_and_holes(x_sign=-1, kn_positions=left_kn);
+        leaf_with_knuckles_and_holes(x_sign= 1, kn_positions=right_kn);
+        pin();
+    }
+}
+
+butt_hinge_open180();

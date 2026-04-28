@@ -1,0 +1,50 @@
+```openscad
+$fn = 64;
+
+module leaf(side) {
+    dx = 25;
+    dy = 30;
+    thickness = 2;
+    base_x = side == "left" ? -dx : 0;
+    knuckle_positions = side == "left" ? [-12, 0, 12] : [-6, 6];
+    countersink_positions = [-8, 0, 8];
+    
+    difference() {
+        union() {
+            translate([base_x, -dy / 2, 0]) cube([dx, dy, thickness], center = false);
+            for (pos = knuckle_positions)
+                knuckle_segment(pos);
+        }
+        for (pos = knuckle_positions)
+            knuckle_core(pos);
+        for (pos = countersink_positions)
+            countersink_hole(pos, side);
+    }
+}
+
+module knuckle_segment(posY) {
+    translate([0, posY, 1]) rotate([-90, 0, 0]) cylinder(h = 6, r = 4, center = true);
+}
+
+module knuckle_core(posY) {
+    translate([0, posY, 1]) rotate([-90, 0, 0]) cylinder(h = 6, r = 2.3, center = true);
+}
+
+module countersink_hole(posY, side) {
+    x = side == "left" ? -22 : 22;
+    union() {
+        translate([x, posY, 1]) cylinder(h = 1, r1 = 1.6, r2 = 3, center = false);
+        translate([x, posY, -1]) cylinder(h = 5, r = 1.6, center = false);
+    }
+}
+
+module hinge_pin() {
+    translate([0, 0, 1]) rotate([-90, 0, 0]) cylinder(h = 32, r = 2, center = true);
+}
+
+union() {
+    leaf("left");
+    leaf("right");
+    hinge_pin();
+}
+```

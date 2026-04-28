@@ -1,0 +1,25 @@
+六角頭の対辺距離の計算に誤りがありました。正六角形の場合、外接円半径 = 対辺距離 / 2 / cos(30°) = 対辺距離 / sqrt(3) ではなく、対辺距離 / 2 / cos(30°) です。修正します。
+
+```openscad
+// M8 Hex Bolt (simplified without threads)
+
+// Parameters
+head_across_flats = 13;    // Across-flats distance (mm)
+head_height = 5.3;         // Head height (mm)
+shank_diameter = 8;        // Shank diameter (mm)
+shank_length = 30;         // Shank length (mm)
+
+// Calculate circumscribed radius for hexagon
+// For a regular hexagon with $fn=6, cylinder uses circumradius
+// across_flats = 2 * circumradius * cos(30°) = circumradius * sqrt(3)
+// Therefore: circumradius = across_flats / sqrt(3)
+head_circumradius = head_across_flats / 2 / cos(30);
+
+// Hex head (positioned with bottom at z=0, extending upward)
+translate([0, 0, head_height/2])
+    cylinder(h = head_height, r = head_circumradius, center = true, $fn = 6);
+
+// Shank (positioned extending downward from z=0)
+translate([0, 0, -shank_length/2])
+    cylinder(h = shank_length, d = shank_diameter, center = true, $fn = 64);
+```

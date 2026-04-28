@@ -1,0 +1,70 @@
+```openscad
+$fn = 100; // 滑らかな曲線にするための解像度
+
+// --- 本体パラメータ ---
+mug_outer_d = 80;
+mug_inner_d = 70;
+mug_h = 90;
+mug_bottom_thickness = 6;
+
+// --- 取手パラメータ ---
+handle_inner_h = 30;        // 指を入れる空間の高さ
+handle_inner_w = 25;        // 指を入れる空間の幅 (本体からの距離)
+handle_thickness = 8;       // 取手の肉厚
+handle_y_width = 12;        // 取手の奥行き (Y軸方向の太さ)
+
+// 本体と取手を結合
+union() {
+    // 1. マグ本体
+    difference() {
+        // 外側の円筒
+        cylinder(h = mug_h, d = mug_outer_d);
+        
+        // 内側をくり抜くための円筒
+        // 底面の厚みを残すために Z 方向にずらす
+        translate([0, 0, mug_bottom_thickness])
+            cylinder(h = mug_h + 1, d = mug_inner_d); // 確実に貫通させるため少し高くする
+    }
+
+    // 2. 取手
+    // 取手全体の高さを計算
+    handle_outer_h = handle_inner_h + 2 * handle_thickness;
+    // 取手をマグカップの高さ方向中央に配置するためのZ座標を計算
+    handle_z_pos = (mug_h - handle_outer_h) / 2;
+
+    // 取手を+X軸方向に配置
+    // 本体に少しめり込ませて確実に接続する
+    translate([mug_outer_d/2 - 1, 0, handle_z_pos]) {
+        // difference() を使って、ソリッドのD字形状から内側の穴をくり抜く
+        difference() {
+            // --- 外側のソリッドD字形状 ---
+            // hull() を使い、直線部(cube)と曲線部(cylinder)を滑らかに繋ぐ
+            hull() {
+                // 本体との接続部 (D字の直線部分)
+                translate([0, -handle_y_width/2, 0])
+                    cube([handle_thickness, handle_y_width, handle_outer_h]);
+                
+                // D字のカーブ部分
+                // 円筒の中心を、指を入れる空間のさらに奥に配置
+                translate([handle_thickness + handle_inner_w, 0, handle_outer_h / 2])
+                    rotate([0, 90, 0])
+                        cylinder(h = handle_y_width, r = handle_outer_h / 2, center = true);
+            }
+            
+            // --- 内側のくり抜き穴 ---
+            // 確実に貫通させるためにX,Y方向に少し大きくする
+            translate([-2, -handle_y_width/2 - 1, handle_thickness]) {
+                 // くり抜く形状もhullで作成し、内側の角を滑らかにする
+                 hull() {
+                    // 直線部分の穴
+                    cube([handle_inner_w, handle_y_width + 2, handle_inner_h]);
+                    
+                    // 曲線部分の穴
+                    translate([handle_inner_w, 0, handle_inner_h / 2])
+                        cylinder(h = handle_y_width + 2, r = handle_inner_h / 2, center=true);
+                 }
+            }
+        }
+    }
+}
+```

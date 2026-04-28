@@ -1,0 +1,85 @@
+画像を確認しました。以下の改善点があります：
+
+1. **垂直面の穴の配置**: 現在、穴が垂直面の前面（-Y方向）に配置されていますが、穴の中心線上での左右対称配置が要件です。垂直面は幅50mmなので、中心線はX=25mmです。
+
+2. **皿座面の向き**: 垂直面の穴について、皿座面が外側（-Y方向）を向くように修正が必要です。
+
+3. **穴の配置の対称性**: 水平面の穴はY方向の中心線上（Y=20mm）に配置されていますが、これを確認する必要があります。
+
+修正したコードを以下に示します：
+
+```openscad
+// L-bracket with countersunk holes
+
+// Parameters
+horizontal_width = 50;  // mm
+horizontal_depth = 40;  // mm
+vertical_width = 50;    // mm
+vertical_height = 40;   // mm
+thickness = 3;          // mm
+
+// Hole parameters
+hole_diameter = 4.5;    // mm
+countersink_diameter = 8;  // mm
+countersink_depth = 2;  // mm
+hole_offset_from_edge = 10;  // mm from edge
+
+// Countersunk hole
+module countersunk_hole(depth = 50) {
+    // Through hole
+    cylinder(h = depth, r = hole_diameter / 2, center = false, $fn = 32);
+    
+    // Countersink
+    cylinder(h = countersink_depth, r = countersink_diameter / 2, center = false, $fn = 32);
+}
+
+// Main L-bracket shape
+module l_bracket() {
+    // Horizontal flange (XY plane, at Z=0 to Z=thickness)
+    cube([horizontal_width, horizontal_depth, thickness]);
+    
+    // Vertical flange (XZ plane, at Y=0 to Y=thickness)
+    cube([vertical_width, thickness, vertical_height]);
+}
+
+// Holes for horizontal flange (top side, Z direction, countersink facing up)
+module horizontal_flange_holes() {
+    hole_y = horizontal_depth / 2;
+    
+    // Left hole
+    hole_x_left = hole_offset_from_edge;
+    translate([hole_x_left, hole_y, -0.1]) {
+        countersunk_hole(thickness + 0.2);
+    }
+    
+    // Right hole
+    hole_x_right = horizontal_width - hole_offset_from_edge;
+    translate([hole_x_right, hole_y, -0.1]) {
+        countersunk_hole(thickness + 0.2);
+    }
+}
+
+// Holes for vertical flange (front side, Y direction, countersink facing outward -Y)
+module vertical_flange_holes() {
+    hole_x = vertical_width / 2;
+    
+    // Bottom hole
+    hole_z_bottom = hole_offset_from_edge;
+    translate([hole_x, -0.1, hole_z_bottom]) {
+        countersunk_hole(thickness + 0.2);
+    }
+    
+    // Top hole
+    hole_z_top = vertical_height - hole_offset_from_edge;
+    translate([hole_x, -0.1, hole_z_top]) {
+        countersunk_hole(thickness + 0.2);
+    }
+}
+
+// Main assembly
+difference() {
+    l_bracket();
+    horizontal_flange_holes();
+    vertical_flange_holes();
+}
+```

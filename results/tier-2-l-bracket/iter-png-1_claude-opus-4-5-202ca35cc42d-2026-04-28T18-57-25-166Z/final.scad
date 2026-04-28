@@ -1,0 +1,60 @@
+// L-bracket with countersunk holes
+
+// Parameters
+flange_width = 50;      // X direction
+flange_depth = 40;      // Y direction for horizontal, Z direction for vertical
+thickness = 3;
+
+// Countersunk hole parameters
+hole_diameter = 4.5;    // M4 through hole
+countersink_diameter = 8;
+countersink_depth = 2;
+edge_distance = 10;     // Distance from edge to hole center
+
+// Module for countersunk hole (pointing in +Z direction, countersink on top)
+module countersunk_hole() {
+    union() {
+        // Through hole
+        cylinder(h = thickness + 1, d = hole_diameter, center = true, $fn = 32);
+        // Countersink (cone)
+        translate([0, 0, thickness/2 - countersink_depth])
+            cylinder(h = countersink_depth + 0.01, d1 = hole_diameter, d2 = countersink_diameter, $fn = 32);
+    }
+}
+
+// Hole X positions (symmetric about center line, 10mm from left and right edges)
+hole_x_positions = [edge_distance, flange_width - edge_distance];
+
+difference() {
+    union() {
+        // Horizontal flange: extends in +Y direction, thickness in +Z at bottom (Z=0 to Z=thickness)
+        // But inner corner at origin means the top surface of horizontal flange is at Z=0
+        // So horizontal flange goes from Z=-thickness to Z=0, extending in +Y
+        translate([0, 0, -thickness])
+            cube([flange_width, flange_depth, thickness]);
+        
+        // Vertical flange: extends in +Z direction from origin, thickness in +Y at back
+        // Inner corner at origin means inner surface is at Y=0
+        // So vertical flange goes from Y=-thickness to Y=0, extending in +Z
+        translate([0, -thickness, 0])
+            cube([flange_width, thickness, flange_depth]);
+    }
+    
+    // Countersunk holes on horizontal flange
+    // Holes at Y = 10mm from edge (which is at Y=0, so Y = flange_depth - edge_distance from far edge)
+    // Center of flange in Y direction, 10mm from the outer edge (Y = flange_depth)
+    // So hole Y position = flange_depth - edge_distance
+    for (x = hole_x_positions) {
+        translate([x, flange_depth - edge_distance, -thickness/2])
+            rotate([180, 0, 0])  // Countersink on bottom (-Z side, outside)
+                countersunk_hole();
+    }
+    
+    // Countersunk holes on vertical flange
+    // 10mm from top edge (Z = flange_depth), so Z = flange_depth - edge_distance
+    for (x = hole_x_positions) {
+        translate([x, -thickness/2, flange_depth - edge_distance])
+            rotate([-90, 0, 0])  // Countersink on -Y side (outside)
+                countersunk_hole();
+    }
+}

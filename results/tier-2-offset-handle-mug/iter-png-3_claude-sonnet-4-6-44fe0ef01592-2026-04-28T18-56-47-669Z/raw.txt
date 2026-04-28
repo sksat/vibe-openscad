@@ -1,0 +1,119 @@
+画像を確認すると、以下の問題があります：
+
+1. **取手の半円アームが小さすぎ・細すぎ**：上下バーの外端を繋ぐ半円が小さく、D字形状になっていない
+2. **取手の断面が薄い**：バーと半円アームが細く、実用的なマグカップの取手に見えない
+3. **取手全体の形状がD字でなくU字に近い**：半円の半径が `h_space_h/2=15` になっているが、本来は上下バーの間隔全体を外側で繋ぐ大きな半円が必要
+4. **取手の厚み（Y方向）が薄い**：`handle_t=8` では細すぎる
+
+修正方針：
+- 取手断面を太く（handle_t = 10mm）
+- 半円は上下バーの外端を繋ぐもので、半径 = `h_space_h/2 + handle_t/2` をアーム中心で計算
+- hull() を使った滑らかな接続で確実にマニフォールド
+
+```openscad
+$fn = 128;
+
+outer_r  = 40;
+inner_r  = 35;
+mug_h    = 90;
+bot_t    = 6;
+
+handle_z   = mug_h / 2;   // 高さ方向中央 = 45mm
+h_space_h  = 30;          // 取手内側空間 高さ
+h_space_w  = 25;          // 取手内側空間 幅
+handle_t   = 10;          // 取手断面の太さ
+
+// 各部寸法
+// バーはX軸方向に伸びる。本体に食い込んで確実結合
+bar_x_start = outer_r - 3;
+bar_x_end   = outer_r + h_space_w;         // バー外端X
+bar_x_len   = bar_x_end - bar_x_start;
+
+bar_z_top   = handle_z + h_space_h / 2;   // = 60
+bar_z_bot   = handle_z - h_space_h / 2;   // = 30
+
+// 半円アーム中心: (bar_x_end, handle_z)
+// 半円の回転半径 (中心線ベース) = h_space_h/2 = 15
+arc_cx = bar_x_end;
+arc_cz = handle_z;
+arc_r  = h_space_h / 2;  // = 15
+
+// 上バー: Z中心 = bar_z_top, 断面 handle_t x handle_t
+module top_bar() {
+    translate([bar_x_start, -handle_t/2, bar_z_top - handle_t/2])
+        cube([bar_x_len, handle_t, handle_t]);
+}
+
+// 下バー
+module bot_bar() {
+    translate([bar_x_start, -handle_t/2, bar_z_bot - handle_t/2])
+        cube([bar_x_len, handle_t, handle_t]);
+}
+
+// 半円アーム: XZ平面内で -90°〜+90° の半円
+// 各セグメントを hull() で繋ぐ
+// 断面: handle_t x handle_t の立方体
+module arc_arm() {
+    N = 48;
+    for (i = [0 : N-1]) {
+        a1 = -90 + 180 *  i      / N;
+        a2 = -90 + 180 * (i+1)   / N;
+        x1 = arc_cx + arc_r * cos(a1);
+        z1 = arc_cz + arc_r * sin(a1);
+        x2 = arc_cx + arc_r * cos(a2);
+        z2 = arc_cz + arc_r * sin(a2);
+        hull() {
+            translate([x1 - handle_t/2, -handle_t/2, z1 - handle_t/2])
+                cube([handle_t, handle_t, handle_t]);
+            translate([x2 - handle_t/2, -handle_t/2, z2 - handle_t/2])
+                cube([handle_t, handle_t, handle_t]);
+        }
+    }
+}
+
+// バーと半円を滑らかに繋ぐジョイント
+module top_joint() {
+    x1 = arc_cx + arc_r * cos(-90);
+    z1 = arc_cz + arc_r * sin(-90);
+    hull() {
+        translate([bar_x_end - handle_t/2, -handle_t/2, bar_z_top - handle_t/2])
+            cube([handle_t, handle_t, handle_t]);
+        translate([x1 - handle_t/2, -handle_t/2, z1 - handle_t/2])
+            cube([handle_t, handle_t, handle_t]);
+    }
+}
+
+module bot_joint() {
+    x1 = arc_cx + arc_r * cos(90);
+    z1 = arc_cz + arc_r * sin(90);
+    hull() {
+        translate([bar_x_end - handle_t/2, -handle_t/2, bar_z_bot - handle_t/2])
+            cube([handle_t, handle_t, handle_t]);
+        translate([x1 - handle_t/2, -handle_t/2, z1 - handle_t/2])
+            cube([handle_t, handle_t, handle_t]);
+    }
+}
+
+module handle() {
+    union() {
+        top_bar();
+        bot_bar();
+        arc_arm();
+        top_joint();
+        bot_joint();
+    }
+}
+
+module mug_body() {
+    difference() {
+        cylinder(r = outer_r, h = mug_h);
+        translate([0, 0, bot_t])
+            cylinder(r = inner_r, h = mug_h - bot_t + 0.1);
+    }
+}
+
+union() {
+    mug_body();
+    handle();
+}
+```

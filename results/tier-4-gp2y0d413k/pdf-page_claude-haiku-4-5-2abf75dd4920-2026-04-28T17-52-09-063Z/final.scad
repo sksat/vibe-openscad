@@ -1,0 +1,122 @@
+// Sharp GP2Y0D413K0F Distance Sensor - OpenSCAD Model
+// Based on datasheet outline dimensions (page 2)
+
+// Main body case dimensions
+body_length = 29.45;  // X direction
+body_width = 10.1;    // Y direction
+body_height = 9.6;    // Z direction
+
+// Lens case protrusion
+lens_case_height = 7.5;
+lens_case_depth = 4.15;
+
+// Light emitter (circular lens, left side)
+emitter_lens_x = -1.5;  // Reference dimension from center
+emitter_lens_y = 9.7;   // Reference dimension (front)
+emitter_lens_radius = 2.0;  // Approximate circular opening
+
+// Light detector (rectangular lens, right side)
+detector_lens_x = 7.1;  // Reference dimension from center
+detector_lens_y = 9.7;  // Reference dimension
+detector_lens_width = 6.3;
+detector_lens_height = 2.0;
+
+// PWB (Printed circuit board)
+pwb_length = 16.3;
+pwb_width = 7.5;
+pwb_thickness = 1.2;
+
+// Connector pins
+connector_pin_spacing = 2.54;
+connector_pin_diameter = 0.6;
+connector_pin_length = 3.5;
+
+// ===== MAIN BODY CASE =====
+module main_body() {
+    // Main rectangular case body
+    cube([body_length, body_width, body_height], center=true);
+}
+
+// ===== LENS CASE (Front protrusion) =====
+module lens_case() {
+    // Two-window lens case protrusion on front
+    translate([0, (body_width/2 + lens_case_depth/2), (body_height/2 - lens_case_height/2)]) {
+        cube([body_length, lens_case_depth, lens_case_height], center=true);
+    }
+}
+
+// ===== LIGHT EMITTER LENS (Circular, Left) =====
+module emitter_lens() {
+    translate([emitter_lens_x, (body_width/2 + 1), (body_height/2 - 0.5)]) {
+        cylinder(r=emitter_lens_radius, h=2, center=true, $fn=32);
+    }
+}
+
+// ===== LIGHT DETECTOR LENS (Rectangular, Right) =====
+module detector_lens() {
+    translate([detector_lens_x, (body_width/2 + 1), (body_height/2 - 0.5)]) {
+        cube([detector_lens_width, 2, detector_lens_height], center=true);
+    }
+}
+
+// ===== PWB (Printed Circuit Board - Thin plate at bottom) =====
+module pwb() {
+    translate([0, 0, -(body_height/2 + pwb_thickness/2)]) {
+        cube([pwb_length, pwb_width, pwb_thickness], center=true);
+    }
+}
+
+// ===== 3-PIN CONNECTOR (Bottom side, simplified) =====
+module connector() {
+    // Connector body (simplified rectangular block)
+    connector_body_length = 7.0;
+    connector_body_width = 4.0;
+    connector_body_height = 2.5;
+    
+    translate([0, 0, -(body_height/2 + pwb_thickness + connector_body_height/2)]) {
+        cube([connector_body_length, connector_body_width, connector_body_height], center=true);
+    }
+    
+    // Three pins representation
+    pin_positions = [[-2.54, 0, 0], [0, 0, 0], [2.54, 0, 0]];
+    
+    for (pin_pos = pin_positions) {
+        translate([pin_pos[0], pin_pos[1], -(body_height/2 + pwb_thickness + connector_body_height + connector_pin_length/2)]) {
+            cylinder(r=connector_pin_diameter/2, h=connector_pin_length, center=true, $fn=16);
+        }
+    }
+}
+
+// ===== ASSEMBLY =====
+module gp2y0d413k0f() {
+    // Main body case
+    main_body();
+    
+    // Lens case protrusion
+    lens_case();
+    
+    // Light emitter lens (circular opening)
+    %emitter_lens();
+    
+    // Light detector lens (rectangular opening)
+    %detector_lens();
+    
+    // PWB at bottom
+    pwb();
+    
+    // 3-pin connector
+    connector();
+}
+
+// ===== RENDER =====
+gp2y0d413k0f();
+
+// Display coordinate origin and axes for reference
+%translate([0,0,0]) {
+    // X axis (red)
+    color([1,0,0]) cylinder(r=0.3, h=15, center=true, $fn=8);
+    // Y axis (green)
+    color([0,1,0]) rotate([90,0,0]) cylinder(r=0.3, h=15, center=true, $fn=8);
+    // Z axis (blue)
+    color([0,0,1]) rotate([0,90,0]) cylinder(r=0.3, h=15, center=true, $fn=8);
+}

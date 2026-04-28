@@ -1,0 +1,38 @@
+{
+  "runId": "bare-low_claude-opus-4-7-e67ec8087ba7-2026-04-28T18-47-32-252Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "bare-low/claude-opus-4-7",
+  "signature": "e67ec8087ba7ee84e4dc7525f2a64e4300eb9dfad5e2310ab9cf40a7bfe33148",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-opus-4-7",
+      "modelOptions": {
+        "output_config": {
+          "effort": "low"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-opus-4-7",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 11017
+  },
+  "tokens": {
+    "input": 348,
+    "output": 789
+  },
+  "cost_usd": 0.021464999999999998,
+  "createdAt": "2026-04-28T18:47:32.252Z",
+  "gitCommit": "781e6c683dda9349da96561361d4da5f2c54975e"
+}

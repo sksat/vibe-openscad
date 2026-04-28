@@ -1,0 +1,55 @@
+```openscad
+$fn = 100;
+
+// マグ本体のパラメータ
+outer_d = 80;
+inner_d = 70;
+height = 90;
+bottom_thick = 6;
+
+// 取手のパラメータ
+handle_inner_h = 30;
+handle_inner_w = 25;
+handle_thick = 10;
+
+// マグ本体の作成
+module mug_body() {
+    difference() {
+        cylinder(d = outer_d, h = height);
+        translate([0, 0, bottom_thick])
+            cylinder(d = inner_d, h = height - bottom_thick + 0.1);
+    }
+}
+
+// 取手の作成
+module handle() {
+    // D字形状をMinkowski等を使わず、円柱と直方体の組み合わせで滑らかに構築
+    // 取手の高さは inner_h + 上下厚み、幅は inner_w + 外側厚み
+    h_outer_d = handle_inner_h + 2 * handle_thick;
+    
+    translate([outer_d / 2 - 1, 0, height / 2]) {
+        rotate([0, 90, 0]) {
+            linear_extrude(height = handle_thick) {
+                difference() {
+                    // 外形: 半円と長方形
+                    union() {
+                        translate([0, 0]) circle(d = h_outer_d);
+                        translate([-h_outer_d / 2, -h_outer_d / 2]) square([h_outer_d / 2, h_outer_d]);
+                    }
+                    // 内穴: 半円と長方形
+                    union() {
+                        translate([0, 0]) circle(d = handle_inner_h);
+                        translate([-handle_inner_h / 2 - 2, -handle_inner_h / 2]) square([handle_inner_h / 2 + 2, handle_inner_h]);
+                    }
+                }
+            }
+        }
+    }
+}
+
+// 本体と取手の接合部を確実にするため、わずかにめり込ませてマニフォールドを維持
+union() {
+    mug_body();
+    handle();
+}
+```

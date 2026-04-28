@@ -1,0 +1,42 @@
+// パラメータ設定
+width = 50;
+h_depth = 40;
+v_height = 40;
+thickness = 3;
+
+hole_dia = 4.5;
+countersink_dia = 8;
+countersink_depth = 2;
+
+// 皿穴モジュール
+module countersunk_hole() {
+    union() {
+        cylinder(d = hole_dia, h = thickness + 0.1, $fn = 32);
+        translate([0, 0, thickness - countersink_depth + 0.05])
+            cylinder(d1 = hole_dia, d2 = countersink_dia, h = countersink_depth, $fn = 32);
+    }
+}
+
+// L字金具本体
+difference() {
+    union() {
+        // 水平面
+        cube([width, h_depth, thickness]);
+        // 垂直面
+        cube([width, thickness, v_height]);
+    }
+
+    // 水平面の穴 (Y方向に10mm内側、X方向に左右対称)
+    for (x = [-1, 1]) {
+        translate([width / 2 + x * 15, 10, -0.05])
+            rotate([0, 0, 0])
+                countersunk_hole();
+    }
+
+    // 垂直面の穴 (Z方向に10mm内側、X方向に左右対称)
+    for (x = [-1, 1]) {
+        translate([width / 2 + x * 15, -0.05, 10])
+            rotate([-90, 0, 0])
+                countersunk_hole();
+    }
+}

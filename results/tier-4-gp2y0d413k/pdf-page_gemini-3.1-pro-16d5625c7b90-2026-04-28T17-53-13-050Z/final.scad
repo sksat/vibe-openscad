@@ -1,0 +1,61 @@
+$fn = 64;
+
+module gp2y0d413k0f() {
+    // 1. Main Case (Carbonic ABS)
+    color("#222222")
+    translate([0, 0, 0])
+    cube([29.45, 7.1, 13.05], center=true);
+
+    // 2. Lens Case
+    color("#222222") {
+        // Base part of lens case
+        translate([0, 7.1/2 + (6.3 - 2.0)/2, 0])
+        cube([26.45, 6.3 - 2.0, 8.4], center=true);
+        
+        // Front part of lens case
+        difference() {
+            translate([0, 7.1/2 + 6.3 - 2.0/2, 0])
+            cube([26.45, 2.0, 7.2], center=true);
+            
+            // Cutout for Left Lens (Light emitter)
+            translate([-29.45/2 + 4.5, 7.1/2 + 6.3, 0])
+            rotate([90, 0, 0])
+            cylinder(h=2.0, d=5.0, center=true);
+            
+            // Cutout for Right Lens (Light detector)
+            translate([-29.45/2 + 4.5 + 19.7, 7.1/2 + 6.3, 0])
+            cube([6.0, 2.0, 4.5], center=true);
+        }
+    }
+
+    // 3. Lenses
+    // Left Lens (Light emitter)
+    color("#330000")
+    translate([-29.45/2 + 4.5, 7.1/2 + 6.3 - 0.5, 0])
+    rotate([90, 0, 0])
+    cylinder(h=1.0, d=5.0, center=true);
+
+    // Right Lens (Light detector)
+    color("#000033")
+    translate([-29.45/2 + 4.5 + 19.7, 7.1/2 + 6.3 - 0.5, 0])
+    cube([6.0, 1.0, 4.5], center=true);
+
+    // 4. PWB
+    color("#005500")
+    translate([-29.45/2 + 7.5 + 16.3/2, 0, -13.05/2 - 1.2/2])
+    cube([16.3, 7.1, 1.2], center=true);
+
+    // 5. Connector
+    color("#DDDDDD")
+    translate([-29.45/2 + 7.5 + 4.15 + 10.1/2, -7.1/2 + 3.3/2, -13.05/2 - 1.2 - 4.65/2])
+    cube([10.1, 3.3, 4.65], center=true);
+
+    // Connector Pins
+    color("#AAAAAA")
+    for (i = [-1, 0, 1]) {
+        translate([-29.45/2 + 7.5 + 4.15 + 10.1/2 + i*2.5, -7.1/2 + 3.3/2, -13.05/2 - 1.2 - 4.65 - 1.0])
+        cube([0.6, 0.6, 2.0], center=true);
+    }
+}
+
+gp2y0d413k0f();

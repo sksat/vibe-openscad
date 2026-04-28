@@ -1,0 +1,76 @@
+$fn = 128;
+
+// ===== Mug dimensions =====
+outer_d  = 80;   // mm
+inner_d  = 70;   // mm
+mug_h    = 90;   // mm
+bottom_t = 6;    // mm
+
+// ===== Handle inner opening requirement =====
+// inner void: height 30mm (Z) x width 25mm (radial X)
+void_h = 30;
+void_w = 25;
+
+// ===== Handle thickness =====
+t_radial = 5;    // wall thickness in XZ profile
+t_depth  = 10;   // thickness along Y (grip depth)
+
+// Vertical center of handle
+zc = mug_h / 2;
+
+// Mug outer radius
+r_outer = outer_d / 2;
+
+// Inner D profile (opening)
+ri   = void_h / 2;         // 15
+x_ci = r_outer + void_w;   // inner semicircle center X
+zi0  = zc - void_h/2;
+zi1  = zc + void_h/2;
+
+// Outer D profile (handle body), offset by t_radial
+ro   = ri + t_radial;                 // 20
+x_co = x_ci + t_radial;               // keep constant radial thickness
+zo0  = zi0 - t_radial;
+zo1  = zi1 + t_radial;
+
+// Ensure manifold union with mug: overlap into mug wall by epsilon
+eps = 0.6;                            // small penetration for robust union
+x_flat_inner = r_outer - eps;         // inner flat of handle body
+x_flat_outer = x_flat_inner + t_radial;
+
+module d_profile(x_flat, z0, z1, x_c, r) {
+    polygon(points = concat(
+        [[x_flat, z0], [x_flat, z1]],
+        [for (a = [90:-2:-90]) [x_c + r*cos(a), zc + r*sin(a)]]
+    ));
+}
+
+module mug_body() {
+    difference() {
+        cylinder(h = mug_h, d = outer_d);
+        translate([0,0,bottom_t])
+            cylinder(h = mug_h - bottom_t + 0.01, d = inner_d);
+    }
+}
+
+module handle_body() {
+    translate([0, -t_depth/2, 0])
+        rotate([-90,0,0])
+            linear_extrude(height = t_depth)
+                d_profile(x_flat_outer, zo0, zo1, x_co, ro);
+}
+
+module handle_hole() {
+    translate([0, -(t_depth/2 + 0.1), 0])
+        rotate([-90,0,0])
+            linear_extrude(height = t_depth + 0.2)
+                d_profile(r_outer, zi0, zi1, x_ci, ri); // flat side exactly at mug tangent
+}
+
+union() {
+    mug_body();
+    difference() {
+        handle_body();
+        handle_hole();
+    }
+}

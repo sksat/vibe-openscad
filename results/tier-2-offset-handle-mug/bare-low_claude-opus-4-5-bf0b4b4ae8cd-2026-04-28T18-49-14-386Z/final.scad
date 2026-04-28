@@ -1,0 +1,50 @@
+// マグカップ - 取手は+X方向
+$fn = 64;
+
+// 本体パラメータ
+outer_d = 80;
+inner_d = 70;
+height = 90;
+bottom_thick = 6;
+
+// 取手パラメータ
+handle_inner_h = 30;
+handle_inner_w = 25;
+handle_thick = 5;
+
+// 本体
+difference() {
+    cylinder(d=outer_d, h=height);
+    translate([0, 0, bottom_thick])
+        cylinder(d=inner_d, h=height);
+}
+
+// 取手（+X方向）
+handle_outer_w = handle_inner_w + handle_thick * 2;
+handle_outer_h = handle_inner_h + handle_thick * 2;
+handle_center_z = height / 2;
+
+translate([outer_d/2, 0, handle_center_z])
+rotate([90, 0, 0])
+rotate([0, 90, 0])
+difference() {
+    // 外側形状
+    hull() {
+        translate([0, -handle_inner_h/2 - handle_thick/2, 0])
+            cylinder(d=handle_thick, h=handle_outer_w);
+        translate([0, handle_inner_h/2 + handle_thick/2, 0])
+            cylinder(d=handle_thick, h=handle_outer_w);
+        translate([handle_inner_w/2 + handle_thick/2, 0, 0])
+            cylinder(d=handle_thick, h=handle_outer_w);
+    }
+    // 内側くり抜き
+    translate([0, 0, handle_thick])
+    hull() {
+        translate([0, -handle_inner_h/2, 0])
+            cylinder(d=0.1, h=handle_inner_w);
+        translate([0, handle_inner_h/2, 0])
+            cylinder(d=0.1, h=handle_inner_w);
+        translate([handle_inner_w/2, 0, 0])
+            cylinder(d=0.1, h=handle_inner_w);
+    }
+}

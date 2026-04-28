@@ -1,0 +1,42 @@
+{
+  "runId": "iter-png-1_gemini-2.5-pro-ad07f6d1db1e-2026-04-28T18-56-27-285Z",
+  "taskId": "tier-2-hex-bolt",
+  "matrixId": "iter-png-1/gemini-2.5-pro",
+  "signature": "ad07f6d1db1edfd0f62d56068ec491ae2d0a1be69485467a15374440dd4bf6ba",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "0fee46bf3152dd6738d6d2af93e06dad04bb6bddd3b2b528c57138298ec0b5d0",
+    "harness": {
+      "kind": "bare",
+      "provider": "google",
+      "model": "gemini-2.5-pro",
+      "iterateFrom": "bare/gemini-2.5-pro",
+      "iteration": {
+        "kind": "render-png-feedback"
+      },
+      "parentSignature": "8a42d3f8c2a97ed73838149b66a0fddce6750907f2eb0fcd58a7b446755344e2"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "google",
+  "model": "gemini-2.5-pro",
+  "harness": {
+    "kind": "bare",
+    "iteration": {
+      "kind": "render-png-feedback"
+    }
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 12529
+  },
+  "tokens": {
+    "input": 754,
+    "output": 255
+  },
+  "cost_usd": 0.0034925,
+  "createdAt": "2026-04-28T18:56:27.285Z",
+  "gitCommit": "781e6c683dda9349da96561361d4da5f2c54975e",
+  "parentRunId": "bare_gemini-2.5-pro-8a42d3f8c2a9-2026-04-28T10-17-30-595Z"
+}

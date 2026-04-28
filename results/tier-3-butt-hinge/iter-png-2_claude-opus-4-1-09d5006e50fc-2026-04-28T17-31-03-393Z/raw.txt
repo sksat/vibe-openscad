@@ -1,0 +1,106 @@
+```openscad
+$fn = 50;
+
+// Parameters
+leaf_width = 25;
+leaf_height = 30;
+leaf_thickness = 2;
+knuckle_outer_dia = 8;
+knuckle_inner_dia = 4.6;
+knuckle_height = 6;
+pin_diameter = 4;
+pin_length = 32;
+screw_hole_dia = 3.2;
+countersink_dia = 6;
+countersink_depth = 1;
+
+// Pin
+module pin() {
+    color("silver")
+    translate([0, -1, 0])
+    rotate([-90, 0, 0])
+    cylinder(h = pin_length, d = pin_diameter);
+}
+
+// Knuckle
+module knuckle(height) {
+    difference() {
+        cylinder(h = height, d = knuckle_outer_dia);
+        translate([0, 0, -0.1])
+        cylinder(h = height + 0.2, d = knuckle_inner_dia);
+    }
+}
+
+// Screw hole with countersink
+module screw_hole() {
+    // Countersink
+    translate([0, 0, leaf_thickness - countersink_depth])
+    cylinder(h = countersink_depth + 0.1, d1 = screw_hole_dia, d2 = countersink_dia);
+    // Through hole
+    translate([0, 0, -0.1])
+    cylinder(h = leaf_thickness + 0.2, d = screw_hole_dia);
+}
+
+// Left leaf
+module left_leaf() {
+    color("gray")
+    difference() {
+        union() {
+            // Main plate
+            translate([-leaf_width, 0, -leaf_thickness/2])
+            cube([leaf_width, leaf_height, leaf_thickness]);
+            
+            // Knuckles (3 pieces: bottom, middle, top)
+            rotate([-90, 0, 0]) {
+                translate([0, 0, 0])
+                knuckle(knuckle_height);
+                translate([0, 0, knuckle_height * 2])
+                knuckle(knuckle_height);
+                translate([0, 0, knuckle_height * 4])
+                knuckle(knuckle_height);
+            }
+        }
+        
+        // Screw holes
+        translate([-leaf_width/2 - 5, 7, -leaf_thickness/2])
+        screw_hole();
+        translate([-leaf_width/2 - 5, 15, -leaf_thickness/2])
+        screw_hole();
+        translate([-leaf_width/2 - 5, 23, -leaf_thickness/2])
+        screw_hole();
+    }
+}
+
+// Right leaf
+module right_leaf() {
+    color("darkgray")
+    difference() {
+        union() {
+            // Main plate
+            translate([0, 0, -leaf_thickness/2])
+            cube([leaf_width, leaf_height, leaf_thickness]);
+            
+            // Knuckles (2 pieces: lower-middle, upper-middle)
+            rotate([-90, 0, 0]) {
+                translate([0, 0, knuckle_height])
+                knuckle(knuckle_height);
+                translate([0, 0, knuckle_height * 3])
+                knuckle(knuckle_height);
+            }
+        }
+        
+        // Screw holes
+        translate([leaf_width/2 + 5, 7, -leaf_thickness/2])
+        screw_hole();
+        translate([leaf_width/2 + 5, 15, -leaf_thickness/2])
+        screw_hole();
+        translate([leaf_width/2 + 5, 23, -leaf_thickness/2])
+        screw_hole();
+    }
+}
+
+// Assembly
+left_leaf();
+right_leaf();
+pin();
+```

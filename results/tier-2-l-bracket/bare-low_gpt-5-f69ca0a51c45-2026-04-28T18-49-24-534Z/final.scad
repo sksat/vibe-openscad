@@ -1,0 +1,45 @@
+// L-bracket with countersunk holes
+w = 50;          // width (X)
+d = 40;          // depth of horizontal flange (Y)
+h = 40;          // height of vertical flange (Z)
+t = 3;           // thickness
+eps = 0.1;
+
+thru_d = 4.5;    // through hole diameter for M4
+csk_d  = 8;      // countersink diameter
+csk_h  = 2;      // countersink depth
+
+// Hole placement
+hx = w/2 - 10;   // X offset from center to be 10mm in from side edges
+hy = d - 10;     // Y position for horizontal flange holes (10mm from free edge)
+hz = h - 10;     // Z position for vertical flange holes (10mm from free edge)
+
+difference() {
+  // Bracket solid: inner corner at origin; horizontal +Y, vertical +Z
+  union() {
+    // Horizontal flange (X: -25..25, Y: 0..40, Z: 0..3)
+    translate([-w/2, 0, 0]) cube([w, d, t], center=false);
+    // Vertical flange (X: -25..25, Y: 0..3, Z: 0..40)
+    translate([-w/2, 0, 0]) cube([w, t, h], center=false);
+  }
+
+  // Holes on horizontal flange (axis along Z)
+  for (xsign = [-1, 1]) {
+    translate([xsign*hx, hy, 0]) {
+      // through hole
+      translate([0, 0, -eps]) cylinder(d=thru_d, h=t+2*eps, $fn=64);
+      // countersink from top (+Z) side, depth csk_h
+      translate([0, 0, t - csk_h]) cylinder(d=csk_d, h=csk_h+eps, $fn=64);
+    }
+  }
+
+  // Holes on vertical flange (axis along Y)
+  for (xsign = [-1, 1]) {
+    translate([xsign*hx, 0, hz]) {
+      // through hole
+      rotate([90, 0, 0]) translate([0, 0, -eps]) cylinder(d=thru_d, h=t+2*eps, $fn=64);
+      // countersink from outside (+Y) side, depth csk_h
+      rotate([90, 0, 0]) translate([0, 0, t - csk_h]) cylinder(d=csk_d, h=csk_h+eps, $fn=64);
+    }
+  }
+}

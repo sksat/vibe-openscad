@@ -1,0 +1,60 @@
+$fn = 96;
+
+width = 50;
+depth = 40;
+height = 40;
+thickness = 3;
+
+hole_d = 4.5;
+cs_d   = 8;
+cs_h   = 2;
+
+module countersunk_hole_z(z0, through_h, cs_from_top=true) {
+    // Hole axis: Z
+    union() {
+        cylinder(d = hole_d, h = through_h, center = false);
+        if (cs_from_top)
+            translate([0, 0, through_h - cs_h])
+                cylinder(d = cs_d, h = cs_h, center = false);
+        else
+            cylinder(d = cs_d, h = cs_h, center = false);
+    }
+}
+
+module countersunk_hole_y(y0, through_h, cs_from_outer=true) {
+    // Hole axis: Y
+    rotate([-90, 0, 0]) {
+        union() {
+            cylinder(d = hole_d, h = through_h, center = false);
+            if (cs_from_outer)
+                translate([0, 0, through_h - cs_h])
+                    cylinder(d = cs_d, h = cs_h, center = false);
+            else
+                cylinder(d = cs_d, h = cs_h, center = false);
+        }
+    }
+}
+
+difference() {
+    union() {
+        // Horizontal flange: X = centered, Y = +, Z = 0..thickness
+        translate([-width/2, 0, 0])
+            cube([width, depth, thickness], center = false);
+
+        // Vertical flange: X = centered, Y = 0..thickness, Z = +
+        translate([-width/2, 0, 0])
+            cube([width, thickness, height], center = false);
+    }
+
+    // Horizontal flange holes (axis Z), countersink on outer side (top, +Z)
+    for (x = [-width/2 + 10, width/2 - 10]) {
+        translate([x, 10, 0])
+            countersunk_hole_z(0, thickness, true);
+    }
+
+    // Vertical flange holes (axis Y), countersink on outer side (+Y)
+    for (x = [-width/2 + 10, width/2 - 10]) {
+        translate([x, 0, 10])
+            countersunk_hole_y(0, thickness, true);
+    }
+}

@@ -1,0 +1,80 @@
+修正が必要です。
+
+**問題点**  
+- 取手のD字形状が、本体から上に大きく半円アーチ状になっており、実際のマグカップの取手の形としておかしい。
+- 取手内空間サイズ（幅・高さ）が正しく本体側面に配置されていない。
+- 取手が本体高さ中央付近（中心Z）につくべきところ、アーチで大きく外れている。
+- 本体外周に「しっかり接続」ではなく、取手全体が浮いた状態に見える。
+
+**修正版ポリシー**  
+- D字取手の平面スケッチをまず作り、その「外側半円+内直線」をextrude（押し出し）して厚みを持たせ、本体+X側中央にしっかり接続させる。
+
+```openscad
+// マグ本体パラメータ
+mug_outer_diameter = 80;    // mm
+mug_inner_diameter = 70;    // mm
+mug_height = 90;            // mm
+mug_wall_thickness = 5;     // mm
+mug_bottom_thickness = 6;   // mm
+
+// 取手パラメータ
+handle_inner_height = 30;    // mm
+handle_inner_width  = 25;    // mm
+handle_thickness    = 12;    // mm  // 指が入りつつ頑丈さ優先
+
+mug_radius = mug_outer_diameter / 2;
+mug_inner_radius = mug_inner_diameter / 2;
+
+// 取手スケッチ中心位置
+handle_center_z = mug_height/2;
+
+module mug_body() {
+    difference() {
+        cylinder(h = mug_height, r = mug_radius, $fn = 128);
+        translate([0, 0, mug_bottom_thickness])
+            cylinder(h = mug_height - mug_bottom_thickness, r = mug_inner_radius, $fn = 128);
+    }
+}
+
+module handle_D() {
+    // D字断面の外周
+    inner_r = handle_inner_height/2;  // D字の半円内半径
+    outer_r = inner_r + handle_thickness;
+
+    // D字2Dプロファイル
+    //   左辺(本体接触)が直線、右辺が半円
+    handle_profile = 
+        concat( // 下から上への直線
+            [ [0, -inner_r], [0, inner_r] ],
+            [ for (a = [90 : -1 : -90])
+                [handle_inner_width/2 + inner_r * cos(a), inner_r * sin(a)] ],
+            [ [handle_inner_width, -inner_r] ]
+        );
+    // 外周も同様にオフセット
+    handle_outer_profile = 
+        concat(
+            [ [0, -outer_r], [0, outer_r] ],
+            [ for (a = [90 : -1 : -90]) 
+                  [handle_inner_width/2 + outer_r * cos(a), outer_r * sin(a)] ],
+            [ [handle_inner_width, -outer_r] ]
+        );
+    // 2Dハンドル断面
+    polygon(
+        concat(
+            handle_outer_profile,
+            [for (i = [len(handle_profile)-1 : -1 : 0]) handle_profile[i]] // 内周を逆順で結ぶ
+        )
+    );
+}
+
+// 実体化
+union() {
+    mug_body();
+
+    // 取手: X軸方向に平行で、マグ高さ中央に配置
+    translate([mug_radius, 0, handle_center_z])  // 本体外周に密着
+        rotate([90,0,0])  // 平面をY-Zに（マグ円筒に垂直に）
+        linear_extrude(height=handle_inner_width, center=true)
+            handle_D();
+}
+```

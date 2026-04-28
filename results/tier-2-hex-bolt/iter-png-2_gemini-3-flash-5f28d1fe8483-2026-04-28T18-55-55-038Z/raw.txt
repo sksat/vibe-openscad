@@ -1,0 +1,18 @@
+ご提示いただいたレンダリング結果を確認しました。形状、寸法、および配置（頭部が Z≧0、軸部が Z≦0）は、当初のプロンプトの指示通りに正しく実装されています。
+
+修正の必要はないため、同じコードを再度出力します。
+
+```openscad
+// M8 Hex Bolt (Simplified model)
+$fn = 64;
+
+// 頭部: 六角柱 (Across-flats 13mm, Height 5.3mm)
+// OpenSCADのcylinder($fn=6)において d は対角距離になるため、
+// 対辺距離を13mmにするには 13/cos(30) を直径に指定します。
+cylinder(h = 5.3, d = 13 / cos(30), $fn = 6);
+
+// シャンク: 円柱 (Diameter 8mm, Length 30mm)
+// z=0 から負の方向 (-30) へ伸ばします。
+translate([0, 0, -30])
+    cylinder(h = 30, d = 8);
+```

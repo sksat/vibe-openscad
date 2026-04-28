@@ -1,0 +1,57 @@
+$fn = 60;
+
+module countersink_hole() {
+    // 貫通穴 (d=3.2)
+    translate([0, 0, -5]) cylinder(h=10, d=3.2);
+    // 皿穴テーパ (深さ1mm, d1=3.2, d2=6.0)
+    translate([0, 0, 0]) cylinder(h=1.01, d1=3.2, d2=6.0);
+    // テーパ上部のクリアランス
+    translate([0, 0, 1]) cylinder(h=5, d=6.0);
+}
+
+module left_leaf() {
+    difference() {
+        union() {
+            // 左板 (x < 0)
+            translate([-25, 0, -1]) cube([25, 30, 2]);
+            // 左板のknuckle (外側2個 + 中央1個)
+            translate([0, 0, 0]) rotate([-90, 0, 0]) cylinder(h=6, d=8);
+            translate([0, 12, 0]) rotate([-90, 0, 0]) cylinder(h=6, d=8);
+            translate([0, 24, 0]) rotate([-90, 0, 0]) cylinder(h=6, d=8);
+        }
+        // ピン軸用穴 (内径4.6mm)
+        translate([0, -2, 0]) rotate([-90, 0, 0]) cylinder(h=34, d=4.6);
+        // ネジ穴 (M3用皿穴)
+        for (y = [7, 15, 23]) {
+            translate([-15, y, 0]) countersink_hole();
+        }
+    }
+}
+
+module right_leaf() {
+    difference() {
+        union() {
+            // 右板 (x > 0)
+            translate([0, 0, -1]) cube([25, 30, 2]);
+            // 右板のknuckle (中間2個)
+            translate([0, 6, 0]) rotate([-90, 0, 0]) cylinder(h=6, d=8);
+            translate([0, 18, 0]) rotate([-90, 0, 0]) cylinder(h=6, d=8);
+        }
+        // ピン軸用穴 (内径4.6mm)
+        translate([0, -2, 0]) rotate([-90, 0, 0]) cylinder(h=34, d=4.6);
+        // ネジ穴 (M3用皿穴)
+        for (y = [7, 15, 23]) {
+            translate([15, y, 0]) countersink_hole();
+        }
+    }
+}
+
+module hinge_pin() {
+    // ピン軸 (直径4mm, 長さ32mm, 両端1mm突出)
+    translate([0, -1, 0]) rotate([-90, 0, 0]) cylinder(h=32, d=4);
+}
+
+// 組み立て配置
+color("LightSteelBlue") left_leaf();
+color("SteelBlue") right_leaf();
+color("Silver") hinge_pin();

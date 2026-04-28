@@ -1,0 +1,38 @@
+{
+  "runId": "iter-png-2_gpt-5-codex-f530a992577e-2026-04-28T19-12-20-971Z",
+  "taskId": "tier-2-l-bracket",
+  "matrixId": "iter-png-2/gpt-5-codex",
+  "signature": "f530a992577ef9b2ab366c5850bfaf0a5594d7e8c52a92036d8b38ea918c5776",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "b20dcf3dd07e532496944d76485b954e0ab614f3cda1919fee5dc406f59b3ea5",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5-codex",
+      "iterateFrom": "iter-png-1/gpt-5-codex",
+      "iteration": {
+        "kind": "render-png-feedback"
+      },
+      "parentSignature": "195cf120b590ea4578719ce1ddae9aefcc8b0373a9437c67fe8beaf7d661a547"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5-codex",
+  "harness": {
+    "kind": "bare",
+    "iteration": {
+      "kind": "render-png-feedback"
+    }
+  },
+  "status": "no_code",
+  "timing": {
+    "totalMs": 374657
+  },
+  "createdAt": "2026-04-28T19:12:20.971Z",
+  "gitCommit": "781e6c683dda9349da96561361d4da5f2c54975e",
+  "error": "model returned empty response (stopReason=in_progress)",
+  "parentRunId": "iter-png-1_gpt-5-codex-195cf120b590-2026-04-28T19-06-06-261Z"
+}

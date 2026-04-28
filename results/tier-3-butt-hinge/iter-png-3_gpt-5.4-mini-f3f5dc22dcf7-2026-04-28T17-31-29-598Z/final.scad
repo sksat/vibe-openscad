@@ -1,0 +1,82 @@
+$fn = 96;
+
+// Base dimensions
+leaf_len = 30;          // along Y
+leaf_w   = 25;          // along X
+leaf_th  = 2;           // along Z
+
+pin_d    = 4;
+pin_len  = 32;          // extends 1mm beyond knuckles at both ends
+
+knuckle_od = 8;
+knuckle_id = 4.6;
+knuckle_len = 6;        // 30mm / 5
+
+m3_through_d = 3.2;
+m3_csk_top_d = 6;
+m3_csk_depth = 1;
+
+// Open 180° layout:
+// leaves are coplanar in Z, and separated on X so their free edges point away
+// from the hinge axis. Hinge axis is along Y at X=0.
+left_leaf_center_x  = -(pin_len/2 + leaf_w/2);
+right_leaf_center_x =  (pin_len/2 + leaf_w/2);
+
+left_knuckle_y  = [-12, 0, 12];   // 3 segments: 1,3,5
+right_knuckle_y = [-6, 6];        // 2 segments: 2,4
+
+// M3 holes: 3 per leaf, spaced 8mm along Y, on the side away from knuckles.
+hole_y = [-8, 0, 8];
+
+module leaf_plate(side = -1) {
+    translate([side * (pin_len/2 + leaf_w/2), 0, 0])
+        cube([leaf_w, leaf_len, leaf_th], center=true);
+}
+
+module knuckle_segment(yc) {
+    translate([0, yc, 0])
+    difference() {
+        cylinder(d=knuckle_od, h=knuckle_len, center=true);
+        cylinder(d=knuckle_id, h=knuckle_len + 2, center=true);
+    }
+}
+
+module pin_axis() {
+    rotate([90, 0, 0])
+        cylinder(d=pin_d, h=pin_len, center=true);
+}
+
+module leaf_with_knuckles(side = -1) {
+    leaf_x = side < 0 ? left_leaf_center_x : right_leaf_center_x;
+    knuckles = side < 0 ? left_knuckle_y : right_knuckle_y;
+    hole_x = side < 0 ? (leaf_x + leaf_w/2 - 0.8) : (leaf_x - leaf_w/2 + 0.8);
+    csk_dir = side < 0 ? 1 : -1;
+
+    difference() {
+        union() {
+            translate([leaf_x, 0, 0])
+                cube([leaf_w, leaf_len, leaf_th], center=true);
+
+            for (yy = knuckles)
+                knuckle_segment(yy);
+        }
+
+        // Through holes
+        for (yy = hole_y) {
+            translate([hole_x, yy, 0])
+                rotate([0, 90, 0])
+                    cylinder(d=m3_through_d, h=leaf_w + 2, center=true);
+
+            // Countersink from the outer face of the leaf
+            translate([leaf_x + csk_dir * leaf_w/2, yy, 0])
+                rotate([0, 90, 0])
+                    cylinder(d1=m3_csk_top_d, d2=m3_through_d, h=m3_csk_depth, center=false);
+        }
+    }
+}
+
+union() {
+    leaf_with_knuckles(-1);
+    leaf_with_knuckles(+1);
+    pin_axis();
+}

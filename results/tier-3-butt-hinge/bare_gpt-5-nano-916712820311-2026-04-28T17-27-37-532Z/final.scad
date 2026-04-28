@@ -1,0 +1,109 @@
+// OpenSCAD: 2 leaves + pin axis butt hinge (180° open state)
+
+// Dimensions (mm)
+leaf_w  = 25;
+leaf_h  = 30;
+leaf_t  = 2;
+
+knuckle_d = 8;     // outer knuckle diameter
+knuckle_r = knuckle_d/2;
+pin_d     = 4;     // pin diameter
+pin_r     = pin_d/2;
+hole_d    = 4.6;   // inner hole diameter for knuckle/pin clearance (approx)
+hole_r    = hole_d/2;
+
+// Arrays defining knuckle positions along Y (as described)
+left_knuckles_y  = [-12, 0, 12];   // 3 knuckles on left leaf (X ~ -4)
+right_knuckles_y = [-6, 6];       // 2 knuckles on right leaf (X ~ +4)
+
+left_holes_y  = [-12, 0, 12];      // interleaved knuckle holes on left (Y positions)
+right_holes_y = [-6, 6];            // interleaved knuckle holes on right (Y positions)
+
+// Base left leaf (X negative side)
+module left_leaf() {
+    difference() {
+        // Base plate for left leaf: X from -25 to 0, Y from -15 to 15, Z from 0 to 2
+        translate([-25, -15, 0])
+            cube([25, 30, 2], center = false);
+
+        // Left knuckles: cylindrical bosses (outer diameter 8 mm) along Y
+        for (y = left_knuckles_y) {
+            translate([-4, y, 1])
+                rotate([90, 0, 0])
+                    cylinder(h = 30, r = knuckle_r, center = true);
+        }
+
+        // Holes for pin along Y (inner diameter 4.6 mm)
+        for (y = left_holes_y) {
+            translate([0, y, 0])
+                rotate([90, 0, 0])
+                    cylinder(h = 30, r = hole_r, center = true);
+        }
+
+        // M3 mounting holes (approximate via simple through-hole cylinders)
+        // 3 holes with 8 mm pitch along Y; using through holes (simplified)
+        for (y = [-12, -4, 4]) {
+            translate([0, y, 0])
+                rotate([90, 0, 0])
+                    cylinder(h = 30, r = 1.6, center = true);
+        }
+    }
+}
+
+// Base right leaf (X positive side)
+module right_leaf() {
+    difference() {
+        // Base plate for right leaf: X from 0 to 25, Y -15 to 15, Z 0 to 2
+        translate([0, -15, 0])
+            cube([25, 30, 2], center = false);
+
+        // Right knuckles: cylindrical bosses along Y
+        for (y = right_knuckles_y) {
+            translate([4, y, 1])
+                rotate([90, 0, 0])
+                    cylinder(h = 30, r = knuckle_r, center = true);
+        }
+
+        // Holes for pin along Y (inner diameter 4.6 mm)
+        for (y = right_holes_y) {
+            translate([0, y, 0])
+                rotate([90, 0, 0])
+                    cylinder(h = 30, r = hole_r, center = true);
+        }
+
+        // M3 mounting holes (simplified)
+        for (y = [-6, 0, 6]) {
+            translate([0, y, 0])
+                rotate([90, 0, 0])
+                    cylinder(h = 30, r = 1.6, center = true);
+        }
+    }
+}
+
+// Pin axis (along Y, centered at origin, length 32 mm to protrude 1 mm past each leaf)
+module pin_axis() {
+    // Cylinder along Y by rotating a Z-axis cylinder
+    rotate([0, 0, 0])
+        rotate([90, 0, 0])
+            cylinder(h = 32, r = pin_r, center = true);
+}
+
+// Assemble hinge in 180° open state:
+// - left leaf at X < 0
+// - right leaf rotated 180° around hinge axis (Y) to lie in the same plane as left leaf (open state)
+module hinge_open_state() {
+    union() {
+        left_leaf();
+        // Opened state: rotate the right leaf around hinge axis (Y) by 180°
+        rotate([0, 180, 0])
+            right_leaf();
+        // Pin passes through both leaves
+        pin_axis();
+    }
+}
+
+// Increase resolution for circles/arcs if desired
+$fn = 60;
+
+// Output final model
+hinge_open_state();

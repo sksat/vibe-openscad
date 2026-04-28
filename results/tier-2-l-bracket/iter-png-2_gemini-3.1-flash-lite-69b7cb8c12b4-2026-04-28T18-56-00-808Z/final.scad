@@ -1,0 +1,49 @@
+// パラメータ設定
+width = 50;
+depth = 40;
+height = 40;
+thickness = 3;
+
+hole_dia = 4.5;
+cs_dia = 8.0;
+cs_depth = 2.0;
+
+// 皿穴モジュール
+module countersunk_hole() {
+    union() {
+        // 貫通穴
+        cylinder(d = hole_dia, h = thickness * 3, center = true);
+        // 皿座面（板の厚みに対して片側に配置）
+        translate([0, 0, thickness/2 - cs_depth/2])
+            cylinder(d = cs_dia, h = cs_depth, center = true, $fn = 32);
+    }
+}
+
+module l_bracket() {
+    difference() {
+        union() {
+            // 水平面 (Y方向に40mm)
+            cube([width, depth, thickness]);
+            // 垂直面 (Z方向に40mm)
+            cube([width, thickness, height]);
+        }
+
+        // 水平面の穴
+        // 縁(Y=40)から10mm内側なのでY=30、左右対称に配置
+        for (x = [-10, 10]) {
+            translate([width / 2 + x, 30, 0])
+                countersunk_hole();
+        }
+
+        // 垂直面の穴
+        // 縁(Z=40)から10mm内側なのでZ=30、左右対称に配置
+        for (x = [-10, 10]) {
+            translate([width / 2 + x, 0, 30])
+                rotate([90, 0, 0])
+                    countersunk_hole();
+        }
+    }
+}
+
+$fn = 64;
+l_bracket();

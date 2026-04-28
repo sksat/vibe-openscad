@@ -1,0 +1,38 @@
+{
+  "runId": "bare-low_gpt-5.5-d523a5f1bf25-2026-04-28T18-53-25-094Z",
+  "taskId": "tier-2-l-bracket",
+  "matrixId": "bare-low/gpt-5.5",
+  "signature": "d523a5f1bf25f93c4f9b9772dbecd82e4ed72f1d9cee61a0f26810d84cb0294f",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "b20dcf3dd07e532496944d76485b954e0ab614f3cda1919fee5dc406f59b3ea5",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5.5-2026-04-23",
+      "modelOptions": {
+        "reasoning": {
+          "effort": "low"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5.5-2026-04-23",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 24662
+  },
+  "tokens": {
+    "input": 294,
+    "output": 1289
+  },
+  "cost_usd": 0.0132575,
+  "createdAt": "2026-04-28T18:53:25.094Z",
+  "gitCommit": "781e6c683dda9349da96561361d4da5f2c54975e"
+}

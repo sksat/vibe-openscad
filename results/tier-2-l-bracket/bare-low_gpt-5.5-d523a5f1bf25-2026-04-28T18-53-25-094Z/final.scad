@@ -1,0 +1,50 @@
+$fn = 96;
+
+width = 50;
+depth = 40;
+height = 40;
+thickness = 3;
+
+hole_d = 4.5;
+csk_d = 8;
+csk_depth = 2;
+
+edge_offset = 10;
+
+hole_x = [
+    -width / 2 + edge_offset,
+     width / 2 - edge_offset
+];
+
+module horizontal_hole(x, y) {
+    translate([x, y, -thickness - 1])
+        cylinder(h = thickness + 2, d = hole_d);
+
+    translate([x, y, -thickness])
+        cylinder(h = csk_depth, d1 = csk_d, d2 = hole_d);
+}
+
+module vertical_hole(x, z) {
+    translate([x, -thickness - 1, z])
+        rotate([-90, 0, 0])
+            cylinder(h = thickness + 2, d = hole_d);
+
+    translate([x, -thickness, z])
+        rotate([-90, 0, 0])
+            cylinder(h = csk_depth, d1 = csk_d, d2 = hole_d);
+}
+
+difference() {
+    union() {
+        translate([-width / 2, 0, -thickness])
+            cube([width, depth, thickness]);
+
+        translate([-width / 2, -thickness, 0])
+            cube([width, thickness, height]);
+    }
+
+    for (x = hole_x) {
+        horizontal_hole(x, depth / 2);
+        vertical_hole(x, height / 2);
+    }
+}

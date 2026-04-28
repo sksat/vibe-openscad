@@ -1,0 +1,37 @@
+```openscad
+// マグカップ本体とハンドル
+$fn = 100;
+
+// パラメータ
+outer_d = 80;
+inner_d = 70;
+height_body = 90;
+thickness_bottom = 6;
+handle_gap_w = 25;    // 指入れ幅
+handle_gap_h = 30;    // 指入れ高さ
+handle_th = 8;        // 取手肉厚
+handle_zpos = (height_body - handle_gap_h) / 2;  // 取手の底面Z位置
+handle_center_x = outer_d/2 + handle_gap_w + handle_th; // 半円中心X
+
+union() {
+  // 本体外側
+  cylinder(d = outer_d, h = height_body);
+  // 飲み物入る中空部 (底厚みを残して上部をくり抜き)
+  translate([0, 0, thickness_bottom])
+    cylinder(d = inner_d, h = height_body - thickness_bottom);
+
+  // 取手（D字形、Z方向に厚みを持たせる）
+  translate([0, 0, handle_zpos]) rotate([0, 0, 90])  // Z方向が高さ
+    linear_extrude(height = handle_th) {
+      // 2次元断面：半円と角矩形の交差でD字型
+      intersection() {
+        // 外側半円
+        translate([handle_center_x, 0])
+          circle(r = handle_th, $fn = 100);
+        // 高さ制限
+        translate([handle_center_x-handle_th, -handle_gap_h/2])
+          square([handle_th*2, handle_gap_h]);
+      }
+    }
+}
+```

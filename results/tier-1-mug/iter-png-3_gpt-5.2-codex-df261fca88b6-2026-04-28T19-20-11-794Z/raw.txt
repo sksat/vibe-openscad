@@ -1,0 +1,39 @@
+```openscad
+$fn = 100;
+
+outer_d = 80;
+outer_r = outer_d / 2;
+height = 100;
+wall = 4;
+bottom = 6;
+
+handle_R = 12;  // major radius
+handle_r = 4;   // tube radius
+overlap = 2;
+handle_offset = outer_r + handle_R + handle_r - overlap;
+
+module mug_body() {
+    difference() {
+        cylinder(h=height, r=outer_r);
+        translate([0,0,bottom])
+            cylinder(h=height-bottom+1, r=outer_r-wall);
+    }
+}
+
+module torus(R, r) {
+    rotate_extrude()
+        translate([R, 0, 0])
+            circle(r);
+}
+
+module handle() {
+    translate([handle_offset, 0, height/2])
+        rotate([90, 0, 0])
+            torus(handle_R, handle_r);
+}
+
+union() {
+    mug_body();
+    handle();
+}
+```

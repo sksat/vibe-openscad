@@ -1,0 +1,68 @@
+// OpenSCAD code for a small butt hinge (180° open)
+
+$fn = 64;
+
+// Parameters
+leaf_length = 30;    // along Y
+leaf_width  = 25;    // along X from hinge axis
+leaf_thick  = 2;
+knuckle_od  = 8;
+knuckle_id  = 4.6;
+knuckle_h   = leaf_thick;
+knuckle_pitch = leaf_length/5; // 6mm
+pin_d       = 4;
+pin_len     = leaf_length + 2; // 32mm
+csk_d       = 6;
+csk_depth   = 1;
+hole_d      = 3.2;
+hole_pitch  = 8;
+
+// Leaf module: side = -1 for left, +1 for right
+module leaf(side = 1) {
+    // Board
+    translate([ (side==1?0: -leaf_width), -leaf_length/2, 0 ])
+        cube([leaf_width, leaf_length, leaf_thick]);
+    // Knuckles
+    yoffs = [-12, -6, 0, 6, 12];
+    for (i = [0:4]) {
+        use = (side==-1 && (i==0 || i==2 || i==4)) || (side==1 && (i==1 || i==3));
+        if (use) {
+            translate([0, yoffs[i], 0])
+                knuckle();
+        }
+    }
+    // Countersunk holes on far edge
+    for (i=[-1,0,1]) {
+        y = i * hole_pitch;
+        x = side==1 ? leaf_width : -leaf_width;
+        // Through hole
+        translate([x, y, 0])
+            rotate([90,0,0])
+            cylinder(d=hole_d, h=leaf_thick+1, center=true);
+        // Countersink (subtractive)
+        translate([x, y, leaf_thick - csk_depth])
+            rotate([90,0,0])
+            cylinder(h=csk_depth, r1=csk_d/2, r2=hole_d/2, center=false);
+    }
+}
+
+// Knuckle as hollow cylinder
+module knuckle() {
+    difference() {
+        cylinder(d=knuckle_od, h=knuckle_h, center=false);
+        translate([0,0,0])
+            cylinder(d=knuckle_id, h=knuckle_h+0.1, center=false);
+    }
+}
+
+// Pin
+module pin() {
+    translate([0, 0, leaf_thick/2])
+        rotate([0,0,0])
+        cylinder(d=pin_d, h=pin_len, center=true);
+}
+
+// Assemble
+leaf(-1);
+leaf(1);
+pin();

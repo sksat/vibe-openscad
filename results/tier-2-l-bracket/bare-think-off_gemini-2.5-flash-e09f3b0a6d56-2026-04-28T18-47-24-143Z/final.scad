@@ -1,0 +1,58 @@
+// L字金具の寸法
+flange_width = 50;  // 幅 (X方向)
+horizontal_flange_depth = 40; // 水平フランジの奥行き (Y方向)
+vertical_flange_height = 40;  // 垂直フランジの高さ (Z方向)
+thickness = 3;      // 板厚
+
+// 皿穴の寸法 (M4用)
+hole_diameter = 4.5;    // 貫通穴の直径
+countersink_diameter = 8; // 皿座面の直径
+countersink_depth = 2;  // 皿座面の深さ
+
+// 皿穴の位置 (各面の縁から10mm内側)
+hole_offset_from_edge = 10;
+hole_spacing_x = flange_width - (2 * hole_offset_from_edge); // 左右の穴の間隔
+hole_pos_x = flange_width / 2; // X軸の中心
+
+module L_bracket() {
+    // 水平フランジ
+    cube([flange_width, horizontal_flange_depth, thickness]);
+
+    // 垂直フランジ
+    translate([0, thickness, 0]) {
+        rotate([90, 0, 0]) {
+            cube([flange_width, vertical_flange_height, thickness]);
+        }
+    }
+}
+
+module countersunk_hole() {
+    cylinder(h = thickness + 0.1, d = hole_diameter, $fn = 32);
+    translate([0, 0, thickness - countersink_depth]) {
+        cylinder(h = countersink_depth + 0.1, d1 = countersink_diameter, d2 = hole_diameter, $fn = 32);
+    }
+}
+
+difference() {
+    L_bracket();
+
+    // 水平フランジの皿穴
+    for (i = [-1, 1]) {
+        translate([hole_pos_x + i * (hole_spacing_x / 2),
+                   horizontal_flange_depth - hole_offset_from_edge,
+                   0]) {
+            countersunk_hole();
+        }
+    }
+
+    // 垂直フランジの皿穴
+    for (i = [-1, 1]) {
+        translate([hole_pos_x + i * (hole_spacing_x / 2),
+                   0, // Y方向は厚み分ずらす
+                   vertical_flange_height - hole_offset_from_edge]) {
+            rotate([90, 0, 0]) { // 皿座面が外側を向くように回転
+                countersunk_hole();
+            }
+        }
+    }
+}

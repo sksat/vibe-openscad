@@ -1,0 +1,66 @@
+```openscad
+$fn = 128;
+
+// Mug body parameters
+outer_height = 90;
+outer_radius = 40;
+inner_radius = 35;
+bottom_thickness = 6;
+
+// Handle parameters
+handle_wall = 5;
+handle_inner_height = 30;
+handle_inner_width = 25;
+handle_depth = 18;
+
+module mug_body() {
+    difference() {
+        cylinder(h = outer_height, r = outer_radius);
+        translate([0, 0, bottom_thickness])
+            cylinder(h = outer_height - bottom_thickness, r = inner_radius);
+    }
+}
+
+module semicircle(r) {
+    intersection() {
+        circle(r = r);
+        translate([0, -r]) square([r, 2 * r]);
+    }
+}
+
+module d_profile(rect_w, height, radius) {
+    union() {
+        translate([0, -height / 2])
+            square([rect_w, height]);
+        translate([rect_w, 0])
+            semicircle(radius);
+    }
+}
+
+module mug_handle() {
+    inner_r = handle_inner_height / 2;
+    outer_h = handle_inner_height + 2 * handle_wall;
+    outer_r = outer_h / 2;
+    inner_rect_w = handle_inner_width - inner_r;
+    outer_total_w = handle_inner_width + 2 * handle_wall;
+    outer_rect_w = outer_total_w - outer_r;
+
+    module handle_2d() {
+        difference() {
+            d_profile(outer_rect_w, outer_h, outer_r);
+            translate([handle_wall, 0])
+                d_profile(inner_rect_w, handle_inner_height, inner_r);
+        }
+    }
+
+    translate([outer_radius - handle_wall, 0, outer_height / 2])
+        rotate([90, 0, 0])
+            linear_extrude(height = handle_depth, center = true, convexity = 10)
+                handle_2d();
+}
+
+union() {
+    mug_body();
+    mug_handle();
+}
+```

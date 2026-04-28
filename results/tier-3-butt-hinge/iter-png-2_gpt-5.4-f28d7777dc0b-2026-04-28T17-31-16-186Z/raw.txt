@@ -1,0 +1,99 @@
+```openscad
+$fn = 96;
+
+// ===== Parameters =====
+leaf_len = 30;          // Y direction
+leaf_w   = 25;          // X direction from hinge axis outward
+leaf_t   = 2;           // Z thickness
+
+pin_d = 4;
+pin_r = pin_d / 2;
+pin_len = 32;           // 30 + 1 mm each end exposed
+
+knuckle_od = 8;
+knuckle_or = knuckle_od / 2;
+knuckle_id = 4.6;       // pin + 0.3 clearance
+knuckle_ir = knuckle_id / 2;
+knuckle_seg = 6;        // 30 / 5
+
+through_d = 3.2;
+csk_d = 6.0;
+csk_depth = 1.0;
+
+screw_pitch = 8;
+screw_y = [7, 15, 23];
+
+// Screw columns placed away from knuckle side
+screw_x_left  = -18;
+screw_x_right =  18;
+
+// Plate faces are coplanar at z=0 in the 180° open state
+leaf_z0 = -leaf_t;
+
+// ===== Modules =====
+module pin_axis() {
+    translate([0, -1, 0])
+        rotate([-90, 0, 0])
+            cylinder(h = pin_len, r = pin_r);
+}
+
+module knuckle_segment(y0) {
+    translate([0, y0, 0])
+        rotate([-90, 0, 0])
+            difference() {
+                cylinder(h = knuckle_seg, r = knuckle_or);
+                cylinder(h = knuckle_seg, r = knuckle_ir);
+            }
+}
+
+module countersunk_hole(x, y) {
+    translate([x, y, leaf_z0]) {
+        // through hole
+        cylinder(h = leaf_t + 0.02, d = through_d);
+
+        // countersink from top flat face (z=0 side)
+        translate([0, 0, leaf_t - csk_depth])
+            cylinder(h = csk_depth + 0.02, d1 = through_d, d2 = csk_d);
+    }
+}
+
+module leaf_plate(side="left") {
+    if (side == "left") {
+        translate([-leaf_w, 0, leaf_z0])
+            cube([leaf_w, leaf_len, leaf_t]);
+    } else {
+        translate([0, 0, leaf_z0])
+            cube([leaf_w, leaf_len, leaf_t]);
+    }
+}
+
+module left_leaf() {
+    difference() {
+        union() {
+            leaf_plate("left");
+            knuckle_segment(0);
+            knuckle_segment(12);
+            knuckle_segment(24);
+        }
+        for (yy = screw_y)
+            countersunk_hole(screw_x_left, yy);
+    }
+}
+
+module right_leaf() {
+    difference() {
+        union() {
+            leaf_plate("right");
+            knuckle_segment(6);
+            knuckle_segment(18);
+        }
+        for (yy = screw_y)
+            countersunk_hole(screw_x_right, yy);
+    }
+}
+
+// ===== Assembly =====
+left_leaf();
+right_leaf();
+pin_axis();
+```

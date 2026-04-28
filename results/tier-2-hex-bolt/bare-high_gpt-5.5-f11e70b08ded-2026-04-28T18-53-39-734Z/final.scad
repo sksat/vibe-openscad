@@ -1,0 +1,10 @@
+$fn = 64;
+
+union() {
+    // Hex head: across-flats 13 mm, height 5.3 mm
+    cylinder(h = 5.3, r = 13 / sqrt(3), $fn = 6);
+
+    // Shank: diameter 8 mm, length 30 mm, extending in -Z
+    translate([0, 0, -30])
+        cylinder(h = 30, d = 8);
+}

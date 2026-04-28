@@ -1,0 +1,116 @@
+```openscad
+// L-bracket dimensions
+width = 50;
+depth = 40;
+height = 40;
+thickness = 3;
+
+// Hole dimensions
+hole_diameter = 4.5;
+countersink_diameter = 8;
+countersink_depth = 2;
+hole_offset_from_edge = 10;
+hole_spacing_factor = 0.5; // For spacing holes symmetrically on each flange
+
+module l_bracket() {
+    // Base flange (horizontal)
+    cube([width, depth, thickness]);
+
+    // Vertical flange
+    translate([0, 0, thickness])
+    cube([width, thickness, height]);
+}
+
+module countersink_hole(hole_pos_x, hole_pos_y, hole_pos_z, normal_vector) {
+    translate(hole_pos_x) {
+        // Main hole
+        cylinder(h = thickness * 2, r = hole_diameter / 2, center = true);
+
+        // Countersink
+        linear_extrude(height = countersink_depth, convexity = 10) {
+            difference() {
+                circle(r = countersink_diameter / 2);
+                circle(r = hole_diameter / 2);
+            }
+        }
+    }
+}
+
+module create_holes() {
+    // Holes on the horizontal flange (facing +Z)
+    // Position them on the center line of the width, and offset from the edges of depth
+    hole_y_offset = depth / 2 - hole_offset_from_edge;
+    hole_center_x = width / 2;
+    hole_spacing_y = depth * hole_spacing_factor;
+
+    // Left hole on horizontal flange
+    translate([hole_center_x, hole_y_offset - hole_spacing_y/2, thickness])
+    rotate([90, 0, 0]) // Rotate to face upwards
+    cylinder(h = thickness * 2, r = countersink_diameter / 2, center = true);
+
+    // Right hole on horizontal flange
+    translate([hole_center_x, hole_y_offset + hole_spacing_y/2, thickness])
+    rotate([90, 0, 0]) // Rotate to face upwards
+    cylinder(h = thickness * 2, r = countersink_diameter / 2, center = true);
+
+    // Holes on the vertical flange (facing +Y)
+    // Position them on the center line of the width, and offset from the edges of height
+    hole_z_offset = height / 2 - hole_offset_from_edge;
+    hole_spacing_z = height * hole_spacing_factor;
+
+    // Left hole on vertical flange
+    translate([hole_center_x, thickness, thickness + hole_z_offset - hole_spacing_z/2])
+    rotate([0, 90, 0]) // Rotate to face outwards
+    cylinder(h = width * 2, r = countersink_diameter / 2, center = true);
+
+    // Right hole on vertical flange
+    translate([hole_center_x, thickness, thickness + hole_z_offset + hole_spacing_z/2])
+    rotate([0, 90, 0]) // Rotate to face outwards
+    cylinder(h = width * 2, r = countersink_diameter / 2, center = true);
+}
+
+module l_bracket_with_holes() {
+    difference() {
+        l_bracket();
+
+        // Cut the holes
+        // Horizontal flange holes
+        translate([width/2, depth/2 - hole_offset_from_edge, thickness])
+        rotate([90, 0, 0])
+        cylinder(h = thickness + 1, r = hole_diameter/2, center = true);
+
+        translate([width/2, depth/2 + hole_offset_from_edge, thickness])
+        rotate([90, 0, 0])
+        cylinder(h = thickness + 1, r = hole_diameter/2, center = true);
+
+        // Vertical flange holes
+        translate([width/2, thickness, height/2 - hole_offset_from_edge])
+        rotate([0, 90, 0])
+        cylinder(h = thickness + 1, r = hole_diameter/2, center = true);
+
+        translate([width/2, thickness, height/2 + hole_offset_from_edge])
+        rotate([0, 90, 0])
+        cylinder(h = thickness + 1, r = hole_diameter/2, center = true);
+
+        // Countersink cuts on the horizontal flange
+        translate([width/2, depth/2 - hole_offset_from_edge, thickness])
+        rotate([90, 0, 0])
+        cylinder(h = countersink_depth + 0.1, r = countersink_diameter/2, center = true);
+
+        translate([width/2, depth/2 + hole_offset_from_edge, thickness])
+        rotate([90, 0, 0])
+        cylinder(h = countersink_depth + 0.1, r = countersink_diameter/2, center = true);
+
+        // Countersink cuts on the vertical flange
+        translate([width/2, thickness, height/2 - hole_offset_from_edge])
+        rotate([0, 90, 0])
+        cylinder(h = countersink_depth + 0.1, r = countersink_diameter/2, center = true);
+
+        translate([width/2, thickness, height/2 + hole_offset_from_edge])
+        rotate([0, 90, 0])
+        cylinder(h = countersink_depth + 0.1, r = countersink_diameter/2, center = true);
+    }
+}
+
+l_bracket_with_holes();
+```

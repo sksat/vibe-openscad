@@ -1,0 +1,33 @@
+{
+  "runId": "bare_gpt-5.4-mini-1d2aad32f24f-2026-04-28T17-21-32-188Z",
+  "taskId": "tier-3-butt-hinge",
+  "matrixId": "bare/gpt-5.4-mini",
+  "signature": "1d2aad32f24f62310b6aad57ef2d08de07d93887a49bf6a67c6566e3f391f68e",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dd7199030a8827a181914869189fc45a2e5637023f0c8c59532d442557036e7c",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5.4-mini-2026-03-17"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5.4-mini-2026-03-17",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 6608
+  },
+  "tokens": {
+    "input": 592,
+    "output": 789
+  },
+  "cost_usd": 0.0026038000000000003,
+  "createdAt": "2026-04-28T17:21:32.189Z",
+  "gitCommit": "be87c9f2adaf51be5e9ccb7f63eb95c7bc456929"
+}

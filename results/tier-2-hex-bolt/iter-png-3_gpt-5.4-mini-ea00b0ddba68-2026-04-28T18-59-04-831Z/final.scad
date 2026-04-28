@@ -1,0 +1,17 @@
+$fn = 64;
+
+module m8_hex_bolt() {
+    union() {
+        // Head: hexagonal prism, across-flats 13mm, height 5.3mm
+        // Use cylinder with $fn=6; radius = AF / (2*cos(30))
+        translate([0, 0, 0])
+            cylinder(h = 5.3, r = 13 / (2 * cos(30)), $fn = 6);
+
+        // Shank: cylindrical shaft, diameter 8mm, length 30mm
+        // Head bottom at z=0, shank extends toward negative Z.
+        translate([0, 0, -30])
+            cylinder(h = 30, d = 8);
+    }
+}
+
+m8_hex_bolt();

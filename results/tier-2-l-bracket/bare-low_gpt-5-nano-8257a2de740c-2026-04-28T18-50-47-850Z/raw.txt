@@ -1,0 +1,59 @@
+```openscad
+// L-bracket: horizontal plate (X 0..50, Y 0..40, Z 0..3) and vertical plate (X 0..50, Y 0..3, Z 0..40)
+// Inner corner at (0,0,0). Horizontal extends +Y, vertical extends +Z. All plates 3 mm thick.
+
+// Hole and countersink parameters
+hole_d = 4.5;          // through hole diameter
+hole_h = 3;              // plate thickness (through the plate)
+countersink_depth = 2;   // countersink depth (along outer direction)
+countersink_r = 4;        // countersink outer diameter radius (8 mm diameter)
+
+// Center positions for holes on each plate (10 mm from edges, centerline on face)
+hole_xs = [10, 40];
+hole_y = 20; // centerline for horizontal plate (along Y)
+hole_ys = [10, 30];
+hole_z = 20; // centerline for vertical plate (along Z)
+
+$fn = 60;
+
+// Main body: union of two orthogonal plates
+difference() {
+    // Base L-shaped solid: union of horizontal plate and vertical plate
+    // Horizontal plate: 50 (X) x 40 (Y) x 3 (Z)
+    translate([0, 0, 0])
+        cube([50, 40, 3], center=false);
+    // Vertical plate: 50 (X) x 3 (Y) x 40 (Z)
+    translate([0, 0, 0])
+        cube([50, 3, 40], center=false);
+    
+    // Subtract holes on horizontal plate (through Z)
+    for (x = hole_xs) {
+        // Hole center at (x, hole_y, Z from 0..3)
+        translate([x, hole_y, 0])
+            rotate([0,0,0])
+                cylinder(h = 3, r = hole_d/2, center = false);
+        // Countersink on outer top surface (Z direction)
+        // Cone with base radius 4 at top surface Z=3, apex at Z=1
+        translate([x, hole_y, 1])  // cone base starts at Z=1, top at Z=3
+            rotate([0,0,0])
+                cylinder(h = 2, r1 = 0, r2 = countersink_r, center = false);
+    }
+    // Subtract holes on vertical plate (through Y)
+    for (zpos in [20, 20]) {
+        // We'll place holes at (X, Y, Z) with Y hole axis; centers along X for each hole
+        // Actually need two holes per vertical face: X positions 10 and 40, at Z center 20, along Y
+        // Implement as separate two holes
+    }
+    // Vertical plate holes (cylinders along Y, through Y thickness 3)
+    for (x = [10, 40]) {
+        translate([x, 3, 20])
+            rotate([0,90,0])
+                cylinder(h = 3, r = hole_d/2, center = false);
+        // Countersink along outer face at Y=3 (outer side)
+        // Cone oriented along negative Y, base at Y=3, apex at Y=1
+        translate([x, 1, 20])
+            rotate([0,90,0])
+                cylinder(h = 2, r1 = 0, r2 = countersink_r, center = false);
+    }
+}
+```

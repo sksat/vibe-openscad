@@ -1,0 +1,39 @@
+{
+  "runId": "bare-high_gpt-5.4-nano-bdcd0b94b9b7-2026-04-28T18-48-59-158Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "bare-high/gpt-5.4-nano",
+  "signature": "bdcd0b94b9b7b4b8f05094b57cba7c152689795b0258555bd0373ebff3acad2c",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5.4-nano-2026-03-17",
+      "modelOptions": {
+        "reasoning": {
+          "effort": "high"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5.4-nano-2026-03-17",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "render_error",
+  "timing": {
+    "totalMs": 52002
+  },
+  "tokens": {
+    "input": 273,
+    "output": 7349
+  },
+  "cost_usd": 0.004429875,
+  "createdAt": "2026-04-28T18:48:59.158Z",
+  "gitCommit": "781e6c683dda9349da96561361d4da5f2c54975e",
+  "error": "openscad stl render failed (exit 1): ERROR: Parser error: syntax error in file ../../../../../tmp/render-WMbUOf/input.scad, line 47\nCan't parse file '/tmp/render-WMbUOf/input.scad'!\n\n"
+}

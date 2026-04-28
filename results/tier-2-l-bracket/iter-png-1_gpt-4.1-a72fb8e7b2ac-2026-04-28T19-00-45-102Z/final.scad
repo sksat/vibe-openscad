@@ -1,0 +1,63 @@
+// パラメータ
+bracket_w = 50;   // 幅
+bracket_h = 40;   // 奥行・高さ
+thickness = 3;
+
+// 皿穴パラメータ
+hole_d = 4.5;      // 貫通穴径
+cs_d = 8;          // 皿座径
+cs_depth = 2;      // 皿座深さ
+edge_offset = 10;  // フランジ面の縁から穴中心までの距離
+
+// 2つ穴のY/Z座標
+hole_pos = [edge_offset, bracket_h - edge_offset];
+
+// 板金L金具
+module flange_horizontal() {
+    // 原点コーナーから +Y 方向へ
+    difference() {
+        cube([bracket_w, bracket_h, thickness]);
+        // 穴: 原点からY方向へ広がる、皿頭外側（Z=0側が外面）
+        for (y = hole_pos)
+            translate([bracket_w/2, y, 0])
+                countersunk_hole("down");
+    }
+}
+module flange_vertical() {
+    // 原点から +Z方向へ
+    difference() {
+        cube([bracket_w, thickness, bracket_h]);
+        // 穴: 原点からZ方向へ広がる、皿頭外側（Y=0側が外面）
+        for (z = hole_pos)
+            translate([bracket_w/2, 0, z])
+                countersunk_hole("front");
+    }
+}
+
+// 皿穴モジュール
+// face: "down"=下向き外面, "front"=前向き外面
+module countersunk_hole(face) {
+    if (face == "down") {
+        // Z=0側が皿座
+        union() {
+            // 貫通穴
+            cylinder(d=hole_d, h=thickness+0.2, $fn=32);
+            // 皿座
+            cylinder(d=cs_d, h=cs_depth, $fn=32);
+        }
+    } else if (face == "front") {
+        // Y=0側が皿座
+        rotate([-90,0,0])
+        union() {
+            // 貫通穴
+            cylinder(d=hole_d, h=thickness+0.2, $fn=32);
+            // 皿座
+            cylinder(d=cs_d, h=cs_depth, $fn=32);
+        }
+    }
+}
+
+// 組立（原点内コーナー）
+flange_horizontal();
+translate([0, 0, thickness]) // 水平板上端に垂直板
+    flange_vertical();

@@ -1,0 +1,65 @@
+$fn = 160;
+
+outer_radius = 40;
+inner_radius = 35;
+mug_height = 90;
+bottom_thickness = 6;
+
+handle_depth = 14;
+handle_outer_radius = 32;
+handle_flat_depth = 10;
+handle_vertical_center = mug_height / 2;
+
+inner_gap_width = 25;
+inner_gap_height = 30;
+inner_gap_offset = 2;
+
+module mug_body() {
+    difference() {
+        cylinder(r = outer_radius, h = mug_height);
+        translate([0, 0, bottom_thickness])
+            cylinder(r = inner_radius, h = mug_height - bottom_thickness);
+    }
+}
+
+module handle_profile() {
+    union() {
+        translate([-handle_flat_depth, -handle_outer_radius])
+            square([handle_flat_depth, handle_outer_radius * 2]);
+        intersection() {
+            circle(r = handle_outer_radius);
+            translate([0, -handle_outer_radius])
+                square([handle_outer_radius, handle_outer_radius * 2]);
+        }
+    }
+}
+
+module handle_shape() {
+    linear_extrude(height = handle_depth, center = true)
+        handle_profile();
+}
+
+module handle_body() {
+    difference() {
+        handle_shape();
+        translate([
+            inner_gap_offset + inner_gap_width / 2,
+            0,
+            0
+        ])
+            cube(
+                [inner_gap_width, handle_depth + 4, inner_gap_height],
+                center = true
+            );
+    }
+}
+
+module handle() {
+    translate([outer_radius, 0, handle_vertical_center])
+        handle_body();
+}
+
+union() {
+    mug_body();
+    handle();
+}

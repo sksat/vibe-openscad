@@ -1,0 +1,46 @@
+// L-bracket with counterbored M4 holes
+// Dimensions
+w = 50;      // width (X)
+d = 40;      // depth of horizontal flange (Y)
+h = 40;      // height of vertical flange (Z)
+t = 3;       // thickness
+
+// Holes
+dh = 4.5;    // through hole diameter
+ds = 8;      // counterbore diameter
+sd = 2;      // counterbore depth
+edge = 10;   // hole offset from side edges along X
+
+$fn = 64;
+
+difference() {
+  // L-bracket body: inner corner at origin, horizontal +Y, vertical +Z
+  union() {
+    // Horizontal flange: X=w, Y=d, Z=t
+    cube([w, d, t], center=false);
+    // Vertical flange: X=w, Y=t, Z=h
+    cube([w, t, h], center=false);
+  }
+
+  // Horizontal flange holes (axis along Z), counterbore from top (+Z)
+  for (x = [edge, w - edge]) {
+    // Through hole
+    translate([x, d/2, -1])
+      cylinder(h = t + 2, d = dh);
+    // Counterbore from top face
+    translate([x, d/2, t - sd])
+      cylinder(h = sd, d = ds);
+  }
+
+  // Vertical flange holes (axis along Y), counterbore from outside face (+Y)
+  for (x = [edge, w - edge]) {
+    // Through hole (centered, long enough to pass through thickness)
+    translate([x, t/2, h/2])
+      rotate([90, 0, 0])
+        cylinder(h = t + 6, d = dh, center=true);
+    // Counterbore from outside face at Y = +t, depth sd toward -Y
+    translate([x, t - sd, h/2])
+      rotate([90, 0, 0])
+        cylinder(h = sd, d = ds, center=false);
+  }
+}

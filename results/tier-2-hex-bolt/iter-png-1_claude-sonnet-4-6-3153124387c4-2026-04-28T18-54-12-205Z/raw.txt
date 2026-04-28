@@ -1,0 +1,43 @@
+画像を確認しました。形状・寸法・配置ともに仕様通りです：
+
+- 六角頭部が上（+Z方向）に正しく配置されている
+- シャンクが下（-Z方向）に伸びている
+- 頭部底面が原点(z=0)に位置している
+- 六角形の向きも正常
+- 比率も M8 規格として妥当
+
+問題ないため、同じコードをそのまま出力します。
+
+```openscad
+// M8 Hex Bolt (simplified - no thread)
+// Head bottom face at z=0, shank extends in -Z direction
+
+// Parameters
+across_flats = 13;    // Head across-flats distance (mm)
+head_height  = 5.3;   // Head height (mm)
+shank_dia    = 8;     // Shank diameter (mm)
+shank_len    = 30;    // Shank length (mm)
+
+// Circumradius of regular hexagon from across-flats distance
+hex_r = across_flats / (2 * cos(30));  // = across_flats / sqrt(3)
+
+// Hex head: bottom at z=0, extends in +Z direction
+module hex_head() {
+    linear_extrude(height = head_height) {
+        circle(r = hex_r, $fn = 6);
+    }
+}
+
+// Shank: top at z=0, extends in -Z direction
+module shank() {
+    translate([0, 0, -shank_len]) {
+        cylinder(h = shank_len, d = shank_dia, $fn = 64);
+    }
+}
+
+// Assemble bolt
+union() {
+    hex_head();
+    shank();
+}
+```

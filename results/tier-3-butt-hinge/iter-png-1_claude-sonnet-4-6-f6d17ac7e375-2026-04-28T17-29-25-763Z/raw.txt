@@ -1,0 +1,151 @@
+画像を確認して、以下の問題点を見つけました。
+
+1. **knuckle が板と分離している** — knuckle の軸（X=0）に対して、板が knuckle の外径（半径4mm）分だけ離れて配置されるべきだが、knuckle が板の平面から完全に浮いている。knuckle の下半分が板に埋まるように、板の端（X=0側）に knuckle 中心が来るよう調整が必要。
+2. **knuckle が互い違いになっていない** — 左右の knuckle が噛み合っておらず、単純に重なって見える（1本の大きな筒に見える）。knuckle の高さ方向（Y）の隙間を正確に詰める必要がある。
+3. **皿穴のテーパー方向** — `cs_hole` で cone の r1/r2 が逆（表面が広くなるべき）で、かつ Z 方向の配置がずれている。
+4. **板の knuckle 側の端** — 板は knuckle 外径の半分（4mm）だけ knuckle 中心から離れるべき。
+
+```openscad
+// Butt Hinge - 180° open position
+// Pin axis along Y, leaves extend in -X and +X directions
+
+$fn = 64;
+
+// Parameters
+leaf_width  = 25;   // X extent of flat plate portion
+leaf_length = 30;   // Y direction (along pin)
+leaf_thick  = 2;    // Z thickness
+
+pin_dia     = 4;
+pin_r       = pin_dia / 2;
+pin_length  = 32;   // 1mm overhang each end (-1 to 31)
+
+knuckle_od  = 8;
+knuckle_or  = knuckle_od / 2;   // 4
+knuckle_id  = pin_dia + 0.3;    // 4.3mm clearance bore
+knuckle_ir  = knuckle_id / 2;
+knuckle_h   = 6;                 // each knuckle segment height
+
+// Screw holes (M3 countersunk)
+screw_cs_dia   = 6;
+screw_cs_depth = 1;
+screw_thru_dia = 3.2;
+screw_count    = 3;
+screw_pitch    = 8;
+
+// Knuckle Y centres:
+//   Left leaf  (3 knuckles): segments 0,2,4 → Y centres 3, 15, 27
+//   Right leaf (2 knuckles): segments 1,3   → Y centres 9, 21
+left_knuckle_y  = [3, 15, 27];
+right_knuckle_y = [9, 21];
+
+// The pin/knuckle axis is at X=0, Z=0.
+// Leaf flat face is at Z=0 (top surface), body goes down to Z=-leaf_thick.
+// Leaf plate extends from X=0 outward (left: -leaf_width, right: +leaf_width).
+// Knuckle centre is at X=0, Z=0; lower half (Z<0) merges into plate edge.
+
+// ─────────────────────────────────────────────
+// Knuckle tube, axis along Y, centred at origin
+module knuckle_tube() {
+    rotate([90, 0, 0])
+        difference() {
+            cylinder(h = knuckle_h, r = knuckle_or, center = true);
+            cylinder(h = knuckle_h + 0.02, r = knuckle_ir, center = true);
+        }
+}
+
+// ─────────────────────────────────────────────
+// Countersunk hole: top surface at Z=0, going downward through leaf_thick
+// Wider at top (Z=0), narrows to thru-hole diameter
+module cs_hole() {
+    union() {
+        // countersink cone: top z=0 dia=screw_cs_dia, bottom z=-screw_cs_depth dia=screw_thru_dia
+        translate([0, 0, -screw_cs_depth])
+            cylinder(h = screw_cs_depth + 0.01,
+                     r1 = screw_thru_dia / 2,
+                     r2 = screw_cs_dia / 2);
+        // through hole from countersink bottom to leaf bottom
+        translate([0, 0, -(leaf_thick + 0.01)])
+            cylinder(h = leaf_thick - screw_cs_depth + 0.02,
+                     r = screw_thru_dia / 2);
+    }
+}
+
+// ─────────────────────────────────────────────
+// Screw hole Y positions (centred on leaf_length)
+function screw_y(i) =
+    (leaf_length - (screw_count - 1) * screw_pitch) / 2 + i * screw_pitch;
+
+// ─────────────────────────────────────────────
+// Left leaf: plate extends in -X direction, knuckles at X=0
+module left_leaf() {
+    difference() {
+        union() {
+            // Flat plate: from X=-leaf_width to X=0, Y=0 to Y=30, Z=-leaf_thick to Z=0
+            translate([-leaf_width, 0, -leaf_thick])
+                cube([leaf_width, leaf_length, leaf_thick]);
+
+            // Knuckles at X=0 axis
+            for (yc = left_knuckle_y) {
+                translate([0, yc, 0])
+                    knuckle_tube();
+            }
+        }
+
+        // Countersunk screw holes on flat part
+        // X centre at -leaf_width/2 (middle of plate away from hinge)
+        for (i = [0 : screw_count - 1]) {
+            translate([-leaf_width / 2, screw_y(i), 0])
+                cs_hole();
+        }
+
+        // Remove pin bore through all knuckles
+        translate([0, -1, 0])
+            rotate([-90, 0, 0])
+                cylinder(h = pin_length + 2, r = knuckle_ir);
+    }
+}
+
+// ─────────────────────────────────────────────
+// Right leaf: plate extends in +X direction, knuckles at X=0
+module right_leaf() {
+    difference() {
+        union() {
+            // Flat plate: from X=0 to X=+leaf_width
+            translate([0, 0, -leaf_thick])
+                cube([leaf_width, leaf_length, leaf_thick]);
+
+            // Knuckles at X=0 axis
+            for (yc = right_knuckle_y) {
+                translate([0, yc, 0])
+                    knuckle_tube();
+            }
+        }
+
+        // Countersunk screw holes
+        for (i = [0 : screw_count - 1]) {
+            translate([leaf_width / 2, screw_y(i), 0])
+                cs_hole();
+        }
+
+        // Remove pin bore through all knuckles
+        translate([0, -1, 0])
+            rotate([-90, 0, 0])
+                cylinder(h = pin_length + 2, r = knuckle_ir);
+    }
+}
+
+// ─────────────────────────────────────────────
+// Pin: Y from -1 to +31 (1mm overhang each end)
+module pin() {
+    translate([0, -1, 0])
+        rotate([-90, 0, 0])
+            cylinder(h = pin_length, r = pin_r);
+}
+
+// ─────────────────────────────────────────────
+// Assembly
+color([0.75, 0.75, 0.78], 1.0) left_leaf();
+color([0.75, 0.75, 0.78], 1.0) right_leaf();
+color([0.85, 0.70, 0.20], 1.0) pin();
+```

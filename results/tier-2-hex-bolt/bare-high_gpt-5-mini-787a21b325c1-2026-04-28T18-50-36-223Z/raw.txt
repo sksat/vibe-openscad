@@ -1,0 +1,22 @@
+```openscad
+// M8 六角ボルト（ねじ山省略、シャンクは円柱）
+// 頭部底面が z=0、シャンクは z<0 側へ伸ばす
+
+// 寸法（mm）
+af = 13;             // 対辺距離 (across-flats)
+head_h = 5.3;        // 頭部高さ
+shank_d = 8;         // シャンク直径
+shank_len = 30;      // シャンク長さ
+
+// 六角柱用の外接円直径（円周上の頂点間の直径）
+head_d = 2 * af / sqrt(3);
+
+union() {
+    // 六角頭部（底面が z=0）
+    cylinder(h = head_h, d = head_d, $fn = 6, center = false);
+
+    // シャンク（z=-shank_len .. 0）
+    translate([0, 0, -shank_len])
+        cylinder(h = shank_len, d = shank_d, $fn = 64, center = false);
+}
+```

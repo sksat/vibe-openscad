@@ -1,0 +1,103 @@
+```openscad
+$fn = 96;
+
+// Dimensions
+leaf_y = 30;
+leaf_x = 25;
+leaf_t = 2;
+
+pin_d = 4;
+pin_len = 32;
+
+knuckle_od = 8;
+knuckle_id = 4.6;
+knuckle_seg = 6;
+
+cs_thru_d = 3.2;
+cs_top_d = 6;
+cs_depth = 1;
+
+eps = 0.05;
+
+// Coordinate system:
+// Pin axis: Y axis, centered at X=0, Z=0
+// Leaves: flat in XY plane, thickness along Z
+// Left leaf extends to X<0, right leaf extends to X>0
+
+module cyl_y(d, h) {
+    rotate([-90, 0, 0])
+        cylinder(d = d, h = h);
+}
+
+module knuckle(y0, len) {
+    translate([0, y0, 0])
+        difference() {
+            cyl_y(knuckle_od, len);
+            translate([0, -0.01, 0])
+                cyl_y(knuckle_id, len + 0.02);
+        }
+}
+
+module countersunk_hole(x, y) {
+    translate([x, y, -leaf_t])
+        cylinder(d = cs_thru_d, h = leaf_t * 3);
+
+    translate([x, y, leaf_t / 2 - cs_depth])
+        cylinder(d1 = cs_thru_d, d2 = cs_top_d, h = cs_depth + 0.01);
+}
+
+module leaf_plate(side = "left") {
+    difference() {
+        if (side == "left") {
+            translate([-(knuckle_od / 2 + leaf_x), 0, -leaf_t / 2])
+                cube([leaf_x + eps, leaf_y, leaf_t]);
+        } else {
+            translate([knuckle_od / 2 - eps, 0, -leaf_t / 2])
+                cube([leaf_x + eps, leaf_y, leaf_t]);
+        }
+
+        for (yy = [7, 15, 23]) {
+            if (side == "left")
+                countersunk_hole(-23, yy);
+            else
+                countersunk_hole(23, yy);
+        }
+    }
+}
+
+module left_leaf_part() {
+    union() {
+        leaf_plate("left");
+
+        // Left leaf knuckles: outer 2 + center 1
+        knuckle(0, 6);
+        knuckle(12, 6);
+        knuckle(24, 6);
+    }
+}
+
+module right_leaf_part() {
+    union() {
+        leaf_plate("right");
+
+        // Right leaf knuckles: intermediate 2
+        knuckle(6, 6);
+        knuckle(18, 6);
+    }
+}
+
+module pin_part() {
+    translate([0, -1, 0])
+        cyl_y(pin_d, pin_len);
+}
+
+// Assembly: fully open 180 degrees
+color([0.55, 0.55, 0.55])
+    left_leaf_part();
+
+color([0.65, 0.65, 0.65])
+    right_leaf_part();
+
+color([0.25, 0.25, 0.25])
+    pin_part();
+```

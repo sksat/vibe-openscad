@@ -1,0 +1,38 @@
+```openscad
+module bracket() {
+    // horizontal flange
+    translate([0, 0, 0])
+        cube([50, 40, 3], center=false);
+    // vertical flange
+    translate([0, 0, 0])
+        cube([50, 3, 40], center=false);
+}
+
+module holes() {
+    // horizontal flange countersinks and through-holes
+    for (x = [10, 40]) {
+        // countersink Φ8×2mm at top surface
+        translate([x, 20, 3 - 2])
+            cylinder(h=2, r=4, $fn=64);
+        // through-hole Φ4.5mm
+        translate([x, 20, 0])
+            cylinder(h=3, r=2.25, $fn=64);
+    }
+    // vertical flange countersinks and through-holes
+    for (x = [10, 40]) {
+        // countersink Φ8×2mm on outer side
+        translate([x, 3, 20])
+            rotate([-90, 0, 0])
+                cylinder(h=2, r=4, $fn=64);
+        // through-hole Φ4.5mm
+        translate([x, 3, 20])
+            rotate([-90, 0, 0])
+                cylinder(h=3, r=2.25, $fn=64);
+    }
+}
+
+difference() {
+    bracket();
+    holes();
+}
+```

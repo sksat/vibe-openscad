@@ -1,0 +1,32 @@
+```openscad
+// --- Dimensions ---
+// Head
+head_across_flats = 13; // 対辺距離
+head_height = 5.3;      // 高さ
+
+// Shank
+shank_diameter = 8;     // 直径
+shank_length = 30;      // 長さ
+
+// --- Model ---
+union() {
+    // 六角形の頭部を作成
+    // cylinderの直径は外接円の直径で指定するため、対辺距離から計算
+    // 頭部の底面がz=0になるように配置
+    cylinder(
+        h = head_height,
+        d = head_across_flats / cos(30),
+        $fn = 6
+    );
+
+    // 円柱のシャンクを作成
+    // 頭部の底面(z=0)から-z方向へ伸ばすため、translateで移動
+    translate([0, 0, -shank_length]) {
+        cylinder(
+            h = shank_length,
+            d = shank_diameter,
+            $fn = 64 // 円を滑らかにするための解像度
+        );
+    }
+}
+```

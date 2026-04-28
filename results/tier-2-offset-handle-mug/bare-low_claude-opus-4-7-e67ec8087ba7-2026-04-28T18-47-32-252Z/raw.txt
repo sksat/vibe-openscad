@@ -1,0 +1,74 @@
+```openscad
+$fn = 100;
+
+outer_d = 80;
+inner_d = 70;
+height = 90;
+bottom_thk = 6;
+
+handle_inner_h = 30;
+handle_inner_w = 25;
+handle_thk = 6;
+
+module body() {
+    difference() {
+        cylinder(d = outer_d, h = height);
+        translate([0, 0, bottom_thk])
+            cylinder(d = inner_d, h = height);
+    }
+}
+
+module handle() {
+    // D-shape handle on +X side, centered vertically
+    outer_h = handle_inner_h + 2 * handle_thk;
+    outer_w = handle_inner_w + handle_thk; // straight side at body, semicircle outside
+    
+    cz = height / 2;
+    // Place so straight side is at x = body surface (slightly inside for union)
+    x0 = outer_d/2 - 2; // overlap into body for manifold union
+    
+    translate([x0, 0, cz])
+        difference() {
+            // outer D: rectangle + semicircle on +x side
+            hull() {
+                translate([0, -outer_h/2 + outer_h/2, -outer_h/2])
+                    cube([0.01, outer_h, outer_h], center = false)
+                    ;
+            }
+            // simpler approach below
+        }
+}
+
+// Simpler handle implementation
+module d_handle() {
+    outer_h = handle_inner_h + 2 * handle_thk;
+    cz = height / 2;
+    x0 = outer_d/2 - 2;
+    
+    translate([x0, 0, cz - outer_h/2])
+    difference() {
+        // outer D shape (extruded)
+        linear_extrude(height = outer_h)
+            hull() {
+                translate([0, -outer_h/2, 0])
+                    square([0.1, outer_h]);
+                translate([handle_inner_w + handle_thk, 0, 0])
+                    circle(d = outer_h);
+            }
+        // inner hole
+        translate([0, 0, handle_thk])
+            linear_extrude(height = handle_inner_h)
+                hull() {
+                    translate([0, -handle_inner_h/2, 0])
+                        square([0.1, handle_inner_h]);
+                    translate([handle_inner_w, 0, 0])
+                        circle(d = handle_inner_h);
+                }
+    }
+}
+
+union() {
+    body();
+    d_handle();
+}
+```

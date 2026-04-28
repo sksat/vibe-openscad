@@ -1,0 +1,52 @@
+$fn = 100;
+
+// マグ本体のパラメータ
+outer_d = 80;
+inner_d = 70;
+height = 90;
+bottom_thick = 6;
+
+// 取手のパラメータ
+handle_h_space = 30; // 取手の空間の高さ
+handle_w_space = 25; // 取手の空間の幅
+handle_thick = 10;   // 取手の肉厚
+handle_depth = 15;   // 取手の奥行き（本体からの突き出し方向）
+
+module mug_body() {
+    difference() {
+        cylinder(d = outer_d, h = height);
+        translate([0, 0, bottom_thick])
+            cylinder(d = inner_d, h = height - bottom_thick + 0.1);
+    }
+}
+
+module handle() {
+    // マグの側面に接する平らな部分を作るため、D字型を構築
+    // 本体側は円弧に沿うように少し食い込ませる
+    translate([outer_d / 2 - 2, 0, height / 2]) {
+        rotate([90, 0, 90]) {
+            linear_extrude(height = handle_depth) {
+                difference() {
+                    // 取手の外形
+                    union() {
+                        translate([0, handle_h_space / 2]) circle(d = handle_h_space + handle_thick * 2);
+                        translate([-(handle_h_space / 2 + handle_thick), -handle_h_space / 2]) 
+                            square([handle_h_space / 2 + handle_thick, handle_h_space + handle_thick * 2]);
+                    }
+                    // 取手の内側の空洞（指を通す部分）
+                    union() {
+                        translate([0, handle_h_space / 2]) circle(d = handle_h_space);
+                        translate([-handle_w_space, -handle_h_space / 2]) 
+                            square([handle_w_space, handle_h_space]);
+                    }
+                }
+            }
+        }
+    }
+}
+
+// 本体と取手を結合
+union() {
+    mug_body();
+    handle();
+}

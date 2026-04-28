@@ -1,0 +1,64 @@
+module l_bracket(length_x = 50, length_y = 40, thickness = 3) {
+    // 水平面
+    cube([length_x, length_y, thickness]);
+    // 垂直面
+    translate([0, 0, length_y])
+    rotate([90, 0, 0])
+    cube([length_x, thickness, length_y]);
+}
+
+module countersunk_hole(screw_size = "M4") {
+    $fn=30; // 円の滑らかさ
+
+    // M4 ねじ用貫通穴
+    if (screw_size == "M4") {
+        hole_diameter = 4.5;
+        countersink_diameter = 8;
+        countersink_depth = 2;
+    } else {
+        // デフォルトまたはエラー処理
+        hole_diameter = 4.5;
+        countersink_diameter = 8;
+        countersink_depth = 2;
+    }
+
+    // 皿座面
+    cylinder(h = countersink_depth, d1 = countersink_diameter, d2 = countersink_diameter);
+    // 貫通穴
+    translate([0, 0, countersink_depth])
+    cylinder(h = 10, d = hole_diameter); // 十分な長さを確保
+}
+
+// パラメータ設定
+bracket_length_x = 50;
+bracket_length_y = 40;
+bracket_thickness = 3;
+hole_margin_from_edge = 10;
+
+// 穴をくり抜くための差分モジュール
+module subtract_holes() {
+    // 水平面の穴
+    // 左側
+    translate([hole_margin_from_edge, bracket_length_y / 2, bracket_thickness])
+    rotate([0, 90, 0])
+    countersunk_hole();
+    // 右側
+    translate([bracket_length_x - hole_margin_from_edge, bracket_length_y / 2, bracket_thickness])
+    rotate([0, 90, 0])
+    countersunk_hole();
+
+    // 垂直面の穴
+    // 下側
+    translate([bracket_length_x / 2, bracket_thickness, hole_margin_from_edge])
+    rotate([90, 0, 0])
+    countersunk_hole();
+    // 上側
+    translate([bracket_length_x / 2, bracket_thickness, bracket_length_y - hole_margin_from_edge])
+    rotate([90, 0, 0])
+    countersunk_hole();
+}
+
+difference() {
+    l_bracket(bracket_length_x, bracket_length_y, bracket_thickness);
+    subtract_holes();
+}

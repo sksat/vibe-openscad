@@ -1,0 +1,124 @@
+```openscad
+// Butt Hinge - 180° open state
+// Units: mm
+
+// Parameters
+leaf_width  = 25;   // X direction (away from pin)
+leaf_height = 30;   // Y direction (along pin axis)
+leaf_thick  = 2;    // Z direction
+
+pin_dia     = 4;
+pin_r       = pin_dia / 2;
+pin_len     = 32;   // 1mm overhang each end
+
+knuckle_od  = 8;
+knuckle_or  = knuckle_od / 2;
+knuckle_id  = pin_dia + 0.3;  // 4.6mm
+knuckle_ir  = knuckle_id / 2;
+knuckle_h   = 6;    // each knuckle height (30/5)
+
+// Countersink screw holes (M3)
+cs_top_dia  = 6;
+cs_depth    = 1;
+cs_hole_dia = 3.2;
+screw_x_offset = leaf_width / 2;  // center of screw in X on the leaf
+// 3 screws per leaf, spaced 8mm apart in Y, centered on leaf_height
+screw_y_positions = [
+    leaf_height/2 - 8*1,  // 7
+    leaf_height/2,         // 15
+    leaf_height/2 + 8*1   // 23
+];
+
+// Left leaf knuckles: positions 0,2,4 (outer two + center)
+// Y start positions: 0,6,12,18,24  -> knuckle centers at 3,9,15,21,27
+// Left: segments 0,2,4 -> centers at 3, 15, 27
+// Right: segments 1,3  -> centers at 9, 21
+
+left_knuckle_centers  = [3, 15, 27];
+right_knuckle_centers = [9, 21];
+
+$fn = 64;
+
+// ─── Modules ───────────────────────────────────────────────────
+
+module knuckle(center_y) {
+    translate([0, center_y - knuckle_h/2, -knuckle_or])
+    rotate([-90, 0, 0])
+    difference() {
+        cylinder(h = knuckle_h, r = knuckle_or);
+        cylinder(h = knuckle_h, r = knuckle_ir);
+    }
+}
+
+// A leaf with knuckles and screw holes.
+// leaf_side: -1 = left (extends in -X), +1 = right (extends in +X)
+// knuckle_centers: list of Y centers for knuckles
+module leaf(leaf_side, knuckle_centers) {
+    // leaf body
+    // The leaf flat face is at Z=0 (top surface).
+    // Leaf thickness goes downward: Z from -leaf_thick to 0.
+    // Knuckle center is at X=0; leaf extends in leaf_side * X direction.
+    
+    difference() {
+        union() {
+            // Flat leaf plate
+            translate([leaf_side > 0 ? 0 : -leaf_width,
+                       0,
+                       -leaf_thick])
+                cube([leaf_width, leaf_height, leaf_thick]);
+            
+            // Knuckles
+            for (cy = knuckle_centers) {
+                knuckle(cy);
+            }
+        }
+        
+        // Screw countersinks
+        // Screws placed at X = leaf_side * (leaf_width * 0.5)
+        sx = leaf_side * (leaf_width / 2);
+        for (sy = screw_y_positions) {
+            translate([sx, sy, 0]) {
+                // Countersink taper: from dia 6 at Z=0 to dia 3.2 at Z=-cs_depth
+                cylinder(h = cs_depth,
+                         r1 = cs_top_dia / 2,
+                         r2 = cs_hole_dia / 2);
+                // Through hole
+                translate([0, 0, -leaf_thick])
+                    cylinder(h = leaf_thick, r = cs_hole_dia / 2);
+            }
+        }
+        
+        // Trim knuckle area flush with leaf (remove knuckle overlap below leaf)
+        // Actually knuckles are centered at Z=0 so they protrude above.
+        // We need to cut the flat leaf area where knuckles intersect.
+        // The leaf is at Z -leaf_thick..0; knuckles protrude from Z -knuckle_or..+knuckle_or
+        // so below the leaf (Z < -leaf_thick) knuckle material should be removed.
+        // We'll cut below -leaf_thick in the leaf span.
+        translate([leaf_side > 0 ? 0 : -leaf_width,
+                   0,
+                   -knuckle_or - 1])
+            cube([leaf_width, leaf_height, knuckle_or - leaf_thick + 1 + 0.01]);
+    }
+}
+
+module pin_axis() {
+    // Pin along Y axis, centered at origin, length 32mm
+    translate([0, -pin_len/2, 0])
+    rotate([-90, 0, 0])
+    cylinder(h = pin_len, r = pin_r);
+}
+
+// ─── Assembly ──────────────────────────────────────────────────
+
+// Left leaf: extends in -X direction
+color("silver")
+leaf(-1, left_knuckle_centers);
+
+// Right leaf: extends in +X direction
+color("silver")
+leaf(1, right_knuckle_centers);
+
+// Pin axis
+color("gold")
+pin_axis();
+```

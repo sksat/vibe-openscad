@@ -1,0 +1,144 @@
+はい、レンダリングされた画像と元のプロンプトを照らし合わせ、コードに修正を加えました。
+
+観察された主な問題点は、取手のD字形状の内側の空間が完全に中空になっておらず、オレンジ色の部分が残っていることでした。これは、D字の内側の形状を切り取る `difference` 操作が不完全であるために発生していました。
+
+この問題を解決するため、`mug_handle` モジュールを全面的に見直し、取手の外形と内側の穴をそれぞれ独立した `union` オブジェクトとして定義し、それらを `difference` で組み合わせることで、より堅牢で正確なD字形状が生成されるようにしました。これにより、指を入れる空間が完全に中空になり、マニフォールド性も向上します。
+
+修正されたコードは以下の通りです。
+
+```openscad
+// OpenSCAD Mug with Handle
+// Global rendering quality (higher value = smoother curves)
+$fn = 64;
+
+// Mug body parameters
+mug_outer_radius = 80 / 2; // 40mm
+mug_inner_radius = 70 / 2; // 35mm
+mug_height = 90;
+mug_bottom_thickness = 6;
+
+// Handle parameters
+handle_thickness = 10;          // Thickness of the handle material
+handle_inner_width = 25;        // Internal width of the finger hole (X direction)
+handle_inner_height = 30;       // Internal height of the finger hole (Z direction)
+
+// Overlap for robust union between handle and mug body, and between handle components
+// A small positive value ensures parts slightly penetrate each other,
+// which helps OpenSCAD create a manifold solid and avoids Z-fighting artifacts.
+handle_overlap_epsilon = 0.5; // Example: 0.5mm overlap
+
+module mug_body() {
+    difference() {
+        // Outer cylinder of the mug
+        cylinder(h = mug_height, r = mug_outer_radius);
+
+        // Inner hollow part
+        // Lifted by mug_bottom_thickness to create the solid bottom
+        // Slightly increased height to avoid Z-fighting artifacts on the top surface
+        translate([0, 0, mug_bottom_thickness])
+            cylinder(h = mug_height - mug_bottom_thickness + handle_overlap_epsilon, r = mug_inner_radius);
+    }
+}
+
+module mug_handle() {
+    // Calculate dimensions for the D-shape handle
+    // Total height of the handle from top edge to bottom edge
+    handle_total_height = handle_inner_height + 2 * handle_thickness;
+    // Outer radius of the D-arc (half of total height)
+    outer_d_arc_radius = handle_total_height / 2;
+    // Inner radius of the D-arc (half of inner height)
+    inner_d_arc_radius = handle_inner_height / 2;
+
+    // Position the handle:
+    // Translate its "attachment point" (the X-coordinate where it meets the mug)
+    // to mug_outer_radius. We subtract handle_overlap_epsilon to embed it slightly.
+    // Its Y-center is 0 (aligned with mug's Y axis).
+    // Its Z-center is mug_height / 2 (aligned with mug's height center).
+    translate([
+        mug_outer_radius - handle_overlap_epsilon, // X: start slightly inside mug
+        0,                                          // Y: centered
+        mug_height / 2                              // Z: centered
+    ]) {
+        // Build the handle using difference between its outer solid shape and its inner cut-out shape.
+        difference() {
+            // 1. Outer solid handle shape
+            union() {
+                // Rectangular part of the outer handle (from mug to the start of the arc)
+                // In its local coordinate system:
+                // X starts at -handle_overlap_epsilon (to embed into the mug)
+                // X ends at handle_thickness + handle_inner_width (where the arc begins)
+                cube([
+                    handle_thickness + handle_inner_width + handle_overlap_epsilon, // X-dimension
+                    handle_thickness,                                               // Y-thickness
+                    handle_total_height                                             // Z-height
+                ], center = [
+                    (handle_thickness + handle_inner_width + handle_overlap_epsilon) / 2 - handle_overlap_epsilon, // X-center to align start at -overlap_epsilon
+                    0, // Y-center
+                    0  // Z-center
+                ]);
+
+                // Outer arc part (semi-cylinder)
+                // The arc's straight edge is at X = handle_thickness + handle_inner_width.
+                // We translate to this point for the cylinder's local origin.
+                translate([
+                    handle_thickness + handle_inner_width, // X: where the arc's straight edge is
+                    0,                                     // Y
+                    0                                      // Z
+                ])
+                rotate([90, 0, 0]) { // Rotate cylinder (default along Z) so its axis is along Y, profile in XZ.
+                    difference() {
+                        cylinder(r = outer_d_arc_radius, h = handle_thickness, center = true);
+                        // Cut off the "left" half of the cylinder to form the D-shape arc.
+                        // The cube starts outside the cylinder's negative X range to ensure a full cut.
+                        translate([-outer_d_arc_radius - handle_overlap_epsilon * 2, 0, 0])
+                            cube([outer_d_arc_radius * 2 + handle_overlap_epsilon * 4, handle_thickness * 1.1, outer_d_arc_radius * 2 + handle_overlap_epsilon * 4], center=true);
+                    }
+                }
+            }
+
+            // 2. Inner cut-out shape (finger hole)
+            // This starts after the mug-connecting material, at X = handle_thickness.
+            translate([
+                handle_thickness, // X: Start of finger hole relative to mug's outer surface
+                0,                // Y: centered
+                0                 // Z: centered
+            ]) {
+                union() {
+                    // Straight part of the finger hole cut-out
+                    cube([
+                        handle_inner_width + handle_overlap_epsilon, // X: Inner width + slight overlap into arc for clean cut
+                        handle_thickness * 1.1,                      // Y: Slightly larger than handle_thickness for clean cut
+                        handle_inner_height                          // Z: Inner height
+                    ], center=[
+                        (handle_inner_width + handle_overlap_epsilon) / 2, // X-center
+                        0,                                               // Y-center
+                        0                                                // Z-center
+                    ]);
+
+                    // Inner arc part of the finger hole cut-out
+                    // The inner arc's straight edge is at X = handle_inner_width (relative to its own translate).
+                    translate([
+                        handle_inner_width, // X: where the inner arc's straight edge is
+                        0,
+                        0
+                    ])
+                    rotate([90, 0, 0]) { // Same rotation as outer arc
+                        difference() {
+                            cylinder(r = inner_d_arc_radius, h = handle_thickness * 1.1, center = true); // Slightly larger height for clean cut
+                            // Cut off the "left" half of the inner cylinder.
+                            translate([-inner_d_arc_radius - handle_overlap_epsilon * 2, 0, 0])
+                                cube([inner_d_arc_radius * 2 + handle_overlap_epsilon * 4, handle_thickness * 1.2, inner_d_arc_radius * 2 + handle_overlap_epsilon * 4], center=true);
+                        }
+                    }
+                }
+            }
+        } // End of difference for the handle
+    } // End of translate for the handle position
+} // End of mug_handle module
+
+// Assemble the complete mug by combining the body and the handle
+union() {
+    mug_body();
+    mug_handle();
+}
+```

@@ -1,0 +1,77 @@
+画像を確認しました。以下の改善点があります：
+
+1. **取手が小さすぎる** - 指3本が入る25mm幅の取手がほぼ見えないサイズになっている
+2. **取手が本体と十分に接続していない** - 取手と本体の結合部が弱い
+3. **D字形状が不明確** - 取手の形状がはっきりしていない
+4. **マグの上部に穴がある** - 飲み口がない状態
+
+修正版です：
+
+```openscad
+// マグカップ本体
+module mug() {
+    difference() {
+        // 外側円筒：外径80mm(半径40mm)、高さ90mm
+        cylinder(h = 90, r = 40, center = false, $fn = 100);
+        
+        // 内側の空洞：底面6mm残す
+        translate([0, 0, 6]) {
+            cylinder(h = 90, r = 35, center = false, $fn = 100);
+        }
+    }
+}
+
+// D字形取手
+module handle() {
+    // 取手の内側寸法：高さ30mm、幅25mm
+    handle_inner_height = 30;
+    handle_inner_width = 25;
+    
+    // 取手開始高さ(マグの中央付近)
+    handle_z = 30;  // マグ高さ90mmの中央
+    
+    // 取手の外側寸法
+    handle_outer_depth = 28;  // 本体から外へ
+    handle_outer_r = 50;  // 外側の曲率半径
+    
+    difference() {
+        union() {
+            // 本体に接続する直線部分（内側）
+            translate([32, -handle_inner_width/2, handle_z]) {
+                cube([10, handle_inner_width, handle_inner_height]);
+            }
+            
+            // 外側の半円形部分
+            translate([40, 0, handle_z + handle_inner_height/2]) {
+                rotate([0, 0, 0]) {
+                    difference() {
+                        // 半円柱
+                        intersection() {
+                            cylinder(h = handle_inner_height, r = handle_outer_r, center = true, $fn = 100);
+                            translate([0, 0, 0]) {
+                                cube([200, 100, handle_inner_height + 1], center = true);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 内側をくり抜く：D字形状の内側空間
+        translate([40, -handle_inner_width/2, handle_z - 0.5]) {
+            cube([handle_outer_depth + 2, handle_inner_width, handle_inner_height + 1]);
+        }
+        
+        // マグ本体との干渉部分を削除（本体内部を除去）
+        translate([0, 0, handle_z - 1]) {
+            cylinder(h = handle_inner_height + 2, r = 40.5, center = false, $fn = 100);
+        }
+    }
+}
+
+// 完成品
+union() {
+    mug();
+    handle();
+}
+```

@@ -1,0 +1,105 @@
+// Butt Hinge Assembly - 180° Open State
+
+// Parameters
+leaf_length = 30;      // Y direction (along hinge axis)
+leaf_width = 25;       // X direction (opening direction)
+leaf_thickness = 2;
+pin_diameter = 4;
+pin_length = 32;
+knuckle_outer_dia = 8;
+knuckle_inner_dia = 4.6;
+knuckle_width = 6;
+clearance = 0.3;
+
+// Module: Single leaf (flat plate)
+module leaf() {
+    cube([leaf_width, leaf_length, leaf_thickness], center=false);
+}
+
+// Module: Knuckle (cylindrical hinge element)
+module knuckle() {
+    difference() {
+        cylinder(d=knuckle_outer_dia, h=knuckle_width, center=false, $fn=32);
+        cylinder(d=knuckle_inner_dia, h=knuckle_width, center=false, $fn=32);
+    }
+}
+
+// Module: Countersunk hole (M3)
+module countersunk_hole(depth_countersink=1, dia_countersink=6, dia_hole=3.2) {
+    union() {
+        cylinder(d=dia_countersink, h=depth_countersink, center=false, $fn=16);
+        cylinder(d=dia_hole, h=leaf_length, center=false, $fn=16);
+    }
+}
+
+// Module: Left leaf with knuckles and countersunk holes
+module left_leaf_assembly() {
+    difference() {
+        union() {
+            // Base plate
+            translate([-(leaf_width), 0, 0])
+                leaf();
+            
+            // Knuckles: positions at Y = 0, 6, 12 mm
+            // Left leaf has knuckles at outer positions and center
+            for (y_pos = [0, 12]) {
+                translate([0, y_pos, 0])
+                    knuckle();
+            }
+            // Center knuckle
+            translate([0, 6, 0])
+                knuckle();
+        }
+        
+        // Countersunk holes at Y = 2, 10, 18 mm (8mm spacing, away from knuckles)
+        for (y_pos = [2, 10, 18]) {
+            translate([-(leaf_width/2), y_pos, -(leaf_thickness)])
+                countersunk_hole();
+        }
+    }
+}
+
+// Module: Right leaf with knuckles and countersunk holes
+module right_leaf_assembly() {
+    difference() {
+        union() {
+            // Base plate (mirrored position)
+            leaf();
+            
+            // Knuckles: positions at Y = 6, 18 mm
+            // Right leaf has knuckles at intermediate positions
+            for (y_pos = [6, 18]) {
+                translate([0, y_pos, 0])
+                    knuckle();
+            }
+        }
+        
+        // Countersunk holes at Y = 2, 10, 18 mm (same spacing)
+        for (y_pos = [2, 10, 18]) {
+            translate([leaf_width/2, y_pos, -(leaf_thickness)])
+                countersunk_hole();
+        }
+    }
+}
+
+// Module: Pin shaft (cylindrical)
+module pin_shaft() {
+    cylinder(d=pin_diameter, h=pin_length, center=false, $fn=32);
+}
+
+// Assembly
+// Pin shaft along Y axis, centered at X=0
+translate([0, -1, 0])
+    pin_shaft();
+
+// Left leaf: positioned at X negative, rotated 180° to open flat
+// Knuckles at X=0, leaf extends to X negative
+translate([0, 0, 0])
+    rotate([0, 0, 180])
+        translate([0, 0, 0])
+            left_leaf_assembly();
+
+// Right leaf: positioned at X positive, at Z=0 plane
+// Knuckles at X=0, leaf extends to X positive
+translate([0, 0, 0])
+    right_leaf_assembly();

@@ -1,0 +1,33 @@
+{
+  "runId": "bare_claude-opus-4-1-fcf03145868a-2026-04-28T17-23-10-345Z",
+  "taskId": "tier-3-butt-hinge",
+  "matrixId": "bare/claude-opus-4-1",
+  "signature": "fcf03145868a56dbc94d8ad034c72097fbba5a0e4e1de0d70ed636560bbaa81a",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dd7199030a8827a181914869189fc45a2e5637023f0c8c59532d442557036e7c",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-opus-4-1-20250805"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-opus-4-1-20250805",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 17278
+  },
+  "tokens": {
+    "input": 707,
+    "output": 950
+  },
+  "cost_usd": 0.081855,
+  "createdAt": "2026-04-28T17:23:10.345Z",
+  "gitCommit": "be87c9f2adaf51be5e9ccb7f63eb95c7bc456929"
+}

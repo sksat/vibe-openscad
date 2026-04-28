@@ -1,0 +1,15 @@
+```openscad
+// M8 六角ボルト (ねじ山省略モデル)
+
+$fn = 64;
+
+// 頭部 (六角柱)
+// 対辺距離(across-flats) 13mm
+// 外接円半径 = 13 / sqrt(3)
+cylinder(r = 13 / sqrt(3), h = 5.3, $fn = 6);
+
+// シャンク (円柱)
+// 直径 8mm (半径 4mm)、長さ 30mm、Z<0側へ配置
+translate([0, 0, -30])
+    cylinder(r = 4, h = 30);
+```

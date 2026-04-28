@@ -1,0 +1,38 @@
+{
+  "runId": "bare-high_o3-900b326bf885-2026-04-28T18-52-06-434Z",
+  "taskId": "tier-2-hex-bolt",
+  "matrixId": "bare-high/o3",
+  "signature": "900b326bf885315fc94ab6578c018824b1701bd1c69cef2637024c39003e1991",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "0fee46bf3152dd6738d6d2af93e06dad04bb6bddd3b2b528c57138298ec0b5d0",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "o3-2025-04-16",
+      "modelOptions": {
+        "reasoning": {
+          "effort": "high"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "o3-2025-04-16",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 23785
+  },
+  "tokens": {
+    "input": 200,
+    "output": 1916
+  },
+  "cost_usd": 0.015728,
+  "createdAt": "2026-04-28T18:52:06.434Z",
+  "gitCommit": "781e6c683dda9349da96561361d4da5f2c54975e"
+}

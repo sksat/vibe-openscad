@@ -1,0 +1,129 @@
+// Parameters
+leaf_width = 25;
+leaf_height = 30;
+leaf_thickness = 2;
+pin_diameter = 4;
+pin_length = 32;
+knuckle_outer_diameter = 8;
+knuckle_inner_diameter = pin_diameter + 0.3;
+knuckle_height = 6;
+knuckle_count_left = 3;
+knuckle_count_right = 2;
+m3_countersink_diameter = 6;
+m3_countersink_depth = 1;
+m3_hole_diameter = 3.2;
+m3_hole_spacing = 8;
+
+// Derived parameters
+knuckle_radius = knuckle_outer_diameter / 2;
+knuckle_inner_radius = knuckle_inner_diameter / 2;
+pin_radius = pin_diameter / 2;
+leaf_half_width = leaf_width / 2;
+
+// Function to create a single knuckle
+module knuckle(position_y, is_left) {
+    translate([0, position_y, 0]) {
+        difference() {
+            cylinder(h = leaf_thickness, r = knuckle_radius, $fn = 32);
+            // Inner hole for the pin
+            cylinder(h = leaf_thickness + 0.1, r = knuckle_inner_radius, $fn = 32);
+        }
+    }
+}
+
+// Left leaf
+module left_leaf() {
+    translate([-leaf_half_width, 0, 0]) {
+        difference() {
+            union() {
+                // Main leaf plate
+                cube([leaf_width, leaf_height, leaf_thickness]);
+
+                // Knuckles for the left side
+                for (i = [0 : knuckle_count_left - 1]) {
+                    // Position knuckles to alternate with right side
+                    knuckle_y_pos = i * knuckle_height + (knuckle_height / 2) * (i % 2 == 0 ? 0 : 1);
+                    if (i == 0) { // Outer knuckle
+                        knuckle(knuckle_y_pos + knuckle_height/2, true);
+                    } else if (i == 1) { // Middle knuckle
+                        knuckle(knuckle_y_pos + knuckle_height/2, true);
+                    } else { // Another outer knuckle
+                        knuckle(knuckle_y_pos + knuckle_height/2, true);
+                    }
+                }
+            }
+
+            // M3 countersink holes
+            for (i = [0 : 2]) {
+                hole_y = i * m3_hole_spacing;
+                translate([leaf_half_width - 3, hole_y + 3, leaf_thickness - 0.01]) {
+                    rotate([90, 0, 0]) {
+                        // Countersink cone
+                        cylinder(h = m3_countersink_depth, r1 = m3_countersink_diameter / 2, r2 = m3_hole_diameter / 2, $fn = 32);
+                        // Through hole
+                        translate([0, 0, m3_countersink_depth])
+                        cylinder(h = leaf_thickness, r = m3_hole_diameter / 2, $fn = 32);
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Right leaf
+module right_leaf() {
+    translate([0, 0, 0]) { // Right leaf is centered at X=0
+        difference() {
+            union() {
+                // Main leaf plate
+                cube([leaf_width, leaf_height, leaf_thickness]);
+
+                // Knuckles for the right side
+                for (i = [0 : knuckle_count_right - 1]) {
+                    // Position knuckles to alternate with left side
+                    knuckle_y_pos = (i * knuckle_height) + (knuckle_height/2); // Intermediate positions
+                    knuckle(knuckle_y_pos, false);
+                }
+            }
+
+            // M3 countersink holes
+            for (i = [0 : 2]) {
+                hole_y = i * m3_hole_spacing;
+                translate([-leaf_half_width + 3, hole_y + 3, leaf_thickness - 0.01]) {
+                    rotate([90, 0, 0]) {
+                        // Countersink cone
+                        cylinder(h = m3_countersink_depth, r1 = m3_countersink_diameter / 2, r2 = m3_hole_diameter / 2, $fn = 32);
+                        // Through hole
+                        translate([0, 0, m3_countersink_depth])
+                        cylinder(h = leaf_thickness, r = m3_hole_diameter / 2, $fn = 32);
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Pin
+module pin() {
+    cylinder(h = pin_length, r = pin_radius, $fn = 32);
+}
+
+// Assembly - 180 degree open state
+module hinge_assembly() {
+    // Left leaf (rotated 180 degrees around Z axis)
+    rotate([0, 0, 180]) {
+        left_leaf();
+    }
+
+    // Right leaf
+    right_leaf();
+
+    // Pin - centered and extended
+    translate([0, -pin_length / 2 + leaf_height / 2, 0]) {
+        rotate([90, 0, 0]) { // Rotate to align with Y axis
+            pin();
+        }
+    }
+}
+
+hinge_assembly();

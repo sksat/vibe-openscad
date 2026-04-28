@@ -1,0 +1,77 @@
+$fn = 100; // 滑らかな曲線にするための解像度
+
+// --- 本体パラメータ ---
+mug_outer_d = 80;
+mug_inner_d = 70;
+mug_h = 90;
+mug_bottom_thickness = 6;
+
+// --- 取手パラメータ ---
+handle_inner_h = 30;        // 指を入れる空間の高さ (Z軸方向)
+handle_inner_w = 25;        // 指を入れる空間の幅 (X軸方向、本体からの距離)
+handle_thickness = 8;       // 取手の肉厚 (XZ平面上)
+handle_y_width = 12;        // 取手の奥行き (Y軸方向の太さ)
+
+// 本体と取手を結合
+union() {
+    // 1. マグ本体
+    difference() {
+        // 外側の円筒
+        cylinder(h = mug_h, d = mug_outer_d);
+        
+        // 内側をくり抜くための円筒
+        // 底面の厚みを残すために Z 方向にずらす
+        translate([0, 0, mug_bottom_thickness])
+            cylinder(h = mug_h + 1, d = mug_inner_d); // 確実に貫通させるため少し高くする
+    }
+
+    // 2. 取手
+    // 2DのD形状を押し出す方式で作成。これにより、画像のようなテーパー形状を修正します。
+    
+    // --- 取手寸法の計算 ---
+    // 内側D形状の寸法
+    handle_inner_radius = handle_inner_h / 2;
+    handle_inner_rect_w = handle_inner_w - handle_inner_radius;
+    
+    // 外側D形状の寸法
+    handle_outer_h = handle_inner_h + 2 * handle_thickness;
+    handle_outer_radius = handle_outer_h / 2;
+    handle_outer_rect_w = handle_inner_rect_w + handle_thickness;
+
+    // --- 取手の配置 ---
+    // Z方向：マグカップの高さ方向中央に配置
+    handle_z_pos = (mug_h - handle_outer_h) / 2;
+    // X方向：+X軸側面に配置し、確実に接続するために1mmめり込ませる
+    handle_x_pos = mug_outer_d / 2 - 1;
+
+    translate([handle_x_pos, 0, handle_z_pos]) {
+        // 取手のD形状はXZ平面上にあるため、XY平面で2D形状を作成し90度回転させる
+        rotate([90, 0, 0]) {
+            // Y軸方向に押し出して厚みを付ける
+            linear_extrude(height = handle_y_width, center = true) {
+                difference() {
+                    // --- 外側のソリッドD形状 ---
+                    union() {
+                        // Dの直線部分 (2DのXY平面上で、Xが幅、Yが高さに対応)
+                        square([handle_outer_rect_w, handle_outer_h]);
+                        // Dの曲線部分
+                        translate([handle_outer_rect_w, handle_outer_radius, 0])
+                            circle(r = handle_outer_radius);
+                    }
+                    
+                    // --- 内側のくり抜きD形状 ---
+                    // 外側の形状からのオフセットとして配置
+                    translate([handle_thickness, handle_thickness, 0]) {
+                        union() {
+                            // Dの直線部分
+                            square([handle_inner_rect_w, handle_inner_h]);
+                            // Dの曲線部分
+                            translate([handle_inner_rect_w, handle_inner_radius, 0])
+                                circle(r = handle_inner_radius);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

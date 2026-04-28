@@ -1,0 +1,38 @@
+{
+  "runId": "bare-low_o4-mini-2d283e1476ea-2026-04-28T17-26-10-697Z",
+  "taskId": "tier-3-butt-hinge",
+  "matrixId": "bare-low/o4-mini",
+  "signature": "2d283e1476ea1f75d038509b94f06ec77bdbdea6083a83d6fe28f8766a462182",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dd7199030a8827a181914869189fc45a2e5637023f0c8c59532d442557036e7c",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "o4-mini-2025-04-16",
+      "modelOptions": {
+        "reasoning": {
+          "effort": "low"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "o4-mini-2025-04-16",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 23942
+  },
+  "tokens": {
+    "input": 592,
+    "output": 1848
+  },
+  "cost_usd": 0.008782400000000001,
+  "createdAt": "2026-04-28T17:26:10.697Z",
+  "gitCommit": "be87c9f2adaf51be5e9ccb7f63eb95c7bc456929"
+}

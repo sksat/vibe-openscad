@@ -1,0 +1,82 @@
+```openscad
+/*
+  Sharp GP2Y0D413K0F Distance Sensor
+  Modeled based on Outline Dimensions (Datasheet Page 2)
+  
+  Coordinates:
+  - Origin (0,0,0) is the center of the main body block.
+  - +Z: Up (Connector is at the bottom)
+  - +Y: Front (Lens side)
+  - +X: Right
+*/
+
+$fn = 32;
+
+// --- Dimensions (mm) ---
+BODY_W = 29.45;
+BODY_H = 13.5;
+BODY_D = 7.1;
+
+LENS_CASE_D = 6.3; // (6.3) from front surface
+LENS_CASE_H = 8.4;
+LENS_CASE_W = 26.5; // Estimated from front view
+
+LENS_EMITTER_X = -BODY_W/2 + 4.5;  // *4.5 from left edge
+LENS_DETECTOR_X = LENS_EMITTER_X + 19.7; // *19.7 center to center
+LENS_H = 7.2; // From side view height of opening
+
+PWB_T = 1.2;
+PWB_D = 7.1 + 3.3; // Body depth + (3.3) reference for connector protrusion
+PWB_OFFSET_Y = -3.3 / 2; // Shifted towards back
+
+CONN_W = 10.1;
+CONN_H = 18.9 - BODY_H - PWB_T; // Total height 18.9 minus body and PWB
+CONN_D = 5.0; // Simplified depth
+
+// --- Colors ---
+COLOR_CASE      = [0.15, 0.15, 0.15]; // Carbonic ABS (Dark Grey/Black)
+COLOR_LENS_WIN  = [0.2, 0.05, 0.1, 0.8]; // IR Filter (Dark Reddish Translucent)
+COLOR_PWB       = [0.5, 0.4, 0.2];    // Paper Phenol (Brownish)
+COLOR_CONN      = [0.9, 0.9, 0.8];    // White/Beige Connector
+
+// --- Modeling ---
+
+// 1. Main Body Case
+color(COLOR_CASE)
+cube([BODY_W, BODY_D, BODY_H], center=true);
+
+// 2. Lens Case Protrusion
+translate([0, BODY_D/2 + LENS_CASE_D/2, 0])
+color(COLOR_CASE)
+cube([LENS_CASE_W, LENS_CASE_D, LENS_CASE_H], center=true);
+
+// 3. Emitter Lens (Round window, Left)
+translate([LENS_EMITTER_X, BODY_D/2 + LENS_CASE_D - 0.5, 0])
+rotate([90, 0, 0])
+color(COLOR_LENS_WIN)
+cylinder(h=1, d=6, center=true);
+
+// 4. Detector Lens (Rectangular window, Right)
+translate([LENS_DETECTOR_X, BODY_D/2 + LENS_CASE_D - 0.5, 0])
+color(COLOR_LENS_WIN)
+cube([8, 1, LENS_H], center=true);
+
+// 5. PWB (Printed Wiring Board)
+translate([0, PWB_OFFSET_Y, -BODY_H/2 - PWB_T/2])
+color(COLOR_PWB)
+cube([BODY_W, PWB_D, PWB_T], center=true);
+
+// 6. 3-Pin Connector (JCTC 12001W90-3P-HF)
+// Simplified as a block with 3 pins
+translate([0, 0, -BODY_H/2 - PWB_T - CONN_H/2]) {
+    color(COLOR_CONN)
+    cube([CONN_W, CONN_D, CONN_H], center=true);
+    
+    // Tiny pins simplified
+    for(i = [-1 : 1]) {
+        translate([i * 2, 0, -CONN_H/2 - 1])
+        color("silver")
+        cube([0.5, 0.5, 2], center=true);
+    }
+}
+```

@@ -1,0 +1,41 @@
+画像を確認しました。形状・寸法・配置ともに仕様通りです：
+
+- 六角頭部が z=0 を底面として +Z 方向に伸びている
+- シャンクが z=0 から -Z 方向に伸びている
+- 六角形の頭部、円柱のシャンク、比率も適切
+
+問題ないため、同じコードをそのまま出力します。
+
+```openscad
+// M8 Hex Bolt (simplified - no thread)
+// Head bottom face at z=0, shank extends in -Z direction
+
+// Parameters
+across_flats = 13;    // Head across-flats distance (mm)
+head_height  = 5.3;   // Head height (mm)
+shank_dia    = 8;     // Shank diameter (mm)
+shank_len    = 30;    // Shank length (mm)
+
+// Circumradius of regular hexagon from across-flats distance
+hex_r = across_flats / (2 * cos(30));  // = across_flats / sqrt(3)
+
+// Hex head: bottom at z=0, extends in +Z direction
+module hex_head() {
+    linear_extrude(height = head_height) {
+        circle(r = hex_r, $fn = 6);
+    }
+}
+
+// Shank: top at z=0, extends in -Z direction
+module shank() {
+    translate([0, 0, -shank_len]) {
+        cylinder(h = shank_len, d = shank_dia, $fn = 64);
+    }
+}
+
+// Assemble bolt
+union() {
+    hex_head();
+    shank();
+}
+```

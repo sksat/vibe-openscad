@@ -1,0 +1,43 @@
+{
+  "runId": "iter-png-1_gpt-5-nano-a726d38e56d5-2026-04-28T19-01-57-023Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "iter-png-1/gpt-5-nano",
+  "signature": "a726d38e56d59d7659967e696efb83f213e83266e6f7cce786782dee695bed7d",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5-nano-2025-08-07",
+      "iterateFrom": "bare/gpt-5-nano",
+      "iteration": {
+        "kind": "render-png-feedback"
+      },
+      "parentSignature": "456bb3c4fb75dda4925c4c6a41d2b90ce8c326d872229b8e036b2e886f84753b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5-nano-2025-08-07",
+  "harness": {
+    "kind": "bare",
+    "iteration": {
+      "kind": "render-png-feedback"
+    }
+  },
+  "status": "render_error",
+  "timing": {
+    "totalMs": 110546
+  },
+  "tokens": {
+    "input": 1010,
+    "output": 17005
+  },
+  "cost_usd": 0.0068525,
+  "createdAt": "2026-04-28T19:01:57.023Z",
+  "gitCommit": "781e6c683dda9349da96561361d4da5f2c54975e",
+  "error": "openscad stl render failed (exit 1): ERROR: Parser error: syntax error in file ../../../../../tmp/render-DdIUix/input.scad, line 6\nCan't parse file '/tmp/render-DdIUix/input.scad'!\n\n",
+  "parentRunId": "bare_gpt-5-nano-456bb3c4fb75-2026-04-28T15-16-17-187Z"
+}

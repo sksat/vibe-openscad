@@ -1,0 +1,76 @@
+// バット蝶番（180°開いた状態）
+
+// パラメータ
+leaf_width = 25;    // 板の幅
+leaf_height = 30;   // 板の高さ
+leaf_thickness = 2; // 板の厚み
+knuckle_od = 8;     // knuckle外径
+pin_diameter = 4;   // ピン軸径
+pin_clearance = 0.3; // ピンクリアランス
+knuckle_id = pin_diameter + pin_clearance; // knuckle内径
+pin_length = 32;    // ピン軸長さ
+knuckle_length = 6; // 各knuckle長さ
+
+// 皿穴パラメータ
+screw_hole_dia = 3.2;
+countersink_dia = 6;
+countersink_depth = 1;
+screw_spacing = 8;
+
+module leaf_with_knuckles(knuckle_positions, side) {
+    difference() {
+        union() {
+            // メイン板（180°開いた状態で同一平面）
+            translate([side * (leaf_width/2 + knuckle_od/2), 0, 0])
+                cube([leaf_width, leaf_height, leaf_thickness], center=true);
+            
+            // knuckles（Y軸方向に配置、互い違い）
+            for (i = [0:len(knuckle_positions)-1]) {
+                pos = knuckle_positions[i];
+                translate([0, pos, 0])
+                    rotate([90, 0, 0])
+                    cylinder(h=knuckle_length, d=knuckle_od, center=true);
+            }
+        }
+        
+        // knuckle穴（ピン軸用、Y軸方向）
+        for (i = [0:len(knuckle_positions)-1]) {
+            pos = knuckle_positions[i];
+            translate([0, pos, 0])
+                rotate([90, 0, 0])
+                cylinder(h=knuckle_length+0.2, d=knuckle_id, center=true);
+        }
+        
+        // 皿穴（knuckleから離れた側）
+        for (i = [0:2]) {
+            screw_y = -leaf_height/2 + 6 + i * screw_spacing;
+            translate([side * (leaf_width * 0.7 + knuckle_od/2), screw_y, leaf_thickness/2]) {
+                // 皿穴（表面側）
+                cylinder(h=countersink_depth+0.1, d1=screw_hole_dia, d2=countersink_dia);
+                // 貫通穴
+                translate([0, 0, -leaf_thickness/2])
+                    cylinder(h=leaf_thickness+0.2, d=screw_hole_dia);
+            }
+        }
+    }
+}
+
+// knuckle位置（Y座標、30mmを5等分して中心配置）
+// 左板（外側2個＋中央1個）: -15, -9, -3, 3, 9, 15のうち-15, 0, 15
+left_knuckle_positions = [-15, 0, 15];
+
+// 右板（中間2個）: -7.5, 7.5
+right_knuckle_positions = [-7.5, 7.5];
+
+// 左板（x<0側）
+color("steelblue")
+leaf_with_knuckles(left_knuckle_positions, -1);
+
+// 右板（x>0側）
+color("steelblue") 
+leaf_with_knuckles(right_knuckle_positions, 1);
+
+// ピン軸（Y軸方向、32mm長さ）
+color("silver")
+rotate([90, 0, 0])
+cylinder(h=pin_length, d=pin_diameter, center=true);

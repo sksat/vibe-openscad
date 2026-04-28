@@ -1,0 +1,73 @@
+レンダリング画像を見ると、垂直面の皿穴で z-fighting(面の重なりによるちらつき)が発生しています。これは皿座面の円柱が外側面とちょうど同一平面で終わっているため、その先の貫通穴が見えていないことが原因です。皿座面の円柱を少しだけ外側に飛び出させ、貫通穴も両端に余裕を持たせて修正します。
+
+また、課題の「面の縁から 10mm 内側」という指示は、左右(X 方向)の縁からの距離としても解釈できますが、現状コードは Y 方向(または Z 方向)の縁からの距離としており、「中心線上で左右対称に 2 個並べる」という記述から見て前後/上下方向の配置で正しいと判断します(width=50 に対し x 中心=25 に揃え、長手 40mm に対して 10/30mm の位置)。これは妥当です。
+
+```openscad
+// L-bracket with countersunk holes
+
+$fn = 64;
+
+// Parameters
+width     = 50;   // X direction
+depth     = 40;   // Y direction (horizontal flange depth)
+height    = 40;   // Z direction (vertical flange height)
+thickness = 3;    // plate thickness
+
+hole_dia    = 4.5;
+csk_dia     = 8;
+csk_depth   = 2;
+edge_offset = 10;
+
+eps = 0.05;
+
+// Hole positions: on centerline (x = width/2),
+// 10mm from each end along the flange length, symmetrical pair.
+x_center = width / 2;
+pos_a = edge_offset;          // 10
+pos_b = depth - edge_offset;  // 30
+
+module l_bracket() {
+    difference() {
+        union() {
+            // Horizontal flange: inner (top) face at z=0, extends in +Y
+            translate([0, 0, -thickness])
+                cube([width, depth, thickness]);
+
+            // Vertical flange: inner face at y=0, extends in +Z.
+            // Includes corner block (z: -thickness..0) for a clean joint.
+            translate([0, -thickness, -thickness])
+                cube([width, thickness, height + thickness]);
+        }
+
+        // --- Horizontal flange holes (axis along Z) ---
+        // Outer face is at z = -thickness (bottom) -> countersink there.
+        for (y = [pos_a, pos_b]) {
+            translate([x_center, y, 0]) {
+                // Through hole
+                translate([0, 0, -thickness - eps])
+                    cylinder(d = hole_dia, h = thickness + 2*eps);
+                // Countersink on outer (-Z) face
+                translate([0, 0, -thickness - eps])
+                    cylinder(d = csk_dia, h = csk_depth + eps);
+            }
+        }
+
+        // --- Vertical flange holes (axis along Y) ---
+        // Outer face is at y = -thickness -> countersink there.
+        for (z = [pos_a, pos_b]) {
+            translate([x_center, 0, z]) {
+                // Through hole along Y
+                translate([0, eps, 0])
+                    rotate([90, 0, 0])
+                        cylinder(d = hole_dia, h = thickness + 2*eps);
+                // Countersink on outer (-Y) face
+                translate([0, -thickness + csk_depth + eps, 0])
+                    rotate([90, 0, 0])
+                        cylinder(d = csk_dia, h = csk_depth + eps);
+            }
+        }
+    }
+}
+
+l_bracket();
+```

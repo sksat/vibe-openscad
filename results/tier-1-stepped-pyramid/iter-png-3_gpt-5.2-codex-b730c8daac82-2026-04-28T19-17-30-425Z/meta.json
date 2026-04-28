@@ -1,0 +1,42 @@
+{
+  "runId": "iter-png-3_gpt-5.2-codex-b730c8daac82-2026-04-28T19-17-30-425Z",
+  "taskId": "tier-1-stepped-pyramid",
+  "matrixId": "iter-png-3/gpt-5.2-codex",
+  "signature": "b730c8daac82951b67cff4a68d6b893f5053fd6dd4a298b00794c5dc3489a9a7",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "f33c33343b97cdee4ab2a95d84c7f4be5791294d1e997d9c55a752a15c9a2446",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5.2-codex",
+      "iterateFrom": "iter-png-2/gpt-5.2-codex",
+      "iteration": {
+        "kind": "render-png-feedback"
+      },
+      "parentSignature": "9487cb122f1d5bf9b0a73eba269cca8e7097ec893a05bfb3c9b21f9312029edb"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5.2-codex",
+  "harness": {
+    "kind": "bare",
+    "iteration": {
+      "kind": "render-png-feedback"
+    }
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 2409
+  },
+  "tokens": {
+    "input": 786,
+    "output": 154
+  },
+  "cost_usd": 0.0031056,
+  "createdAt": "2026-04-28T19:17:30.425Z",
+  "gitCommit": "781e6c683dda9349da96561361d4da5f2c54975e",
+  "parentRunId": "iter-png-2_gpt-5.2-codex-9487cb122f1d-2026-04-28T19-17-14-363Z"
+}

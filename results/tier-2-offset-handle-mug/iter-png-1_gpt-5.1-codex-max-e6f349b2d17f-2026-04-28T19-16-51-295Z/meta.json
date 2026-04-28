@@ -1,0 +1,43 @@
+{
+  "runId": "iter-png-1_gpt-5.1-codex-max-e6f349b2d17f-2026-04-28T19-16-51-295Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "iter-png-1/gpt-5.1-codex-max",
+  "signature": "e6f349b2d17f65e658bf318117595f93defd256910444d35a124314e3ef3d650",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5.1-codex-max",
+      "iterateFrom": "bare/gpt-5.1-codex-max",
+      "iteration": {
+        "kind": "render-png-feedback"
+      },
+      "parentSignature": "f88d16315e81103a112fa8d55053f405e3cb0cb2176cbba51a14df1adfc74e2e"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5.1-codex-max",
+  "harness": {
+    "kind": "bare",
+    "iteration": {
+      "kind": "render-png-feedback"
+    }
+  },
+  "status": "render_error",
+  "timing": {
+    "totalMs": 37196
+  },
+  "tokens": {
+    "input": 1474,
+    "output": 4426
+  },
+  "cost_usd": 0.0507496,
+  "createdAt": "2026-04-28T19:16:51.295Z",
+  "gitCommit": "781e6c683dda9349da96561361d4da5f2c54975e",
+  "error": "openscad stl render failed (exit 1): ERROR: Parser error: syntax error in file ../../../../../tmp/render-ZrtOaj/input.scad, line 37\nCan't parse file '/tmp/render-ZrtOaj/input.scad'!\n\n",
+  "parentRunId": "bare_gpt-5.1-codex-max-f88d16315e81-2026-04-28T14-36-33-366Z"
+}

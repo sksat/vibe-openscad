@@ -1,0 +1,53 @@
+$fn = 64;
+
+width = 50;
+depth = 40;
+height = 40;
+thickness = 3;
+
+through_d = 4.5;
+csk_d = 8;
+csk_depth = 2;
+
+hole_offset_from_side = 10;
+
+hole_x1 = -width/2 + hole_offset_from_side;
+hole_x2 =  width/2 - hole_offset_from_side;
+h_center_y = depth/2;
+v_center_z = height/2;
+
+difference() {
+    union() {
+        // Horizontal flange: inside face at z=0, extends +Y, thickness to -Z
+        translate([-width/2, 0, -thickness])
+            cube([width, depth, thickness]);
+
+        // Vertical flange: inside face at y=0, extends +Z, thickness to -Y
+        translate([-width/2, -thickness, 0])
+            cube([width, thickness, height]);
+    }
+
+    // Horizontal flange holes (outer side = bottom, -Z)
+    for (x = [hole_x1, hole_x2]) {
+        // Through hole
+        translate([x, h_center_y, -thickness - 0.1])
+            cylinder(d = through_d, h = thickness + 0.2);
+
+        // Countersunk seat
+        translate([x, h_center_y, -thickness - 0.1])
+            cylinder(d = csk_d, h = csk_depth + 0.1);
+    }
+
+    // Vertical flange holes (outer side = back, -Y)
+    for (x = [hole_x1, hole_x2]) {
+        // Through hole
+        translate([x, -thickness - 0.1, v_center_z])
+            rotate([-90, 0, 0])
+                cylinder(d = through_d, h = thickness + 0.2);
+
+        // Countersunk seat
+        translate([x, -thickness - 0.1, v_center_z])
+            rotate([-90, 0, 0])
+                cylinder(d = csk_d, h = csk_depth + 0.1);
+    }
+}

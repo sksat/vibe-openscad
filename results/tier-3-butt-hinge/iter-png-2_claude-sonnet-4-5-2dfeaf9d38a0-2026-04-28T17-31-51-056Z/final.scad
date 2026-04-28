@@ -1,0 +1,104 @@
+// 小型バット蝶番 (180° 開いた状態)
+
+$fn = 64;
+
+// パラメータ
+leaf_length = 30;      // 板の縦(Y方向)
+leaf_width = 25;       // 板の横(X方向)
+leaf_thickness = 2;    // 板の厚さ
+knuckle_od = 8;        // knuckle外径
+pin_diameter = 4;      // ピン軸直径
+pin_clearance = 0.3;   // クリアランス
+knuckle_id = pin_diameter + pin_clearance;  // knuckle内径
+knuckle_segment = 6;   // knuckleセグメント長
+pin_length = 32;       // ピン軸長
+screw_hole_d = 3.2;    // M3貫通穴
+countersink_d = 6;     // 皿穴直径
+countersink_depth = 1; // 皿穴深さ
+screw_spacing = 8;     // 皿穴間隔
+
+// 左板 (knuckle 3個: Y=0-6, 12-18, 24-30)
+module left_leaf() {
+    difference() {
+        union() {
+            // 平板部
+            translate([-leaf_width, 0, -leaf_thickness/2])
+                cube([leaf_width - knuckle_od/2, leaf_length, leaf_thickness]);
+            
+            // knuckle 3個
+            for (i = [0, 2, 4]) {
+                translate([0, i * knuckle_segment, 0])
+                    rotate([-90, 0, 0])
+                        cylinder(d = knuckle_od, h = knuckle_segment);
+            }
+        }
+        
+        // knuckle内径穴
+        for (i = [0, 2, 4]) {
+            translate([0, i * knuckle_segment - 0.1, 0])
+                rotate([-90, 0, 0])
+                    cylinder(d = knuckle_id, h = knuckle_segment + 0.2);
+        }
+        
+        // 皿穴 3個 (knuckleから離れた側、Y方向に8mm間隔)
+        for (i = [0, 1, 2]) {
+            translate([-leaf_width + 6, 7 + i * screw_spacing, -leaf_thickness/2]) {
+                // 貫通穴
+                translate([0, 0, -0.1])
+                    cylinder(d = screw_hole_d, h = leaf_thickness + 0.2);
+                // 皿穴 (上面から)
+                translate([0, 0, leaf_thickness - countersink_depth])
+                    cylinder(d1 = screw_hole_d, d2 = countersink_d, h = countersink_depth + 0.1);
+            }
+        }
+    }
+}
+
+// 右板 (knuckle 2個: Y=6-12, 18-24)
+module right_leaf() {
+    difference() {
+        union() {
+            // 平板部
+            translate([knuckle_od/2, 0, -leaf_thickness/2])
+                cube([leaf_width - knuckle_od/2, leaf_length, leaf_thickness]);
+            
+            // knuckle 2個
+            for (i = [1, 3]) {
+                translate([0, i * knuckle_segment, 0])
+                    rotate([-90, 0, 0])
+                        cylinder(d = knuckle_od, h = knuckle_segment);
+            }
+        }
+        
+        // knuckle内径穴
+        for (i = [1, 3]) {
+            translate([0, i * knuckle_segment - 0.1, 0])
+                rotate([-90, 0, 0])
+                    cylinder(d = knuckle_id, h = knuckle_segment + 0.2);
+        }
+        
+        // 皿穴 3個 (knuckleから離れた側、Y方向に8mm間隔)
+        for (i = [0, 1, 2]) {
+            translate([leaf_width - 6, 7 + i * screw_spacing, -leaf_thickness/2]) {
+                // 貫通穴
+                translate([0, 0, -0.1])
+                    cylinder(d = screw_hole_d, h = leaf_thickness + 0.2);
+                // 皿穴 (上面から)
+                translate([0, 0, leaf_thickness - countersink_depth])
+                    cylinder(d1 = screw_hole_d, d2 = countersink_d, h = countersink_depth + 0.1);
+            }
+        }
+    }
+}
+
+// ピン軸
+module pin() {
+    translate([0, -1, 0])
+        rotate([-90, 0, 0])
+            cylinder(d = pin_diameter, h = pin_length);
+}
+
+// 組み立て
+left_leaf();
+right_leaf();
+pin();

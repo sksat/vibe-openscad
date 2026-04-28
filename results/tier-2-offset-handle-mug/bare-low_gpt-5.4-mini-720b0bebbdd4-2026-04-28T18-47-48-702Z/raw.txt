@@ -1,0 +1,54 @@
+```openscad
+$fn = 128;
+
+module mug_body() {
+    difference() {
+        cylinder(h = 90, d = 80);
+        translate([0, 0, 6])
+            cylinder(h = 90 - 6 + 0.2, d = 70);
+    }
+}
+
+module handle_2d() {
+    // D-shaped profile in the X-Z plane:
+    // flat side on the body, semicircle on the outside.
+    outer_w = 35;
+    outer_h = 40;
+    inner_w = 25;
+    inner_h = 30;
+    cx = 57.5;
+    cz = 45;
+
+    difference() {
+        union() {
+            translate([40, cz - outer_h / 2])
+                square([outer_w / 2, outer_h], center = false);
+            translate([cx, cz])
+                circle(r = outer_h / 2);
+        }
+        union() {
+            translate([45, cz - inner_h / 2])
+                square([inner_w / 2, inner_h], center = false);
+            translate([cx, cz])
+                circle(r = inner_h / 2);
+        }
+    }
+}
+
+module handle() {
+    // Extrude along Y to give the handle thickness.
+    // Slight overlap into the mug body ensures a robust union.
+    linear_extrude(height = 16, center = true, convexity = 10)
+        handle_2d();
+}
+
+union() {
+    mug_body();
+
+    // Small bridge to guarantee a solid manifold connection on the +X side.
+    translate([38.5, -8, 26])
+        cube([8.0, 16, 38], center = false);
+
+    handle();
+}
+```

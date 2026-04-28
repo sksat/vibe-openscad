@@ -1,0 +1,38 @@
+{
+  "runId": "bare-think-off_claude-opus-4-7-ba41c0145181-2026-04-28T18-48-05-625Z",
+  "taskId": "tier-2-hex-bolt",
+  "matrixId": "bare-think-off/claude-opus-4-7",
+  "signature": "ba41c0145181925f5418a8bead5c4322b3e0b8736507d992c1474c1951b1c843",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "0fee46bf3152dd6738d6d2af93e06dad04bb6bddd3b2b528c57138298ec0b5d0",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-opus-4-7",
+      "modelOptions": {
+        "thinking": {
+          "type": "disabled"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-opus-4-7",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 3978
+  },
+  "tokens": {
+    "input": 267,
+    "output": 227
+  },
+  "cost_usd": 0.007009999999999999,
+  "createdAt": "2026-04-28T18:48:05.625Z",
+  "gitCommit": "781e6c683dda9349da96561361d4da5f2c54975e"
+}

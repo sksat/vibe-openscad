@@ -1,0 +1,70 @@
+画像を確認しました。提示されたコードでは、以下の2点が要件から外れています。
+1. **板とナックルの接続位置**: プレートの端がナックルの中心に来ておらず、隙間や段差が生じています。
+2. **ネジ穴の配置**: プレートの幅25mmに対して穴が中央に寄りすぎており、バランスが悪いです。
+
+これらを修正し、プレートの端をナックルの外周と滑らかに接合し、ネジ穴を適切な位置（プレート幅の中心付近）に配置したコードを出力します。
+
+```openscad
+// Parameters
+leaf_w = 25;
+leaf_h = 30;
+leaf_t = 2;
+knuckle_outer_d = 8;
+knuckle_inner_d = 4.3;
+pin_d = 4;
+pin_l = 32;
+knuckle_count = 5;
+knuckle_len = leaf_h / knuckle_count; // 6mm
+hole_dist = 8;
+
+module leaf_with_knuckles(is_left) {
+    union() {
+        // Plate
+        // knuckleの端(半径4mm)からプレートが伸びるように配置
+        translate([is_left ? -leaf_w : 0, -leaf_h/2, 0]) 
+            cube([leaf_w, leaf_h, leaf_t]);
+            
+        // Knuckles
+        for (i = [0:knuckle_count-1]) {
+            // 左板は0, 2, 4番目、右板は1, 3番目
+            if ((is_left && (i % 2 == 0)) || (!is_left && (i % 2 != 0))) {
+                translate([0, -leaf_h/2 + i * knuckle_len + knuckle_len/2, 0])
+                rotate([90, 0, 0]) 
+                cylinder(d = knuckle_outer_d, h = knuckle_len, center = true);
+            }
+        }
+    }
+}
+
+module hinge() {
+    difference() {
+        union() {
+            leaf_with_knuckles(true);
+            leaf_with_knuckles(false);
+        }
+        // Pin hole
+        rotate([90, 0, 0]) cylinder(d = knuckle_inner_d, h = leaf_h + 1, center = true);
+        
+        // Screw holes (Left)
+        for (i = [-1, 0, 1]) {
+            translate([-15, i * hole_dist, -1]) {
+                cylinder(d1 = 6, d2 = 3.2, h = 1.1);
+                cylinder(d = 3.2, h = leaf_t + 2);
+            }
+        }
+        // Screw holes (Right)
+        for (i = [-1, 0, 1]) {
+            translate([15, i * hole_dist, -1]) {
+                cylinder(d1 = 6, d2 = 3.2, h = 1.1);
+                cylinder(d = 3.2, h = leaf_t + 2);
+            }
+        }
+    }
+
+    // Pin
+    rotate([90, 0, 0]) color("silver") cylinder(d = pin_d, h = pin_l, center = true);
+}
+
+$fn = 100;
+hinge();
+```

@@ -1,0 +1,24 @@
+```openscad
+// M8 hex bolt (simplified, no threads)
+
+// Parameters
+across_flats = 13;      // head width across flats (mm)
+head_height  = 5.3;     // head height (mm)
+shank_dia    = 8;       // shank diameter (mm)
+shank_len    = 30;      // shank length (mm)
+
+// Derived: circumscribed circle radius from across-flats
+head_radius = across_flats / sqrt(3);
+
+module hex_bolt() {
+    // Head: hexagonal prism, bottom at z=0, extends to z=head_height
+    translate([0, 0, 0])
+        cylinder(h = head_height, r = head_radius, $fn = 6);
+
+    // Shank: cylinder extending downward (z<0)
+    translate([0, 0, -shank_len])
+        cylinder(h = shank_len, d = shank_dia, $fn = 64);
+}
+
+hex_bolt();
+```

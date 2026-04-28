@@ -1,0 +1,20 @@
+// M8 六角ボルト
+
+// 頭部寸法
+head_across_flats = 13;
+head_height = 5.3;
+
+// シャンク寸法
+shank_diameter = 8;
+shank_length = 30;
+
+// 対辺距離から外接円半径を計算
+head_radius = head_across_flats / 2 / cos(30);
+
+// 頭部(六角柱)
+translate([0, 0, 0])
+    cylinder(h = head_height, r = head_radius, $fn = 6);
+
+// シャンク(円柱)
+translate([0, 0, -shank_length])
+    cylinder(h = shank_length, d = shank_diameter, $fn = 64);

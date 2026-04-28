@@ -1,0 +1,38 @@
+{
+  "runId": "bare-think-off_claude-opus-4-7-c5bcef0c2fbe-2026-04-28T17-22-00-194Z",
+  "taskId": "tier-3-butt-hinge",
+  "matrixId": "bare-think-off/claude-opus-4-7",
+  "signature": "c5bcef0c2fbe1963564d316915b6dd7c85aa85e3a81e3237811a422834c17766",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dd7199030a8827a181914869189fc45a2e5637023f0c8c59532d442557036e7c",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-opus-4-7",
+      "modelOptions": {
+        "thinking": {
+          "type": "disabled"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-opus-4-7",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 17428
+  },
+  "tokens": {
+    "input": 748,
+    "output": 1401
+  },
+  "cost_usd": 0.038765,
+  "createdAt": "2026-04-28T17:22:00.194Z",
+  "gitCommit": "be87c9f2adaf51be5e9ccb7f63eb95c7bc456929"
+}

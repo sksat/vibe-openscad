@@ -1,0 +1,147 @@
+// Mug +X-side D-handle (revised to match prompt)
+
+// ---- Quality ----
+$fn = 160;
+
+// ---- Mug parameters ----
+outer_d   = 80;           // outer diameter
+inner_d   = 70;           // inner diameter
+wall      = (outer_d-inner_d)/2; // =5
+h_mug     = 90;           // mug height
+t_bottom  = 6;           // bottom thickness
+
+// ---- Handle parameters ----
+handle_void_w = 25;      // width of inner void (Y direction)
+handle_void_h = 30;      // height of inner void (Z direction)
+handle_center_z = h_mug/2;
+
+// Handle should connect to +X side ONLY.
+// We'll attach it so the handle extends only from x = mug outer radius to x = mug outer radius + depth,
+// and we also clip it to x>=mug_outer_r so it doesn't appear on -X side.
+handle_depth = 22;       // extrusion depth along +X
+handle_wall  = 4;        // thickness of handle shell in the D cross-section
+
+// Avoid tiny non-manifold overlaps: ensure a small overlap when unioning/subtracting.
+eps = 0.6;
+
+// ---- Derived mug radii ----
+mug_outer_r = outer_d/2; // 40
+mug_inner_r = inner_d/2; // 35
+
+// ---- 2D semicircle with flat at y=0, bulge toward +Y ----
+module semicircle_with_flat(r=10) {
+  // returns polygon in (Y,Z) plane with flat edge at Y=0
+  pts = [
+    for (i=[0:80])
+      let(
+        a = -90 + i*(180/80),
+        y = r*cos(a),     // 0..r..0
+        z = r*sin(a)      // -r..+r
+      )
+      [y, z]
+  ];
+  // close with flat edge
+  polygon(concat(pts, [[0, -r],[0, r]]));
+}
+
+// ---- D-handle as hollow D-shell extruded in +X ----
+// Cross-section in YZ: outer semicircle (bulge +Y) with flat at Y=0,
+// inner semicircle reduced by handle_wall, also flat at Y=0.
+// Then we clip to requested inner void rectangle by subtracting a box.
+module handle_d_shell() {
+  // Outer D "radius" in YZ. Inner void width at flat-to-flat should be handle_void_w.
+  // Because both outer/inner are clipped from y=0..clip_y_max, this controls the void width.
+  // Choose outer radius so that inner radius - clipping gives adequate wall.
+  // We'll directly size by clip bounds and inner radius.
+  //
+  // For better match: let inner semicircle radius be handle_void_h/2,
+  // and then outer semicircle radius = inner + handle_wall.
+  r_inner = handle_void_h/2;
+  r_outer = r_inner + handle_wall;
+
+  // Inner void rectangle is width handle_void_w (Y) and height handle_void_h (Z).
+  // We will subtract this box after forming D-shell, ensuring exact dimensions.
+  clip_y_max = handle_void_w;
+
+  // Z placement centered at handle_center_z.
+  z0 = handle_center_z - handle_void_h/2;
+
+  // Build shell at local origin where:
+  // - flat face is at Y=0
+  // - Z is centered at 0
+  // Later we translate to mug coordinates.
+  difference() {
+    // Outer D shell
+    translate([mug_outer_r - eps, 0, handle_center_z])
+      linear_extrude(height=handle_depth, center=false)
+        intersection() {
+          semicircle_with_flat(r=r_outer);
+          // Clip in Y to control overall "grip" width of the D
+          square([clip_y_max, 2*r_outer + 1], center=false);
+        }
+
+    // Inner void: subtract smaller D-shape
+    translate([mug_outer_r - eps, 0, handle_center_z])
+      linear_extrude(height=handle_depth + 2*eps, center=false)
+        intersection() {
+          semicircle_with_flat(r=r_inner);
+          square([clip_y_max, 2*r_inner + 1], center=false);
+        }
+
+    // Ensure void height exactly handle_void_h by cutting with a box
+    translate([mug_outer_r - eps - 0.2, 0, z0])
+      cube([handle_depth + 2*eps + 0.4, clip_y_max, handle_void_h], center=false);
+
+    // Extra cut: ensure no negative-Y void extension and also keep manifold sane
+    // (flat at Y=0 means void shouldn't go to negative Y)
+  }
+}
+
+// Ensure handle ONLY appears on +X side:
+// 1) Position handle so its "inner base" is on mug's outer radius.
+// 2) Clip by x >= mug_outer_r so it cannot protrude to -X.
+module handle_with_x_clip() {
+  difference() {
+    handle_d_shell();
+    // Clip away any part with x < mug_outer_r
+    translate([mug_outer_r/2, 0, handle_center_z])
+      cube([mug_outer_r + eps, 200, 200], center=true);
+    // (This cube centered at mug_outer_r/2 will cover x from 0..mug_outer_r+eps,
+    // but since we need to remove x < mug_outer_r, we instead rely on
+    // subtracting a large block that covers the -X side.)
+  }
+}
+
+// ---- Mug body ----
+module mug_body() {
+  difference() {
+    cylinder(d=outer_d, h=h_mug, center=false);
+    translate([0,0,t_bottom])
+      cylinder(d=inner_d, h=h_mug - t_bottom, center=false);
+  }
+}
+
+// ---- Final ----
+union() {
+  mug_body();
+
+  // Place handle at +X side:
+  // In this model, the handle's flat face is at Y=0 (i.e., centered on +Y side).
+  // To center the handle symmetrically around the Y axis, shift it by -handle_void_w/2 in Y
+  // is *not* requested by prompt; prompt says inner space width 25 (likely along Y),
+  // but doesn't require centering around Y=0. However typical handle should be centered.
+  //
+  // We'll center it: void should span Y=[-handle_void_w/2, +handle_void_w/2].
+  // Our D currently spans Y in [0, handle_void_w] due to flat at Y=0.
+  // So shift by -handle_void_w/2 to center it around Y=0.
+  translate([0, -handle_void_w/2, 0]) {
+    // Clip to +X only using an explicit intersection with x>=mug_outer_r
+    intersection() {
+      handle_with_x_clip();
+
+      // keep only x>=mug_outer_r
+      translate([mug_outer_r + (handle_depth/2), 0, handle_center_z])
+        cube([handle_depth + mug_outer_r + 50, 200, h_mug + 100], center=true);
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "runId": "bare-high_gpt-5.5-a6ba99f94538-2026-04-28T17-30-54-528Z",
+  "taskId": "tier-3-butt-hinge",
+  "matrixId": "bare-high/gpt-5.5",
+  "signature": "a6ba99f945387efab54cda38d124390ec9d83514e7f01b4c038d1e3503cbf535",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dd7199030a8827a181914869189fc45a2e5637023f0c8c59532d442557036e7c",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5.5-2026-04-23",
+      "modelOptions": {
+        "reasoning": {
+          "effort": "high"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5.5-2026-04-23",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 250370
+  },
+  "tokens": {
+    "input": 592,
+    "output": 13182
+  },
+  "cost_usd": 0.13255999999999998,
+  "createdAt": "2026-04-28T17:30:54.528Z",
+  "gitCommit": "be87c9f2adaf51be5e9ccb7f63eb95c7bc456929"
+}

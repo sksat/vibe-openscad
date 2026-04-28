@@ -1,0 +1,33 @@
+```openscad
+// M8規格準拠の六角ボルト（ねじ山は省略、シャンクは円柱）
+af = 13;            // across flats (mm)
+head_h = 5.3;        // head height (mm)
+shank_len = 30;      // shank length (mm)
+shank_r = 4;         // shank radius (mm) -> Ø8 mm
+
+R = af / sqrt(3);    // hex head circumradius
+
+head_pts = [
+  [ R, 0 ],
+  [ R/2, R*sqrt(3)/2 ],
+  [ -R/2, R*sqrt(3)/2 ],
+  [ -R, 0 ],
+  [ -R/2, -R*sqrt(3)/2 ],
+  [ R/2, -R*sqrt(3)/2 ]
+];
+
+module hex_head() {
+  linear_extrude(height = head_h)
+    polygon(points = head_pts);
+}
+
+module shank() {
+  translate([0, 0, -shank_len])
+    cylinder(h = shank_len, r = shank_r, $fn = 64);
+}
+
+union() {
+  hex_head();
+  shank();
+}
+```

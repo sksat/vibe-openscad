@@ -1,0 +1,46 @@
+```openscad
+// L-bracket with countersunk holes
+
+module countersunk_hole(through_dia, counter_dia, counter_depth, total_depth) {
+    translate([0, 0, -total_depth]) {
+        cylinder(h = total_depth, d = through_dia, $fn = 32);
+    }
+    translate([0, 0, -counter_depth]) {
+        cylinder(h = counter_depth, d1 = counter_dia, d2 = through_dia, $fn = 32);
+    }
+}
+
+module l_bracket() {
+    difference() {
+        union() {
+            // Horizontal flange
+            cube([50, 40, 3]);
+            
+            // Vertical flange
+            cube([50, 3, 43]);
+        }
+        
+        // Horizontal flange holes
+        translate([15, 20, 3]) {
+            countersunk_hole(4.5, 8, 2, 3);
+        }
+        translate([35, 20, 3]) {
+            countersunk_hole(4.5, 8, 2, 3);
+        }
+        
+        // Vertical flange holes
+        translate([15, 0, 23]) {
+            rotate([-90, 0, 0]) {
+                countersunk_hole(4.5, 8, 2, 3);
+            }
+        }
+        translate([35, 0, 23]) {
+            rotate([-90, 0, 0]) {
+                countersunk_hole(4.5, 8, 2, 3);
+            }
+        }
+    }
+}
+
+l_bracket();
+```

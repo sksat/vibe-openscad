@@ -1,0 +1,34 @@
+```openscad
+// M8 hex bolt (simplified: no threads, cylindrical shank)
+// Head: hexagonal prism, across-flats = 13 mm, height = 5.3 mm
+// Shank: cylinder, diameter = 8 mm, length = 30 mm
+// Head bottom at z = 0, shank extends to z < 0, central axis along +Z
+
+$fn = 64; // smooth cylinder
+
+module hex_head(across_flats = 13, height = 5.3) {
+    // For a regular hexagon: across_flats = R * sqrt(3)  => circumradius R = across_flats / sqrt(3)
+    R = across_flats / sqrt(3);
+    // Create a 6-sided regular polygon with circumradius R, centered at origin
+    linear_extrude(height = height, center = false, convexity = 10)
+        polygon(points = [ for(i = [0:5]) let(a = i*360/6) [ R*cos(a), R*sin(a) ] ]);
+}
+
+module shank(diameter = 8, length = 30) {
+    // Cylinder with top at z = 0, extending to negative z
+    translate([0,0,-length]) // move base to z = -length
+        translate([0,0,0]) // ensures top at z=0 after cylinder creation
+            cylinder(h = length, d = diameter, center = false);
+}
+
+// Assemble: head from z=0 up, shank from z=0 down
+union() {
+    // Head: bottom at z = 0
+    translate([0,0,0]) hex_head(13, 5.3);
+    // Shank: top at z = 0, extends to z = -30
+    shank(8, 30);
+}
+
+// Optional: create a module and call it (already assembled above)
+// bolt();
+```

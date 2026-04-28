@@ -1,0 +1,202 @@
+```openscad
+// Parameters
+leaf_width = 25;
+leaf_height = 30;
+leaf_thickness = 2;
+pin_diameter = 4;
+pin_length = 32;
+knuckle_outer_diameter = 8;
+knuckle_inner_diameter = pin_diameter + 0.3;
+knuckle_height = 6; // 30mm / 5 equal parts
+num_knuckles_left = 3;
+num_knuckles_right = 2;
+m3_countersink_diameter = 6;
+m3_countersink_depth = 1;
+m3_hole_diameter = 3.2;
+m3_hole_spacing = 8;
+
+module pin() {
+    cylinder(h = pin_length, d = pin_diameter, center = true);
+}
+
+module knuckle(side) {
+    difference() {
+        cylinder(h = knuckle_height, d = knuckle_outer_diameter, center = true);
+        // Ensure the hole goes all the way through the knuckle
+        cylinder(h = knuckle_height + 0.1, d = knuckle_inner_diameter, center = true);
+    }
+}
+
+// Helper module for creating a conical void for the countersink
+module countersink_hole(depth, d_outer, d_inner) {
+    // This creates a frustum shape and then a cylinder.
+    // The frustum is from the surface (z=0) to 'depth'.
+    // The cylinder continues from 'depth' to 'leaf_thickness'.
+
+    // Frustum part
+    // hull() creates a shape connecting two 2D shapes.
+    // We need to create two circles at the start and end of the frustum.
+    hull() {
+        circle(d = d_outer);
+        translate([depth, 0, 0]) circle(d = d_inner);
+    }
+
+    // Cylinder part for the through hole
+    translate([depth, 0, 0]) {
+        cylinder(h = leaf_thickness - depth, d = d_inner, center = false);
+    }
+}
+
+module leaf(side) {
+    // Base leaf shape
+    cube([leaf_thickness, leaf_width, leaf_height], center = true);
+
+    // Mount holes
+    // The prompt states "板の縦方向に 8mm 間隔" which corresponds to the leaf's height (30mm).
+    // The leaf is centered at Z=0. So Z-coordinates for holes will be -m3_hole_spacing, 0, m3_hole_spacing.
+    // The holes are on the surface of the leaf, so their X-coordinate should be at the edge of the leaf.
+    // The X-coordinate for the surface is `side * leaf_thickness / 2`.
+
+    // For the countersink, we need to create a negative volume.
+    // The countersink hole will be applied as a difference.
+    // We need to position the countersink module correctly relative to the leaf's outer face.
+    // The countersink module itself will be translated to the correct position on the leaf face.
+
+    // Left leaf holes (side = -1)
+    if (side == -1) {
+        translate([leaf_thickness / 2, 0, -m3_hole_spacing]) {
+            // The countersink_hole module assumes it's on a face and creates a void extending into the leaf.
+            // We need to ensure it cuts *into* the leaf.
+            // The default orientation of the countersink_hole module is along the X-axis.
+            // For the left leaf, the outer face is at X = leaf_thickness / 2.
+            // The countersink should be placed at this face and extend inwards (towards X=0).
+            // We can achieve this by using rotate to align the countersink module's creation axis.
+            rotate([0, 0, 0]) { // No rotation needed if countersink_hole is built along X
+                difference() {
+                    // This is a placeholder for the leaf's actual geometry that the countersink will subtract from.
+                    // However, the countersink_hole module is designed to be placed as a void.
+                    // Let's rethink the structure. We should create the leaf as solid, then subtract the countersinks.
+
+                    // Let's redefine the countersink_hole to create the negative shape.
+                    // We can then apply this to the leaf.
+
+                    // Rebuilding the countersink_hole module as a subtractive part.
+                    // This module will be called within a difference() operation on the leaf.
+                    // The countersink_hole module needs to be aligned correctly.
+                    // For the left leaf (side = -1), the face is at +leaf_thickness/2. The countersink extends inwards.
+                    // For the right leaf (side = 1), the face is at -leaf_thickness/2. The countersink extends inwards.
+                    // The countersink_hole module is defined to create a void along its local X-axis.
+                    // So, we need to translate and possibly rotate it.
+
+                    // Correct approach: Position the countersink void at the leaf's face and extrude inwards.
+                    // The countersink_hole module is already designed to create this void.
+                    // We need to place it on the correct face.
+
+                    // Left leaf: face at X = leaf_thickness/2. Extrude towards X=0.
+                    translate([leaf_thickness / 2, 0, -m3_hole_spacing]) {
+                        rotate([0, 90, 0]) { // Rotate to align hole creation along X-axis
+                            countersink_hole(m3_countersink_depth, m3_countersink_diameter, m3_hole_diameter);
+                        }
+                    }
+                }
+            }
+        }
+        translate([leaf_thickness / 2, 0, 0]) {
+            rotate([0, 90, 0]) {
+                countersink_hole(m3_countersink_depth, m3_countersink_diameter, m3_hole_diameter);
+            }
+        }
+        translate([leaf_thickness / 2, 0, m3_hole_spacing]) {
+            rotate([0, 90, 0]) {
+                countersink_hole(m3_countersink_depth, m3_countersink_diameter, m3_hole_diameter);
+            }
+        }
+    }
+
+    // Right leaf holes (side = 1)
+    if (side == 1) {
+        translate([-leaf_thickness / 2, 0, -m3_hole_spacing]) {
+            // Right leaf: face at X = -leaf_thickness/2. Extrude towards X=0.
+            // The countersink_hole module extrudes along its local X.
+            // So we need to rotate it to face inwards.
+            rotate([0, -90, 0]) { // Rotate to align hole creation along X-axis, pointing inwards
+                countersink_hole(m3_countersink_depth, m3_countersink_diameter, m3_hole_diameter);
+            }
+        }
+        translate([-leaf_thickness / 2, 0, 0]) {
+            rotate([0, -90, 0]) {
+                countersink_hole(m3_countersink_depth, m3_countersink_diameter, m3_hole_diameter);
+            }
+        }
+        translate([-leaf_thickness / 2, 0, m3_hole_spacing]) {
+            rotate([0, -90, 0]) {
+                countersink_hole(m3_countersink_depth, m3_countersink_diameter, m3_hole_diameter);
+            }
+        }
+    }
+}
+
+// Assemble the hinge in 180 degree open state
+module butt_hinge() {
+    // Pin
+    // The pin's length is 32mm, knuckles are 6mm high each.
+    // Total height of knuckles on one side: 3 * 6 = 18mm, 2 * 6 = 12mm.
+    // The pin should extend 1mm beyond the outermost knuckles on each side.
+    // Left knuckles are at Y = -12, 0, 12. Outermost is at Y=12.
+    // Right knuckles are at Y = -6, 6. Outermost is at Y=6.
+    // The pin should extend from Y = -15 to Y = 15 (approx).
+    // Pin length 32mm is correct for this. It extends from -16 to 16.
+
+    pin();
+
+    // Left knuckles and leaf plate
+    // Knuckle Y-positions for left leaf: [-12, 0, 12]
+    // These positions are relative to the center of the hinge barrel stack (Y-axis).
+    // The knuckle centers are offset from the Y-axis.
+    // The left knuckles are on the X < 0 side of the pin's YZ plane.
+    // Their X-center position is -(knuckle_outer_diameter/2).
+    for (i = [0 : num_knuckles_left - 1]) {
+        translate([-knuckle_outer_diameter/2, [-12, 0, 12][i], 0]) {
+            knuckle(-1); // -1 indicates left side
+        }
+    }
+    // Left leaf plate positioned to the outside of its knuckles.
+    // The leaf plate's face is aligned with the outer edge of the knuckles.
+    // The leaf thickness is 2mm.
+    // The X-position of the left leaf's center should be such that its face is at the edge of the outermost knuckle.
+    // Outermost left knuckle center is at X = -knuckle_outer_diameter/2.
+    // The leaf's face should be at X = -knuckle_outer_diameter/2.
+    // So the leaf's center X should be -knuckle_outer_diameter/2 - leaf_thickness/2.
+    translate([-(knuckle_outer_diameter/2 + leaf_thickness/2), 0, 0]) {
+        difference() {
+            leaf(-1); // -1 indicates left side
+            // The leaf module itself will now contain the subtractive parts for holes.
+        }
+    }
+
+    // Right knuckles and leaf plate
+    // Knuckle Y-positions for right leaf: [-6, 6]
+    // The right knuckles are on the X > 0 side of the pin's YZ plane.
+    // Their X-center position is +(knuckle_outer_diameter/2).
+    for (i = [0 : num_knuckles_right - 1]) {
+        translate([knuckle_outer_diameter/2, [-6, 6][i], 0]) {
+            knuckle(1); // 1 indicates right side
+        }
+    }
+    // Right leaf plate positioned to the outside of its knuckles.
+    // The X-position of the right leaf's center should be such that its face is at the edge of the outermost knuckle.
+    // Outermost right knuckle center is at X = knuckle_outer_diameter/2.
+    // The leaf's face should be at X = knuckle_outer_diameter/2.
+    // So the leaf's center X should be knuckle_outer_diameter/2 + leaf_thickness/2.
+    translate([knuckle_outer_diameter/2 + leaf_thickness/2, 0, 0]) {
+        difference() {
+            leaf(1); // 1 indicates right side
+        }
+    }
+}
+
+// Position the hinge at the origin for final rendering
+translate([0, 0, 0]) {
+    butt_hinge();
+}
+```

@@ -1,0 +1,28 @@
+```openscad
+// M8 hex bolt (simplified thread omitted)
+
+$fn = 180;
+
+// Parameters
+af = 13;      // across-flats for hex head (mm)
+h  = 5.3;     // head height (mm)
+d_shank = 8;  // shank diameter (mm)
+l_shank = 30; // shank length (mm)
+
+// Derived
+r_hex = af / 2;  // circumscribed radius for a regular hex: across-flats = 2*R*cos(30)=R*sqrt(3) -> wait: use apothem
+// For a regular hexagon created by polygon/cylinder with flat-to-flat = af,
+// easiest: use cylinder with $fn=6; then use radius based on flat-to-flat.
+// For regular hex: flat-to-flat = 2 * apothem = 2 * r*cos(30) = r*sqrt(3)
+r_hex = af / sqrt(3);
+
+union() {
+    // Hex head: bottom face at z=0, center axis along +Z
+    translate([0, 0, h/2])
+        cylinder(h = h, r = r_hex, center = true, $fn = 6);
+
+    // Shank: extends into z<0 side
+    translate([0, 0, -l_shank/2])
+        cylinder(h = l_shank, d = d_shank, center = true, $fn = 180);
+}
+```

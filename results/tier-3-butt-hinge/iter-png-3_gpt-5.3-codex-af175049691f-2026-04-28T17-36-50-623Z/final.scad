@@ -1,0 +1,101 @@
+$fn = 96;
+
+// ===== Parameters =====
+leaf_len_y      = 30;    // hinge axis direction
+leaf_width_x    = 25;    // opening direction
+leaf_thick_z    = 2;
+
+pin_d           = 4;
+pin_r           = pin_d/2;
+pin_len         = 32;    // 1mm protrusion each side from 30mm knuckle stack
+
+knuckle_od      = 8;
+knuckle_or      = knuckle_od/2;
+knuckle_id      = 4.6;   // pin + 0.3 clearance
+knuckle_ir      = knuckle_id/2;
+knuckle_seg     = 6;     // 30/5
+
+csk_thru_d      = 3.2;
+csk_head_d      = 6;
+csk_depth       = 1;
+
+y0 = -leaf_len_y/2;      // -15
+
+// ===== Utilities =====
+function seg_center(i) = y0 + knuckle_seg*i + knuckle_seg/2; // i=0..4
+
+left_idx  = [0,2,4]; // left leaf knuckles (outer, center, outer)
+right_idx = [1,3];   // right leaf knuckles (middle two)
+
+hole_y = [-8,0,8];   // 8mm pitch along Y
+
+// ===== Features =====
+module countersunk_hole_through(plate_t=2) {
+    // Through hole
+    translate([0,0,-plate_t/2-0.05])
+        cylinder(h=plate_t+0.1, d=csk_thru_d);
+
+    // Countersink from +Z surface (top): tapered, depth 1mm
+    // top dia 6 -> bottom dia 3.2
+    translate([0,0,plate_t/2-csk_depth])
+        cylinder(h=csk_depth+0.01, d1=csk_thru_d, d2=csk_head_d);
+}
+
+module leaf_plate(side=1) {
+    // side +1: right (x>0), side -1: left (x<0)
+    x0 = (side>0) ? 0 : -leaf_width_x;
+    translate([x0, y0, -leaf_thick_z/2])
+        cube([leaf_width_x, leaf_len_y, leaf_thick_z], center=false);
+}
+
+module knuckle_half(yc, side=1) {
+    // Half-cylinder shell centered at X=0, axis along Y, length=6
+    intersection() {
+        translate([0,yc,0])
+            rotate([90,0,0])
+                cylinder(h=knuckle_seg, d=knuckle_od, center=true);
+        // keep x>=0 (right) or x<=0 (left)
+        if (side>0)
+            translate([0, yc-knuckle_seg/2-0.01, -knuckle_or-0.01])
+                cube([knuckle_or+0.02, knuckle_seg+0.02, 2*knuckle_or+0.02], center=false);
+        else
+            translate([-knuckle_or-0.01, yc-knuckle_seg/2-0.01, -knuckle_or-0.01])
+                cube([knuckle_or+0.02, knuckle_seg+0.02, 2*knuckle_or+0.02], center=false);
+    }
+}
+
+module leaf_with_knuckles(side=1) {
+    idxs = (side>0) ? right_idx : left_idx;
+
+    difference() {
+        union() {
+            leaf_plate(side);
+            for (i=idxs) knuckle_half(seg_center(i), side);
+        }
+
+        // Knuckle bore in each segment
+        for (i=idxs) {
+            translate([0,seg_center(i),0])
+                rotate([90,0,0])
+                    cylinder(h=knuckle_seg+0.2, d=knuckle_id, center=true);
+        }
+
+        // Screw holes near free edge
+        hx = (side>0) ? (leaf_width_x-5) : (-leaf_width_x+5);
+        for (yy=hole_y) {
+            translate([hx,yy,0]) countersunk_hole_through(leaf_thick_z);
+        }
+    }
+}
+
+module pin() {
+    // Pin axis on global Y axis
+    rotate([90,0,0]) cylinder(h=pin_len, d=pin_d, center=true);
+}
+
+// ===== Assembly (180° open, both leaves coplanar) =====
+union() {
+    leaf_with_knuckles(-1); // left leaf to x<0
+    leaf_with_knuckles( 1); // right leaf to x>0
+    pin();
+}

@@ -1,0 +1,140 @@
+レンダリング結果を確認すると、以下の問題があります：
+
+1. **ナックルが5つではなく2つしか見えない** - 左板に3個、右板に2個の計5個のナックルが互い違いに配置されるべき
+2. **板の平らな面がZ軸に直交していない** - 180°開いた状態で両板の平らな面が同一平面に来るべき
+3. **ナックルの配置が正しくない** - Y方向に6mmずつ並ぶべき
+
+修正したコードを以下に出力します：
+
+```openscad
+// Butt Hinge - Furniture Small Size
+// Three parts: Left leaf, Right leaf, Pin
+
+// Parameters
+leaf_length = 30;      // Y direction (along hinge axis)
+leaf_width = 25;       // X direction (opening direction)
+leaf_thickness = 2;    // Z direction
+
+pin_diameter = 4;
+pin_length = 32;
+pin_clearance = 0.3;
+
+knuckle_outer_diameter = 8;
+knuckle_inner_diameter = pin_diameter + pin_clearance;
+knuckle_radius = knuckle_outer_diameter / 2;
+knuckle_height = 6;    // 30mm / 5 = 6mm each
+knuckle_gap = 0.1;     // Small gap between knuckles
+
+// Countersunk hole parameters
+hole_diameter = 3.2;
+countersink_diameter = 6;
+countersink_depth = 1;
+hole_spacing = 8;
+
+$fn = 64;
+
+// Module for countersunk hole (drilled from top, z+ direction)
+module countersunk_hole() {
+    // Through hole
+    translate([0, 0, -0.01])
+        cylinder(h = leaf_thickness + 0.02, d = hole_diameter);
+    // Countersink from top surface
+    translate([0, 0, leaf_thickness - countersink_depth])
+        cylinder(h = countersink_depth + 0.01, d1 = hole_diameter, d2 = countersink_diameter);
+}
+
+// Module for single knuckle cylinder (along Y axis)
+module knuckle_cylinder(y_start, height) {
+    translate([0, y_start, 0])
+        rotate([-90, 0, 0])
+            difference() {
+                cylinder(h = height, d = knuckle_outer_diameter);
+                translate([0, 0, -0.01])
+                    cylinder(h = height + 0.02, d = knuckle_inner_diameter);
+            }
+}
+
+// Module for left leaf (3 knuckles at positions 0, 2, 4)
+module left_leaf() {
+    // In 180° open position, left plate extends in -X direction
+    // Plate flat surface is on Z=0 plane (bottom) to Z=leaf_thickness (top)
+    // Knuckle center axis is at Z = knuckle_radius
+    
+    difference() {
+        union() {
+            // Main plate - extends from x = -leaf_width to x = 0
+            // But knuckle takes some space, so plate edge meets knuckle
+            translate([-leaf_width, 0, 0])
+                cube([leaf_width, leaf_length, leaf_thickness]);
+            
+            // Knuckles at positions 0, 2, 4 (first, third, fifth)
+            // Y positions: 0-6, 12-18, 24-30
+            translate([0, 0, knuckle_radius])
+            {
+                knuckle_cylinder(0, knuckle_height - knuckle_gap/2);
+                knuckle_cylinder(2 * knuckle_height + knuckle_gap/2, knuckle_height - knuckle_gap);
+                knuckle_cylinder(4 * knuckle_height + knuckle_gap/2, knuckle_height - knuckle_gap/2);
+            }
+        }
+        
+        // Countersunk holes - 3 holes on the plate away from knuckle
+        // Centered horizontally on plate, spaced 8mm vertically
+        for (i = [-1, 0, 1]) {
+            translate([-leaf_width/2, leaf_length/2 + i * hole_spacing, 0])
+                countersunk_hole();
+        }
+    }
+}
+
+// Module for right leaf (2 knuckles at positions 1, 3)
+module right_leaf() {
+    // In 180° open position, right plate extends in +X direction
+    
+    difference() {
+        union() {
+            // Main plate - extends from x = 0 to x = leaf_width
+            translate([0, 0, 0])
+                cube([leaf_width, leaf_length, leaf_thickness]);
+            
+            // Knuckles at positions 1, 3 (second, fourth)
+            // Y positions: 6-12, 18-24
+            translate([0, 0, knuckle_radius])
+            {
+                knuckle_cylinder(knuckle_height + knuckle_gap/2, knuckle_height - knuckle_gap);
+                knuckle_cylinder(3 * knuckle_height + knuckle_gap/2, knuckle_height - knuckle_gap);
+            }
+        }
+        
+        // Countersunk holes
+        for (i = [-1, 0, 1]) {
+            translate([leaf_width/2, leaf_length/2 + i * hole_spacing, 0])
+                countersunk_hole();
+        }
+    }
+}
+
+// Module for pin
+module pin() {
+    // Pin axis along Y at X=0, Z=knuckle_radius
+    // Pin extends from Y = -1 to Y = 31 (32mm total, 1mm overhang each end)
+    translate([0, -1, knuckle_radius])
+        rotate([-90, 0, 0])
+            cylinder(h = pin_length, d = pin_diameter);
+}
+
+// Assembly - 180° open position
+// Pin axis along Y at X=0, Z=knuckle_radius
+// Both plates have flat surface at Z=0 to Z=leaf_thickness
+
+// Left leaf (extends in -X direction)
+color("DimGray")
+    left_leaf();
+
+// Right leaf (extends in +X direction)  
+color("Gray")
+    right_leaf();
+
+// Pin
+color("Silver")
+    pin();
+```

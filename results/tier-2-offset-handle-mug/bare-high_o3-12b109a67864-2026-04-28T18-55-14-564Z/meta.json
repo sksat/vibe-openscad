@@ -1,0 +1,38 @@
+{
+  "runId": "bare-high_o3-12b109a67864-2026-04-28T18-55-14-564Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "bare-high/o3",
+  "signature": "12b109a67864341b4be979e0cdf92a7e8c5fc92ff1d78f3c1d5c9bc4439da6ab",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "o3-2025-04-16",
+      "modelOptions": {
+        "reasoning": {
+          "effort": "high"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "o3-2025-04-16",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 188111
+  },
+  "tokens": {
+    "input": 273,
+    "output": 15619
+  },
+  "cost_usd": 0.125498,
+  "createdAt": "2026-04-28T18:55:14.564Z",
+  "gitCommit": "781e6c683dda9349da96561361d4da5f2c54975e"
+}

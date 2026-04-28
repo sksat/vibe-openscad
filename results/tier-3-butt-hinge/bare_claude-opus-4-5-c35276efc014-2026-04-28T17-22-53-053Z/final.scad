@@ -1,0 +1,129 @@
+// Butt Hinge - Furniture Small Size
+// Three parts: Left leaf, Right leaf, Pin
+
+// Parameters
+leaf_length = 30;      // Y direction (along hinge axis)
+leaf_width = 25;       // X direction (opening direction)
+leaf_thickness = 2;    // Z direction
+
+pin_diameter = 4;
+pin_length = 32;
+pin_clearance = 0.3;
+
+knuckle_outer_diameter = 8;
+knuckle_inner_diameter = pin_diameter + pin_clearance;
+knuckle_height = 6;    // 30mm / 5 = 6mm each
+knuckle_count = 5;
+
+// Countersunk hole parameters
+hole_diameter = 3.2;
+countersink_diameter = 6;
+countersink_depth = 1;
+hole_spacing = 8;
+hole_offset_from_knuckle = 12.5;  // Center of holes from knuckle edge
+
+$fn = 64;
+
+// Module for countersunk hole
+module countersunk_hole() {
+    union() {
+        // Through hole
+        cylinder(h = leaf_thickness + 1, d = hole_diameter, center = true);
+        // Countersink (on top surface, z = leaf_thickness/2)
+        translate([0, 0, leaf_thickness/2 - countersink_depth/2 + 0.01])
+            cylinder(h = countersink_depth, d1 = hole_diameter, d2 = countersink_diameter, center = true);
+    }
+}
+
+// Module for knuckle (half cylinder attached to leaf)
+module knuckle(is_left) {
+    difference() {
+        // Outer cylinder
+        rotate([-90, 0, 0])
+            cylinder(h = knuckle_height, d = knuckle_outer_diameter, center = false);
+        // Inner hole for pin
+        rotate([-90, 0, 0])
+            translate([0, 0, -0.1])
+                cylinder(h = knuckle_height + 0.2, d = knuckle_inner_diameter, center = false);
+    }
+}
+
+// Module for leaf plate (without knuckles)
+module leaf_plate() {
+    // Plate positioned so that the edge at x=0 aligns with knuckle center
+    // and extends in -x direction for left leaf (will be mirrored for right)
+    translate([-leaf_width, 0, -leaf_thickness/2])
+        cube([leaf_width, leaf_length, leaf_thickness]);
+}
+
+// Module for left leaf (3 knuckles: positions 0, 2, 4 - i.e., outer two + center)
+module left_leaf() {
+    knuckle_radius = knuckle_outer_diameter / 2;
+    
+    difference() {
+        union() {
+            // Main plate - extends in -X direction
+            // Plate top surface at z = knuckle center height - leaf_thickness/2 + knuckle_radius
+            // For 180° open, both plates should be on same plane
+            // Knuckle center is at z=0, so plate surface should be at z = leaf_thickness/2
+            // But we want flat surfaces coplanar, so plate from z=0 to z=-leaf_thickness
+            translate([-leaf_width, 0, -leaf_thickness])
+                cube([leaf_width, leaf_length, leaf_thickness]);
+            
+            // Knuckles at positions 0, 2, 4 (left leaf gets 1st, 3rd, 5th)
+            for (i = [0, 2, 4]) {
+                translate([0, i * knuckle_height, 0])
+                    knuckle(true);
+            }
+        }
+        
+        // Countersunk holes (3 holes along Y axis)
+        for (i = [-1, 0, 1]) {
+            translate([-hole_offset_from_knuckle, leaf_length/2 + i * hole_spacing, -leaf_thickness/2])
+                countersunk_hole();
+        }
+    }
+}
+
+// Module for right leaf (2 knuckles: positions 1, 3 - middle two)
+module right_leaf() {
+    difference() {
+        union() {
+            // Main plate - extends in +X direction (mirrored)
+            translate([0, 0, -leaf_thickness])
+                cube([leaf_width, leaf_length, leaf_thickness]);
+            
+            // Knuckles at positions 1, 3 (right leaf gets 2nd, 4th)
+            for (i = [1, 3]) {
+                translate([0, i * knuckle_height, 0])
+                    knuckle(false);
+            }
+        }
+        
+        // Countersunk holes (3 holes along Y axis)
+        for (i = [-1, 0, 1]) {
+            translate([hole_offset_from_knuckle, leaf_length/2 + i * hole_spacing, -leaf_thickness/2])
+                countersunk_hole();
+        }
+    }
+}
+
+// Module for pin
+module pin() {
+    rotate([-90, 0, 0])
+        translate([0, 0, -1])  // Start 1mm before knuckles
+            cylinder(h = pin_length, d = pin_diameter, center = false);
+}
+
+// Assembly - 180° open position
+// Left leaf (red)
+color("DarkGray")
+    left_leaf();
+
+// Right leaf (blue)  
+color("Gray")
+    right_leaf();
+
+// Pin (silver)
+color("Silver")
+    pin();

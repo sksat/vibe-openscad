@@ -1,0 +1,43 @@
+{
+  "runId": "iter-png-2_gpt-5-mini-487f5601b697-2026-04-28T17-34-45-449Z",
+  "taskId": "tier-3-butt-hinge",
+  "matrixId": "iter-png-2/gpt-5-mini",
+  "signature": "487f5601b697d6588184cd8b22ed08e9611e9844370d2e334cd005a7d7831916",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dd7199030a8827a181914869189fc45a2e5637023f0c8c59532d442557036e7c",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5-mini-2025-08-07",
+      "iterateFrom": "iter-png-1/gpt-5-mini",
+      "iteration": {
+        "kind": "render-png-feedback"
+      },
+      "parentSignature": "b6b6395279e074b5f15ce35e503a43abcdf8fc1c3bb7e01e26e6dc216b220aa5"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5-mini-2025-08-07",
+  "harness": {
+    "kind": "bare",
+    "iteration": {
+      "kind": "render-png-feedback"
+    }
+  },
+  "status": "render_error",
+  "timing": {
+    "totalMs": 89926
+  },
+  "tokens": {
+    "input": 3007,
+    "output": 5356
+  },
+  "cost_usd": 0.01146375,
+  "createdAt": "2026-04-28T17:34:45.449Z",
+  "gitCommit": "be87c9f2adaf51be5e9ccb7f63eb95c7bc456929",
+  "error": "openscad stl render failed (exit 1): ERROR: Parser error: syntax error in file ../../../../../tmp/render-wURp5d/input.scad, line 49\nCan't parse file '/tmp/render-wURp5d/input.scad'!\n\n",
+  "parentRunId": "iter-png-1_gpt-5-mini-b6b6395279e0-2026-04-28T17-33-15-476Z"
+}

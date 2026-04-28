@@ -1,0 +1,83 @@
+$fn = 64;
+
+// --- パラメータ設定 ---
+leaf_w = 25;           // 板の幅
+leaf_h = 30;           // 板の高さ(縦)
+leaf_t = 2;            // 板の厚み
+pin_d = 4;             // ピン直径
+pin_l = 32;            // ピン長さ
+knuckle_od = 8;        // ナックル外径
+knuckle_id = 4.6;      // ナックル内径 (4mm + 0.3mm clearance x 2)
+knuckle_segments = 5;  // 分割数
+seg_h = leaf_h / knuckle_segments; // 1区画の長さ(6mm)
+
+screw_d = 3.2;         // M3貫通穴径
+screw_head_d = 6;      // 皿穴表面径
+screw_head_t = 1;      // 皿穴テーパ深さ
+hole_pitch = 8;        // 穴の間隔
+hole_x_pos = 18;       // ピン中心からの穴のX位置
+
+// --- モジュール: 皿穴 ---
+module screw_hole() {
+    // 貫通穴
+    translate([0, 0, -leaf_t - 0.5])
+        cylinder(d = screw_d, h = leaf_t + 1);
+    // 皿取りテーパ部
+    translate([0, 0, -screw_head_t])
+        cylinder(d1 = screw_d, d2 = screw_head_d, h = screw_head_t + 0.01);
+}
+
+// --- モジュール: ナックル(単体) ---
+module knuckle_part(y_offset) {
+    translate([0, y_offset, 0])
+    rotate([-90, 0, 0])
+    difference() {
+        cylinder(d = knuckle_od, h = seg_h);
+        translate([0, 0, -0.5])
+            cylinder(d = knuckle_id, h = seg_h + 1);
+    }
+}
+
+// --- 1. 左板 (Left Leaf) ---
+color("silver")
+difference() {
+    union() {
+        // 板部分 (X < 0)
+        translate([-leaf_w - knuckle_od/2, 0, -leaf_t])
+            cube([leaf_w, leaf_h, leaf_t]);
+        // ナックル部分 (1, 3, 5番目)
+        for (i = [0, 2, 4]) {
+            knuckle_part(i * seg_h);
+        }
+    }
+    // ネジ穴 (3個)
+    for (i = [0:2]) {
+        translate([-hole_x_pos, (leaf_h - (2 * hole_pitch))/2 + i * hole_pitch, 0])
+            screw_hole();
+    }
+}
+
+// --- 2. 右板 (Right Leaf) ---
+color("lightgray")
+difference() {
+    union() {
+        // 板部分 (X > 0)
+        translate([knuckle_od/2, 0, -leaf_t])
+            cube([leaf_w, leaf_h, leaf_t]);
+        // ナックル部分 (2, 4番目)
+        for (i = [1, 3]) {
+            knuckle_part(i * seg_h);
+        }
+    }
+    // ネジ穴 (3個)
+    for (i = [0:2]) {
+        translate([hole_x_pos, (leaf_h - (2 * hole_pitch))/2 + i * hole_pitch, 0])
+            screw_hole();
+    }
+}
+
+// --- 3. ピン軸 (Pin) ---
+color("gray")
+translate([0, (leaf_h - pin_l)/2, 0]) // Y方向に中心合わせ (-1mmから31mm)
+rotate([-90, 0, 0])
+cylinder(d = pin_d, h = pin_l);

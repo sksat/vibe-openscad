@@ -1,0 +1,26 @@
+$fn = 100;
+
+module mug_body() {
+    difference() {
+        cylinder(h=100, r=40);
+        translate([0,0,6])
+            cylinder(h=94, r=36);
+    }
+}
+
+module torus(R, r) {
+    rotate_extrude()
+        translate([R, 0, 0])
+            circle(r);
+}
+
+module handle() {
+    translate([54, 0, 50])
+        rotate([90, 0, 0])
+            torus(12, 4);
+}
+
+union() {
+    mug_body();
+    handle();
+}

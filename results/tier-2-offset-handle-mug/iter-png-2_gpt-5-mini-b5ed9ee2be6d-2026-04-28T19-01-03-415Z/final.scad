@@ -1,0 +1,63 @@
+// OpenSCAD: マグカップ（修正版）
+// 単位: mm
+
+$fn = 120; // 円を滑らかに
+
+// -------- パラメータ --------
+mug_outer_r = 40;    // 外半径 (外径 80)
+mug_inner_r = 35;    // 内半径 (内径 70)
+mug_h = 90;          // 高さ
+bottom_thickness = 6;
+
+handle_wall = 8;            // 取手の厚み（外側と内側の差）
+inner_open_w = 25;          // 取手内側空間の幅 (指 3 本ぐらい)
+inner_open_h = 30;          // 取手内側空間の高さ
+R_out = inner_open_w + handle_wall; // 取手外側半円の半径
+handle_extrude_h = inner_open_h + 10; // 取手の垂直厚み（内空間よりやや大）
+mug_center_z = mug_h/2;
+
+// 取手の平面（フラット面）の X 座標（本体外周に合わせる）
+flat_face_x = mug_outer_r; // フラット面をちょうど本体外周に合わせる
+outer_center_x = flat_face_x + R_out; // 半円中心の X
+
+// 取手内空間の位置（Z と X）
+inner_void_left_x = flat_face_x; // 内側空間は本体外周に開口するようにする
+inner_void_z = mug_center_z - inner_open_h/2;
+handle_z_bottom = mug_center_z - handle_extrude_h/2;
+
+// -------- モジュール --------
+module mug() {
+    difference() {
+        // 外側の円筒
+        translate([0,0,0]) cylinder(h=mug_h, r=mug_outer_r);
+        // 内側の空洞（底面の厚みを残す）
+        translate([0,0,bottom_thickness]) cylinder(h=mug_h - bottom_thickness, r=mug_inner_r);
+    }
+}
+
+module handle_piece() {
+    // 取手外形（半円＋フラット面）を押し出し、内側の指空間を差し引く
+    difference() {
+        // 外形: 半円を矩形で切り取ってフラットにする
+        translate([0,0,handle_z_bottom])
+            linear_extrude(height = handle_extrude_h, center = false, convexity = 10)
+                intersection() {
+                    // 半径 R_out の円（半分を残す）
+                    translate([outer_center_x, 0]) circle(r=R_out);
+                    // フラット面で切る矩形（左端を flat_face_x にする）
+                    // 少し余裕を持たせて縦方向は大きく取る
+                    translate([flat_face_x - 1, -(R_out + 10)])
+                        square([ (outer_center_x + R_out) - (flat_face_x - 1) + 20, 2*(R_out + 10) ]);
+                }
+
+        // 内側の指空間を差し引く（外側に開口するよう左端を flat_face_x に合わせる）
+        translate([inner_void_left_x, -(R_out + 10), inner_void_z])
+            cube([inner_open_w, 2*(R_out + 10), inner_open_h]);
+    }
+}
+
+// -------- 組み立て --------
+union() {
+    mug();
+    handle_piece();
+}

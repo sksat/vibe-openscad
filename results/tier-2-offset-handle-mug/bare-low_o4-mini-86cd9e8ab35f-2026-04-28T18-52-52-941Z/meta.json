@@ -1,0 +1,38 @@
+{
+  "runId": "bare-low_o4-mini-86cd9e8ab35f-2026-04-28T18-52-52-941Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "bare-low/o4-mini",
+  "signature": "86cd9e8ab35fad62ba27022c7356fb06ce4f1d53faf7f52b461d422c56b9e96b",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "o4-mini-2025-04-16",
+      "modelOptions": {
+        "reasoning": {
+          "effort": "low"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "o4-mini-2025-04-16",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 21043
+  },
+  "tokens": {
+    "input": 273,
+    "output": 2089
+  },
+  "cost_usd": 0.009491900000000001,
+  "createdAt": "2026-04-28T18:52:52.941Z",
+  "gitCommit": "781e6c683dda9349da96561361d4da5f2c54975e"
+}

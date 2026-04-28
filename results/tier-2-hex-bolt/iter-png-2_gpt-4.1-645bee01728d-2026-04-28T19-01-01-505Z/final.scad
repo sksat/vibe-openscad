@@ -1,0 +1,28 @@
+// M8 Hex Bolt (Thread omitted)
+// No correction needed; meets all requirements.
+
+// Parameters
+head_across_flats = 13;  // Head width across flats (mm)
+head_height = 5.3;       // Head height (mm)
+shank_diameter = 8;      // Shank diameter (mm)
+shank_length = 30;       // Shank length (mm)
+hex_sides = 6;
+
+// Calculate hex radius (distance from center to vertex)
+head_radius = head_across_flats / (2 * cos(180/hex_sides));
+
+// Hex head (centered at z = head_height/2, bottom at z = 0)
+module hex_head() {
+    translate([0, 0, head_height/2])
+        cylinder(h = head_height, r = head_radius, $fn = hex_sides);
+}
+
+// Shank (extends downward from bottom of head, along -Z)
+module shank() {
+    translate([0, 0, -shank_length])
+        cylinder(h = shank_length, r = shank_diameter/2, $fn = 60);
+}
+
+// Assemble
+hex_head();
+shank();

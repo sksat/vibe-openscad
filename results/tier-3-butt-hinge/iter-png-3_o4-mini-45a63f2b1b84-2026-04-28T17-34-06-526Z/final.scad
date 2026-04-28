@@ -1,0 +1,43 @@
+// Small butt hinge in open 180° configuration
+
+module leaf(side=1) {
+  // side = -1 for left leaf, +1 for right leaf
+  difference() {
+    union() {
+      // leaf plate
+      translate([ side == 1 ? 0 : -25, -15, 0 ])
+        cube([25, 30, 2]);
+      // knuckle barrels (outer)
+      for (ypt = side == 1 ? [-6, 6] : [-12, 0, 12]) {
+        translate([0, ypt, 6])
+          rotate([-90, 0, 0])
+            cylinder(h=6, r=4, center=true);
+      }
+    }
+    // knuckle barrel inner holes
+    for (ypt = side == 1 ? [-6, 6] : [-12, 0, 12]) {
+      translate([0, ypt, 6])
+        rotate([-90, 0, 0])
+          cylinder(h=6, r=2.3, center=true);
+    }
+    // M3 countersunk screw holes
+    for (ypt = [-8, 0, 8]) {
+      // countersink: 6mm dia at surface → 3.2mm dia at 1mm depth
+      translate([side*20, ypt, 1])
+        cylinder(h=1, r1=1.6, r2=3, center=false);
+      // through hole 3.2mm dia full thickness (2mm)
+      translate([side*20, ypt, 0])
+        cylinder(h=2, r=1.6, center=false);
+    }
+  }
+}
+
+// left leaf (x<0)
+leaf(-1);
+// right leaf (x>0)
+leaf(1);
+
+// hinge pin
+translate([0, 0, 6])
+  rotate([-90, 0, 0])
+    cylinder(h=32, r=2, center=true);

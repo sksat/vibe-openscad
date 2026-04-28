@@ -1,0 +1,12 @@
+// M8 Hex Bolt (Simplified model)
+$fn = 64;
+
+// 頭部: 六角柱 (Across-flats 13mm, Height 5.3mm)
+// OpenSCADのcylinder($fn=6)において d は外接円の直径（対角距離）となるため、
+// 対辺距離(S)を13mmにするための直径(D)は D = S / cos(30) で計算します。
+cylinder(h = 5.3, d = 13 / cos(30), $fn = 6);
+
+// シャンク: 円柱 (Diameter 8mm, Length 30mm)
+// 頭部の底面(z=0)から負の方向へ30mm伸ばします。
+translate([0, 0, -30])
+    cylinder(h = 30, d = 8);

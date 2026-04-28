@@ -1,0 +1,107 @@
+// マグカップのパラメータ
+mug_outer_diameter = 80;
+mug_wall_thickness = 5;
+mug_height = 90;
+mug_bottom_thickness = 6;
+
+// 取手のパラメータ
+handle_inner_height = 30;
+handle_inner_width = 25;
+handle_thickness = 8; // 本体との接続部を考慮した厚み
+
+// マグ本体の計算
+mug_outer_radius = mug_outer_diameter / 2;
+mug_inner_radius = mug_outer_radius - mug_wall_thickness;
+mug_body_height = mug_height - mug_bottom_thickness;
+
+// マグ本体の作成
+module mug_body() {
+    difference() {
+        // 外側の円筒
+        cylinder(h = mug_height, r = mug_outer_radius, $fn = 100);
+        // 内側の円筒 (飲み物用空間)
+        translate([0, 0, mug_bottom_thickness])
+            cylinder(h = mug_body_height + 0.1, r = mug_inner_radius, $fn = 100); // 少し高めに設定して完全にくり抜く
+    }
+}
+
+// 取手の作成
+module mug_handle() {
+    // 取手の中心位置をマグの高さの中央付近に設定
+    handle_center_z = mug_height / 2;
+
+    // 取手の外側の半円の半径
+    handle_outer_radius_base = mug_outer_radius; // 本体外周に接続
+    handle_outer_radius_arc = mug_inner_width / 2 + handle_thickness; // D字のカーブ部分
+
+    // 取手の形状を定義
+    module handle_shape(pos_x, pos_y, pos_z) {
+        translate([pos_x, pos_y, pos_z]) {
+            rotate([0, 90, 0]) { // X軸方向に向ける
+                union() {
+                    // D字のカーブ部分
+                    // 半円の円柱
+                    cylinder(h = handle_thickness, r = handle_outer_radius_arc, $fn = 100);
+                    // 本体に接続する直線部分
+                    translate([handle_outer_radius_arc - handle_thickness, 0, 0])
+                        cube([handle_thickness, handle_outer_radius_arc*2, handle_thickness], center=true);
+                }
+            }
+        }
+    }
+
+    // 取手の内側くり抜き
+    module handle_hollow(pos_x, pos_y, pos_z) {
+        translate([pos_x, pos_y, pos_z]) {
+            rotate([0, 90, 0]) { // X軸方向に向ける
+                translate([handle_thickness, 0, 0]) // 本体からのオフセット
+                    rotate([0, 0, 90])
+                        cylinder(h = handle_thickness + 0.1, r = handle_inner_width/2, $fn = 100); // 少し厚みを持たせて完全にくり抜く
+            }
+        }
+    }
+    
+    // 取手本体
+    handle_pos_x = mug_outer_radius;
+    handle_pos_y = 0;
+    handle_pos_z = handle_center_z;
+
+    difference() {
+        union() {
+            // 外側のD字形状 (本体への接続部を含む)
+            linear_extrude(height = handle_thickness, center = true) {
+                polygon(points = [
+                    [0, -handle_outer_radius_arc],
+                    [0, handle_outer_radius_arc],
+                    [handle_outer_radius_arc, handle_outer_radius_arc],
+                    [handle_outer_radius_arc, -handle_outer_radius_arc],
+                    [0, -handle_outer_radius_arc]
+                ]);
+            }
+            // 本体との接続部分
+            translate([handle_outer_radius_arc - handle_thickness, 0, 0])
+                cube([handle_thickness, handle_outer_radius_arc * 2, handle_thickness], center = true);
+        }
+        // 内側のくり抜き
+        translate([handle_thickness, 0, 0])
+            linear_extrude(height = handle_thickness + 0.1, center = true) {
+                polygon(points = [
+                    [0, -handle_inner_width/2],
+                    [0, handle_inner_width/2],
+                    [handle_inner_width, handle_inner_width/2],
+                    [handle_inner_width, -handle_inner_width/2],
+                    [0, -handle_inner_width/2]
+                ]);
+            }
+    }
+}
+
+
+// マグカップ全体を作成
+union() {
+    mug_body();
+    // 取手を本体の +X 軸方向の側面に取り付ける
+    translate([mug_outer_radius, 0, 0])
+        rotate([0, 90, 0])
+            mug_handle();
+}

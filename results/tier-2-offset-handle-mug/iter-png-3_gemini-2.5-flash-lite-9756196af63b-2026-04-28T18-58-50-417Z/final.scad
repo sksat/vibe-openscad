@@ -1,0 +1,99 @@
+// マグカップのパラメータ
+mug_outer_diameter = 80;
+mug_wall_thickness = 5;
+mug_height = 90;
+mug_bottom_thickness = 6;
+
+// 取手のパラメータ
+handle_inner_height = 30;
+handle_inner_width = 25;
+handle_thickness = 8; // 本体との接続部を考慮した厚み
+
+// マグ本体の計算
+mug_outer_radius = mug_outer_diameter / 2;
+mug_inner_radius = mug_outer_radius - mug_wall_thickness;
+mug_body_height_for_inner_cylinder = mug_height - mug_bottom_thickness; // 内側円筒の高さ計算用
+
+// マグ本体の作成
+module mug_body() {
+    difference() {
+        // 外側の円筒
+        cylinder(h = mug_height, r = mug_outer_radius, $fn = 100);
+        // 内側の円筒 (飲み物用空間)
+        translate([0, 0, mug_bottom_thickness])
+            cylinder(h = mug_body_height_for_inner_cylinder, r = mug_inner_radius, $fn = 100);
+    }
+}
+
+// 取手の作成
+module mug_handle() {
+    // 取手の中心位置をマグの高さの中央付近に設定
+    handle_center_z = mug_height / 2;
+
+    // D字形状の半円部分の外径
+    handle_arc_outer_diameter = handle_inner_width + 2 * handle_thickness;
+    handle_arc_outer_radius = handle_arc_outer_diameter / 2;
+    
+    // D字形状の直線部分の長さ (本体に接続する部分)
+    handle_straight_length = mug_outer_radius - handle_arc_outer_radius;
+
+    // 取手本体
+    union() {
+        // D字のカーブ部分
+        translate([handle_straight_length, 0, 0]) { // 直線部分の長さに合わせてオフセット
+            rotate([0, 90, 0]) { // X軸方向に向ける
+                cylinder(h = handle_thickness, r = handle_arc_outer_radius, $fn = 100);
+            }
+        }
+        // 本体に接続する直線部分
+        translate([handle_straight_length / 2, 0, 0]) {
+            rotate([0, 90, 0]) {
+                cube([handle_straight_length, handle_arc_outer_diameter, handle_thickness], center = true);
+            }
+        }
+    }
+}
+
+// 取手の内側くり抜き
+module handle_hollow() {
+    // D字形状の半円部分の内径
+    handle_arc_inner_diameter = handle_inner_width;
+    handle_arc_inner_radius = handle_arc_inner_diameter / 2;
+
+    // D字形状の直線部分の内側 (指が入る空間)
+    handle_inner_straight_length = handle_inner_width;
+    
+    union() {
+        // 内側のカーブ部分
+        translate([handle_thickness, 0, 0]) { // 本体との接続部の厚み分オフセット
+            rotate([0, 90, 0]) {
+                cylinder(h = handle_thickness, r = handle_arc_inner_radius, $fn = 100);
+            }
+        }
+        // 内側の直線部分 (指が入る空間)
+        translate([handle_thickness + handle_inner_width / 2, 0, 0]) {
+            rotate([0, 90, 0]) {
+                cube([handle_inner_straight_length, handle_inner_width, handle_thickness], center = true);
+            }
+        }
+    }
+}
+
+
+// マグカップ全体を作成
+union() {
+    mug_body();
+    
+    // 取手を本体の +X 軸方向の側面に取り付ける
+    translate([mug_outer_radius, 0, mug_height / 2]) { // マグの外周に配置し、高さを中央に
+        rotate([0, 0, 90]) { // Y軸周りに90度回転させて +X 軸方向に向ける
+            union() {
+                mug_handle();
+                // 内側のくり抜きを配置
+                translate([handle_thickness/2 + handle_inner_width/2, 0, 0]) { // 取手の厚みと内側空間のオフセットを考慮
+                    handle_hollow();
+                }
+            }
+        }
+    }
+}

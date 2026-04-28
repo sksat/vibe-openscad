@@ -1,0 +1,19 @@
+```openscad
+// Parameters
+af = 13;          // across-flats for hex head (mm)
+head_h = 5.3;     // head height (mm)
+shank_d = 8;      // shank diameter (mm)
+shank_h = 30;     // shank length (mm)
+
+// Derived
+head_d_corners = af * 2 / sqrt(3); // diameter across corners for hex
+
+union() {
+  // Hex head: base at z=0, extends to +Z
+  cylinder(h = head_h, d = head_d_corners, $fn = 6);
+
+  // Shank: extends from z=-shank_h to z=0
+  translate([0,0,-shank_h])
+    cylinder(h = shank_h, d = shank_d, $fn = 128);
+}
+```

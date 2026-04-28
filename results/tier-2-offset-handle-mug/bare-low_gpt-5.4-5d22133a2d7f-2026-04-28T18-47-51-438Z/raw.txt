@@ -1,0 +1,54 @@
+```openscad
+$fn = 128;
+
+mug_outer_d = 80;
+mug_inner_d = 70;
+mug_h       = 90;
+bottom_t    = 6;
+
+handle_inner_h = 30;
+handle_inner_w = 25;
+handle_wall    = 5;
+handle_thick_y = 12;
+
+handle_outer_h = handle_inner_h + 2*handle_wall; // 40
+handle_outer_w = handle_inner_w + 2*handle_wall; // 35
+
+mug_r = mug_outer_d/2;
+handle_zc = mug_h/2;
+attach_overlap = 3;
+handle_x = mug_r - attach_overlap;
+
+module d2d(h, w) {
+    r = h/2;
+    rect_w = max(w - r, 0);
+    union() {
+        square([rect_w, h], center=false);
+        translate([rect_w, r]) circle(r=r);
+    }
+}
+
+module mug_body() {
+    difference() {
+        cylinder(h=mug_h, d=mug_outer_d);
+        translate([0, 0, bottom_t])
+            cylinder(h=mug_h - bottom_t + 0.01, d=mug_inner_d);
+    }
+}
+
+module handle() {
+    translate([handle_x, -handle_thick_y/2, handle_zc - handle_outer_h/2])
+        rotate([-90, 0, 0])
+            linear_extrude(height=handle_thick_y)
+                difference() {
+                    d2d(handle_outer_h, handle_outer_w);
+                    translate([handle_wall, handle_wall])
+                        d2d(handle_inner_h, handle_inner_w);
+                }
+}
+
+union() {
+    mug_body();
+    handle();
+}
+```

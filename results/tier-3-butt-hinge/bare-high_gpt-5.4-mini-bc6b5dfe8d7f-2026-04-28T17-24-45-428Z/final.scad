@@ -1,0 +1,58 @@
+$fn = 64;
+eps = 0.05;
+
+plate_w = 25;
+plate_l = 30;
+plate_t = 2;
+
+knuckle_od = 8;
+knuckle_id = 4.6;
+knuckle_len = 6;
+
+pin_d = 4;
+pin_len = 32;
+
+screw_d = 3.2;
+sink_d = 6;
+sink_depth = 1;
+hole_x = plate_w - 7;
+hole_ys = [7, 15, 23];
+
+module countersunk_hole(x, y) {
+    translate([x, y, plate_t - sink_depth])
+        cylinder(h = sink_depth + eps, d1 = sink_d, d2 = screw_d);
+    translate([x, y, -eps])
+        cylinder(h = plate_t + 2 * eps, d = screw_d);
+}
+
+module knuckle(yc) {
+    translate([0, yc, plate_t / 2])
+        rotate([90, 0, 0])
+            difference() {
+                cylinder(h = knuckle_len, d = knuckle_od, center = true);
+                cylinder(h = knuckle_len + 2 * eps, d = knuckle_id, center = true);
+            }
+}
+
+module leaf(side, knuckles) {
+    difference() {
+        union() {
+            translate([side < 0 ? -plate_w : 0, 0, 0])
+                cube([plate_w, plate_l, plate_t]);
+            for (yc = knuckles)
+                knuckle(yc);
+        }
+        for (yy = hole_ys)
+            countersunk_hole(side > 0 ? hole_x : -hole_x, yy);
+    }
+}
+
+color([0.72, 0.72, 0.75]) {
+    leaf(-1, [3, 15, 27]);
+    leaf(1, [9, 21]);
+}
+
+color([0.9, 0.9, 0.95])
+translate([0, plate_l / 2, plate_t / 2])
+    rotate([90, 0, 0])
+    cylinder(h = pin_len, d = pin_d, center = true);

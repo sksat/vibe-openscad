@@ -1,0 +1,256 @@
+```openscad
+// Mug with handle on +X side
+
+// Body dimensions
+outer_r = 40;      // outer radius = 80mm diameter
+inner_r = 35;      // inner radius = 70mm diameter
+mug_h   = 90;      // height
+bottom_t = 6;      // bottom thickness
+
+// Handle dimensions
+handle_inner_h = 30;   // inner space height
+handle_inner_w = 25;   // inner space width (radial depth)
+handle_tube_t  = 6;    // handle tube thickness
+
+// Handle geometry:
+// The handle sits on the +X side of the mug.
+// It forms a D-shape: straight side against the mug, semicircular outer side.
+// 
+// We model the handle cross-section in the XZ plane (extruded in Y... 
+// actually rotated/swept around).
+// 
+// Better approach: model as a 2D profile extruded linearly (D shape in XY, 
+// then rotated to be in XZ plane).
+//
+// The handle inner space: height 30mm, width 25mm
+// Handle tube thickness: 6mm on all sides
+//
+// The D-shape:
+//   - straight side (against mug) at x = outer_r
+//   - inner space: from x = outer_r to x = outer_r + handle_inner_w, height = handle_inner_h
+//   - outer boundary: semicircle of radius = handle_inner_w/2 + handle_tube_t centered at 
+//     x = outer_r + handle_tube_t (the flat side thickness), y_mid of handle
+//
+// Let's place handle centered vertically on the mug at z = mug_h/2
+
+// Handle parameters
+ht = handle_tube_t;         // 6mm thickness
+hiw = handle_inner_w;       // 25mm inner width
+hih = handle_inner_h;       // 30mm inner height
+
+// The handle cross section (in XZ plane, centered at z=0 for now):
+// Outer rectangle/D: 
+//   X from outer_r to outer_r + ht + hiw + ht  (left wall + inner + right... 
+//   but right side is semicircle)
+//   Z from -hih/2 - ht to hih/2 + ht
+//
+// D-shape cross section: 
+//   bottom bar: z in [-hih/2-ht, -hih/2], x in [outer_r, outer_r+ht+hiw]
+//   top bar:    z in [ hih/2,  hih/2+ht], x in [outer_r, outer_r+ht+hiw]
+//   left wall (against mug): x in [outer_r, outer_r+ht], z in [-hih/2-ht, hih/2+ht]
+//   right/outer semicircle: centered at (outer_r + ht + hiw/2, 0), 
+//                            outer radius = hiw/2 + ht, inner radius = hiw/2... 
+//                            but only the outer half-annulus + the rect bars form the D
+//
+// Simplest: use linear_extrude on a 2D polygon in XZ, then rotate so it extrudes in Y... 
+// Actually let's use rotate_extrude won't work well for D-shape.
+//
+// Best approach: 
+//   1. Create the handle solid as a swept/extruded shape
+//   2. Use linear_extrude with a 2D D-shape profile, oriented correctly
+
+// We'll build the handle as:
+// - A rectangular frame (top/bottom/left bars) + a half-cylinder for the outer curve
+// All in the XZ plane, but since we need 3D we linear_extrude in Y with small depth,
+// No - the handle has thickness in the Y direction too.
+// 
+// Actually the handle should have circular cross section (like a tube) 
+// or rectangular cross section swept along the D path.
+// 
+// Let's keep it simple: the handle is a solid D-ring shape.
+// Model it as: (large D solid) minus (inner hollow of the D).
+// 
+// The handle outer boundary in XZ plane:
+//   - Rectangle from (outer_r, -hih/2-ht) to (outer_r+ht+hiw, hih/2+ht) 
+//     but the right side is a semicircle
+//   - Outer D: rect (outer_r to outer_r+ht+hiw, -(hih/2+ht) to hih/2+ht) 
+//              with right side replaced by semicircle of radius hih/2+ht centered at 
+//              (outer_r + ht + hiw/2 ... hmm this doesn't work cleanly
+//
+// Let me reconsider the geometry:
+// Center the D at x = outer_r + ht + hiw/2, z = 0 (relative to handle center)
+// The D-shape (outer):
+//   Half-circle on +X side: radius = (hih/2 + ht), centered at x=outer_r+ht+hiw/2... 
+//   No. Let me define it differently.
+//
+// Handle inner opening: width hiw=25 in X, height hih=30 in Z
+// Handle tube thickness: ht=6 on all sides
+// So handle outer size: (ht + hiw + semicircle) in X, (ht + hih + ht) in Z
+// The outer shape in XZ:
+//   Left edge at x = outer_r (flush with mug outer surface)
+//   Right side: semicircle
+//   The straight parts: 
+//     top: z = hih/2 + ht, x from outer_r to outer_r + ht + hiw/2
+//     bottom: z = -(hih/2 + ht), x from outer_r to outer_r + ht + hiw/2
+//     The right part curves: semicircle centered at (outer_r + ht + hiw/2... 
+//
+// I'll just implement it cleanly:
+
+$fn = 64;
+
+module mug_body() {
+    difference() {
+        // Outer cylinder
+        cylinder(h = mug_h, r = outer_r, center = false);
+        // Inner hollow (starts at bottom_t from bottom)
+        translate([0, 0, bottom_t])
+            cylinder(h = mug_h - bottom_t + 0.1, r = inner_r, center = false);
+    }
+}
+
+module handle() {
+    // Handle centered at z = mug_h/2
+    // Build in local coords, then translate
+    
+    // Outer D solid:
+    //   - A rectangle covering the left (mug-side) portion
+    //   - Plus a cylinder for the outer rounded part
+    // Inner cutout (the finger hole):
+    //   - A rectangle
+    //   - Plus a cylinder
+    //
+    // The D cross-section (in XZ plane, centered at z = mug_h/2):
+    //   inner opening: x from (outer_r + ht) to (outer_r + ht + hiw)
+    //                  z from (mug_h/2 - hih/2) to (mug_h/2 + hih/2)
+    //   The outer curve center (for semicircle): 
+    //     x = outer_r + ht + hiw/2... No, the outer curve should be a semicircle 
+    //     centered at the midpoint of the inner opening's right edge
+    //     Actually: center at x = outer_r + ht, z = mug_h/2
+    //     with the arc going around to make the D
+    //
+    // Let me use a clean definition:
+    // The D-shape handle (cross section in XZ):
+    //   Inner hole center for semicircle: (outer_r + ht, mug_h/2)
+    //   Inner semicircle radius: hiw (so inner width = hiw) -- NO
+    //
+    // OK final clean definition:
+    // The handle ring in cross-section (XZ plane):
+    //   Think of it as a rounded rectangle loop.
+    //   Inner loop: 
+    //     - straight part at x = outer_r + ht (left, against mug)
+    //     - semicircle on right: center at (outer_r + ht, mug_h/2), radius = hih/2
+    //       Wait, that makes inner width = hih/2 not hiw.
+    //
+    // I need inner width = hiw and inner height = hih.
+    // So inner shape: rectangle (outer_r+ht) to (outer_r+ht+hiw) in X, 
+    //                 (mug_h/2 - hih/2) to (mug_h/2 + hih/2) in Z
+    //                 but right side rounded with semicircle:
+    //                 center at (outer_r+ht, mug_h/2), but that's the left side...
+    //
+    // The inner opening of the handle IS a D-shape (mirroring the outer):
+    //   Left edge (against mug interior wall of handle) at x = outer_r + ht
+    //   Top at z = mug_h/2 + hih/2
+    //   Bottom at z = mug_h/2 - hih/2
+    //   Right side: semicircle centered at (outer_r + ht, mug_h/2) with radius hih/2
+    //   But that gives width on right = hih/2... 
+    //   Hmm, for a "D" shape the width and height are somewhat coupled.
+    //   
+    //   Actually for user: inner space 30mm high, 25mm wide.
+    //   Let's just make inner space a simple rectangle (not D-shaped inner hole).
+    //   Outer shape: D (semicircle on the right).
+    //
+    // FINAL APPROACH (simple and clear):
+    // 
+    // Handle solid = union of:
+    //   a) A box: x:[outer_r, outer_r+ht+hiw], z:[mug_h/2-hih/2-ht, mug_h/2+hih/2+ht]
+    //      (in Y: from -ht to +ht, i.e., thickness 2*ht... wait Y is perpendicular)
+    //
+    // Actually the handle needs thickness in the Y direction too.
+    // Let's say handle thickness in Y = ht*2 = 12mm (seems reasonable for grip).
+    // Or we can make it match the tube profile.
+    //
+    // SIMPLEST CORRECT APPROACH:
+    // Create handle as a 2D polygon (D-shape) and linear_extrude in Y.
+    // Then subtract the inner opening.
+    //
+    // 2D polygon in XZ (I'll use rotate + linear_extrude):
+    
+    handle_y_half = ht; // half-thickness in Y direction = 6mm, total 12mm
+    
+    // The handle 2D profile (in XZ plane):
+    // Outer boundary:
+    //   Points (going CCW):
+    //   (outer_r, mug_h/2 - hih/2 - ht)  bottom-left
+    //   (outer_r + ht + hiw/2, mug_h/2 - hih/2 - ht)  bottom-right start of arc  -- NO
+    //   
+    // Let me just do it with CSG:
+    // 
+    // Outer D solid (cross section extruded in Y):
+    //   outer_rect + outer_semicyl - inner_rect - inner_semicyl
+    
+    // The D-shape: 
+    // Imagine looking from the side (XZ plane):
+    // Outer shape of handle:
+    //   Left flat side at x = outer_r
+    //   Height: from z = mug_h/2 - (hih/2 + ht) to z = mug_h/2 + (hih/2 + ht)  => total = hih + 2ht
+    //   Right side: semicircle, center at (outer_r, mug_h/2), radius = hih/2 + ht + hiw
+    //   NO that's too big...
+    //
+    // OK I think the issue is I'm overcomplicating the geometry. Let me be very explicit:
+    //
+    // The D handle has:
+    //   - A flat side on the left (at x = outer_r, the mug surface)
+    //   - An arch on the right
+    //   - The inner opening (finger hole) is: height hih, width hiw
+    //   - The tube wall thickness is ht on all sides
+    //
+    // So:
+    //   Total height of handle = hih + 2*ht = 30 + 12 = 42mm
+    //   The flat left wall: from x=outer_r to x=outer_r+ht, height = hih+2ht
+    //   Top bar: from x=outer_r to x=outer_r+ht+hiw, thickness=ht (at top)
+    //   Bottom bar: same at bottom
+    //   Right arch: centered at x=outer_r+ht, z=mug_h/2
+    //     Outer semicircle radius = hih/2 + ht... but then width = hih/2+ht
+    //     And inner semicircle radius = hih/2
+    //     But we want inner width = hiw = 25, so hih/2 = 12.5 ≠ 25
+    //
+    // I see: for a true D-shape, the inner width equals the inner radius of the semicircle,
+    // which equals hih/2 only if it's a perfect semicircle.
+    // But we want inner width hiw = 25 and inner height hih = 30, which are independent.
+    //
+    // Solution: Make the inner hole NOT a D-shape but a rectangle with rounded right corner,
+    // or simply: the outer D has a semicircle whose radius = hih/2 + ht (outer) 
+    // and inner radius = hih/2, with a rectangular extension on the left.
+    //
+    // With this: inner width at the widest point = hih/2 (= 15mm, not 25mm).
+    // That doesn't meet the spec.
+    //
+    // ALTERNATIVE: The outer D is formed differently:
+    //   - The inner opening is purely rectangular: width hiw, height hih
+    //   - The outer boundary has a semicircular bulge on the right
+    //   - Outer semicircle centered at the right edge of the inner rect: 
+    //     center_x = outer_r + ht + hiw, center_z = mug_h/2
+    //     outer radius = hih/2 + ht
+    //   - This makes the outermost point at x = outer_r + ht + hiw + hih/2 + ht
+    //     = outer_r + 2ht + hiw + hih/2 = 40 + 12 + 25 + 15 = 92mm from center
+    //   - That seems quite far out (52mm from mug surface)
+    //
+    // MORE REASONABLE: Keep the D-shape simple:
+    //   - Outer: large semicircle (radius R_outer) on right half, flat left side
+    //   - Inner: smaller concentric region (finger hole)
+    //   But make it work for the given dimensions.
+    //
+    // Let me just go with a practical approach:
+    // The handle is formed by sweeping a circular/rectangular cross-section along a D-path,
+    // OR simply as a solid D minus a smaller D.
+    //
+    // PRACTICAL FINAL IMPLEMENTATION:
+    // Use the "ring" approach: 
+    //   Outer D-solid: rectangle (left portion) + half-cylinder (right portion)
+    //   Minus inner D-void: smaller rectangle + smaller half-cylinder
+    //   The sizes are adjusted so inner opening = hiw x hih
+    //
+    // I'll define:
+    //   The inner opening goes from x=outer_r+ht to x=outer_r+ht+hiw_rect (rectangular part)
+    //   Plus a semicircle of radius r_inner = hih/2 centered at (outer_r+ht+hiw_rect, mug_h/2)
+    //   Total inner width = hiw_rect + r_inner =
