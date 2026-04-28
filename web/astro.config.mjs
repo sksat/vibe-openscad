@@ -1,13 +1,10 @@
 import { defineConfig } from "astro/config";
 import { watch } from "node:fs";
 import { resolve } from "node:path";
+import { pagesWithStaticPathsAbs } from "./src/pages-with-static-paths.mjs";
 
 const RESULTS_DIR = resolve("..", "results");
-const PAGES = [
-  resolve("./src/pages/benchmark/[id].astro"),
-  resolve("./src/pages/tasks/[id].astro"),
-  resolve("./src/pages/index.astro"),
-];
+const PAGES = pagesWithStaticPathsAbs();
 
 /**
  * Astro caches getStaticPaths() at server boot, and Vite's watcher ignores

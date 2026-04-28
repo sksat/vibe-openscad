@@ -124,7 +124,9 @@ describe("createOpenaiProvider", () => {
     const responsesCreate = vi.fn();
     const fakeClient = {
       responses: { create: responsesCreate, stream: responsesStream },
-    } as unknown as ConstructorParameters<typeof createOpenaiProvider>[0]["client"];
+    } as unknown as NonNullable<
+      NonNullable<Parameters<typeof createOpenaiProvider>[0]>["client"]
+    >;
     const provider = createOpenaiProvider({ client: fakeClient });
 
     const r = await provider.complete({ prompt: "hi", model: "gpt-5" });
