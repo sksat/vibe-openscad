@@ -1,0 +1,64 @@
+```openscad
+$fn = 100;
+
+// Main cup (outer cylinder with inner hollow bottom 6 mm)
+module mug_body() {
+    outer = cylinder(h = 90, r = 40, $fn = $fn);
+    inner = translate([0, 0, 6]) cylinder(h = 84, r = 35, $fn = $fn);
+    difference() {
+        outer;
+        inner;
+    }
+}
+
+// D-shaped handle cross-section (2D, to be extruded then rotated into place)
+module handle_cross_section() {
+    Th = 12;       // thickness into +X direction (before rotation)
+    Hh = 60;       // height of cross-section (maps to mug height after rotation)
+    hole_w = 25;   // inner space width
+    hole_h = 30;   // inner space height
+    hole_x = 0;    // inner hole touches left boundary
+    hole_y = (Hh - hole_h)/2; // center vertically within cross-section
+
+    r = Hh/2; // radius for the semicircular outer part
+
+    pts = [];
+    // left-bottom to left-top and then to right-bottom
+    pts = concat(pts, [[0, 0]]);
+    pts = concat(pts, [[Th, 0]]);
+    // semicircular arc on the right side (center at (Th, Hh/2), from -90° to +90°)
+    for (a = [-90:5:90]) {
+        ang = a * PI / 180;
+        pts = concat(pts, [ [ Th + r * cos(ang), Hh/2 + r * sin(ang) ] ]);
+    }
+    // top-left corner to close the shape
+    pts = concat(pts, [[0, Hh]]);
+
+    difference() {
+        polygon(points = pts);
+        translate([hole_x, hole_y]) square([hole_w, hole_h], center = false);
+    }
+}
+
+// 3D handle: extrude the 2D cross-section and rotate to align height with mug
+module handle3d() {
+    // After rotating -90° around X, the cross-section's height (Y) maps to Z (height)
+    rotate([-90, 0, 0]) {
+        linear_extrude(height = 18) {
+            handle_cross_section();
+        }
+    }
+}
+
+// Assemble mug with handle on the +X side.
+// The handle is positioned to slightly overlap the mug wall to ensure union (no gaps).
+union() {
+    mug_body();
+
+    // Position the handle:
+    // - Place so its left face is near the mug's outer surface at x ≈ 40 (we use 39 for slight overlap)
+    // - Center the handle vertically around z = 45 mm (mug height is 90 mm)
+    //   After rotation, vertical alignment maps accordingly; we translate in Z to center at 45.
+    translate([39, 0, 15]) handle3d();
+}
+```

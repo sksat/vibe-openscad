@@ -1,5 +1,5 @@
 {
-  "runId": "bare_gpt-5-nano-456bb3c4fb75-2026-04-28T14-05-06-412Z",
+  "runId": "bare_gpt-5-nano-456bb3c4fb75-2026-04-28T15-16-17-187Z",
   "taskId": "tier-2-offset-handle-mug",
   "matrixId": "bare/gpt-5-nano",
   "signature": "456bb3c4fb75dda4925c4c6a41d2b90ce8c326d872229b8e036b2e886f84753b",
@@ -19,15 +19,16 @@
   "harness": {
     "kind": "bare"
   },
-  "status": "success",
+  "status": "render_error",
   "timing": {
-    "totalMs": 201414
+    "totalMs": 209069
   },
   "tokens": {
     "input": 273,
-    "output": 27929
+    "output": 26029
   },
-  "cost_usd": 0.01118525,
-  "createdAt": "2026-04-28T14:05:06.412Z",
-  "gitCommit": "2d7e9895d68a4deb55126efe4edaca7544001dcc"
+  "cost_usd": 0.01042525,
+  "createdAt": "2026-04-28T15:16:17.190Z",
+  "gitCommit": "14ce8a9937e4c4500f65200ca0fa803e05d964e0",
+  "error": "openscad stl render failed (exit 1): ERROR: Parser error: syntax error in file ../../../../../tmp/render-22F3kd/input.scad, line 6\nCan't parse file '/tmp/render-22F3kd/input.scad'!\n\n"
 }
