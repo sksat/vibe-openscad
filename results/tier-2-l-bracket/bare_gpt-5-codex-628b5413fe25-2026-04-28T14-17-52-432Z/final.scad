@@ -1,0 +1,42 @@
+$fn = 80;
+
+width = 50;
+depth = 40;
+height = 40;
+thickness = 3;
+
+hole_d = 4.5;
+cs_d = 8;
+cs_depth = 2;
+
+hole_offset = width / 2 - 10;
+depth_center = depth / 2;
+height_center = height / 2;
+
+module horizontal_hole(x_pos) {
+    translate([x_pos, depth_center, 0]) {
+        cylinder(h = thickness, r = hole_d / 2);
+        translate([0, 0, thickness - cs_depth])
+            cylinder(h = cs_depth, r1 = hole_d / 2, r2 = cs_d / 2);
+    }
+}
+
+module vertical_hole(x_pos) {
+    translate([x_pos, 0, height_center])
+        rotate([-90, 0, 0]) {
+            cylinder(h = thickness, r = hole_d / 2);
+            translate([0, 0, thickness - cs_depth])
+                cylinder(h = cs_depth, r1 = hole_d / 2, r2 = cs_d / 2);
+        }
+}
+
+difference() {
+    union() {
+        translate([-width / 2, 0, 0]) cube([width, depth, thickness]);
+        translate([-width / 2, 0, 0]) cube([width, thickness, height]);
+    }
+    for (x_pos = [-hole_offset, hole_offset]) {
+        horizontal_hole(x_pos);
+        vertical_hole(x_pos);
+    }
+}

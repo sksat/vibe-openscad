@@ -1,0 +1,65 @@
+$fn = 96;
+
+w = 50;
+d = 40;
+h = 40;
+t = 3;
+
+hole_d = 4.5;
+cs_d = 8;
+cs_depth = 2;
+
+edge_offset = 10;
+eps = 0.05;
+
+hole_x = [
+    -w / 2 + edge_offset,
+     w / 2 - edge_offset
+];
+
+module bracket_body() {
+    union() {
+        // Horizontal flange: +Y direction, thickness toward -Z
+        translate([-w / 2, 0, -t])
+            cube([w, d, t]);
+
+        // Vertical flange: +Z direction, thickness toward -Y
+        translate([-w / 2, -t, 0])
+            cube([w, t, h]);
+
+        // Bend/corner material outside the inner corner
+        translate([-w / 2, -t, -t])
+            cube([w, t, t]);
+    }
+}
+
+module horizontal_hole(x, y) {
+    // Through hole
+    translate([x, y, -t - eps])
+        cylinder(h = t + 2 * eps, d = hole_d);
+
+    // Countersink on outside face (-Z)
+    translate([x, y, -t - eps])
+        cylinder(h = cs_depth + 2 * eps, r1 = cs_d / 2, r2 = hole_d / 2);
+}
+
+module vertical_hole(x, z) {
+    // Through hole
+    translate([x, -t - eps, z])
+        rotate([-90, 0, 0])
+            cylinder(h = t + 2 * eps, d = hole_d);
+
+    // Countersink on outside face (-Y)
+    translate([x, -t - eps, z])
+        rotate([-90, 0, 0])
+            cylinder(h = cs_depth + 2 * eps, r1 = cs_d / 2, r2 = hole_d / 2);
+}
+
+difference() {
+    bracket_body();
+
+    for (x = hole_x) {
+        horizontal_hole(x, d / 2);
+        vertical_hole(x, h / 2);
+    }
+}

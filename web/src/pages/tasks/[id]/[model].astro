@@ -19,6 +19,7 @@ import {
 import VendorIcon from "../../../components/VendorIcon.astro";
 import DiffView from "../../../components/DiffView.astro";
 import Breadcrumb from "../../../components/Breadcrumb.astro";
+import BareSection from "../../../components/BareSection.astro";
 import { shortModelLabel } from "../../../lib/dataset.js";
 import type { LoadedRun } from "../../../lib/results.js";
 
@@ -347,27 +348,17 @@ const ogDescription = [
     ))}
   </div>
 
-  <section class="bare-section">
-    <header>
-      <h2>bare <span class="muted small">(provider default effort)</span></h2>
-      <a class="muted runlink" href={`/benchmark/${m.runId}`}>run detail →</a>
-    </header>
-    <div class="bare-body">
-      <div class="bare-render-col">
-        {bare.pngUrl ? (
-          <img class="render" src={bare.pngUrl} alt={`bare render of ${m.taskId}`} />
-        ) : (
-          <div class="empty"><span class="muted">no render</span></div>
-        )}
-      </div>
-      <div class="bare-scad-col">
-        <div class="scad-meta muted small">SCAD ({bareScad.split("\n").length} lines · {m.status})</div>
-        <div class="scad-scroll">
-          {bareScad ? <Code code={bareScad} lang="c" theme="github-dark" wrap /> : <p class="muted small">no SCAD</p>}
-        </div>
-      </div>
-    </div>
-  </section>
+  <BareSection
+    pngUrl={bare.pngUrl}
+    scad={bareScad}
+    runId={m.runId}
+    status={m.status}
+    taskId={m.taskId}
+    durationMs={m.timing.totalMs}
+    tokens={m.tokens}
+    costUsd={runCostUsd(m)}
+    errorMessage={m.error}
+  />
 
   {task && (
     <section class="prompt-section">
@@ -523,50 +514,6 @@ const ogDescription = [
   section h2 { font-family: var(--mono); font-size: 15px; margin: 0; }
   .runlink { font-size: 12px; margin-left: auto; }
 
-  .bare-body {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
-    align-items: stretch;
-  }
-  @media (min-width: 720px) {
-    .bare-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  }
-  .bare-render-col {
-    display: flex;
-    flex-direction: column;
-  }
-  .render {
-    width: 100%;
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    /* PNG はアスペクト比そのまま、最大幅で */
-    object-fit: contain;
-  }
-  .bare-scad-col {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  }
-  .scad-meta {
-    margin-bottom: 4px;
-  }
-  /* SCAD パネルを画像の高さに揃えて、はみ出す分はスクロール。
-     画像のアスペクト比 (≈ 4:3 or 1:1) を基準に最大高さを制限する。 */
-  .scad-scroll {
-    flex: 1;
-    overflow: auto;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    max-height: 60vh;
-  }
-  .bare-render-col .render { max-height: 60vh; }
-  .scad-scroll :global(pre) {
-    margin: 0;
-    border: none;
-    border-radius: 0;
-  }
   .prompt {
     white-space: pre-wrap;
     word-break: break-word;

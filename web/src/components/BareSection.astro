@@ -1,0 +1,205 @@
+---
+import { Code } from "astro:components";
+import { formatCost } from "../lib/dataset.js";
+
+interface Props {
+  pngUrl: string | undefined;
+  scad: string;
+  runId: string;
+  status: string;
+  taskId: string;
+  durationMs: number;
+  tokens?: { input: number; output: number } | undefined;
+  costUsd?: number | null | undefined;
+  errorMessage?: string | undefined;
+}
+
+const {
+  pngUrl,
+  scad,
+  runId,
+  status,
+  taskId,
+  durationMs,
+  tokens,
+  costUsd,
+  errorMessage,
+} = Astro.props;
+const lines = scad.split("\n").length;
+---
+
+<section class="bare-section">
+  <header>
+    <h2>bare <span class="muted small">(provider default effort)</span></h2>
+    <a class="muted runlink" href={`/benchmark/${runId}`}>run detail →</a>
+  </header>
+  <div class="bare-body">
+    <div class="bare-render-col">
+      <div class="render-frame" data-status={status}>
+        {pngUrl ? (
+          <img src={pngUrl} alt={`bare render of ${taskId}`} />
+        ) : (
+          <span class="no-render muted">no render</span>
+        )}
+      </div>
+      <div class="render-meta">
+        <div class="row">
+          <span class={`status-pill status-${status}`}>{status}</span>
+          <span class="muted small">
+            {(durationMs / 1000).toFixed(1)}s
+            {tokens && ` · ${tokens.input}/${tokens.output}t`}
+            {typeof costUsd === "number" && ` · ${formatCost(costUsd)}`}
+          </span>
+        </div>
+        {errorMessage && (
+          <pre class="error-detail">{errorMessage}</pre>
+        )}
+      </div>
+    </div>
+    <div class="bare-scad-col">
+      <div class="scad-scroll">
+        <div class="scad-meta muted small">SCAD ({lines} lines)</div>
+        {scad ? <Code code={scad} lang="c" theme="github-dark" wrap /> : <p class="muted small">no SCAD</p>}
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .bare-section header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .bare-section h2 {
+    font-family: var(--mono);
+    font-size: 15px;
+    margin: 0;
+  }
+  .runlink { font-size: 12px; margin-left: auto; }
+
+  .bare-body {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    /* container query unit (cqw) を有効化して、子の高さを列幅に
+       ベース連動させる。col 幅 ≒ 50cqw なので、render aspect 4:3 では
+       render 高さ ≒ 50cqw × 3/4 = 37.5cqw、SCAD max は その 2 倍 = 75cqw。 */
+    container-type: inline-size;
+  }
+  @media (min-width: 720px) {
+    .bare-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  }
+
+  .bare-render-col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+  }
+  /* render-frame は画像有無に関わらず同じ 4:3 ボックスを保つ。 */
+  .render-frame {
+    aspect-ratio: 4 / 3;
+    width: 100%;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .render-frame img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+  .render-frame[data-status]:not([data-status="success"]) {
+    background: var(--bg-3);
+    border-style: dashed;
+  }
+  .no-render {
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+
+  .render-meta { display: flex; flex-direction: column; gap: 6px; }
+  .render-meta .row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .status-pill {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: 11px;
+    border: 1px solid var(--line);
+    background: var(--bg-3);
+    color: var(--fg-dim);
+  }
+  .status-pill.status-success {
+    color: var(--ok);
+    border-color: rgba(108, 213, 140, 0.4);
+    background: rgba(108, 213, 140, 0.08);
+  }
+  .status-pill.status-render_error,
+  .status-pill.status-no_code,
+  .status-pill.status-submit_missing,
+  .status-pill.status-timeout,
+  .status-pill.status-api_error {
+    color: var(--bad);
+    border-color: rgba(239, 111, 108, 0.4);
+    background: rgba(239, 111, 108, 0.08);
+  }
+  .error-detail {
+    font-size: 11px;
+    color: var(--bad);
+    background: rgba(239, 111, 108, 0.06);
+    border: 1px solid rgba(239, 111, 108, 0.4);
+    border-radius: 4px;
+    padding: 6px 10px;
+    margin: 0;
+    max-height: 160px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .bare-scad-col {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  /* SCAD は render フレームの 2 倍まで(= column 幅の 1.5 倍 = 75cqw)
+     でキャップ。それ以下なら content に応じて縮む。 */
+  .scad-scroll {
+    overflow: auto;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--bg-2);
+    max-height: 75cqw;
+  }
+  /* 720px 未満(モバイル: 1 列レイアウト) では cqw が full width に
+     なるので別の上限を当てる(画面の高さ半分)。 */
+  @media (max-width: 719px) {
+    .scad-scroll { max-height: 50vh; }
+  }
+  .scad-meta {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 6px 10px;
+    background: var(--bg-3);
+    border-bottom: 1px solid var(--line);
+    font-family: var(--mono);
+  }
+  .scad-scroll :global(pre) {
+    margin: 0;
+    border: none;
+    border-radius: 0;
+  }
+</style>

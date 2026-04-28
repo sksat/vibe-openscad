@@ -1,0 +1,47 @@
+// L字金具 (L-bracket)
+w       = 50;   // 幅
+d       = 40;   // 奥行き
+h       = 40;   // 高さ
+t       = 3;    // 板厚
+hole_d  = 4.5;  // 貫通穴径
+cs_d    = 8;    // 皿座面径
+cs_depth= 2;    // 皿座面深さ
+offset  = 10;   // 縁からの距離
+hole_x  = [ -w/2 + offset, w/2 - offset ];
+
+module bracket() {
+    difference() {
+        // 板本体
+        union() {
+            // 水平フランジ
+            translate([-w/2, 0, 0])
+                cube([w, d, t]);
+            // 垂直フランジ
+            translate([-w/2, 0, 0])
+                cube([w, t, h]);
+        }
+        // 水平フランジの穴
+        for (x_pos = hole_x) {
+            // 貫通穴
+            translate([x_pos, d/2, t/2])
+                cylinder(d=hole_d, h=t+2, center=true);
+            // 皿穴
+            translate([x_pos, d/2, t - cs_depth/2])
+                cylinder(d=cs_d, h=cs_depth, center=true);
+        }
+        // 垂直フランジの穴
+        for (x_pos = hole_x) {
+            // 貫通穴
+            translate([x_pos, t/2, h/2])
+                rotate([90, 0, 0])
+                    cylinder(d=hole_d, h=t+2, center=true);
+            // 皿穴
+            translate([x_pos, t - cs_depth/2, h/2])
+                rotate([90, 0, 0])
+                    cylinder(d=cs_d, h=cs_depth, center=true);
+        }
+    }
+}
+
+// モデル出力
+bracket();

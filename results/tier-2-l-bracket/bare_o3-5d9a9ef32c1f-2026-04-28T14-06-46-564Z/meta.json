@@ -1,0 +1,33 @@
+{
+  "runId": "bare_o3-5d9a9ef32c1f-2026-04-28T14-06-46-564Z",
+  "taskId": "tier-2-l-bracket",
+  "matrixId": "bare/o3",
+  "signature": "5d9a9ef32c1f585a25ba2bd5f9d69f80f5355f02bd6087e9c7c67d7bc9dff622",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "b20dcf3dd07e532496944d76485b954e0ab614f3cda1919fee5dc406f59b3ea5",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "o3-2025-04-16"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "o3-2025-04-16",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 53946
+  },
+  "tokens": {
+    "input": 294,
+    "output": 3792
+  },
+  "cost_usd": 0.030924,
+  "createdAt": "2026-04-28T14:06:46.564Z",
+  "gitCommit": "2d7e9895d68a4deb55126efe4edaca7544001dcc"
+}
