@@ -111,6 +111,23 @@ describe("BareSection layout", () => {
     expect(SRC).toMatch(/::-webkit-scrollbar/);
   });
 
+  it("uses identical flex gap on both columns so col-label + box top aligns", () => {
+    // .bare-render-col に gap: 10px があり .bare-scad-col に無いと、
+    // col-label の下端から render-frame までと scad-scroll までで
+    // 10px ずれる。両 col に同じ gap を当てて揃える。
+    const gapOnRender = SRC.match(/\.bare-render-col[\s\S]*?gap:\s*(\d+px)/);
+    const gapOnScad = SRC.match(/\.bare-scad-col[\s\S]*?gap:\s*(\d+px)/);
+    expect(gapOnRender?.[1]).toBeDefined();
+    expect(gapOnScad?.[1]).toBe(gapOnRender?.[1]);
+  });
+
+  it("always shows the vertical scrollbar (overflow-y: scroll) for size cue", () => {
+    // \`overflow: auto\` だとコードが収まったときバーが消えて
+    // 「どれくらい大きい SCAD か」の視覚的手掛かりが消える。
+    // 縦バーは常に出して、横は wrap してるので auto で十分。
+    expect(SRC).toMatch(/\.scad-scroll[\s\S]*?overflow-y:\s*scroll/);
+  });
+
   it("ensures the bare-scad-col cannot push the grid wider than its 1fr share", () => {
     // The Code (Shiki) output can include long unwrappable lines; without
     // min-width: 0 on the grid item, it can blow out past the column and

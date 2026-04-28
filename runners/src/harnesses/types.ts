@@ -48,4 +48,6 @@ export interface HarnessResult {
   modelId?: string;
   harnessLog: HarnessLog;
   errorMessage?: string;
+  /** Raw model response text, before SCAD extraction (prose, fences, etc). */
+  rawResponse?: string;
 }

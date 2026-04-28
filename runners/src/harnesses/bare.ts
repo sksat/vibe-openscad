@@ -123,6 +123,7 @@ export async function runBare(ctx: HarnessContext): Promise<HarnessResult> {
 
   const tokens = response.tokens;
   const modelId = response.modelId;
+  const rawResponse = response.text;
 
   const scad = extractScad(response.text);
   if (!scad) {
@@ -137,6 +138,7 @@ export async function runBare(ctx: HarnessContext): Promise<HarnessResult> {
       errorMessage: reason,
       ...(tokens ? { tokens } : {}),
       modelId,
+      rawResponse,
     });
   }
 
@@ -149,6 +151,7 @@ export async function runBare(ctx: HarnessContext): Promise<HarnessResult> {
       png: rendered.png,
       ...(tokens ? { tokens } : {}),
       modelId,
+      rawResponse,
     });
   } catch (e) {
     return finish({
@@ -157,6 +160,7 @@ export async function runBare(ctx: HarnessContext): Promise<HarnessResult> {
       errorMessage: (e as Error).message,
       ...(tokens ? { tokens } : {}),
       modelId,
+      rawResponse,
     });
   }
 }

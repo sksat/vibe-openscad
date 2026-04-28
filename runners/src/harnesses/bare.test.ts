@@ -51,6 +51,11 @@ describe("runBare", () => {
     expect(result.tokens).toEqual({ input: 50, output: 25 });
     expect(result.modelId).toBe("claude-opus-4-7");
     expect(result.harnessLog).toEqual({ kind: "bare" });
+    // raw response is preserved verbatim so the UI can offer a toggle
+    // between extracted SCAD and the full LLM output (with prose, fences, etc).
+    expect(result.rawResponse).toBe(
+      "Here you go:\n```openscad\ncube([50,50,50]);\n```\n",
+    );
   });
 
   it("calls the provider with the task prompt and configured model", async () => {
