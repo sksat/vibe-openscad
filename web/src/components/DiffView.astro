@@ -17,7 +17,7 @@ const summaryText = label
   : `diff: +${added}/-${removed}`;
 ---
 
-<details class="diff-view">
+<details class="diff-view" open>
   <summary>{summaryText}</summary>
   <pre class="diff-body"><code>{lines.map((l) => {
     const prefix = l.type === "added" ? "+ " : l.type === "removed" ? "- " : "  ";
