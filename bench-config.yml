@@ -624,5 +624,97 @@ matrix:
     provider: openai
     model: o4-mini-2025-04-16
 
+  # GPT-5.5 + codex 系の iter-png chain
+  - id: iter-png-1/gpt-5.5
+    harness: { kind: bare, iterateFrom: bare/gpt-5.5, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.5-2026-04-23
+  - id: iter-png-2/gpt-5.5
+    harness: { kind: bare, iterateFrom: iter-png-1/gpt-5.5, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.5-2026-04-23
+  - id: iter-png-3/gpt-5.5
+    harness: { kind: bare, iterateFrom: iter-png-2/gpt-5.5, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.5-2026-04-23
+
+  - id: iter-png-1/gpt-5-codex
+    harness: { kind: bare, iterateFrom: bare/gpt-5-codex, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5-codex
+  - id: iter-png-2/gpt-5-codex
+    harness: { kind: bare, iterateFrom: iter-png-1/gpt-5-codex, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5-codex
+  - id: iter-png-3/gpt-5-codex
+    harness: { kind: bare, iterateFrom: iter-png-2/gpt-5-codex, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5-codex
+
+  - id: iter-png-1/gpt-5.1-codex
+    harness: { kind: bare, iterateFrom: bare/gpt-5.1-codex, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.1-codex
+  - id: iter-png-2/gpt-5.1-codex
+    harness: { kind: bare, iterateFrom: iter-png-1/gpt-5.1-codex, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.1-codex
+  - id: iter-png-3/gpt-5.1-codex
+    harness: { kind: bare, iterateFrom: iter-png-2/gpt-5.1-codex, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.1-codex
+
+  - id: iter-png-1/gpt-5.1-codex-mini
+    harness: { kind: bare, iterateFrom: bare/gpt-5.1-codex-mini, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.1-codex-mini
+  - id: iter-png-2/gpt-5.1-codex-mini
+    harness: { kind: bare, iterateFrom: iter-png-1/gpt-5.1-codex-mini, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.1-codex-mini
+  - id: iter-png-3/gpt-5.1-codex-mini
+    harness: { kind: bare, iterateFrom: iter-png-2/gpt-5.1-codex-mini, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.1-codex-mini
+
+  - id: iter-png-1/gpt-5.1-codex-max
+    harness: { kind: bare, iterateFrom: bare/gpt-5.1-codex-max, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.1-codex-max
+  - id: iter-png-2/gpt-5.1-codex-max
+    harness: { kind: bare, iterateFrom: iter-png-1/gpt-5.1-codex-max, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.1-codex-max
+  - id: iter-png-3/gpt-5.1-codex-max
+    harness: { kind: bare, iterateFrom: iter-png-2/gpt-5.1-codex-max, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.1-codex-max
+
+  - id: iter-png-1/gpt-5.2-codex
+    harness: { kind: bare, iterateFrom: bare/gpt-5.2-codex, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.2-codex
+  - id: iter-png-2/gpt-5.2-codex
+    harness: { kind: bare, iterateFrom: iter-png-1/gpt-5.2-codex, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.2-codex
+  - id: iter-png-3/gpt-5.2-codex
+    harness: { kind: bare, iterateFrom: iter-png-2/gpt-5.2-codex, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.2-codex
+
+  - id: iter-png-1/gpt-5.3-codex
+    harness: { kind: bare, iterateFrom: bare/gpt-5.3-codex, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.3-codex
+  - id: iter-png-2/gpt-5.3-codex
+    harness: { kind: bare, iterateFrom: iter-png-1/gpt-5.3-codex, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.3-codex
+  - id: iter-png-3/gpt-5.3-codex
+    harness: { kind: bare, iterateFrom: iter-png-2/gpt-5.3-codex, iteration: { kind: render-png-feedback } }
+    provider: openai
+    model: gpt-5.3-codex
+
 tasks:
   - tier: 1
