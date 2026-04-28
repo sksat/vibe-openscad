@@ -1,9 +1,13 @@
 ---
 import { formatCost } from "../lib/dataset.js";
 import ScadCode from "./ScadCode.astro";
+import StlViewer from "./StlViewer.astro";
 
 interface Props {
   pngUrl: string | undefined;
+  /** Final STL artifact. When given the render col gets a PNG/STL toggle
+   *  (interactive 3D viewer). */
+  stlUrl?: string | undefined;
   scad: string;
   runId: string;
   status: string;
@@ -19,6 +23,7 @@ interface Props {
 
 const {
   pngUrl,
+  stlUrl,
   scad,
   runId,
   status,
@@ -32,6 +37,7 @@ const {
 const lines = scad.split("\n").length;
 const rawLines = rawText ? rawText.split("\n").length : 0;
 const hasRaw = typeof rawText === "string" && rawText.length > 0;
+const hasStl = typeof stlUrl === "string" && stlUrl.length > 0;
 ---
 
 <section class="bare-section">
@@ -40,15 +46,28 @@ const hasRaw = typeof rawText === "string" && rawText.length > 0;
     <a class="muted runlink" href={`/benchmark/${runId}`}>run detail →</a>
   </header>
   <div class="bare-body">
-    <div class="bare-render-col">
-      <div class="col-label muted small">render</div>
-      <div class="render-frame" data-status={status}>
+    <div class="bare-render-col" data-active-render-view="png">
+      <div class="col-label muted small">
+        <span>render</span>
+        {hasStl && (
+          <span class="view-toggle" role="tablist" aria-label="render mode">
+            <button type="button" class="toggle-btn" data-target="png" aria-pressed="true">PNG</button>
+            <button type="button" class="toggle-btn" data-target="stl" aria-pressed="false">STL</button>
+          </span>
+        )}
+      </div>
+      <div class="render-frame" data-status={status} data-render-view="png">
         {pngUrl ? (
           <img src={pngUrl} alt={`bare render of ${taskId}`} />
         ) : (
           <span class="no-render muted">no render</span>
         )}
       </div>
+      {hasStl && (
+        <div class="render-frame stl-frame" data-render-view="stl" hidden aria-hidden="true">
+          <StlViewer src={stlUrl!} height={420} />
+        </div>
+      )}
       <div class="render-meta">
         <div class="row">
           <span class={`status-pill status-${status}`}>{status}</span>
@@ -300,32 +319,54 @@ const hasRaw = typeof rawText === "string" && rawText.length > 0;
 </style>
 
 <script>
-  // SCAD / raw 切替。各 .bare-scad-col 単独の島として動作する。
-  for (const col of document.querySelectorAll<HTMLElement>(".bare-scad-col")) {
-    const buttons = col.querySelectorAll<HTMLButtonElement>(".toggle-btn");
-    const views = col.querySelectorAll<HTMLElement>("[data-view]");
-    for (const btn of buttons) {
-      btn.addEventListener("click", () => {
-        const target = btn.dataset["target"];
-        if (!target) return;
-        col.setAttribute("data-active-view", target);
-        for (const b of buttons) {
-          b.setAttribute(
-            "aria-pressed",
-            b.dataset["target"] === target ? "true" : "false",
-          );
-        }
-        for (const v of views) {
-          const visible = v.dataset["view"] === target;
-          if (visible) {
-            v.removeAttribute("hidden");
-            v.removeAttribute("aria-hidden");
-          } else {
-            v.setAttribute("hidden", "");
-            v.setAttribute("aria-hidden", "true");
+  // 列単位の view 切替。SCAD 列(scad/raw)と render 列(png/stl)で
+  // 同じ仕組みを共有する。data-view-axis 属性で対応する pane 属性名を
+  // 切替える。
+  type Spec = {
+    selector: string;
+    paneAttr: string; // pane 側の data 属性名
+    activeAttr: string; // 列側の active marker 属性名
+  };
+  const SPECS: Spec[] = [
+    {
+      selector: ".bare-scad-col",
+      paneAttr: "data-view",
+      activeAttr: "data-active-view",
+    },
+    {
+      selector: ".bare-render-col",
+      paneAttr: "data-render-view",
+      activeAttr: "data-active-render-view",
+    },
+  ];
+
+  for (const spec of SPECS) {
+    for (const col of document.querySelectorAll<HTMLElement>(spec.selector)) {
+      const buttons = col.querySelectorAll<HTMLButtonElement>(".toggle-btn");
+      const views = col.querySelectorAll<HTMLElement>(`[${spec.paneAttr}]`);
+      for (const btn of buttons) {
+        btn.addEventListener("click", () => {
+          const target = btn.dataset["target"];
+          if (!target) return;
+          col.setAttribute(spec.activeAttr, target);
+          for (const b of buttons) {
+            b.setAttribute(
+              "aria-pressed",
+              b.dataset["target"] === target ? "true" : "false",
+            );
           }
-        }
-      });
+          for (const v of views) {
+            const visible = v.getAttribute(spec.paneAttr) === target;
+            if (visible) {
+              v.removeAttribute("hidden");
+              v.removeAttribute("aria-hidden");
+            } else {
+              v.setAttribute("hidden", "");
+              v.setAttribute("aria-hidden", "true");
+            }
+          }
+        });
+      }
     }
   }
 </script>

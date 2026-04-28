@@ -164,6 +164,44 @@ describe("BareSection layout", () => {
     expect(scadLabelIdx).toBeLessThan(scadScrollIdx);
   });
 
+  it("renders a PNG/STL toggle on the render col when stlUrl is provided, defaulting to PNG", async () => {
+    const c = await AstroContainer.create();
+    const html = await c.renderToString(BareSection, {
+      props: {
+        pngUrl: "/img.png",
+        stlUrl: "/img.stl",
+        scad: SAMPLE_SCAD,
+        runId: "r-1",
+        status: "success",
+        taskId: "tier-1-mug",
+        durationMs: 1000,
+      },
+    });
+    // 切替ボタンの構造
+    expect(html).toMatch(/data-target="png"/);
+    expect(html).toMatch(/data-target="stl"/);
+    // デフォルト PNG: png ボタン aria-pressed="true"、stl 側 hidden
+    const pngBtn = html.match(/data-target="png"[^>]+>/)?.[0] ?? "";
+    expect(pngBtn).toMatch(/aria-pressed="true"/);
+    const stlPanel = html.match(/data-render-view="stl"[\s\S]{0,500}/)?.[0] ?? "";
+    expect(stlPanel).toMatch(/hidden/);
+  });
+
+  it("does not render PNG/STL toggle when stlUrl is missing", async () => {
+    const c = await AstroContainer.create();
+    const html = await c.renderToString(BareSection, {
+      props: {
+        pngUrl: "/img.png",
+        scad: SAMPLE_SCAD,
+        runId: "r-1",
+        status: "success",
+        taskId: "tier-1-mug",
+        durationMs: 1000,
+      },
+    });
+    expect(html).not.toMatch(/data-target="stl"/);
+  });
+
   it("renders a SCAD/raw toggle when rawText is provided, defaulting to SCAD", async () => {
     const c = await AstroContainer.create();
     const html = await c.renderToString(BareSection, {
