@@ -10,6 +10,8 @@ export interface LoadedRun {
   scadUrl: string;
   pngUrl?: string;
   stlUrl?: string;
+  /** raw.txt URL when the run captured the LLM's full pre-extraction text. */
+  rawUrl?: string;
 }
 
 export interface LoadedTask {
@@ -56,6 +58,9 @@ export function loadDataset(repoRoot: string): LoadedDataset {
         : {}),
       ...(existsSync(join(runDir, "final.stl"))
         ? { stlUrl: `${urlBase}/final.stl` }
+        : {}),
+      ...(existsSync(join(runDir, "raw.txt"))
+        ? { rawUrl: `${urlBase}/raw.txt` }
         : {}),
     };
     runs.set(meta.runId, loaded);

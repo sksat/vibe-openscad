@@ -86,6 +86,24 @@ describe("writeRunResult", () => {
       Buffer.from("png-bytes"),
     );
   });
+
+  it("optionally writes raw model response to raw.txt", () => {
+    writeRunResult(dir, baseMeta, {
+      prompt: "p",
+      finalScad: "cube();",
+      finalRaw: "Here is your cube:\n```openscad\ncube();\n```\n",
+    });
+    const runDir = join(dir, baseMeta.taskId, baseMeta.runId);
+    expect(readFileSync(join(runDir, "raw.txt"), "utf8")).toBe(
+      "Here is your cube:\n```openscad\ncube();\n```\n",
+    );
+  });
+
+  it("does not write raw.txt when finalRaw is omitted", () => {
+    writeRunResult(dir, baseMeta, { prompt: "p", finalScad: "cube();" });
+    const runDir = join(dir, baseMeta.taskId, baseMeta.runId);
+    expect(() => readFileSync(join(runDir, "raw.txt"))).toThrow();
+  });
 });
 
 describe("writeRunResult with parentRunId", () => {

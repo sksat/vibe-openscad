@@ -474,6 +474,9 @@ async function executeBareRun(
       finalScad: result.scad ?? "",
       ...(result.stl ? { finalStl: result.stl } : {}),
       ...(result.png ? { finalPng: result.png } : {}),
+      ...(result.rawResponse !== undefined
+        ? { finalRaw: result.rawResponse }
+        : {}),
     });
   }
 

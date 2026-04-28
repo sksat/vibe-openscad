@@ -16,6 +16,8 @@ export interface RunArtifacts {
   finalStl?: Buffer;
   finalPng?: Buffer;
   agentLog?: string;
+  /** Raw LLM response text before SCAD extraction (prose + fences + code). */
+  finalRaw?: string;
 }
 
 export function writeRunResult(
@@ -39,6 +41,9 @@ export function writeRunResult(
   }
   if (artifacts.agentLog) {
     writeFileSync(join(runDir, "agent-log.jsonl"), artifacts.agentLog);
+  }
+  if (artifacts.finalRaw !== undefined) {
+    writeFileSync(join(runDir, "raw.txt"), artifacts.finalRaw);
   }
 }
 

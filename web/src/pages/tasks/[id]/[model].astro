@@ -81,6 +81,16 @@ export function getStaticPaths() {
       return "";
     }
   };
+  const readRaw = (r: LoadedRun): string | undefined => {
+    try {
+      return readFileSync(
+        join(repoRoot, "results", r.meta.taskId, r.meta.runId, "raw.txt"),
+        "utf8",
+      );
+    } catch {
+      return undefined;
+    }
+  };
 
   type ModelBucket = {
     bare?: LoadedRun;
@@ -197,6 +207,7 @@ export function getStaticPaths() {
 
   type Props = {
     bare: LoadedRun;
+    bareRaw?: string;
     bareScad: string;
     task: ReturnType<typeof tasksById.get>;
     strategies: ChainStrategy[];
@@ -213,6 +224,7 @@ export function getStaticPaths() {
       if (!mb.bare) continue;
       const bare = mb.bare;
       const bareScad = readScad(bare);
+      const bareRaw = readRaw(bare);
 
       const strategies: ChainStrategy[] = [];
       for (const [slug, runs] of mb.iterRunsBySlug.entries()) {
@@ -289,6 +301,7 @@ export function getStaticPaths() {
         props: {
           bare,
           bareScad,
+          ...(bareRaw !== undefined ? { bareRaw } : {}),
           task: tb.task,
           strategies,
           variantRows,
@@ -305,6 +318,7 @@ export function getStaticPaths() {
 const props = Astro.props as {
   bare: LoadedRun;
   bareScad: string;
+  bareRaw?: string;
   task: ReturnType<Map<string, ReturnType<typeof getDataset>["tasks"][number]["task"]>["get"]>;
   strategies: ChainStrategy[];
   variantRows: VariantRow[];
@@ -312,7 +326,7 @@ const props = Astro.props as {
   totalMs: number;
   runCount: number;
 };
-const { bare, bareScad, task, strategies, variantRows, totalCost, totalMs, runCount } = props;
+const { bare, bareScad, bareRaw, task, strategies, variantRows, totalCost, totalMs, runCount } = props;
 const m = bare.meta;
 const segments = runBadges(m);
 const ogTitle = `${m.model} on ${m.taskId}`;
@@ -358,6 +372,7 @@ const ogDescription = [
     tokens={m.tokens}
     costUsd={runCostUsd(m)}
     errorMessage={m.error}
+    rawText={bareRaw}
   />
 
   {task && (

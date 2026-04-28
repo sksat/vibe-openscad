@@ -164,6 +164,46 @@ describe("BareSection layout", () => {
     expect(scadLabelIdx).toBeLessThan(scadScrollIdx);
   });
 
+  it("renders a SCAD/raw toggle when rawText is provided, defaulting to SCAD", async () => {
+    const c = await AstroContainer.create();
+    const html = await c.renderToString(BareSection, {
+      props: {
+        pngUrl: "/img.png",
+        scad: SAMPLE_SCAD,
+        runId: "r-1",
+        status: "success",
+        taskId: "tier-1-mug",
+        durationMs: 1000,
+        rawText: "Here you go:\n```openscad\ncube();\n```\n",
+      },
+    });
+    // 切替ボタンがある(button or radio)
+    expect(html).toMatch(/role="tablist"|class="[^"]*toggle/);
+    // SCAD と raw 両方の view tag がある
+    expect(html).toMatch(/data-view="scad"/);
+    expect(html).toMatch(/data-view="raw"/);
+    // default は SCAD: scad view が aria-pressed/active、raw が hidden
+    const scadBtn = html.match(/data-target="scad"[^>]+>/)?.[0] ?? "";
+    expect(scadBtn).toMatch(/aria-pressed="true"|aria-current/);
+    const rawPanel = html.match(/data-view="raw"[\s\S]{0,200}/)?.[0] ?? "";
+    expect(rawPanel).toMatch(/hidden|aria-hidden="true"/);
+  });
+
+  it("does not render a toggle when rawText is not provided", async () => {
+    const c = await AstroContainer.create();
+    const html = await c.renderToString(BareSection, {
+      props: {
+        pngUrl: "/img.png",
+        scad: SAMPLE_SCAD,
+        runId: "r-1",
+        status: "success",
+        taskId: "tier-1-mug",
+        durationMs: 1000,
+      },
+    });
+    expect(html).not.toMatch(/data-target="raw"/);
+  });
+
   it("places scad-meta ABOVE the scroll container (sibling, not nested)", async () => {
     const c = await AstroContainer.create();
     const html = await c.renderToString(BareSection, {
