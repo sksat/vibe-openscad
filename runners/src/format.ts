@@ -32,7 +32,8 @@ export type StatusToken =
   | "skipped"
   | "missing"
   | "stale"
-  | "up-to-date";
+  | "up-to-date"
+  | "blocked";
 
 export interface ItemLine {
   verb: string; // "plan" | "bench" | etc.
@@ -59,6 +60,7 @@ function statusColor(s: StatusToken): string {
     case "stale":
       return ANSI.yellow;
     case "skipped":
+    case "blocked":
       return ANSI.dim;
   }
 }
@@ -72,7 +74,12 @@ export type Summary =
     }
   | {
       kind: "plan";
-      counts: { missing: number; stale: number; upToDate: number };
+      counts: {
+        missing: number;
+        stale: number;
+        upToDate: number;
+        blocked?: number;
+      };
     };
 
 export function summary(s: Summary, opts: ColorOptions = {}): string {
@@ -83,7 +90,9 @@ export function summary(s: Summary, opts: ColorOptions = {}): string {
     const secs = (s.durationMs / 1000).toFixed(2);
     return `bench result: ${verdict}. ${s.counts.passed} passed; ${s.counts.failed} failed; ${s.counts.skipped} skipped; finished in ${secs}s`;
   }
-  return `plan result: ${s.counts.missing} missing; ${s.counts.stale} stale; ${s.counts.upToDate} up-to-date`;
+  const blocked = s.counts.blocked ?? 0;
+  const tail = blocked > 0 ? `; ${blocked} blocked` : "";
+  return `plan result: ${s.counts.missing} missing; ${s.counts.stale} stale; ${s.counts.upToDate} up-to-date${tail}`;
 }
 
 export interface Failure {

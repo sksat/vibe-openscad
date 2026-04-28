@@ -256,6 +256,7 @@ function printPlan(items: PlanItem[]): void {
   console.log(header(items.length, items.length === 1 ? "candidate" : "candidates"));
   let nMissing = 0;
   let nStale = 0;
+  let nBlocked = 0;
   let nUp = 0;
   for (const item of items) {
     console.log(
@@ -266,6 +267,7 @@ function printPlan(items: PlanItem[]): void {
     );
     if (item.status === "missing") nMissing++;
     else if (item.status === "stale") nStale++;
+    else if (item.status === "blocked") nBlocked++;
     else nUp++;
   }
   console.log("");
@@ -273,7 +275,12 @@ function printPlan(items: PlanItem[]): void {
     summary(
       {
         kind: "plan",
-        counts: { missing: nMissing, stale: nStale, upToDate: nUp },
+        counts: {
+          missing: nMissing,
+          stale: nStale,
+          upToDate: nUp,
+          blocked: nBlocked,
+        },
       },
       { color },
     ),
@@ -659,7 +666,9 @@ async function main(): Promise<void> {
   // run
   const todo = args.force
     ? items
-    : items.filter((i) => i.status !== "up-to-date");
+    : items.filter(
+        (i) => i.status !== "up-to-date" && i.status !== "blocked",
+      );
   const skipped = items.length - todo.length;
 
   const color = isColorTty();

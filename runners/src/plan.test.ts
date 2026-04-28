@@ -167,6 +167,173 @@ describe("planRuns", () => {
     expect(plan[0]?.status).toBe("up-to-date");
   });
 
+  it("classifies an iter step as blocked when its parent's only run is no_code", () => {
+    const parentEntry = cfg.matrix[0]!;
+    const iterEntry = {
+      id: "iter-1",
+      harness: {
+        kind: "bare" as const,
+        iterateFrom: parentEntry.id,
+        iteration: { kind: "render-png-feedback" as const },
+      },
+      provider: "anthropic",
+      model: "claude-opus-4-7",
+    };
+    const cfg2: BenchConfig = {
+      ...cfg,
+      matrix: [parentEntry, iterEntry],
+    };
+    const noCodeParent: RunMeta = {
+      ...baseRun,
+      runId: "parent-no-code",
+      status: "no_code",
+    };
+    const iterCandidate: Candidate = { task, entry: iterEntry };
+    const plan = planRuns(
+      inputs({
+        cfg: cfg2,
+        candidates: [{ task, entry: parentEntry }, iterCandidate],
+        existing: {
+          all: [noCodeParent],
+          bySignature: new Map([[SIG_CURRENT, [noCodeParent]]]),
+        },
+      }),
+    );
+    const iterPlan = plan.find((p) => p.candidate.entry.id === "iter-1");
+    expect(iterPlan?.status).toBe("blocked");
+  });
+
+  it("classifies an iter step as missing when its parent has a usable run (success)", () => {
+    const parentEntry = cfg.matrix[0]!;
+    const iterEntry = {
+      id: "iter-1",
+      harness: {
+        kind: "bare" as const,
+        iterateFrom: parentEntry.id,
+        iteration: { kind: "render-png-feedback" as const },
+      },
+      provider: "anthropic",
+      model: "claude-opus-4-7",
+    };
+    const cfg2: BenchConfig = {
+      ...cfg,
+      matrix: [parentEntry, iterEntry],
+    };
+    const iterCandidate: Candidate = { task, entry: iterEntry };
+    // baseRun is status=success on parent matrixId.
+    const plan = planRuns(
+      inputs({
+        cfg: cfg2,
+        candidates: [{ task, entry: parentEntry }, iterCandidate],
+        existing: {
+          all: [baseRun],
+          bySignature: new Map([[SIG_CURRENT, [baseRun]]]),
+        },
+      }),
+    );
+    const iterPlan = plan.find((p) => p.candidate.entry.id === "iter-1");
+    expect(iterPlan?.status).toBe("missing");
+  });
+
+  it("classifies an iter step as missing (not blocked) when parent has no runs yet", () => {
+    // Parent hasn't been run; we can't know the outcome, so mark missing
+    // (the parent will be tried in this same run and could succeed).
+    const parentEntry = cfg.matrix[0]!;
+    const iterEntry = {
+      id: "iter-1",
+      harness: {
+        kind: "bare" as const,
+        iterateFrom: parentEntry.id,
+        iteration: { kind: "render-png-feedback" as const },
+      },
+      provider: "anthropic",
+      model: "claude-opus-4-7",
+    };
+    const cfg2: BenchConfig = {
+      ...cfg,
+      matrix: [parentEntry, iterEntry],
+    };
+    const iterCandidate: Candidate = { task, entry: iterEntry };
+    const plan = planRuns(
+      inputs({
+        cfg: cfg2,
+        candidates: [{ task, entry: parentEntry }, iterCandidate],
+        existing: { all: [], bySignature: new Map() },
+      }),
+    );
+    const iterPlan = plan.find((p) => p.candidate.entry.id === "iter-1");
+    expect(iterPlan?.status).toBe("missing");
+  });
+
+  it("propagates blocked through transitive chain when an upstream is no_code", () => {
+    // bare → iter-1 (no_code) → iter-2 (no run) → iter-3
+    // iter-2 should be blocked (parent's only run is no_code) AND iter-3
+    // should be blocked too (transitive: iter-2 has no run, but its parent
+    // iter-1 is unusable, so the whole chain is dead).
+    const parentEntry = cfg.matrix[0]!;
+    const iter1Entry = {
+      id: "iter-1",
+      harness: {
+        kind: "bare" as const,
+        iterateFrom: parentEntry.id,
+        iteration: { kind: "render-png-feedback" as const },
+      },
+      provider: "anthropic",
+      model: "claude-opus-4-7",
+    };
+    const iter2Entry = {
+      id: "iter-2",
+      harness: {
+        kind: "bare" as const,
+        iterateFrom: "iter-1",
+        iteration: { kind: "render-png-feedback" as const },
+      },
+      provider: "anthropic",
+      model: "claude-opus-4-7",
+    };
+    const iter3Entry = {
+      id: "iter-3",
+      harness: {
+        kind: "bare" as const,
+        iterateFrom: "iter-2",
+        iteration: { kind: "render-png-feedback" as const },
+      },
+      provider: "anthropic",
+      model: "claude-opus-4-7",
+    };
+    const cfg2: BenchConfig = {
+      ...cfg,
+      matrix: [parentEntry, iter1Entry, iter2Entry, iter3Entry],
+    };
+    const noCodeIter1: RunMeta = {
+      ...baseRun,
+      matrixId: "iter-1",
+      runId: "iter-1-no-code",
+      status: "no_code",
+    };
+    const plan = planRuns(
+      inputs({
+        cfg: cfg2,
+        candidates: [
+          { task, entry: parentEntry },
+          { task, entry: iter1Entry },
+          { task, entry: iter2Entry },
+          { task, entry: iter3Entry },
+        ],
+        existing: {
+          all: [noCodeIter1],
+          bySignature: new Map([[SIG_CURRENT, [noCodeIter1]]]),
+        },
+      }),
+    );
+    expect(plan.find((p) => p.candidate.entry.id === "iter-2")?.status).toBe(
+      "blocked",
+    );
+    expect(plan.find((p) => p.candidate.entry.id === "iter-3")?.status).toBe(
+      "blocked",
+    );
+  });
+
   it("counts only same-task same-matrix runs toward samples and stale lists", () => {
     const sameTaskOtherSig: RunMeta = {
       ...baseRun,
