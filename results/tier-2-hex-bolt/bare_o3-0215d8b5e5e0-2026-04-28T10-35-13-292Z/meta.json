@@ -1,0 +1,34 @@
+{
+  "runId": "bare_o3-0215d8b5e5e0-2026-04-28T10-35-13-292Z",
+  "taskId": "tier-2-hex-bolt",
+  "matrixId": "bare/o3",
+  "signature": "0215d8b5e5e0516413d04f11f6d4e66db1917b3485a4c8fe51ca2c3554b44bca",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "0fee46bf3152dd6738d6d2af93e06dad04bb6bddd3b2b528c57138298ec0b5d0",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "o3-2025-04-16"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "o3-2025-04-16",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "no_code",
+  "timing": {
+    "totalMs": 15660
+  },
+  "tokens": {
+    "input": 200,
+    "output": 1676
+  },
+  "cost_usd": 0.013807999999999999,
+  "createdAt": "2026-04-28T10:35:13.292Z",
+  "gitCommit": "266a4b423d4ee84428231197fdf4c052bea21307",
+  "error": "model returned empty response (stopReason=completed)"
+}

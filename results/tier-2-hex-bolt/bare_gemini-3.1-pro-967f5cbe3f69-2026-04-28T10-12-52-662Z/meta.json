@@ -1,0 +1,33 @@
+{
+  "runId": "bare_gemini-3.1-pro-967f5cbe3f69-2026-04-28T10-12-52-662Z",
+  "taskId": "tier-2-hex-bolt",
+  "matrixId": "bare/gemini-3.1-pro",
+  "signature": "967f5cbe3f69788dbdddedd644806c0306788f23ea078022567fe43f280cfc53",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "0fee46bf3152dd6738d6d2af93e06dad04bb6bddd3b2b528c57138298ec0b5d0",
+    "harness": {
+      "kind": "bare",
+      "provider": "google",
+      "model": "gemini-3.1-pro-preview"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "google",
+  "model": "gemini-3.1-pro-preview",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 41070
+  },
+  "tokens": {
+    "input": 173,
+    "output": 105
+  },
+  "cost_usd": 0.0012662500000000002,
+  "createdAt": "2026-04-28T10:12:52.662Z",
+  "gitCommit": "266a4b423d4ee84428231197fdf4c052bea21307"
+}

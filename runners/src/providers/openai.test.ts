@@ -134,6 +134,34 @@ describe("createOpenaiProvider", () => {
     expect(fakeStream.finalResponse).toHaveBeenCalledTimes(1);
   });
 
+  it("extracts text from output[].content[] when output_text is undefined (streamed path)", async () => {
+    // SDK's `responses.stream().finalResponse()` returns a Response where
+    // `output_text` is undefined even when text is present in the
+    // structured `output[].content[]` array. The provider must dig into
+    // that structure rather than returning empty text.
+    const create = vi.fn().mockResolvedValue({
+      // No output_text accessor (would be undefined on real streamed Response)
+      model: "gpt-5",
+      usage: { input_tokens: 10, output_tokens: 5 },
+      status: "completed",
+      output: [
+        {
+          type: "reasoning",
+          summary: "internal reasoning",
+        },
+        {
+          type: "message",
+          content: [
+            { type: "output_text", text: "cube(10);" },
+          ],
+        },
+      ],
+    });
+    const provider = createOpenaiProvider({ create });
+    const r = await provider.complete({ prompt: "p", model: "gpt-5" });
+    expect(r.text).toBe("cube(10);");
+  });
+
   it("translates ChatMessage[] with image into Responses input array", async () => {
     const create = vi.fn().mockResolvedValue(fakeResp());
     const provider = createOpenaiProvider({ create });

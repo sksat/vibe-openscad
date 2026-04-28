@@ -12,6 +12,37 @@ import type {
 } from "./types.js";
 
 /**
+ * Concatenate `output_text` parts out of the structured `output` array of
+ * a Responses API result. Needed because the SDK's convenience accessor
+ * `Response.output_text` is undefined on streamed responses, while the
+ * `output[]` structure is correctly populated either way.
+ */
+function extractOutputText(response: Response): string {
+  const parts: string[] = [];
+  const output = (response as unknown as { output?: unknown[] }).output ?? [];
+  for (const item of output) {
+    if (
+      typeof item === "object" &&
+      item !== null &&
+      (item as { type?: string }).type === "message"
+    ) {
+      const content = (item as { content?: unknown[] }).content ?? [];
+      for (const c of content) {
+        if (
+          typeof c === "object" &&
+          c !== null &&
+          (c as { type?: string }).type === "output_text" &&
+          typeof (c as { text?: unknown }).text === "string"
+        ) {
+          parts.push((c as { text: string }).text);
+        }
+      }
+    }
+  }
+  return parts.join("");
+}
+
+/**
  * Translate ChatMessage[] to the OpenAI Responses API input array.
  * Multi-turn input is a list of message-shaped items with role + content
  * parts. Image inputs use a `data:` URL.
@@ -132,7 +163,12 @@ export function createOpenaiProvider(
 
       // status=incomplete (e.g. hit max_output_tokens) returns empty text +
       // a stopReason so the harness can classify as no_code.
-      const text = response.output_text ?? "";
+      // Note: `output_text` accessor is only populated on the non-streaming
+      // response path. With streaming finalResponse() it comes back undefined
+      // even when text is present, so we always reconstruct from the
+      // structured `output[].content[]` and fall back to output_text.
+      const text =
+        extractOutputText(response) || (response.output_text ?? "");
       const stopReason =
         response.status === "incomplete"
           ? `incomplete:${response.incomplete_details?.reason ?? "unknown"}`

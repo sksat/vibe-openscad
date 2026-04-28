@@ -1,0 +1,34 @@
+{
+  "runId": "bare_gpt-5.4-mini-52aab21bdb0d-2026-04-28T10-22-32-094Z",
+  "taskId": "tier-2-l-bracket",
+  "matrixId": "bare/gpt-5.4-mini",
+  "signature": "52aab21bdb0d26a51eb90550507c82209b7703fbf36685edc41f335deceb5f59",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "b20dcf3dd07e532496944d76485b954e0ab614f3cda1919fee5dc406f59b3ea5",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5.4-mini-2026-03-17"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5.4-mini-2026-03-17",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "no_code",
+  "timing": {
+    "totalMs": 2904
+  },
+  "tokens": {
+    "input": 294,
+    "output": 388
+  },
+  "cost_usd": 0.0012816000000000001,
+  "createdAt": "2026-04-28T10:22:32.094Z",
+  "gitCommit": "266a4b423d4ee84428231197fdf4c052bea21307",
+  "error": "model returned empty response (stopReason=completed)"
+}

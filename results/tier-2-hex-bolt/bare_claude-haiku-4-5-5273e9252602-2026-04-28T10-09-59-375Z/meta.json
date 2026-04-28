@@ -1,0 +1,33 @@
+{
+  "runId": "bare_claude-haiku-4-5-5273e9252602-2026-04-28T10-09-59-375Z",
+  "taskId": "tier-2-hex-bolt",
+  "matrixId": "bare/claude-haiku-4-5",
+  "signature": "5273e9252602dc3d78d951b5b1b4e212b5a5b4e61feb1732e4d512cabb9c7c60",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "0fee46bf3152dd6738d6d2af93e06dad04bb6bddd3b2b528c57138298ec0b5d0",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-haiku-4-5-20251001",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 3258
+  },
+  "tokens": {
+    "input": 252,
+    "output": 212
+  },
+  "cost_usd": 0.001312,
+  "createdAt": "2026-04-28T10:09:59.375Z",
+  "gitCommit": "266a4b423d4ee84428231197fdf4c052bea21307"
+}

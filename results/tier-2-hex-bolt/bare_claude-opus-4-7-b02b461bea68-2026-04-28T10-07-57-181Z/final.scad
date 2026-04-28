@@ -1,0 +1,19 @@
+// M8 六角ボルト
+
+// 頭部
+// 対辺距離 13mm → 外接円直径 = 13 / cos(30) = 15.011mm
+head_af = 13;          // across-flats
+head_height = 5.3;
+head_d = head_af / cos(30);
+
+// シャンク
+shank_d = 8;
+shank_length = 30;
+
+// 頭部 (底面が z=0、上方向に伸びる)
+translate([0, 0, head_height/2])
+    cylinder(h = head_height, d = head_d, center = true, $fn = 6);
+
+// シャンク (z<0 側へ伸びる)
+translate([0, 0, -shank_length])
+    cylinder(h = shank_length, d = shank_d, $fn = 64);

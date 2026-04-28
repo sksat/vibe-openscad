@@ -1,0 +1,34 @@
+{
+  "runId": "bare_gpt-5-nano-52d57ec6005f-2026-04-28T10-32-24-923Z",
+  "taskId": "tier-2-l-bracket",
+  "matrixId": "bare/gpt-5-nano",
+  "signature": "52d57ec6005f7432f1d43f83a71f1ab1282956606cc7d7b0827b72424c8bb118",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "b20dcf3dd07e532496944d76485b954e0ab614f3cda1919fee5dc406f59b3ea5",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5-nano-2025-08-07"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5-nano-2025-08-07",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "no_code",
+  "timing": {
+    "totalMs": 143482
+  },
+  "tokens": {
+    "input": 294,
+    "output": 21509
+  },
+  "cost_usd": 0.0086183,
+  "createdAt": "2026-04-28T10:32:24.923Z",
+  "gitCommit": "266a4b423d4ee84428231197fdf4c052bea21307",
+  "error": "model returned empty response (stopReason=completed)"
+}

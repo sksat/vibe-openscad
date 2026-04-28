@@ -1,0 +1,33 @@
+{
+  "runId": "bare_claude-opus-4-0-2863ae5e9106-2026-04-28T10-11-05-137Z",
+  "taskId": "tier-2-hex-bolt",
+  "matrixId": "bare/claude-opus-4-0",
+  "signature": "2863ae5e91060c9085910c4d019415468b924b14e4e7ebd41e8cbec4250db3bb",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "0fee46bf3152dd6738d6d2af93e06dad04bb6bddd3b2b528c57138298ec0b5d0",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-opus-4-20250514"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-opus-4-20250514",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 3583
+  },
+  "tokens": {
+    "input": 252,
+    "output": 74
+  },
+  "cost_usd": 0.00933,
+  "createdAt": "2026-04-28T10:11:05.137Z",
+  "gitCommit": "266a4b423d4ee84428231197fdf4c052bea21307"
+}

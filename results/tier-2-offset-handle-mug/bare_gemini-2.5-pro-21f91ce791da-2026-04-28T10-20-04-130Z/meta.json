@@ -1,0 +1,33 @@
+{
+  "runId": "bare_gemini-2.5-pro-21f91ce791da-2026-04-28T10-20-04-130Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "bare/gemini-2.5-pro",
+  "signature": "21f91ce791daa7da5c0007b90a0c800afb0968cfb468765998cac65083ed3d07",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "google",
+      "model": "gemini-2.5-pro"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "google",
+  "model": "gemini-2.5-pro",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 85650
+  },
+  "tokens": {
+    "input": 232,
+    "output": 720
+  },
+  "cost_usd": 0.007490000000000001,
+  "createdAt": "2026-04-28T10:20:04.130Z",
+  "gitCommit": "266a4b423d4ee84428231197fdf4c052bea21307"
+}
