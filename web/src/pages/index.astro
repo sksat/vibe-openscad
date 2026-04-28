@@ -629,6 +629,12 @@ function groupTiles(tiles: TaskTile[], mode: Grouping): OuterGroup[] {
     flex-direction: column;
     gap: 16px;
   }
+  /* `display: flex` がブラウザの `[hidden] { display: none }` を上書き
+     してしまうので、明示的に潰す。harness-first / provider-first 両方
+     SSR してあって、JS が片方に hidden を立てている。 */
+  .hierarchy[hidden] {
+    display: none;
+  }
   .hierarchy .outer-group {
     display: flex;
     flex-direction: column;

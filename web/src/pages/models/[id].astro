@@ -59,11 +59,36 @@ for (const r of ds.runs.values()) {
   const c = runCostUsd(r.meta);
   if (c !== null) totalCost += c;
 }
+
+/**
+ * モデル別 OGP 画像。`web/scripts/generate-ogp.mjs` がビルド前に
+ * /og/model-<model>.png を吐いている。存在チェックして fallback は
+ * このモデルの bare 代表 run の PNG にする(無ければ undefined)。
+ */
+import { existsSync } from "node:fs";
+import { resolve as pathResolve } from "node:path";
+const syntheticOgpPath = `/og/model-${model}.png`;
+const syntheticOgpExists = existsSync(
+  pathResolve(process.cwd(), "public", syntheticOgpPath.slice(1)),
+);
+function pickFallbackOgImage(): string | undefined {
+  for (const r of ds.runs.values()) {
+    if (r.meta.model !== model) continue;
+    if (!r.meta.matrixId.startsWith("bare/")) continue;
+    if (r.meta.status !== "success") continue;
+    if (r.pngUrl) return r.pngUrl;
+  }
+  return undefined;
+}
+const ogImage = syntheticOgpExists
+  ? syntheticOgpPath
+  : pickFallbackOgImage();
 ---
 
 <Base
   title={`${model} — vibe-openscad`}
   description={`${model} の harness・パラメータ違い ${variants.length} variant × ${tasks.length} タスク`}
+  ogImage={ogImage}
 >
   <Breadcrumb items={[
     { label: "home", href: "/" },

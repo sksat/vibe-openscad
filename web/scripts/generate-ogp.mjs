@@ -212,6 +212,177 @@ async function buildTaskCard(task, picks) {
     .toBuffer();
 }
 
+/**
+ * モデル毎の OGP 用に「このモデルの bare run を tier 別に最大 4 個」
+ * 拾う。tier 1〜N から 1 件ずつ取って多様性を保ち、足りなければ
+ * 残りの tier を埋める。
+ */
+function pickRunsForModel(model) {
+  if (!existsSync(resultsDir)) return [];
+  // tier の引きには task 一覧が必要なので作っておく。
+  const taskIdToTier = new Map();
+  for (const t of loadTasks()) {
+    // crude tier 抽出 (loadTasks は title しか取ってない)
+    const yamlPath = (() => {
+      const stack = [tasksDir];
+      while (stack.length) {
+        const d = stack.pop();
+        for (const e of readdirSync(d)) {
+          const p = join(d, e);
+          if (statSync(p).isDirectory()) stack.push(p);
+          else if (
+            e.endsWith(".yml") &&
+            readFileSync(p, "utf8").includes(`id: ${t.id}`)
+          ) {
+            return p;
+          }
+        }
+      }
+      return null;
+    })();
+    if (!yamlPath) continue;
+    const m = readFileSync(yamlPath, "utf8").match(/^\s*tier:\s*(\d+)/m);
+    taskIdToTier.set(t.id, m ? Number(m[1]) : 99);
+  }
+  // この model の bare/* 成功 run を全 task 横断で集める。
+  const candidates = [];
+  for (const taskDir of readdirSync(resultsDir)) {
+    const taskAbs = join(resultsDir, taskDir);
+    if (!statSync(taskAbs).isDirectory()) continue;
+    for (const runDir of readdirSync(taskAbs)) {
+      const metaPath = join(taskAbs, runDir, "meta.json");
+      const pngPath = join(taskAbs, runDir, "final.png");
+      if (!existsSync(metaPath) || !existsSync(pngPath)) continue;
+      let meta;
+      try {
+        meta = JSON.parse(readFileSync(metaPath, "utf8"));
+      } catch {
+        continue;
+      }
+      if (meta.model !== model) continue;
+      // bare/* (default effort) のみ。effort 別 / iter は OGP では混ぜない。
+      // pdf-page も許容(tier-4 vision モデル)。
+      if (
+        !meta.matrixId?.startsWith("bare/") &&
+        !meta.matrixId?.startsWith("pdf-page/")
+      ) continue;
+      if (meta.status !== "success") continue;
+      candidates.push({ meta, pngPath, tier: taskIdToTier.get(meta.taskId) ?? 99 });
+    }
+  }
+  if (candidates.length === 0) return [];
+  // 同 task 内の最新を newest に丸める。
+  const byTask = new Map();
+  for (const c of candidates) {
+    const ex = byTask.get(c.meta.taskId);
+    if (!ex || ex.meta.createdAt < c.meta.createdAt) byTask.set(c.meta.taskId, c);
+  }
+  // tier 昇順で 1 件ずつ拾う(多様性)。同 tier 内は createdAt 新しい順。
+  const byTier = new Map();
+  for (const c of byTask.values()) {
+    const list = byTier.get(c.tier) ?? [];
+    list.push(c);
+    byTier.set(c.tier, list);
+  }
+  const tiers = [...byTier.keys()].sort((a, b) => a - b);
+  const picked = [];
+  // 1 周目: 各 tier から 1 件ずつ
+  for (const t of tiers) {
+    if (picked.length >= 4) break;
+    const sorted = byTier
+      .get(t)
+      .sort((a, b) => (a.meta.createdAt < b.meta.createdAt ? 1 : -1));
+    picked.push(sorted[0]);
+  }
+  // 2 周目以降: 余った tier 内から拾い増す
+  if (picked.length < 4) {
+    const seen = new Set(picked.map((p) => p.meta.runId));
+    for (const t of tiers) {
+      if (picked.length >= 4) break;
+      const sorted = byTier
+        .get(t)
+        .sort((a, b) => (a.meta.createdAt < b.meta.createdAt ? 1 : -1));
+      for (const c of sorted) {
+        if (picked.length >= 4) break;
+        if (seen.has(c.meta.runId)) continue;
+        picked.push(c);
+        seen.add(c.meta.runId);
+      }
+    }
+  }
+  return picked;
+}
+
+/**
+ * モデル OGP カード: title が `<vendor> <family> <ver>` 等の short label、
+ * cells はそのモデルが解いた tier 1〜4 の代表 run。 cells のラベルは
+ * 「task id + tier」で、同モデル内でも task が違うのが読み取れる。
+ */
+async function buildModelCard(model, picks) {
+  const composites = [];
+  composites.push({
+    input: Buffer.from(headerSvg(shortModelLabel(model))),
+    left: 0,
+    top: 0,
+  });
+  for (let i = 0; i < 4; i++) {
+    const pick = picks[i];
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    const x = PADDING + col * (CELL_W + GAP);
+    const y = HEADER_HEIGHT + PADDING / 2 + row * (CELL_H + GAP);
+    if (!pick) {
+      const placeholderSvg = `
+<svg width="${CELL_W}" height="${CELL_H}" xmlns="http://www.w3.org/2000/svg">
+  <rect width="${CELL_W}" height="${CELL_H}" fill="#1f262e" stroke="#2a323b" stroke-dasharray="6 4"/>
+  <text x="50%" y="50%" text-anchor="middle" font-family="ui-monospace, monospace" font-size="14" fill="#8a96a3">—</text>
+</svg>`;
+      composites.push({ input: Buffer.from(placeholderSvg), left: x, top: y });
+      continue;
+    }
+    const img = await sharp(pick.pngPath)
+      .resize(CELL_W, CELL_H, { fit: "contain", background: "#ffffff" })
+      .png()
+      .toBuffer();
+    composites.push({ input: img, left: x, top: y });
+    composites.push({
+      input: Buffer.from(
+        labelSvg(
+          `tier ${pick.tier} · ${pick.meta.taskId.replace(/^tier-\d+-/, "")}`,
+        ),
+      ),
+      left: x,
+      top: y + CELL_H - LABEL_HEIGHT,
+    });
+  }
+  return sharp({
+    create: { width: W, height: H, channels: 3, background: "#0e1116" },
+  })
+    .composite(composites)
+    .png()
+    .toBuffer();
+}
+
+function loadAllModels() {
+  if (!existsSync(resultsDir)) return [];
+  const set = new Set();
+  for (const taskDir of readdirSync(resultsDir)) {
+    const taskAbs = join(resultsDir, taskDir);
+    if (!statSync(taskAbs).isDirectory()) continue;
+    for (const runDir of readdirSync(taskAbs)) {
+      const metaPath = join(taskAbs, runDir, "meta.json");
+      if (!existsSync(metaPath)) continue;
+      try {
+        const meta = JSON.parse(readFileSync(metaPath, "utf8"));
+        if (meta.model) set.add(meta.model);
+      } catch {
+        // ignore
+      }
+    }
+  }
+  return [...set].sort();
+}
+
 async function main() {
   if (!existsSync(resultsDir)) {
     console.warn("[generate-ogp] no results/ dir, skipping");
@@ -225,7 +396,7 @@ async function main() {
     return;
   }
 
-  let made = 0;
+  let madeTasks = 0;
   for (const task of tasks) {
     const picks = pickRunsForTask(task.id);
     if (picks.length === 0) {
@@ -236,12 +407,31 @@ async function main() {
     const outPath = join(outDir, `task-${task.id}.png`);
     const fs = await import("node:fs");
     fs.writeFileSync(outPath, png);
-    made++;
+    madeTasks++;
     console.log(
       `[generate-ogp] ${task.id}: ${picks.length} pick(s) → ${outPath}`,
     );
   }
-  console.log(`[generate-ogp] generated ${made} task card(s)`);
+  console.log(`[generate-ogp] generated ${madeTasks} task card(s)`);
+
+  const models = loadAllModels();
+  let madeModels = 0;
+  for (const model of models) {
+    const picks = pickRunsForModel(model);
+    if (picks.length === 0) {
+      console.warn(`[generate-ogp] model ${model}: no usable bare runs, skipping`);
+      continue;
+    }
+    const png = await buildModelCard(model, picks);
+    const outPath = join(outDir, `model-${model}.png`);
+    const fs = await import("node:fs");
+    fs.writeFileSync(outPath, png);
+    madeModels++;
+    console.log(
+      `[generate-ogp] model ${model}: ${picks.length} pick(s) → ${outPath}`,
+    );
+  }
+  console.log(`[generate-ogp] generated ${madeModels} model card(s)`);
 }
 
 main().catch((e) => {
