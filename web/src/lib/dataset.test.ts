@@ -5,6 +5,7 @@ import {
   formatCost,
   parseMatrixId,
   runBadges,
+  shortModelLabel,
   thinkingInfoFor,
 } from "./dataset.js";
 
@@ -566,5 +567,41 @@ describe("thinkingInfoFor", () => {
         }),
       ),
     ).toEqual({ value: "dynamic", isDefault: false });
+  });
+});
+
+describe("shortModelLabel", () => {
+  it("formats Claude model with vendor + version (drops date)", () => {
+    expect(shortModelLabel("claude-opus-4-7")).toBe("claude opus 4.7");
+    expect(shortModelLabel("claude-haiku-4-5-20251001")).toBe("claude haiku 4.5");
+    expect(shortModelLabel("claude-sonnet-4-6")).toBe("claude sonnet 4.6");
+  });
+
+  it("formats GPT family (drops date suffix)", () => {
+    expect(shortModelLabel("gpt-5.4-2026-03-05")).toBe("gpt 5.4");
+    expect(shortModelLabel("gpt-5.4-mini-2026-03-17")).toBe("gpt 5.4 mini");
+    expect(shortModelLabel("gpt-5-2025-08-07")).toBe("gpt 5");
+    expect(shortModelLabel("gpt-4.1-2025-04-14")).toBe("gpt 4.1");
+  });
+
+  it("formats GPT codex variants", () => {
+    expect(shortModelLabel("gpt-5-codex")).toBe("gpt 5 codex");
+    expect(shortModelLabel("gpt-5.1-codex")).toBe("gpt 5.1 codex");
+    expect(shortModelLabel("gpt-5.1-codex-max")).toBe("gpt 5.1 codex max");
+  });
+
+  it("formats o-series reasoning models", () => {
+    expect(shortModelLabel("o3-2025-04-16")).toBe("o3");
+    expect(shortModelLabel("o4-mini-2025-04-16")).toBe("o4 mini");
+  });
+
+  it("formats Gemini (drops 'preview' suffix)", () => {
+    expect(shortModelLabel("gemini-3.1-pro-preview")).toBe("gemini 3.1 pro");
+    expect(shortModelLabel("gemini-2.5-flash-lite")).toBe("gemini 2.5 flash-lite");
+    expect(shortModelLabel("gemini-3-flash-preview")).toBe("gemini 3 flash");
+  });
+
+  it("falls back to the input string for unknown shapes", () => {
+    expect(shortModelLabel("local-llama-7b")).toBe("local-llama-7b");
   });
 });

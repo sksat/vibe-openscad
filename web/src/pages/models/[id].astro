@@ -1,7 +1,8 @@
 ---
 import Base from "../../layouts/Base.astro";
 import RunCard from "../../components/RunCard.astro";
-import { formatCost, getDataset, runCostUsd } from "../../lib/dataset.js";
+import Breadcrumb from "../../components/Breadcrumb.astro";
+import { formatCost, getDataset, runCostUsd, shortModelLabel } from "../../lib/dataset.js";
 
 export function getStaticPaths() {
   const ds = getDataset();
@@ -64,7 +65,10 @@ for (const r of ds.runs.values()) {
   title={`${model} — vibe-openscad`}
   description={`${model} の harness・パラメータ違い ${variants.length} variant × ${tasks.length} タスク`}
 >
-  <p class="muted"><a href="/">← dashboard</a></p>
+  <Breadcrumb items={[
+    { label: "home", href: "/" },
+    { label: shortModelLabel(model) },
+  ]} />
   <h1 class="title"><code>{model}</code></h1>
   <p class="muted small">
     {runCount} run / {variants.length} variant / {tasks.length} task / 累計 {formatCost(totalCost)}

@@ -149,6 +149,55 @@ function parseModelLabel(modelStr: string): MatrixSegment[] {
 }
 
 /**
+ * Compact human-readable label for a model id. Used in breadcrumbs and
+ * places where the full canonical id (with date suffix / `-preview`) is
+ * needlessly verbose. Convention:
+ *
+ *   claude-opus-4-7              → "claude opus 4.7"
+ *   gpt-5.4-mini-2026-03-17      → "gpt 5.4 mini"
+ *   gpt-5.1-codex-max            → "gpt 5.1 codex max"
+ *   o4-mini-2025-04-16           → "o4 mini"
+ *   gemini-3.1-pro-preview       → "gemini 3.1 pro"
+ *
+ * Returns the input unchanged when no pattern matches (safe fallback).
+ */
+export function shortModelLabel(model: string): string {
+  if (!model) return model;
+  const claude = model.match(
+    /^claude-(opus|sonnet|haiku)-(\d+)(?:-(\d{1,3}))?(?:-\d{8})?$/,
+  );
+  if (claude) {
+    const ver = claude[3] ? `${claude[2]}.${claude[3]}` : claude[2];
+    return `claude ${claude[1]} ${ver}`;
+  }
+  const gptCodex = model.match(
+    /^gpt-(\d+(?:\.\d+)?)-codex(?:-(max|mini))?$/,
+  );
+  if (gptCodex) {
+    return `gpt ${gptCodex[1]} codex${gptCodex[2] ? ` ${gptCodex[2]}` : ""}`;
+  }
+  const gpt = model.match(
+    /^gpt-(\d+(?:\.\d+)?)(?:-(mini|nano|pro|turbo))?(?:-(\d{4}-\d{2}-\d{2}|preview|latest))?$/,
+  );
+  if (gpt) {
+    return `gpt ${gpt[1]}${gpt[2] ? ` ${gpt[2]}` : ""}`;
+  }
+  const oseries = model.match(
+    /^(o\d+)(?:-(mini|pro|preview))?(?:-\d{4}-\d{2}-\d{2})?$/,
+  );
+  if (oseries) {
+    return `${oseries[1]}${oseries[2] ? ` ${oseries[2]}` : ""}`;
+  }
+  const gemini = model.match(
+    /^gemini-(\d+(?:\.\d+)?)-(pro|flash-lite|flash)(?:-(?:preview(?:-[\w-]+)?|\d+|latest|exp[\w-]*))?$/,
+  );
+  if (gemini) {
+    return `gemini ${gemini[1]} ${gemini[2]}`;
+  }
+  return model;
+}
+
+/**
  * Decompose a matrixId like `bare/claude-opus-4-7` into displayable segments
  * so the dashboard can render them as a row of badges instead of one wide
  * string that clips with ellipsis. When the model carries a date suffix it

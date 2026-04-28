@@ -1,0 +1,34 @@
+{
+  "runId": "bare_gpt-5-mini-7ec6b5868421-2026-04-28T13-56-25-101Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "bare/gpt-5-mini",
+  "signature": "7ec6b58684211d9eb9986e7b860f4711e35ff615d385d98fac377e7ff56dfdc4",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5-mini-2025-08-07"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5-mini-2025-08-07",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "render_error",
+  "timing": {
+    "totalMs": 147951
+  },
+  "tokens": {
+    "input": 273,
+    "output": 9491
+  },
+  "cost_usd": 0.019050249999999998,
+  "createdAt": "2026-04-28T13:56:25.101Z",
+  "gitCommit": "6bcf5489cb58860c66dc91c50859395107b3a032",
+  "error": "openscad stl render failed (exit 1): ERROR: Parser error: syntax error in file ../../../../../tmp/render-o5lJCl/input.scad, line 43\nCan't parse file '/tmp/render-o5lJCl/input.scad'!\n\n"
+}

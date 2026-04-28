@@ -6,8 +6,9 @@ import Base from "../../layouts/Base.astro";
 import StlViewer from "../../components/StlViewer.astro";
 import ParametricStlViewer from "../../components/ParametricStlViewer.astro";
 import { Code } from "astro:components";
-import { formatCost, getDataset, runCostUsd, statusBadgeClass } from "../../lib/dataset.js";
+import { formatCost, getDataset, runCostUsd, shortModelLabel, statusBadgeClass } from "../../lib/dataset.js";
 import { extractParameters } from "../../lib/scad-parameters.js";
+import Breadcrumb from "../../components/Breadcrumb.astro";
 
 export function getStaticPaths() {
   const ds = getDataset();
@@ -83,11 +84,14 @@ const subagents =
   ogImage={run.pngUrl}
   ogType="article"
 >
-  <p class="muted">
-    <a href="/">← dashboard</a>
-    {" · "}
-    <a href={`/tasks/${m.taskId}`}>{m.taskId}</a>
-  </p>
+  <Breadcrumb items={[
+    { label: "home", href: "/" },
+    { label: m.taskId, href: `/tasks/${m.taskId}` },
+    ...(m.model
+      ? [{ label: shortModelLabel(m.model), href: `/tasks/${m.taskId}/${m.model}` }]
+      : []),
+    { label: m.runId.slice(0, 16) + "…" },
+  ]} />
 
   <h1 class="title">
     <span class="matrix">{m.matrixId}</span>

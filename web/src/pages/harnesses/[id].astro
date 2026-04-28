@@ -1,6 +1,7 @@
 ---
 import Base from "../../layouts/Base.astro";
 import RunCard from "../../components/RunCard.astro";
+import Breadcrumb from "../../components/Breadcrumb.astro";
 import {
   chainDepthFor,
   chainRootMatrixId,
@@ -152,7 +153,10 @@ const description =
 ---
 
 <Base title={`${slugTitle} — vibe-openscad`} description={description}>
-  <p class="muted"><a href="/">← dashboard</a></p>
+  <Breadcrumb items={[
+    { label: "home", href: "/" },
+    { label: `harness: ${slug}` },
+  ]} />
   <h1 class="title">harness: <code>{slug}</code></h1>
   <p class="muted small">
     {runCount} run / {mode === "iter" ? `${modelSections.length} model` : `${models.length} model`} / {tasks.length} task / 累計 {formatCost(totalCost)}

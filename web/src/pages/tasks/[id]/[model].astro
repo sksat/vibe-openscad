@@ -18,6 +18,8 @@ import {
 } from "../../../lib/dataset.js";
 import VendorIcon from "../../../components/VendorIcon.astro";
 import DiffView from "../../../components/DiffView.astro";
+import Breadcrumb from "../../../components/Breadcrumb.astro";
+import { shortModelLabel } from "../../../lib/dataset.js";
 import type { LoadedRun } from "../../../lib/results.js";
 
 interface ChainStrategy {
@@ -321,12 +323,11 @@ const ogDescription = [
 ---
 
 <Base title={`${ogTitle} — vibe-openscad`} description={ogDescription} ogImage={bare.pngUrl} ogType="article">
-  <p class="muted">
-    <a href="/">← dashboard</a>
-    {" · "}
-    <a href={`/tasks/${m.taskId}`}>{m.taskId}</a>
-    {m.model && (<>{" · "}<a href={`/models/${m.model}`}><code>{m.model}</code></a></>)}
-  </p>
+  <Breadcrumb items={[
+    { label: "home", href: "/" },
+    { label: m.taskId, href: `/tasks/${m.taskId}` },
+    { label: m.model ? shortModelLabel(m.model) : m.matrixId },
+  ]} />
 
   <h1 class="title">
     <span class="task-id">{m.taskId}</span>
@@ -352,17 +353,19 @@ const ogDescription = [
       <a class="muted runlink" href={`/benchmark/${m.runId}`}>run detail →</a>
     </header>
     <div class="bare-body">
-      <div>
+      <div class="bare-render-col">
         {bare.pngUrl ? (
           <img class="render" src={bare.pngUrl} alt={`bare render of ${m.taskId}`} />
         ) : (
           <div class="empty"><span class="muted">no render</span></div>
         )}
       </div>
-      <details class="scad-details">
-        <summary>SCAD ({bareScad.split("\n").length} lines · {m.status})</summary>
-        {bareScad ? <Code code={bareScad} lang="c" theme="github-dark" wrap /> : <p class="muted small">no SCAD</p>}
-      </details>
+      <div class="bare-scad-col">
+        <div class="scad-meta muted small">SCAD ({bareScad.split("\n").length} lines · {m.status})</div>
+        <div class="scad-scroll">
+          {bareScad ? <Code code={bareScad} lang="c" theme="github-dark" wrap /> : <p class="muted small">no SCAD</p>}
+        </div>
+      </div>
     </div>
   </section>
 
@@ -524,15 +527,45 @@ const ogDescription = [
     display: grid;
     grid-template-columns: 1fr;
     gap: 12px;
+    align-items: stretch;
   }
   @media (min-width: 720px) {
     .bare-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  }
+  .bare-render-col {
+    display: flex;
+    flex-direction: column;
   }
   .render {
     width: 100%;
     background: #fff;
     border: 1px solid var(--line);
     border-radius: 6px;
+    /* PNG はアスペクト比そのまま、最大幅で */
+    object-fit: contain;
+  }
+  .bare-scad-col {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .scad-meta {
+    margin-bottom: 4px;
+  }
+  /* SCAD パネルを画像の高さに揃えて、はみ出す分はスクロール。
+     画像のアスペクト比 (≈ 4:3 or 1:1) を基準に最大高さを制限する。 */
+  .scad-scroll {
+    flex: 1;
+    overflow: auto;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    max-height: 60vh;
+  }
+  .bare-render-col .render { max-height: 60vh; }
+  .scad-scroll :global(pre) {
+    margin: 0;
+    border: none;
+    border-radius: 0;
   }
   .prompt {
     white-space: pre-wrap;

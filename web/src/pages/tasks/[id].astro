@@ -2,6 +2,7 @@
 import Base from "../../layouts/Base.astro";
 import RunCard from "../../components/RunCard.astro";
 import Filters from "../../components/Filters.astro";
+import Breadcrumb from "../../components/Breadcrumb.astro";
 import { getDataset } from "../../lib/dataset.js";
 
 export function getStaticPaths() {
@@ -58,7 +59,10 @@ const description = `${task.title} (tier ${task.tier}) — ${runs.length} run �
   description={description}
   ogImage={sampleImage}
 >
-  <p class="muted"><a href="/">← dashboard</a></p>
+  <Breadcrumb items={[
+    { label: "home", href: "/" },
+    { label: task.id },
+  ]} />
   <h1>{task.title}</h1>
   <div class="meta">
     <span class="badge">tier {task.tier}</span>
