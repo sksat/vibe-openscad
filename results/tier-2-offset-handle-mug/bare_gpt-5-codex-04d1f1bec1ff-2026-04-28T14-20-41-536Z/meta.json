@@ -1,33 +1,33 @@
 {
-  "runId": "bare_gpt-5.1-codex-da16ca52dc1e-2026-04-28T13-35-54-246Z",
+  "runId": "bare_gpt-5-codex-04d1f1bec1ff-2026-04-28T14-20-41-536Z",
   "taskId": "tier-2-offset-handle-mug",
-  "matrixId": "bare/gpt-5.1-codex",
-  "signature": "da16ca52dc1ed8b748c46fe512069928556b6a43e99f20696017be721605a601",
+  "matrixId": "bare/gpt-5-codex",
+  "signature": "04d1f1bec1ff0b7f1d609eeadbc970eea733c1f45d1684a5488ff0e51748f58c",
   "fingerprint": {
     "schemaVersion": 1,
     "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
     "harness": {
       "kind": "bare",
       "provider": "openai",
-      "model": "gpt-5.1-codex"
+      "model": "gpt-5-codex"
     },
     "openscadVersion": "OpenSCAD version 2026.04.27",
     "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
   },
   "provider": "openai",
-  "model": "gpt-5.1-codex",
+  "model": "gpt-5-codex",
   "harness": {
     "kind": "bare"
   },
   "status": "success",
   "timing": {
-    "totalMs": 81362
+    "totalMs": 169046
   },
   "tokens": {
     "input": 273,
-    "output": 12110
+    "output": 17044
   },
-  "cost_usd": 0.1335922,
-  "createdAt": "2026-04-28T13:35:54.246Z",
-  "gitCommit": "2c4d5c256c14a7f70794f9c1b400876aa4648418"
+  "cost_usd": 0.17078125,
+  "createdAt": "2026-04-28T14:20:41.536Z",
+  "gitCommit": "76ae3a322ae4baddc4d16116fbb01ce1790d8e69"
 }

@@ -1,6 +1,13 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { experimental_AstroContainer as AstroContainer } from "astro/container";
 import { describe, expect, it } from "vitest";
 import BareSection from "./BareSection.astro";
+
+const SRC = readFileSync(
+  resolve("src/components/BareSection.astro"),
+  "utf8",
+);
 
 const SAMPLE_SCAD = "cube(10);\nsphere(5);\n";
 
@@ -73,6 +80,28 @@ describe("BareSection layout", () => {
     expect(html).toContain("200/1500t");
     expect(html).toContain("$0.0123");
     expect(html).toMatch(/Parser error/);
+  });
+
+  it("does not combine container-type with aspect-ratio (broke render-frame collapse)", () => {
+    // Symptom: with `container-type: inline-size` on .bare-body the
+    // render-frame's aspect-ratio occasionally collapsed to its content
+    // width (= the "no render" text), squeezing the column and pushing
+    // meta panel content sideways. Use viewport-relative units instead.
+    expect(SRC).not.toMatch(/container-type:\s*inline-size/);
+  });
+
+  it("caps SCAD scroll height with a viewport-relative unit (vh) not cqw", () => {
+    // cqw depends on container-type which we drop above. Use vh as the
+    // primary cap so the layout is invariant across hot-reload + zoom.
+    expect(SRC).not.toMatch(/max-height:\s*\d+cqw/);
+    expect(SRC).toMatch(/\.scad-scroll[\s\S]{0,200}max-height:\s*\d+vh/);
+  });
+
+  it("ensures the bare-scad-col cannot push the grid wider than its 1fr share", () => {
+    // The Code (Shiki) output can include long unwrappable lines; without
+    // min-width: 0 on the grid item, it can blow out past the column and
+    // squeeze the render column.
+    expect(SRC).toMatch(/\.bare-scad-col[\s\S]*?min-width:\s*0/);
   });
 
   it("places scad-meta INSIDE the scroll container (not as a sibling above)", async () => {

@@ -83,10 +83,6 @@ const lines = scad.split("\n").length;
     display: grid;
     grid-template-columns: 1fr;
     gap: 16px;
-    /* container query unit (cqw) を有効化して、子の高さを列幅に
-       ベース連動させる。col 幅 ≒ 50cqw なので、render aspect 4:3 では
-       render 高さ ≒ 50cqw × 3/4 = 37.5cqw、SCAD max は その 2 倍 = 75cqw。 */
-    container-type: inline-size;
   }
   @media (min-width: 720px) {
     .bare-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
@@ -174,19 +170,15 @@ const lines = scad.split("\n").length;
     flex-direction: column;
     min-width: 0;
   }
-  /* SCAD は render フレームの 2 倍まで(= column 幅の 1.5 倍 = 75cqw)
-     でキャップ。それ以下なら content に応じて縮む。 */
+  /* SCAD column の縦方向上限を viewport 基準で。およそ render frame の
+     倍を狙うが、cqw + container-type は aspect-ratio と組み合わせると
+     render-frame が text 幅へ崩れることがあったので vh ベースに固定。 */
   .scad-scroll {
     overflow: auto;
     border: 1px solid var(--line);
     border-radius: 6px;
     background: var(--bg-2);
-    max-height: 75cqw;
-  }
-  /* 720px 未満(モバイル: 1 列レイアウト) では cqw が full width に
-     なるので別の上限を当てる(画面の高さ半分)。 */
-  @media (max-width: 719px) {
-    .scad-scroll { max-height: 50vh; }
+    max-height: 80vh;
   }
   .scad-meta {
     position: sticky;

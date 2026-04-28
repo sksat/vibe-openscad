@@ -1,5 +1,5 @@
 {
-  "runId": "bare_gpt-5.1-codex-mini-56f763d79a69-2026-04-28T13-36-01-511Z",
+  "runId": "bare_gpt-5.1-codex-mini-56f763d79a69-2026-04-28T14-30-35-100Z",
   "taskId": "tier-2-hex-bolt",
   "matrixId": "bare/gpt-5.1-codex-mini",
   "signature": "56f763d79a69167bba1d3d2e92d19ad9b9c5f7d7b4b55b208ed66854f6c59593",
@@ -21,13 +21,13 @@
   },
   "status": "success",
   "timing": {
-    "totalMs": 7249
+    "totalMs": 9172
   },
   "tokens": {
     "input": 200,
-    "output": 906
+    "output": 1197
   },
-  "cost_usd": 0.010246000000000002,
-  "createdAt": "2026-04-28T13:36:01.511Z",
-  "gitCommit": "2c4d5c256c14a7f70794f9c1b400876aa4648418"
+  "cost_usd": 0.013447,
+  "createdAt": "2026-04-28T14:30:35.100Z",
+  "gitCommit": "76ae3a322ae4baddc4d16116fbb01ce1790d8e69"
 }
