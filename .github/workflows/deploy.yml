@@ -48,5 +48,7 @@ jobs:
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_APP_DEPLOY_TOKEN }}
-          # GA4 measurement ID. Not a secret (ends up in HTML) so use `vars`.
-          PUBLIC_GA_ID: ${{ vars.PUBLIC_GA_ID }}
+          # GA4 measurement ID. Stored as a secret in this repo (technically
+          # it ends up in the public HTML so masking is purely defensive,
+          # but secrets work just as well as vars for build-time inlining).
+          PUBLIC_GA_ID: ${{ secrets.PUBLIC_GA_ID }}

@@ -1,5 +1,5 @@
 {
-  "runId": "bare_gpt-5-nano-52d57ec6005f-2026-04-28T13-15-16-791Z",
+  "runId": "bare_gpt-5-nano-52d57ec6005f-2026-04-28T14-01-44-949Z",
   "taskId": "tier-2-l-bracket",
   "matrixId": "bare/gpt-5-nano",
   "signature": "52d57ec6005f7432f1d43f83a71f1ab1282956606cc7d7b0827b72424c8bb118",
@@ -21,13 +21,13 @@
   },
   "status": "success",
   "timing": {
-    "totalMs": 149253
+    "totalMs": 258300
   },
   "tokens": {
     "input": 294,
-    "output": 21490
+    "output": 32353
   },
-  "cost_usd": 0.008610699999999999,
-  "createdAt": "2026-04-28T13:15:16.792Z",
-  "gitCommit": "2c4d5c256c14a7f70794f9c1b400876aa4648418"
+  "cost_usd": 0.0129559,
+  "createdAt": "2026-04-28T14:01:44.949Z",
+  "gitCommit": "015fb83a2a2671d1cc4cc001eca3987a770beda6"
 }
