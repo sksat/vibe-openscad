@@ -17,6 +17,7 @@ import {
   statusBadgeClass,
 } from "../../../lib/dataset.js";
 import VendorIcon from "../../../components/VendorIcon.astro";
+import DiffView from "../../../components/DiffView.astro";
 import type { LoadedRun } from "../../../lib/results.js";
 
 interface ChainStrategy {
@@ -436,6 +437,10 @@ const ogDescription = [
           const sm = step.run.meta;
           const errBadge = errorBadgeFor(sm.status);
           const cost = runCostUsd(sm);
+          // Predecessor scad: iter-1 → bare; iter-N (N>1) → step at depth (d-1)
+          const prevStep = d > 1 ? s.steps.find((x) => x.depth === d - 1) : null;
+          const prevScad = d === 1 ? bareScad : (prevStep?.scad ?? "");
+          const prevLabel = d === 1 ? "vs bare" : `vs i${d - 1}`;
           return (
             <article class="step-tile" data-status={sm.status}>
               <header>
@@ -455,6 +460,9 @@ const ogDescription = [
                 {cost !== null && ` · ${formatCost(cost)}`}
               </div>
               {sm.error && <pre class="step-error">{sm.error}</pre>}
+              {step.scad && prevScad && (
+                <DiffView before={prevScad} after={step.scad} label={prevLabel} />
+              )}
               <details class="scad-details">
                 <summary>SCAD ({step.scad.split("\n").length} lines)</summary>
                 {step.scad ? <Code code={step.scad} lang="c" theme="github-dark" wrap /> : <p class="muted small">no SCAD</p>}

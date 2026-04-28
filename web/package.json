@@ -15,12 +15,14 @@
   "dependencies": {
     "@vibe-openscad/runners": "workspace:*",
     "astro": "^6.1.9",
+    "diff": "^9.0.0",
     "openscad-wasm": "^0.0.4",
     "simple-icons": "^16.18.0",
     "three": "^0.184.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.8",
+    "@types/diff": "^8.0.0",
     "@types/three": "^0.184.0",
     "happy-dom": "^15.11.7",
     "sharp": "^0.34.5",
