@@ -1,0 +1,75 @@
+---
+import { Code } from "astro:components";
+import { parseScadErrors } from "../lib/scad-error.js";
+
+interface Props {
+  scad: string;
+  /** Optional render error from OpenSCAD; line refs are extracted and turned
+   *  into VSCode-style wavy-underline markers on the matching SCAD lines. */
+  errorMessage?: string | undefined;
+}
+
+const { scad, errorMessage } = Astro.props;
+const annotations = parseScadErrors(errorMessage);
+const lineCount = scad.split("\n").length;
+const errorByLine = new Map<number, string>();
+for (const a of annotations) {
+  // Discard out-of-range refs so we never tag a non-existent line.
+  if (a.line >= 1 && a.line <= lineCount) {
+    errorByLine.set(a.line, a.message);
+  }
+}
+
+// Shiki transformer: tag each <span class="line"> that has an annotation.
+// Functions in `transformers` run at SSR time (not serialised), so it's
+// fine to capture errorByLine via closure.
+const transformer = {
+  name: "scad-error-annotation",
+  line(node: { properties?: Record<string, unknown> }, line: number) {
+    const msg = errorByLine.get(line);
+    if (!msg) return;
+    node.properties = node.properties ?? {};
+    const existing = (node.properties["class"] as string | undefined) ?? "";
+    node.properties["class"] = `${existing} line-error`.trim();
+    node.properties["data-error"] = msg;
+    node.properties["title"] = msg;
+  },
+};
+---
+
+<Code
+  code={scad}
+  lang="c"
+  theme="github-dark"
+  wrap
+  transformers={[transformer]}
+/>
+
+<style is:global>
+  .line-error {
+    text-decoration: underline wavy var(--bad);
+    text-decoration-skip-ink: none;
+    position: relative;
+    cursor: help;
+  }
+  .line-error:hover::after {
+    content: attr(data-error);
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 4px);
+    z-index: 10;
+    background: var(--bg-2);
+    color: var(--bad);
+    border: 1px solid rgba(239, 111, 108, 0.4);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-width: 480px;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+</style>

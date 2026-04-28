@@ -1,7 +1,7 @@
 ---
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { Code } from "astro:components";
+import ScadCode from "../../../components/ScadCode.astro";
 import Base from "../../../layouts/Base.astro";
 import {
   chainDepthFor,
@@ -420,7 +420,7 @@ const ogDescription = [
               {sm.error && <pre class="step-error">{sm.error}</pre>}
               <details class="scad-details">
                 <summary>SCAD ({v.scad.split("\n").length} lines)</summary>
-                {v.scad ? <Code code={v.scad} lang="c" theme="github-dark" wrap /> : <p class="muted small">no SCAD</p>}
+                {v.scad ? <ScadCode scad={v.scad} errorMessage={sm.error} /> : <p class="muted small">no SCAD</p>}
               </details>
             </article>
           );
@@ -474,7 +474,7 @@ const ogDescription = [
               )}
               <details class="scad-details">
                 <summary>SCAD ({step.scad.split("\n").length} lines)</summary>
-                {step.scad ? <Code code={step.scad} lang="c" theme="github-dark" wrap /> : <p class="muted small">no SCAD</p>}
+                {step.scad ? <ScadCode scad={step.scad} errorMessage={sm.error} /> : <p class="muted small">no SCAD</p>}
               </details>
             </article>
           );

@@ -1,6 +1,6 @@
 ---
-import { Code } from "astro:components";
 import { formatCost } from "../lib/dataset.js";
+import ScadCode from "./ScadCode.astro";
 
 interface Props {
   pngUrl: string | undefined;
@@ -74,7 +74,7 @@ const hasRaw = typeof rawText === "string" && rawText.length > 0;
         )}
       </div>
       <div class="scad-scroll" data-view="scad">
-        {scad ? <Code code={scad} lang="c" theme="github-dark" wrap /> : <p class="muted small">no SCAD</p>}
+        {scad ? <ScadCode scad={scad} errorMessage={errorMessage} /> : <p class="muted small">no SCAD</p>}
       </div>
       {hasRaw && (
         <div class="scad-scroll raw-scroll" data-view="raw" hidden aria-hidden="true">
