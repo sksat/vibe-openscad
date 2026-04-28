@@ -66,15 +66,35 @@ const DEFAULT_MAX_TOKENS = 32768;
 export function createOpenaiProvider(
   deps: OpenaiProviderDeps = {},
 ): Provider {
+  // Production default uses the streaming API + .finalResponse() instead of
+  // non-streaming responses.create. Identical wall-clock and final result,
+  // but the long-lived SSE connection avoids the SDK's 10-minute HTTP
+  // timeout that bites reasoning models with high effort + 32k output cap.
+  // Tests typically inject deps.create directly to bypass this path.
   const create: CreateResponse =
     deps.create ??
-    ((params) => {
+    (async (params) => {
       const client =
         deps.client ??
         new OpenAI({
           ...(deps.apiKey ? { apiKey: deps.apiKey } : {}),
         });
-      return client.responses.create(params) as Promise<Response>;
+      const stream = await (
+        client.responses as unknown as {
+          stream: (
+            p: ResponseCreateParamsNonStreaming,
+          ) => Promise<{
+            [Symbol.asyncIterator](): AsyncIterator<unknown>;
+            finalResponse(): Promise<Response>;
+          }>;
+        }
+      ).stream(params);
+      // Drain events to keep the connection alive until completion. Hook
+      // here later if we want a progress callback (token counts etc).
+      for await (const _evt of stream) {
+        void _evt;
+      }
+      return stream.finalResponse();
     });
 
   return {

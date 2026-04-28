@@ -109,6 +109,31 @@ describe("createOpenaiProvider", () => {
     ).rejects.toThrow();
   });
 
+  it("uses responses.stream + finalResponse when no explicit create is injected", async () => {
+    // Production path: provider should call streaming API to avoid SDK
+    // 10-min HTTP timeouts on long reasoning calls. With deps.client given,
+    // we can verify which method (create vs stream) gets invoked.
+    const finalResp = fakeResp({ output_text: "streamed-result" });
+    const fakeStream = {
+      [Symbol.asyncIterator]() {
+        return { next: async () => ({ done: true, value: undefined }) };
+      },
+      finalResponse: vi.fn().mockResolvedValue(finalResp),
+    };
+    const responsesStream = vi.fn().mockResolvedValue(fakeStream);
+    const responsesCreate = vi.fn();
+    const fakeClient = {
+      responses: { create: responsesCreate, stream: responsesStream },
+    } as unknown as ConstructorParameters<typeof createOpenaiProvider>[0]["client"];
+    const provider = createOpenaiProvider({ client: fakeClient });
+
+    const r = await provider.complete({ prompt: "hi", model: "gpt-5" });
+    expect(responsesStream).toHaveBeenCalledTimes(1);
+    expect(responsesCreate).not.toHaveBeenCalled();
+    expect(r.text).toBe("streamed-result");
+    expect(fakeStream.finalResponse).toHaveBeenCalledTimes(1);
+  });
+
   it("translates ChatMessage[] with image into Responses input array", async () => {
     const create = vi.fn().mockResolvedValue(fakeResp());
     const provider = createOpenaiProvider({ create });
