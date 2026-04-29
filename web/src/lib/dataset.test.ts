@@ -5,7 +5,10 @@ import {
   compareModelsByRank,
   effortInfoFor,
   formatCost,
+  isSelfHostedProvider,
   parseMatrixId,
+  providerDisplayLabel,
+  providerVendor,
   runBadges,
   shortModelLabel,
   taskSlug,
@@ -739,5 +742,51 @@ describe("compareModelsByRank", () => {
       "llama-2",
       "zebra-7b",
     ]);
+  });
+});
+
+describe("self-hosted provider helpers", () => {
+  it("isSelfHostedProvider matches by `-self-hosted` suffix", () => {
+    expect(isSelfHostedProvider("openai-self-hosted")).toBe(true);
+    expect(isSelfHostedProvider("anthropic-self-hosted")).toBe(true);
+    expect(isSelfHostedProvider("google-self-hosted")).toBe(true);
+    // 命名規約に乗っていないものは false(将来 self-hosted を増やす
+    // ときは provider 名側で suffix を付ける運用)
+    expect(isSelfHostedProvider("openai")).toBe(false);
+    expect(isSelfHostedProvider("anthropic")).toBe(false);
+    expect(isSelfHostedProvider("ollama")).toBe(false);
+    expect(isSelfHostedProvider("")).toBe(false);
+  });
+
+  it("providerDisplayLabel attaches `(self-hosted)` for any -self-hosted provider", () => {
+    expect(providerDisplayLabel("openai-self-hosted")).toBe(
+      "openai (self-hosted)",
+    );
+    expect(providerDisplayLabel("anthropic-self-hosted")).toBe(
+      "anthropic (self-hosted)",
+    );
+    expect(providerDisplayLabel("openai")).toBe("openai");
+  });
+
+  it("providerVendor strips -self-hosted suffix to look up the vendor logo", () => {
+    expect(providerVendor("openai-self-hosted")).toBe("openai");
+    expect(providerVendor("anthropic-self-hosted")).toBe("claude");
+    expect(providerVendor("google-self-hosted")).toBe("gemini");
+    expect(providerVendor("openai")).toBe("openai");
+    expect(providerVendor("anthropic")).toBe("claude");
+    expect(providerVendor("custom")).toBeUndefined();
+  });
+
+  it("runBadges relabels vendor segment for any self-hosted provider", () => {
+    // `anthropic-self-hosted` の場合も「anthropic (self-hosted)」と表示される
+    const m = fakeMeta({
+      matrixId: "bare/claude-opus-4-7",
+      model: "claude-opus-4-7",
+      provider: "anthropic-self-hosted",
+    });
+    const segs = runBadges(m);
+    expect(segs.find((s) => s.kind === "vendor")?.label).toBe(
+      "anthropic (self-hosted)",
+    );
   });
 });

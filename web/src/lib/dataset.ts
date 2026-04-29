@@ -4,34 +4,49 @@ import type { RunMeta, Task } from "@vibe-openscad/runners/src/schema.js";
 import { loadDataset } from "./results.js";
 
 /**
+ * 命名規約: 末尾 `-self-hosted` が付く provider はセルフホスト系。将来
+ * `anthropic-self-hosted` / `google-self-hosted` が増えても自動で同じ
+ * 判定ロジックが効く。
+ */
+const SELF_HOSTED_SUFFIX = "-self-hosted";
+export function isSelfHostedProvider(provider: string): boolean {
+  return provider.endsWith(SELF_HOSTED_SUFFIX);
+}
+/** `openai-self-hosted` → `openai` のように suffix を剥がす(self-hosted
+ *  でなければそのまま)。 */
+function selfHostedBase(provider: string): string {
+  return isSelfHostedProvider(provider)
+    ? provider.slice(0, -SELF_HOSTED_SUFFIX.length)
+    : provider;
+}
+
+/**
  * Provider 文字列(`anthropic` / `openai` / `openai-self-hosted` / `google`
- * / `ollama` 等)を「人間に見せたい label」に変換。
- *  - `openai-self-hosted` → "openai (self-hosted)"
- *  - その他はそのまま返す(将来必要なら追加)
+ * 等)を「人間に見せたい label」に変換。
+ *  - `<vendor>-self-hosted` → "<vendor> (self-hosted)"
+ *  - その他はそのまま返す
  */
 export function providerDisplayLabel(provider: string): string {
-  switch (provider) {
-    case "openai-self-hosted":
-      return "openai (self-hosted)";
-    default:
-      return provider;
+  if (isSelfHostedProvider(provider)) {
+    return `${selfHostedBase(provider)} (self-hosted)`;
   }
+  return provider;
 }
 
 /**
  * Provider 文字列を VendorIcon の vendor プロパティ(`claude` / `gemini` /
- * `openai`)に対応付ける。`openai-self-hosted` も openai ロゴを使う(同じ
- * モデル提供者である OpenAI のものを self-host しているケースが多いし、
+ * `openai`)に対応付ける。`<vendor>-self-hosted` は同じ vendor のロゴを
+ * 使う(同じモデル提供者の重みを self-host しているケースが多いし、
  * ローカル UI では「ロゴで一目」が一番分かりやすい)。
  */
 export function providerVendor(
   provider: string,
 ): "claude" | "gemini" | "openai" | undefined {
-  switch (provider) {
+  const base = selfHostedBase(provider);
+  switch (base) {
     case "anthropic":
       return "claude";
     case "openai":
-    case "openai-self-hosted":
       return "openai";
     case "google":
       return "gemini";
@@ -407,9 +422,11 @@ export function runBadges(meta: RunMeta): MatrixSegment[] {
   const out: MatrixSegment[] = [];
   if (meta.model) {
     const segs = parseModelLabel(meta.model);
-    // セルフホスト run の vendor badge は「openai (self-hosted)」のように
+    // セルフホスト run の vendor badge は「<vendor> (self-hosted)」と
     // 表記して、cloud との区別を一目で付けられるようにする。
-    if (meta.provider === "openai-self-hosted") {
+    // `-self-hosted` suffix の命名規約で判定するので、将来
+    // `anthropic-self-hosted` 等が増えても自動で効く。
+    if (meta.provider && isSelfHostedProvider(meta.provider)) {
       for (const s of segs) {
         if (s.kind === "vendor") {
           s.label = providerDisplayLabel(meta.provider);
