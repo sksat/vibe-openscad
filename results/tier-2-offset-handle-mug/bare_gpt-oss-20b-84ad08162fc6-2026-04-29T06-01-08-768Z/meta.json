@@ -1,0 +1,58 @@
+{
+  "runId": "bare_gpt-oss-20b-84ad08162fc6-2026-04-29T06-01-08-768Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "bare/gpt-oss-20b",
+  "signature": "84ad08162fc6a1edd0573bc308e4504728f71c13f64112dc22aa5cda5d3f4bfc",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "openai/gpt-oss-20b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "openai/gpt-oss-20b",
+  "harness": {
+    "kind": "bare",
+    "modelMetadata": {
+      "raw": {
+        "id": "openai/gpt-oss-20b",
+        "object": "model",
+        "type": "llm",
+        "publisher": "openai",
+        "arch": "gpt-oss",
+        "compatibility_type": "gguf",
+        "quantization": "MXFP4",
+        "state": "loaded",
+        "max_context_length": 131072,
+        "loaded_context_length": 4096,
+        "capabilities": [
+          "tool_use"
+        ]
+      },
+      "publisher": "openai",
+      "type": "llm",
+      "arch": "gpt-oss",
+      "quantization": "MXFP4",
+      "maxContextLength": 131072,
+      "capabilities": [
+        "tool_use"
+      ]
+    }
+  },
+  "status": "render_error",
+  "timing": {
+    "totalMs": 5306
+  },
+  "tokens": {
+    "input": 334,
+    "output": 796
+  },
+  "createdAt": "2026-04-29T06:01:08.768Z",
+  "gitCommit": "c98be6c495f41a37a8cdc7299fc0c044aa2b628e",
+  "error": "openscad stl render failed (exit 1): ERROR: Parser error: syntax error in file ../../../../../tmp/render-eSoMOL/input.scad, line 28\nCan't parse file '/tmp/render-eSoMOL/input.scad'!\n\n"
+}

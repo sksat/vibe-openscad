@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type OpenAI from "openai";
-import { createOllamaProvider } from "./ollama.js";
+import { createOpenAISelfHostedProvider } from "./openai-self-hosted.js";
 
 /** OpenAI SDK 互換の最小モック client。chat.completions.create の引数を
  *  キャプチャしてレスポンスを返すだけ。 */
@@ -24,7 +24,7 @@ describe("ollama provider (OpenAI-compat /v1/chat/completions)", () => {
       ],
       usage: { prompt_tokens: 42, completion_tokens: 17 },
     });
-    const p = createOllamaProvider({ client });
+    const p = createOpenAISelfHostedProvider({ client });
     const res = await p.complete({ prompt: "make a cube", model: "llama3:8b" });
     expect(res.text).toContain("cube()");
     expect(res.modelId).toBe("llama3:8b");
@@ -43,7 +43,7 @@ describe("ollama provider (OpenAI-compat /v1/chat/completions)", () => {
       model: "x",
       choices: [{ message: { content: "y" }, finish_reason: "stop" }],
     });
-    const p = createOllamaProvider({ client });
+    const p = createOpenAISelfHostedProvider({ client });
     await p.complete({ prompt: "p", model: "x", systemPrompt: "you are concise" });
     expect(create.mock.calls[0]![0].messages).toEqual([
       { role: "system", content: "you are concise" },
@@ -58,7 +58,7 @@ describe("ollama provider (OpenAI-compat /v1/chat/completions)", () => {
       model: "llava",
       choices: [{ message: { content: "ok" }, finish_reason: "stop" }],
     });
-    const p = createOllamaProvider({ client });
+    const p = createOpenAISelfHostedProvider({ client });
     const png = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
     await p.complete({
       model: "llava",
@@ -94,7 +94,7 @@ describe("ollama provider (OpenAI-compat /v1/chat/completions)", () => {
       model: "x",
       choices: [{ message: { content: "y" }, finish_reason: "stop" }],
     });
-    const p = createOllamaProvider({ client });
+    const p = createOpenAISelfHostedProvider({ client });
     await p.complete({
       prompt: "p",
       model: "x",
@@ -107,7 +107,7 @@ describe("ollama provider (OpenAI-compat /v1/chat/completions)", () => {
 
   it("propagates SDK errors as-is(host が落ちている等の判別を上位に任せる)", async () => {
     const create = vi.fn().mockRejectedValue(new Error("ECONNREFUSED"));
-    const p = createOllamaProvider({
+    const p = createOpenAISelfHostedProvider({
       client: {
         chat: { completions: { create } },
       } as unknown as OpenAI,

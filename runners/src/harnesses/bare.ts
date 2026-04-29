@@ -77,6 +77,16 @@ export async function runBare(ctx: HarnessContext): Promise<HarnessResult> {
     kind: "bare",
     ...(ctx.config.iteration ? { iteration: ctx.config.iteration } : {}),
   };
+  // Self-hosted (LM Studio / Ollama) は publisher / quant 等が後で
+  // 追えるよう meta.json に同梱する。クラウド provider は無実装で undefined。
+  if (ctx.config.provider.getModelMetadata) {
+    try {
+      const md = await ctx.config.provider.getModelMetadata(ctx.config.model);
+      if (md) harnessLog.modelMetadata = md;
+    } catch {
+      // メタデータ取得失敗は run 自体を止めない(host が一時的に応答しない等)。
+    }
+  }
   const finish = (extra: Partial<HarnessResult>): HarnessResult => ({
     durationMs: performance.now() - start,
     harnessLog,

@@ -1,5 +1,5 @@
 import type { RenderResult } from "../render.js";
-import type { Provider } from "../providers/types.js";
+import type { ModelMetadata, Provider } from "../providers/types.js";
 import type { IterationStrategy, RunStatus, Task } from "../schema.js";
 
 export interface BareHarnessConfig {
@@ -49,6 +49,9 @@ export interface HarnessContext {
 export interface HarnessLogBare {
   kind: "bare";
   iteration?: IterationStrategy;
+  /** Self-hosted LLM のモデル個体メタデータ(publisher / quant 等)。
+   *  クラウド provider では undefined。 */
+  modelMetadata?: ModelMetadata;
 }
 
 export interface HarnessLogPdfPage {
@@ -56,6 +59,7 @@ export interface HarnessLogPdfPage {
   iteration?: IterationStrategy;
   pdfUrl?: string;
   pages?: number[];
+  modelMetadata?: ModelMetadata;
 }
 
 export type HarnessLog = HarnessLogBare | HarnessLogPdfPage;

@@ -345,12 +345,13 @@ matrix:
     provider: google
     model: gemini-3-flash-preview
 
-  # --- ローカル LLM (Ollama / LM Studio 等。OLLAMA_HOST .env で接続) ---
-  # ローカルは VRAM 制約で並走できないので concurrency 1 で回す前提。
-  # 試運転として 1 モデルだけ。動いたら他のローカルモデルを順次足す。
+  # --- セルフホスト OpenAI 互換 endpoint (LM Studio / Ollama / vLLM 等) ---
+  # OPENAI_SELF_HOSTED_BASE_URL=.../v1 で接続先指定。VRAM 制約で並走できない
+  # ので `defaults.concurrency.perProvider.openai-self-hosted: 1` を推奨。
+  # 試運転として 1 モデル。動いたら他のローカルモデルを順次足す。
   - id: bare/gpt-oss-20b
     harness: { kind: bare }
-    provider: ollama
+    provider: openai-self-hosted
     model: openai/gpt-oss-20b
 
   # --- iteration chain (PNG feedback) ---

@@ -327,6 +327,26 @@ const SubagentLogSchema = z.object({
 });
 export type SubagentLog = z.infer<typeof SubagentLogSchema>;
 
+/**
+ * セルフホスト LLM のモデル個体メタデータ。`provider: openai-self-hosted`
+ * が run 時に host を叩いて埋める(LM Studio /api/v0/models, Ollama
+ * /api/tags 等)。クラウド provider では omit。
+ *
+ * publisher / quantization が違うと挙動も変わるので、後で再現性を
+ * 追えるよう meta.json に同梱しておく。
+ */
+const ModelMetadataSchema = z.object({
+  publisher: z.string().optional(),
+  type: z.string().optional(),
+  arch: z.string().optional(),
+  quantization: z.string().optional(),
+  maxContextLength: z.number().optional(),
+  capabilities: z.array(z.string()).optional(),
+  parameterSize: z.string().optional(),
+  size: z.number().optional(),
+  raw: z.record(z.string(), z.unknown()).optional(),
+});
+
 const RunHarnessLogSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("bare"),
@@ -337,6 +357,7 @@ const RunHarnessLogSchema = z.discriminatedUnion("kind", [
      */
     iteration: IterationStrategySchema.optional(),
     iterationsRun: z.number().int().nonnegative().optional(),
+    modelMetadata: ModelMetadataSchema.optional(),
   }),
   z.object({
     kind: z.literal("pdf-page"),
@@ -346,6 +367,7 @@ const RunHarnessLogSchema = z.discriminatedUnion("kind", [
     pdfUrl: z.string().optional(),
     /** 切り出したページ番号(参考用)。 */
     pages: z.array(z.number().int().positive()).optional(),
+    modelMetadata: ModelMetadataSchema.optional(),
   }),
   z.object({
     kind: z.literal("external-agent"),

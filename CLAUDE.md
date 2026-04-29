@@ -56,4 +56,4 @@ DESIGN.md には「signature ベースの差分実行」「`api_error` は resul
 - `ANTHROPIC_API_KEY` — Anthropic provider 用
 - `OPENAI_API_KEY` — OpenAI provider 用
 - `GEMINI_API_KEY` / `GOOGLE_API_KEY` — Gemini provider 用
-- `OLLAMA_HOST`(任意) — ローカル LLM のエンドポイント
+- `OPENAI_SELF_HOSTED_BASE_URL`(任意) — セルフホスト OpenAI 互換 endpoint(LM Studio / Ollama / llama.cpp / vLLM 等)。`/v1` 込みで指定(例 `http://asuha:1234/v1`)。フォールバックで旧 `OLLAMA_HOST`(/v1 を自動補完)も読む

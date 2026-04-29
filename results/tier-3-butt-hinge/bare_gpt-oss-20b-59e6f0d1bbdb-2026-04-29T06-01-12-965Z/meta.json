@@ -1,0 +1,57 @@
+{
+  "runId": "bare_gpt-oss-20b-59e6f0d1bbdb-2026-04-29T06-01-12-965Z",
+  "taskId": "tier-3-butt-hinge",
+  "matrixId": "bare/gpt-oss-20b",
+  "signature": "59e6f0d1bbdb7a1cacb6da903456b0e7d2f4bd8479ba46a39e2df12c2f71484f",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dd7199030a8827a181914869189fc45a2e5637023f0c8c59532d442557036e7c",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "openai/gpt-oss-20b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "openai/gpt-oss-20b",
+  "harness": {
+    "kind": "bare",
+    "modelMetadata": {
+      "raw": {
+        "id": "openai/gpt-oss-20b",
+        "object": "model",
+        "type": "llm",
+        "publisher": "openai",
+        "arch": "gpt-oss",
+        "compatibility_type": "gguf",
+        "quantization": "MXFP4",
+        "state": "loaded",
+        "max_context_length": 131072,
+        "loaded_context_length": 4096,
+        "capabilities": [
+          "tool_use"
+        ]
+      },
+      "publisher": "openai",
+      "type": "llm",
+      "arch": "gpt-oss",
+      "quantization": "MXFP4",
+      "maxContextLength": 131072,
+      "capabilities": [
+        "tool_use"
+      ]
+    }
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 4174
+  },
+  "tokens": {
+    "input": 653,
+    "output": 606
+  },
+  "createdAt": "2026-04-29T06:01:12.965Z",
+  "gitCommit": "c98be6c495f41a37a8cdc7299fc0c044aa2b628e"
+}

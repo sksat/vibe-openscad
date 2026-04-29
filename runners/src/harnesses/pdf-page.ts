@@ -82,6 +82,11 @@ export async function runPdfPage(
     config: derivedConfig,
   });
 
+  // bare 側で取得した modelMetadata を pdf-page log に引き継ぐ。
+  const passedThroughMetadata =
+    result.harnessLog.kind === "bare"
+      ? result.harnessLog.modelMetadata
+      : undefined;
   return {
     ...result,
     harnessLog: {
@@ -89,6 +94,7 @@ export async function runPdfPage(
       ...(ctx.config.iteration ? { iteration: ctx.config.iteration } : {}),
       pdfUrl: pdfSource.url,
       pages: pdfSource.pages,
+      ...(passedThroughMetadata ? { modelMetadata: passedThroughMetadata } : {}),
     },
   };
 }

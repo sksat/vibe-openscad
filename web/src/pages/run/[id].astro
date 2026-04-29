@@ -205,6 +205,46 @@ const subagents =
     </table>
   </section>
 
+  {(m.harness.kind === "bare" || m.harness.kind === "pdf-page") &&
+    m.harness.modelMetadata && (
+    <section class="meta-table">
+      <h3>model metadata <span class="muted small">(self-hosted)</span></h3>
+      <p class="muted small">
+        セルフホスト LLM はクラウドの単一 <code>provider</code> と違い、
+        実質「(モデル開発者, weight publisher, 量子化)」の組で挙動が決まる。
+        run 時に LM Studio / Ollama から取得した値:
+      </p>
+      <table>
+        <tbody>
+          {m.harness.modelMetadata.publisher && (
+            <tr><th>publisher</th><td><code>{m.harness.modelMetadata.publisher}</code></td></tr>
+          )}
+          {m.harness.modelMetadata.type && (
+            <tr><th>type</th><td>{m.harness.modelMetadata.type}</td></tr>
+          )}
+          {m.harness.modelMetadata.arch && (
+            <tr><th>arch</th><td>{m.harness.modelMetadata.arch}</td></tr>
+          )}
+          {m.harness.modelMetadata.quantization && (
+            <tr><th>quantization</th><td><code>{m.harness.modelMetadata.quantization}</code></td></tr>
+          )}
+          {m.harness.modelMetadata.parameterSize && (
+            <tr><th>parameter size</th><td>{m.harness.modelMetadata.parameterSize}</td></tr>
+          )}
+          {m.harness.modelMetadata.maxContextLength && (
+            <tr><th>max ctx</th><td>{m.harness.modelMetadata.maxContextLength.toLocaleString()} tok</td></tr>
+          )}
+          {m.harness.modelMetadata.capabilities && m.harness.modelMetadata.capabilities.length > 0 && (
+            <tr><th>capabilities</th><td>{m.harness.modelMetadata.capabilities.join(", ")}</td></tr>
+          )}
+          {m.harness.modelMetadata.size && (
+            <tr><th>size</th><td>{(m.harness.modelMetadata.size / (1024*1024*1024)).toFixed(2)} GB</td></tr>
+          )}
+        </tbody>
+      </table>
+    </section>
+  )}
+
   {subagents.length > 0 && (
     <section>
       <h3>subagents</h3>
