@@ -423,7 +423,10 @@ async function main() {
       continue;
     }
     const png = await buildModelCard(model, picks);
-    const outPath = join(outDir, `model-${model}.png`);
+    // モデル id にスラッシュ(`google/gemma-3-27b` 等)が混じると
+    // パスとして解釈されてしまうので、ファイル名用にサニタイズする。
+    const safeModel = model.replace(/[\\/]/g, "_");
+    const outPath = join(outDir, `model-${safeModel}.png`);
     const fs = await import("node:fs");
     fs.writeFileSync(outPath, png);
     madeModels++;

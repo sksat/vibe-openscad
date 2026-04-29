@@ -67,7 +67,9 @@ for (const r of ds.runs.values()) {
  */
 import { existsSync } from "node:fs";
 import { resolve as pathResolve } from "node:path";
-const syntheticOgpPath = `/og/model-${model}.png`;
+// model id にスラッシュ(`google/gemma-3-27b` 等)が含まれることがあるので
+// ファイル名用にサニタイズ。generate-ogp.mjs と同じ規約で `_` に置換。
+const syntheticOgpPath = `/og/model-${model.replace(/[\\/]/g, "_")}.png`;
 const syntheticOgpExists = existsSync(
   pathResolve(process.cwd(), "public", syntheticOgpPath.slice(1)),
 );
