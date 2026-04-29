@@ -1,0 +1,66 @@
+{
+  "runId": "bare_qwen3-0.6b-81de998b47b4-2026-04-29T08-19-53-615Z",
+  "taskId": "tier-1-cube-with-hole",
+  "matrixId": "bare/qwen3-0.6b",
+  "signature": "81de998b47b4d5122f49e8ae6278b39ac2b4072c844254a12b0c640badc3bba2",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "8ff7e36af4bc202429ec68b7eb9cc3f195b6a3c68668be31239bcea23345a048",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "qwen3-0.6b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "qwen3-0.6b",
+  "harness": {
+    "kind": "bare",
+    "modelMetadata": {
+      "raw": {
+        "id": "qwen3-0.6b",
+        "object": "model",
+        "type": "llm",
+        "publisher": "lmstudio-community",
+        "arch": "qwen3",
+        "compatibility_type": "gguf",
+        "quantization": "Q8_0",
+        "state": "not-loaded",
+        "max_context_length": 32768,
+        "capabilities": [
+          "tool_use"
+        ]
+      },
+      "publisher": "lmstudio-community",
+      "type": "llm",
+      "arch": "qwen3",
+      "quantization": "Q8_0",
+      "maxContextLength": 32768,
+      "capabilities": [
+        "tool_use"
+      ],
+      "host": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "vramGb": 24,
+        "gpuPlatform": "Vulkan",
+        "cpu": "12th Gen Intel(R) Core(TM) i9-12900K",
+        "memGb": 32
+      }
+    }
+  },
+  "status": "render_error",
+  "timing": {
+    "totalMs": 21625,
+    "firstTokenMs": 5686,
+    "generationMs": 5740
+  },
+  "tokens": {
+    "input": 86,
+    "output": 2202
+  },
+  "createdAt": "2026-04-29T08:19:53.615Z",
+  "gitCommit": "1d991ed9e773cb54c9da9c6f363f6276380f5f94",
+  "error": "openscad stl render failed (exit 1): ERROR: Parser error: syntax error in file ../../../../../tmp/render-4eQLMH/input.scad, line 12\nCan't parse file '/tmp/render-4eQLMH/input.scad'!\n\n"
+}

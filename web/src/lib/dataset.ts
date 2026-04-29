@@ -275,7 +275,7 @@ export interface MatrixSegment {
   label: string;
   title?: string;
   /** Vendor identifier — used for theme tinting. */
-  vendor?: "claude" | "gemini" | "openai" | "nvidia";
+  vendor?: "claude" | "gemini" | "openai" | "nvidia" | "qwen";
   /**
    * Override the default href derived from `kind` + `label`. Used when the
    * harness label and the harness group slug differ — e.g., a label of
@@ -377,6 +377,17 @@ function parseModelLabel(modelStr: string): MatrixSegment[] {
     return [
       { kind: "vendor", label: "openai", vendor: "openai" },
       { kind: "model", label, title: modelStr, vendor: "openai" },
+    ];
+  }
+
+  // Qwen 系(bare 形式): `qwen3-8b` / `qwen3-0.6b` / `qwen3-32b` 等。
+  // 厳密な publisher prefix は無いが community 配布の qwen3-* は普通に
+  // 出回っているので 1 級 vendor 扱い。
+  const qwen3 = modelStr.match(/^(qwen[23](?:\.\d+)?)-(.+)$/i);
+  if (qwen3) {
+    return [
+      { kind: "vendor", label: "qwen", vendor: "qwen" },
+      { kind: "model", label: modelStr, title: modelStr, vendor: "qwen" },
     ];
   }
 

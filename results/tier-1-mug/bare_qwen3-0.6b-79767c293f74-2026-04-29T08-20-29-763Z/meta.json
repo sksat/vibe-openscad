@@ -1,0 +1,66 @@
+{
+  "runId": "bare_qwen3-0.6b-79767c293f74-2026-04-29T08-20-29-763Z",
+  "taskId": "tier-1-mug",
+  "matrixId": "bare/qwen3-0.6b",
+  "signature": "79767c293f746259c810921619265f7954d5bcf7eb380e5ca49a9b98f47b62c0",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "883b512feb40f76c3fdcb332c7c513c491c27c8511f65b90fecbad6b6c197cd5",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "qwen3-0.6b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "qwen3-0.6b",
+  "harness": {
+    "kind": "bare",
+    "modelMetadata": {
+      "raw": {
+        "id": "qwen3-0.6b",
+        "object": "model",
+        "type": "llm",
+        "publisher": "lmstudio-community",
+        "arch": "qwen3",
+        "compatibility_type": "gguf",
+        "quantization": "Q8_0",
+        "state": "not-loaded",
+        "max_context_length": 32768,
+        "capabilities": [
+          "tool_use"
+        ]
+      },
+      "publisher": "lmstudio-community",
+      "type": "llm",
+      "arch": "qwen3",
+      "quantization": "Q8_0",
+      "maxContextLength": 32768,
+      "capabilities": [
+        "tool_use"
+      ],
+      "host": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "vramGb": 24,
+        "gpuPlatform": "Vulkan",
+        "cpu": "12th Gen Intel(R) Core(TM) i9-12900K",
+        "memGb": 32
+      }
+    }
+  },
+  "status": "render_error",
+  "timing": {
+    "totalMs": 17487,
+    "firstTokenMs": 5759,
+    "generationMs": 6841
+  },
+  "tokens": {
+    "input": 162,
+    "output": 4084
+  },
+  "createdAt": "2026-04-29T08:20:29.763Z",
+  "gitCommit": "1d991ed9e773cb54c9da9c6f363f6276380f5f94",
+  "error": "openscad stl render failed (exit 1): ERROR: Parser error: syntax error in file ../../../../../tmp/render-J2f3Z6/input.scad, line 2\nCan't parse file '/tmp/render-J2f3Z6/input.scad'!\n\n"
+}

@@ -1,0 +1,4 @@
+difference() {
+    cube([50, 50, 50]);
+    translate([25, 25, 25]) cylinder(r=10, h=50);
+}

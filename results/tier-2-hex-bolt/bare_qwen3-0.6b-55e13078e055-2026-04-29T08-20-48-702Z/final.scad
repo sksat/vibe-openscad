@@ -1,0 +1,5 @@
+cylinder(
+    radius: 4,
+    length: 30,
+    axis: [Z]
+)

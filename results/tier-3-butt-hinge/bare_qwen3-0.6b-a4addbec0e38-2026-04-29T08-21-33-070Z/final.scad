@@ -1,0 +1,82 @@
+// OpenSCAD butt hinge design: left plate, right plate, and pivot pin
+
+// Define base plates (left and right)
+part left_plate = cylinder(
+    dimensions => [30, 25, 2],
+    radius => 1.5,
+    height => 2,
+    y => 30,
+    x => -0.5,
+    z => 0
+);
+
+part right_plate = cylinder(
+    dimensions => [30, 25, 2],
+    radius => 1.5,
+    height => 2,
+    y => 6,
+    x => 0.5,
+    z => 0
+);
+
+// Define pivot pin (cylinder)
+pin_cylinders = cylinder(
+    dimensions => [32, 4, 0.1],
+    radius => 2,
+    height => 32,
+    center_y => 0.5
+);
+
+// Knuckles for left and right plates
+left_knuckles = [
+    pin_cylinders,
+    pin_cylinders,
+    pin_cylinders,
+    pin_cylinders
+];
+
+right_knuckles = [
+    pin_cylinders,
+    pin_cylinders
+];
+
+// Holes in knuckles (M3 nuts)
+holes_left = [
+    cylinder(
+        dimensions => [8, 6, 1.5],
+        radius => 3.2,
+        z => -0.5
+    ),
+    cylinder(
+        dimensions => [8, 6, 1.5],
+        radius => 4.6,
+        z => 0.5
+    )
+];
+
+holes_right = [
+    cylinder(
+        dimensions => [8, 6, 1.5],
+        radius => 3.2,
+        z => -0.5
+    ),
+    cylinder(
+        dimensions => [8, 6, 1.5],
+        radius => 4.6,
+        z => 0.5
+    )
+];
+
+// Coordinate system setup
+set_coords() {
+    pivot_y = 32mm;
+    left_x = -0.5;
+    right_x = 0.5;
+    knuckle_center_y = 6mm;
+}
+
+// Combine all components into one file with correct positions and connections
+file "butt_hinge.scad" {
+    // Left plate at x <0, right at x >0
+    left_plate + right_plate + pin_cylinders + holes_left + holes_right
+}

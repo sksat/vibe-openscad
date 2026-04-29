@@ -1,0 +1,64 @@
+{
+  "runId": "bare_qwen3-0.6b-f83c607d44ed-2026-04-29T08-21-04-587Z",
+  "taskId": "tier-2-l-bracket",
+  "matrixId": "bare/qwen3-0.6b",
+  "signature": "f83c607d44ed5acbf0381b6191c130bfe62a96db6eff4838a1ee820686acc253",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "b20dcf3dd07e532496944d76485b954e0ab614f3cda1919fee5dc406f59b3ea5",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "qwen3-0.6b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "qwen3-0.6b",
+  "harness": {
+    "kind": "bare",
+    "modelMetadata": {
+      "raw": {
+        "id": "qwen3-0.6b",
+        "object": "model",
+        "type": "llm",
+        "publisher": "lmstudio-community",
+        "arch": "qwen3",
+        "compatibility_type": "gguf",
+        "quantization": "Q8_0",
+        "state": "not-loaded",
+        "max_context_length": 32768,
+        "capabilities": [
+          "tool_use"
+        ]
+      },
+      "publisher": "lmstudio-community",
+      "type": "llm",
+      "arch": "qwen3",
+      "quantization": "Q8_0",
+      "maxContextLength": 32768,
+      "capabilities": [
+        "tool_use"
+      ],
+      "host": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "vramGb": 24,
+        "gpuPlatform": "Vulkan",
+        "cpu": "12th Gen Intel(R) Core(TM) i9-12900K",
+        "memGb": 32
+      }
+    }
+  },
+  "status": "render_error",
+  "timing": {
+    "totalMs": 15863
+  },
+  "tokens": {
+    "input": 302,
+    "output": 2247
+  },
+  "createdAt": "2026-04-29T08:21:04.587Z",
+  "gitCommit": "1d991ed9e773cb54c9da9c6f363f6276380f5f94",
+  "error": "openscad stl render failed (exit 1): ERROR: Parser error: syntax error in file ../../../../../tmp/render-Sx5nbZ/input.scad, line 4\nCan't parse file '/tmp/render-Sx5nbZ/input.scad'!\n\n"
+}

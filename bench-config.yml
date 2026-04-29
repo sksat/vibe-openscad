@@ -361,6 +361,18 @@ matrix:
     harness: { kind: bare }
     provider: openai-self-hosted
     model: nvidia/nemotron-3-nano-4b
+  - id: bare/qwen3-0.6b
+    harness: { kind: bare }
+    provider: openai-self-hosted
+    model: qwen3-0.6b
+  - id: bare/qwen3-8b
+    harness: { kind: bare }
+    provider: openai-self-hosted
+    model: qwen3-8b
+  - id: bare/qwen3-32b
+    harness: { kind: bare }
+    provider: openai-self-hosted
+    model: qwen3-32b
 
   # --- iteration chain (PNG feedback) ---
   # 各 iteration step は独立した benchmark run。iter-png-1 は bare の出力を

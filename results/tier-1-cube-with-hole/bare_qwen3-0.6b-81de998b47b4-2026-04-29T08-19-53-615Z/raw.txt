@@ -1,0 +1,15 @@
+
+
+```openscad
+length = 50;
+width = 50;
+
+// Create two squares for left and right sides
+left_square = square(length/2, width);
+right_square = square(length/2, width);
+
+// Add a circular hole in the center
+hole_circle_centered_at_midpoint = circle(20, radius=10);
+
+model = combine(left_square, right_square, hole_circle_centered_at_midpoint)
+```
