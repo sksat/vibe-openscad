@@ -1,0 +1,252 @@
+```openscad
+// Sharp GP2Y0A21YK0F Distance Sensor - External Dimensions Model
+// Units: mm
+// Coordinate system: center of main body at origin, +Z up, +Y forward
+
+// Key dimensions from datasheet
+// Overall width (X): 37mm
+// Overall depth (Y): 13mm (lens case depth)
+// Main body height (Z): ~13mm (from bottom of bar to top of lens case)
+
+// Body dimensions
+body_w = 37;       // total width X
+body_d = 13;       // depth Y (reference dimension 13, shown as (18.9-25) includes lens protrusion?)
+body_h = 13;       // height Z of main rectangular case portion
+
+// From side view:
+// Total height including lens protrusion ~ (18.9-25) is reference for lens center positions
+// Main case height: 13mm
+// Lens case extends above: 6.3mm total? 
+// From the side view: 6.3 (top), 2 (next), 8.4 / 7.2 are internal divisions
+// The case appears to be ~13mm tall
+// Lens protrusion above case top: ~2mm
+
+// From front view dimensions:
+// Width: 37mm total
+// Lens emitter center: 4.5mm from left edge (x position)
+// Lens detector center: *20±0.1mm from left edge  
+// Bar (connector area) extends below main case
+// Bar width: 29.5mm (centered?)
+// Bar dimensions from bottom view: 7.5 | 4.15 | 16.3  => positions along x
+
+// Heights (Z) from side view:
+// Total side height: (18.9~25) reference - this is lens center height range?
+// From bottom: PWB 1.2mm, then (3.3) reference, then main body
+// Lens case top portion: 6.3mm, step: 2mm, then 8.4 or 7.2mm body
+
+// Let me re-read carefully:
+// Side view right side shows: 6.3, 2, then 8.4/7.2 stacked, then 1.2(PWB), (3.3)
+// 6.3 = top of lens protrusion height
+// 2 = step between lens top and body top
+// 8.4 = main body height? or 7.2?
+// 1.2 = PWB/connector part below
+// (3.3) = reference below
+
+// From the drawing interpretation:
+// Main body (lens case box): width=37, depth=13, height=8.4 (or 7.2)
+// Lens protrudes above by: 2mm step + 6.3mm = looks like lens housing is 6.3 tall above a 2mm ledge
+// Actually: the right side shows dimensions 6.3 and 2 at top, meaning:
+//   lens protrusion = 6.3mm total height above body
+//   or: 6.3 from some reference, 2mm is a ledge
+
+// Best interpretation based on typical GP2Y0A21 physical measurements:
+// Main body: 37 x 13 x 13 mm (W x D x H)  
+// Lens protrusion above body: ~2mm
+// Connecting bar below: 29.5mm wide, ~3mm tall, extending down from body bottom
+
+// Mounting bar / connector tab dimensions from bottom view:
+// 7.5 from left | 4.15 wide | 16.3 to right
+// Bar height (Z): ~2.5mm
+// Bar total width: 29.5mm  
+// Bar depth (Y): same as body ~13mm? or smaller
+
+// Mounting holes: ø3.2, at positions shown
+// Left lens (emitter): center at x = 4.5 from left => from center: 4.5 - 37/2 = -14.0
+// Right lens (detector): center at x = 20 from left => from center: 20 - 37/2 = 1.5
+// Both lenses: R1.75 (diameter 3.5mm)
+
+// Connector/cable at bottom center-ish
+
+// Let me define origin at body center, Z=0 at body bottom face
+
+// === Dimensions ===
+bw = 37;    // body width X
+bd = 13;    // body depth Y  
+bh = 13;    // body height Z (main case)
+
+// Lens protrusion
+lens_h = 2.0;   // how much lenses protrude above body top
+lens_emitter_r = 1.75;    // emitter lens radius
+lens_detector_r = 1.75;   // detector lens radius (ø3.2 hole, R1.75)
+
+// Lens center X positions (from left edge of body)
+emitter_x_from_left = 4.5;
+detector_x_from_left = 20.0;
+
+// Convert to centered coords
+emitter_cx = emitter_x_from_left - bw/2;   // = 4.5 - 18.5 = -14.0
+detector_cx = detector_x_from_left - bw/2; // = 20.0 - 18.5 = 1.5
+
+// Lens Y position: centered in body depth, slightly toward front
+lens_cy = 0;  // centered in Y
+
+// Connecting bar dimensions
+bar_w = 29.5;       // width of bar
+bar_h = 3.75;       // height of bar below body (from "3.75" in front view)
+bar_d = bd;         // same depth as body
+
+// Mounting holes in bar
+// From front view: holes at 3.75 below body bottom, at X positions
+// Left hole at ~3.75 from left of bar, right hole 
+// Bar left edge from body left edge: (bw - bar_w)/2 = (37-29.5)/2 = 3.75
+bar_left_x = -bw/2 + (bw - bar_w)/2;  // = -18.5 + 3.75 = -14.75
+// Mounting hole positions: shown in front view
+// "10|1" and "14.75" from front view - hole spacing
+// Left hole at 3.75 from left of bar? 
+// Right hole - the "14.75" total from something
+// Let's place holes symmetrically based on drawing
+// "1" center mark at 10mm from left, another at 10+1=11? 
+// Interpreting: two holes, one at 10mm from left bar edge, one near right
+// From "10|1" label and "14.75": hole centers at X= bar_left_x+3.75+... 
+// More careful: front view shows R3.75 circles (mounting holes) and dimension 10|1 and 14.75
+// The "R3.75" might be corner radius, and ø3.2 is hole diameter
+// mounting hole left: at x = bar_left_x + 3.75 from bar left = -14.75+3.75 = -11
+// Hmm, let me just place them based on "3.75" spacing from edges and "14.75" span
+
+mount_hole_r = 3.2/2;  // ø3.2 mounting holes
+// From drawing the two mounting holes seem to be at:
+// Left hole:  x ~ -14.75 + 3.75 = -11  (3.75 from left edge of bar)
+// Right hole: x ~ -14.75 + 14.75 - 3.75? 
+// The "14.75" dimension in front view appears to span from left bar edge to right hole center
+// or between centers. Let's say:
+mount_hole_left_x  = bar_left_x + 3.75;         // ~ -11.0
+mount_hole_right_x = bar_left_x + 14.75 - 3.75; // ~ -3.75... 
+// Actually the dimension "14.75" might be from left of body (not bar):
+// mount right = -18.5 + 14.75 = -3.75
+// mount left = from "10|1": at 10-18.5 = -8.5? and spacing 1mm? that seems small
+// Let me interpret: left hole at x=-14.75+3.75 = from bar left + 3.75
+// 14.75 from bar left to right hole center: right hole at bar_left_x + 14.75
+
+mh_left_x  = bar_left_x + 3.75;
+mh_right_x = bar_left_x + 14.75;
+mh_y       = 0;   // centered in Y
+mh_z       = -bh/2 - bar_h/2;  // in middle of bar height
+
+// Cable notch / cutout in bar
+notch_w = 4.15;  // from bottom view "4.15"
+notch_x = -bw/2 + 7.5 + 4.15/2;  // 7.5 from left, then 4.15 wide
+// bottom view: 7.5 | 4.15 | 16.3 along bar
+notch_d = 3;    // depth of notch in Y (guessed)
+notch_h = bar_h + 0.1; // full bar height
+
+// Cable (simplified as cylinder)
+cable_r = 1.5;
+cable_len = 20;
+
+// Connector pins (simplified) from bottom view "①②③"
+// 3 pins in row at connector area
+pin_spacing = 2.0;
+pin_r = 0.5;
+pin_h = 3.5;  // 2.5+1 from side view "2.5" and "1"
+// Pins centered at notch_x, bottom of bar
+
+// === Colors ===
+body_color = [0.2, 0.2, 0.2, 1.0];   // dark gray ABS
+lens_color = [0.1, 0.1, 0.1, 0.8];   // dark lens (visible light cut-off)
+cable_color = [0.8, 0.6, 0.0, 1.0];  // yellow cable
+
+module body() {
+    color(body_color) {
+        // Main rectangular body case
+        translate([0, 0, 0])
+            cube([bw, bd, bh], center=true);
+    }
+}
+
+module lens_protrusions() {
+    color(lens_color) {
+        // Emitter lens (left) - circular cylindrical protrusion
+        translate([emitter_cx, lens_cy, bh/2 + lens_h/2])
+            cylinder(r=lens_emitter_r, h=lens_h, center=true, $fn=32);
+        
+        // Detector lens (right) - circular cylindrical protrusion  
+        translate([detector_cx, lens_cy, bh/2 + lens_h/2])
+            cylinder(r=lens_detector_r, h=lens_h, center=true, $fn=32);
+    }
+}
+
+module lens_windows() {
+    // Slight indentation / window on top face to show lens apertures
+    color([0.15, 0.15, 0.15])
+    {
+        // Emitter window (slightly recessed into top)
+        translate([emitter_cx, lens_cy, bh/2 - 0.5])
+            cylinder(r=lens_emitter_r - 0.3, h=1.1, center=true, $fn=32);
+        // Detector window 
+        translate([detector_cx, lens_cy, bh/2 - 0.5])
+            cylinder(r=lens_detector_r - 0.3, h=1.1, center=true, $fn=32);
+    }
+}
+
+module connecting_bar() {
+    color(body_color) {
+        difference() {
+            // Bar body
+            translate([bar_left_x + bar_w/2, 0, -bh/2 - bar_h/2])
+                cube([bar_w, bar_d, bar_h], center=true);
+            
+            // Left mounting hole
+            translate([mh_left_x, mh_y, mh_z])
+                cylinder(r=mount_hole_r, h=bar_h + 0.1, center=true, $fn=24);
+            
+            // Right mounting hole
+            translate([mh_right_x, mh_y, mh_z])
+                cylinder(r=mount_hole_r, h=bar_h + 0.1, center=true, $fn=24);
+            
+            // Cable cutout notch (open slot from front face)
+            translate([notch_x, -bar_d/2, -bh/2 - bar_h/2])
+                cube([notch_w, notch_d*2, bar_h + 0.2], center=true);
+        }
+    }
+}
+
+module cable() {
+    color(cable_color) {
+        // Cable coming out of notch downward (simplified)
+        translate([notch_x, -bd/2 + 1, -bh/2 - bar_h - cable_len/2])
+            cylinder(r=cable_r, h=cable_len, center=true, $fn=16);
+        
+        // Small bend toward front
+        translate([notch_x, -bd/2 - cable_len/4, -bh/2 - bar_h])
+            rotate([0, 90, 0])
+            cylinder(r=cable_r, h=0.1, center=true, $fn=16);
+    }
+}
+
+module connector_pins() {
+    // 3 connector pins at bottom of bar (simplified)
+    color([0.9, 0.9, 0.0]) {
+        for (i = [-1, 0, 1]) {
+            translate([notch_x + i * pin_spacing, -bd/2 + 1.5, -bh/2 - bar_h - pin_h/2])
+                cylinder(r=pin_r, h=pin_h, center=true, $fn=8);
+        }
+    }
+}
+
+module top_label_ridge() {
+    // Slight ridge/stamp area on top (simplified)
+    color([0.25, 0.25, 0.25])
+    translate([0, 0, bh/2 + 0.3])
+        cube([bw - 4, bd - 4, 0.5], center=true);
+}
+
+// === Assembly ===
+union() {
+    body();
+    lens_protrusions();
+    connecting_bar();
+    cable();
+    connector_pins();
+    top_label_ridge();
+}
+```
