@@ -2,6 +2,7 @@
 import type { LoadedRun } from "../lib/results.js";
 import {
   formatCost,
+  providerVendor,
   runBadges,
   runCostUsd,
   statusBadgeClass,
@@ -50,6 +51,9 @@ const modelMetadata =
   </a>
   <div class="meta">
     <div class="row matrix-row">
+      {modelMetadata && (modelMetadata.publisher || modelMetadata.quantization) && (
+        <span class="row-label muted small">model:</span>
+      )}
       <div class="matrix-badges" title={m.matrixId}>
         {segments.map((s) => {
           const inner = (
@@ -81,22 +85,31 @@ const modelMetadata =
           );
         })}
       </div>
-      {m.status !== "success" ? (
+      {m.status !== "success" && (
         <a class={`${statusBadgeClass(m.status)} status-link`} href={`/run/${m.runId}`}>{m.status}</a>
-      ) : modelMetadata && (modelMetadata.publisher || modelMetadata.quantization) ? (
-        /* 成功 run はステータス表示を消し、代わりに self-hosted の
-           weight 個体識別 (publisher / quantization) を pill で出す。
-           cloud モデルは modelMetadata 無しでこのスロットは空。 */
-        <div class="self-hosted-pills" title={`publisher: ${modelMetadata.publisher ?? "—"}, quant: ${modelMetadata.quantization ?? "—"}`}>
-          {modelMetadata.publisher && (
-            <span class="pill pill-publisher">{modelMetadata.publisher}</span>
-          )}
-          {modelMetadata.quantization && (
-            <span class="pill pill-quant">{modelMetadata.quantization}</span>
-          )}
-        </div>
-      ) : null}
+      )}
     </div>
+    {m.status === "success" && modelMetadata && (modelMetadata.publisher || modelMetadata.quantization) && (
+      /* 成功 self-hosted run は「model provider」と「publisher(weight 配布元)」
+         が別物のことがあるので、行を分けてラベル付きで出す。publisher が
+         既知 vendor (openai / google / anthropic) なら logo も付ける。
+         quant も同行で抱き合わせ。 */
+      <div class="row publisher-row">
+        <span class="row-label muted small">publisher:</span>
+        {modelMetadata.publisher && (() => {
+          const pubVendor = providerVendor(modelMetadata.publisher);
+          return (
+            <span class="pill pill-publisher" data-vendor={pubVendor ?? ""}>
+              {pubVendor && <VendorIcon vendor={pubVendor} />}
+              {modelMetadata.publisher}
+            </span>
+          );
+        })()}
+        {modelMetadata.quantization && (
+          <span class="pill pill-quant">{modelMetadata.quantization}</span>
+        )}
+      </div>
+    )}
     {showTask && <div class="task muted">{m.taskId}</div>}
     <div class="row sub muted">
       <span>{(m.timing.totalMs / 1000).toFixed(1)}s</span>
@@ -134,17 +147,27 @@ const modelMetadata =
   }
   .thumb-link:hover { text-decoration: none; }
   .status-link { text-decoration: none; }
-  /* self-hosted の publisher / quantization は他の pill と同じ形にして
-     視覚的なリズムを揃える。色は弱めに(モデル名 pill より控えめ)。 */
-  .self-hosted-pills {
-    display: inline-flex;
-    gap: 4px;
+  /* self-hosted run のときは matrix-row の下に publisher 行を出す。
+     行の頭に "model:" / "publisher:" の小さいラベルを置いて、各 pill が
+     何を表すかを明示する。両者が同じ "openai" でも別概念なので、視覚的
+     に区別したい。 */
+  .row-label {
     flex-shrink: 0;
+    color: var(--fg-dim);
+  }
+  .publisher-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    flex-wrap: wrap;
   }
   .pill-publisher {
     color: var(--fg);
     border-color: rgba(232, 184, 109, 0.4);
     background: rgba(232, 184, 109, 0.06);
+    display: inline-flex;
+    align-items: center;
   }
   .pill-quant {
     color: var(--accent);
