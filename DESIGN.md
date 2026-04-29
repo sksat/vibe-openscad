@@ -40,8 +40,21 @@ API 課金が嵩むので「変更があった組み合わせだけ流す」こ�
 ### CLI
 
 - `pnpm bench plan` — `bench-config.yml` の matrix × tasks を展開し、既存 run の signature と突合して **up-to-date / missing / stale** に分類して表示。**API は叩かない**
-- `pnpm bench run` — missing/stale だけを実行。`--force`, `--filter`, `--samples N`
+- `pnpm bench run` — missing/stale だけを実行。`--force`, `--filter`, `--samples N`, `--concurrency N` (`-j N`), `--concurrency-<provider> N`
 - `pnpm bench show <runId>` — meta/log を pretty 表示
+
+### 並列実行
+
+`bench run` は API 待ちで blocking している時間が大半なので、並列化が時間短縮にすごく効く。`runners/src/scheduler.ts` で「グローバル上限 + bucket(provider)毎上限 + dependsOn DAG」を扱う薄いスケジューラを使う。
+
+- **デフォルト**: `defaults.concurrency.global = 4`、`defaults.concurrency.perProvider.anthropic = 2`(他 provider は無制限)。Anthropic は他社より rate limit が厳しい(tier 1 で 50 RPM、ITPM/OTPM もタイト)ので明示的に絞る
+- **CLI 上書き**: `-j 8` で global、`--concurrency-openai 6` で provider 別
+- **iteration chain は自動で順序保証**: 親が同じ todo に居れば dependsOn に登録、居なければ即起動
+- **bucket cap で詰まった場合**: 別 bucket を試して deadlock 回避
+- **失敗の扱い**: 1 つ失敗しても in-flight は完走させる(benchmark 用途では情報量重視)
+- **直列実行が必要なら** `-j 1`、または bench-config.yml で `concurrency.global: 1` を明示
+
+依存サイクルや不明な dependency は build 前に検出して reject する。
 
 ### モデル指定の方針(全プロバイダ共通)
 
@@ -125,16 +138,54 @@ vibe-openscad/
 ### 課題 YAML
 
 ```yaml
+# テキストのみ(tier-1〜3 の標準)
 id: tier-1-cube-with-hole
 tier: 1
 title: 中央に貫通穴を持つ立方体
 prompt: |
   OpenSCAD で 50mm 角の立方体の中央に直径 20mm の貫通穴を z 軸方向に開けたモデルを作成してください。
   完成したコード全体を ```openscad ... ``` で囲んで出力してください。
-expected:
-  bbox_mm: [50, 50, 50]
-  manifold: true
 ```
+
+```yaml
+# 内部 id は signature fingerprint の安定化のため不変だが、URL は人間が
+# 読みやすい名前にしたい。両者を両立するため optional な `slug` フィールド。
+# 未指定時は id から `tier-N-` prefix を剥がしたものを使う。
+id: tier-1-mug
+slug: simple-mug
+tier: 1
+title: 取手付きマグカップ
+prompt: |
+  ...
+```
+
+```yaml
+# tier-4 vision タスク: PDF データシートのページを画像として LLM に
+# 渡し、3D モデルを起こさせる。`pdf-page` ハーネスが pdftoppm で
+# 該当ページを PNG に切り出して provider に投げる。
+id: tier-4-gp2y0d413k
+slug: gp2y0d413k
+tier: 4
+title: 距離センサ GP2Y0D413K0F の外形モデリング
+prompt: |
+  添付のデータシート 2 ページ目を読んで OpenSCAD で外形をモデリングしてください...
+pdf_source:
+  url: https://jp.sharp/products/device/doc/opto/gp2y0d413k_e.pdf
+  pages: [2]
+```
+
+`prompt_images: [path1, path2]`(YAML からの相対パス)も同じく vision 入力としてサポート。loader が読み込み時に sha256 を計算して `prompt_image_hashes` に詰める。`taskHash` には path / Buffer は入れず content hash のみを乗せ、マシン間で signature が揺れないようにする。
+
+### URL スラグ
+
+- `/run/<runId>` — 単一 run 詳細
+- `/task/` — task 一覧
+- `/task/<slug>` — task 詳細(slug は YAML の `slug:` か、無ければ id から `tier-N-` prefix を剥がしたもの)
+- `/task/<slug>/<model>` — (task, model) 詳細
+- `/models/<id>` — モデル別ページ
+- `/harnesses/<id>` — ハーネス別ページ
+
+URL に `tier-` prefix を含めない理由: tier は将来再編する可能性があるが、URL は安定していてほしい。一方で内部 id は signature fingerprint に効くので不用意に変えたくない。両立するため slug を分離した。同 slug 衝突は web ビルド時に弾く。
 
 ### 実行マトリクス(`bench-config.yml`)
 
@@ -157,11 +208,38 @@ tasks:
 
 `fingerprint` と `signature` が再現キー。それ以外はログ用途。詳細は `runners/src/schema.ts` の Zod 定義を参照。
 
+## ハーネス
+
+### `bare`
+
+provider を 1 回叩いて応答から SCAD を抜き出すだけのハーネス。tier-1〜3 の標準。`task.prompt_images` か `prompt_image_data` があれば single-shot でも text + image content parts で送る(vision 対応モデル限定、`matrix.ts` が plan 段階で非対応モデルを除外)。
+
+iteration(`iterateFrom`)が設定されていれば bare のままで前段 run の出力(SCAD + PNG / error テキスト)を feedback ターンとして付け加えて 1 回呼ぶ — 詳細は後述「Iteration」節。
+
+### `pdf-page`
+
+`bare` の前段に **PDF preprocessing** を挟むハーネス。`task.pdf_source = { url, pages }` の URL を取りに行き、`pdftoppm` で指定ページを PNG に切り出して、bare 同形の context に inject して `runBare` に委譲する。tier-4 のデータシート起こしタスクで使う。
+
+- PDF キャッシュ: `~/.cache/vibe-openscad/pdf/<sha-of-url>.pdf`(disk cache、再 plan / 再 run で再ダウンロードしない)
+- fingerprint stability: PDF 中身の sha256 を `pdf_source_hash` に乗せる。URL は環境依存なので除外、ページ番号と中身ハッシュだけが taskHash に効く
+- 非 vision モデル × pdf_source タスクの組合せは `expandMatrix` で除外。逆に `pdf-page` ハーネス × `pdf_source` 無し task も意味が無いので除外
+
+### `external-agent`(将来)
+
+Claude Code / Cursor / 自作 SDK エージェント等を **MCP 経由で** 動かして、レンダリング結果を見ながら自己修正させる。`render_openscad` / `submit_final` を提供する MCP サーバを別プロセスで立てて、エージェント CLI を起動して接続する。これにより:
+
+- エージェント側のハーネス品質(計画力・自己修正)も評価対象に含められる
+- 同じ MCP に異なるエージェントをぶら下げて横並び比較できる
+
+実装は別タスク。この想定があるので harness 種別は最初から union(`bare` | `pdf-page` | `external-agent`)に切ってある。
+
 ## 3D 表示
 
 - 一覧: PNG サムネイル(OpenSCAD で固定アングルからレンダリング)
 - 詳細: three.js + STLLoader を vanilla web component として埋め込む island。React-Three-Fiber 等は使わない(オーバーキル)
 - `<model-viewer>` は STL 非対応のため不採用
+- **パラメトリック 3D ビューア**: SCAD の top-level 変数(数値・bool)をスライダーで動かすと openscad-wasm で再レンダして即時反映。openscad-wasm の `callMain` が同期 blocking で UI を凍らせるため Web Worker に分離。`console.error.bind(console)` で stderr が固定参照になる Emscripten ラッパーの仕様に合わせて、worker 起動時に console を差し替えて bind 経由で実エラーメッセージをキャプチャする(さもないと exit code の数値だけが見える)
+- **ダッシュボード階層表示**: `(harness × provider × model)` を二段ネスト表示し、`harness > provider > model` ↔ `provider > harness > model` を localStorage に保存して全 task row 共有。両方を SSR してハードコード CSS の `[hidden]` で切り替える(client 側で DOM を組み直さない)
 
 ## デプロイ
 
