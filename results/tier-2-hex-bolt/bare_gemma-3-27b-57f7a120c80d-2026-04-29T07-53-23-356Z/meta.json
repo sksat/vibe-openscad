@@ -1,11 +1,11 @@
 {
-  "runId": "bare_gemma-3-27b-5ec527c6926f-2026-04-29T06-37-28-577Z",
-  "taskId": "tier-2-offset-handle-mug",
+  "runId": "bare_gemma-3-27b-57f7a120c80d-2026-04-29T07-53-23-356Z",
+  "taskId": "tier-2-hex-bolt",
   "matrixId": "bare/gemma-3-27b",
-  "signature": "5ec527c6926f643d9aba9c1662c1521bfbfb1f077de3416f3176b79b7f6ad578",
+  "signature": "57f7a120c80dbf07987040ea5f590e9c08dd574570d996fc5dde3bb6e769dd73",
   "fingerprint": {
     "schemaVersion": 1,
-    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "taskHash": "0fee46bf3152dd6738d6d2af93e06dad04bb6bddd3b2b528c57138298ec0b5d0",
     "harness": {
       "kind": "bare",
       "provider": "openai-self-hosted",
@@ -34,17 +34,27 @@
       "type": "vlm",
       "arch": "gemma3",
       "quantization": "Q4_0",
-      "maxContextLength": 131072
+      "maxContextLength": 131072,
+      "host": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "vramGb": 24,
+        "gpuPlatform": "Vulkan",
+        "cpu": "12th Gen Intel(R) Core(TM) i9-12900K",
+        "memGb": 32
+      }
     }
   },
-  "status": "success",
+  "status": "render_error",
   "timing": {
-    "totalMs": 162979
+    "totalMs": 127344,
+    "firstTokenMs": 2182,
+    "generationMs": 124280
   },
   "tokens": {
-    "input": 239,
-    "output": 332
+    "input": 180,
+    "output": 253
   },
-  "createdAt": "2026-04-29T06:37:28.577Z",
-  "gitCommit": "68749000bf3ae142c6c66326a1b9238f5dc855f4"
+  "createdAt": "2026-04-29T07:53:23.356Z",
+  "gitCommit": "67e7e807e695e67b7a2dcaf9c750a17be2f60c38",
+  "error": "openscad stl render failed (exit 1): ERROR: Parser error: syntax error in file ../../../../../tmp/render-Ro6ejl/input.scad, line 10\nCan't parse file '/tmp/render-Ro6ejl/input.scad'!\n\n"
 }

@@ -1,4 +1,3 @@
-```openscad
 // L-bracket parameters
 width = 50;
 depth = 40;
@@ -37,9 +36,8 @@ module vertical_flange() {
   }
 }
 
-// L-bracket assembly
+// Combine the flanges to create the L-bracket
 union() {
   horizontal_flange();
   translate([0, depth, 0]) vertical_flange();
 }
-```

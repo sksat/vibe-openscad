@@ -1,5 +1,5 @@
 {
-  "runId": "bare_gemma-3-27b-b58caf6cefd0-2026-04-29T06-24-56-714Z",
+  "runId": "bare_gemma-3-27b-b58caf6cefd0-2026-04-29T07-46-37-367Z",
   "taskId": "tier-1-cube-with-hole",
   "matrixId": "bare/gemma-3-27b",
   "signature": "b58caf6cefd0ff945f4203629662ed60f5fac8d9bafb37249b069acbe7c86c6f",
@@ -34,17 +34,26 @@
       "type": "vlm",
       "arch": "gemma3",
       "quantization": "Q4_0",
-      "maxContextLength": 131072
+      "maxContextLength": 131072,
+      "host": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "vramGb": 24,
+        "gpuPlatform": "Vulkan",
+        "cpu": "12th Gen Intel(R) Core(TM) i9-12900K",
+        "memGb": 32
+      }
     }
   },
   "status": "success",
   "timing": {
-    "totalMs": 74668
+    "totalMs": 86918,
+    "firstTokenMs": 5450,
+    "generationMs": 24708
   },
   "tokens": {
     "input": 75,
-    "output": 47
+    "output": 61
   },
-  "createdAt": "2026-04-29T06:24:56.715Z",
-  "gitCommit": "68749000bf3ae142c6c66326a1b9238f5dc855f4"
+  "createdAt": "2026-04-29T07:46:37.368Z",
+  "gitCommit": "5f36132a630cff5e8d0d3442f40c99955b09b152"
 }

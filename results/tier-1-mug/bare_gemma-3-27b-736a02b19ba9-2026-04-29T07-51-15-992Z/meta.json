@@ -1,11 +1,11 @@
 {
-  "runId": "bare_gemma-3-27b-08267de61f7e-2026-04-29T06-27-14-728Z",
-  "taskId": "tier-1-stepped-pyramid",
+  "runId": "bare_gemma-3-27b-736a02b19ba9-2026-04-29T07-51-15-992Z",
+  "taskId": "tier-1-mug",
   "matrixId": "bare/gemma-3-27b",
-  "signature": "08267de61f7e056eb384aa8529ca215752ab520b51b629844fe8c93e4d2d581d",
+  "signature": "736a02b19ba9f65025ac1ad8b577e81f6f83985cf2f4c0515cb2891bb2fae0c9",
   "fingerprint": {
     "schemaVersion": 1,
-    "taskHash": "f33c33343b97cdee4ab2a95d84c7f4be5791294d1e997d9c55a752a15c9a2446",
+    "taskHash": "883b512feb40f76c3fdcb332c7c513c491c27c8511f65b90fecbad6b6c197cd5",
     "harness": {
       "kind": "bare",
       "provider": "openai-self-hosted",
@@ -34,17 +34,26 @@
       "type": "vlm",
       "arch": "gemma3",
       "quantization": "Q4_0",
-      "maxContextLength": 131072
+      "maxContextLength": 131072,
+      "host": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "vramGb": 24,
+        "gpuPlatform": "Vulkan",
+        "cpu": "12th Gen Intel(R) Core(TM) i9-12900K",
+        "memGb": 32
+      }
     }
   },
   "status": "success",
   "timing": {
-    "totalMs": 137995
+    "totalMs": 139096,
+    "firstTokenMs": 2181,
+    "generationMs": 135923
   },
   "tokens": {
-    "input": 145,
-    "output": 282
+    "input": 149,
+    "output": 280
   },
-  "createdAt": "2026-04-29T06:27:14.729Z",
-  "gitCommit": "68749000bf3ae142c6c66326a1b9238f5dc855f4"
+  "createdAt": "2026-04-29T07:51:15.992Z",
+  "gitCommit": "5f36132a630cff5e8d0d3442f40c99955b09b152"
 }

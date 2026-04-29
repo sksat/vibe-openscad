@@ -21,7 +21,6 @@ module bolt(across_flats, head_height, shank_diameter, shank_length) {
       translate([0, 0, -shank_length])
         cylinder(h = shank_length, r = shank_diameter / 2);
     }
-    // 必要に応じて、シャンクの端に面取りを追加できます。
   }
 }
 
