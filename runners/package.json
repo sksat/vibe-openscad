@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "build": "tsc -p tsconfig.build.json",
     "bench": "tsx src/run.ts",
-    "list-openai-models": "tsx scripts/list-openai-models.ts"
+    "list-openai-models": "tsx scripts/list-openai-models.ts",
+    "list-ollama-models": "tsx scripts/list-ollama-models.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",

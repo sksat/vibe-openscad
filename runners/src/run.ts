@@ -28,6 +28,7 @@ import { type PlanItem, planRuns } from "./plan.js";
 import { computeCostUsd } from "./pricing.js";
 import { createAnthropicProvider } from "./providers/anthropic.js";
 import { createGoogleProvider } from "./providers/google.js";
+import { createOllamaProvider } from "./providers/ollama.js";
 import { createOpenaiProvider } from "./providers/openai.js";
 import type { Provider } from "./providers/types.js";
 import { renderScad } from "./render.js";
@@ -231,6 +232,8 @@ function providerFor(name: string): Provider {
       return createGoogleProvider();
     case "openai":
       return createOpenaiProvider();
+    case "ollama":
+      return createOllamaProvider();
     default:
       throw new Error(`provider not yet implemented: ${name}`);
   }
