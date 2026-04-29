@@ -10,6 +10,7 @@ import {
   providerDisplayLabel,
   providerVendor,
   runBadges,
+  runGroupProvider,
   shortModelLabel,
   taskSlug,
   thinkingInfoFor,
@@ -777,8 +778,71 @@ describe("self-hosted provider helpers", () => {
     expect(providerVendor("custom")).toBeUndefined();
   });
 
-  it("runBadges relabels vendor segment for any self-hosted provider", () => {
-    // `anthropic-self-hosted` の場合も「anthropic (self-hosted)」と表示される
+  it("runBadges appends `(self-hosted)` to the model's own vendor label, not the provider base", () => {
+    // ★ provider 文字列(`openai-self-hosted` 等)の base は API protocol を
+    // 表すだけで、model 自体の vendor とは独立。例えば LM Studio で
+    // gemma-3-27b を動かすと provider=openai-self-hosted, model=google/gemma-3-27b
+    // となり、vendor label は "openai (self-hosted)" ではなく
+    // 「gemma の vendor」=「google (self-hosted)」と出るのが正しい。
+    const m = fakeMeta({
+      matrixId: "bare/gemma-3-27b",
+      model: "google/gemma-3-27b",
+      provider: "openai-self-hosted",
+    });
+    const segs = runBadges(m);
+    expect(segs.find((s) => s.kind === "vendor")?.label).toBe(
+      "google (self-hosted)",
+    );
+  });
+
+  it("runGroupProvider returns provider as-is for non-self-hosted runs", () => {
+    expect(
+      runGroupProvider(fakeMeta({ provider: "anthropic", model: "claude-opus-4-7" })),
+    ).toBe("anthropic");
+    expect(
+      runGroupProvider(fakeMeta({ provider: "openai", model: "gpt-5.5" })),
+    ).toBe("openai");
+    expect(
+      runGroupProvider(fakeMeta({ provider: "google", model: "gemini-3-pro" })),
+    ).toBe("google");
+  });
+
+  it("runGroupProvider derives a `<vendor>-self-hosted` key from the model when provider is self-hosted", () => {
+    // ★ LM Studio (= openai-self-hosted protocol) で gemma を動かすと
+    // 一覧グルーピング上は openai-self-hosted ではなく google-self-hosted の
+    // バケツに入っていてほしい。
+    expect(
+      runGroupProvider(
+        fakeMeta({ provider: "openai-self-hosted", model: "google/gemma-3-27b" }),
+      ),
+    ).toBe("google-self-hosted");
+    // openai/gpt-oss-20b on the same protocol stays in openai-self-hosted.
+    expect(
+      runGroupProvider(
+        fakeMeta({ provider: "openai-self-hosted", model: "openai/gpt-oss-20b" }),
+      ),
+    ).toBe("openai-self-hosted");
+    // Claude weights on a hypothetical anthropic-self-hosted protocol map to anthropic.
+    expect(
+      runGroupProvider(
+        fakeMeta({ provider: "anthropic-self-hosted", model: "claude-opus-4-7" }),
+      ),
+    ).toBe("anthropic-self-hosted");
+  });
+
+  it("runGroupProvider falls back to `self-hosted` when model vendor cannot be inferred", () => {
+    expect(
+      runGroupProvider(
+        fakeMeta({ provider: "openai-self-hosted", model: "lmstudio-community/some-random-7b" }),
+      ),
+    ).toBe("self-hosted");
+  });
+
+  it("runBadges keeps the existing chat-product vendor name when self-hosted (claude / gemini / openai)", () => {
+    // 同じく、provider が openai-self-hosted で model が claude-opus-4-7
+    // (slash 無し familar 形式)のとき、parseModelLabel は vendor="claude"
+    // (chat product 名)を返す。runBadges は「claude (self-hosted)」を
+    // 付けるべきで、provider base の「openai」ではない。
     const m = fakeMeta({
       matrixId: "bare/claude-opus-4-7",
       model: "claude-opus-4-7",
@@ -786,7 +850,7 @@ describe("self-hosted provider helpers", () => {
     });
     const segs = runBadges(m);
     expect(segs.find((s) => s.kind === "vendor")?.label).toBe(
-      "anthropic (self-hosted)",
+      "claude (self-hosted)",
     );
   });
 });

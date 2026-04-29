@@ -1,0 +1,63 @@
+{
+  "runId": "bare_nemotron-3-nano-4b-38af75439391-2026-04-29T07-37-34-788Z",
+  "taskId": "tier-1-stepped-pyramid",
+  "matrixId": "bare/nemotron-3-nano-4b",
+  "signature": "38af75439391467ee2608a2ea6b1d89afa9dcfc7432d509a4c67901c9a8a9506",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "f33c33343b97cdee4ab2a95d84c7f4be5791294d1e997d9c55a752a15c9a2446",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "nvidia/nemotron-3-nano-4b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "nvidia/nemotron-3-nano-4b",
+  "harness": {
+    "kind": "bare",
+    "modelMetadata": {
+      "raw": {
+        "id": "nvidia/nemotron-3-nano-4b",
+        "object": "model",
+        "type": "llm",
+        "publisher": "nvidia",
+        "arch": "nemotron_h",
+        "compatibility_type": "gguf",
+        "quantization": "Q4_K_M",
+        "state": "not-loaded",
+        "max_context_length": 1048576,
+        "capabilities": [
+          "tool_use"
+        ]
+      },
+      "publisher": "nvidia",
+      "type": "llm",
+      "arch": "nemotron_h",
+      "quantization": "Q4_K_M",
+      "maxContextLength": 1048576,
+      "capabilities": [
+        "tool_use"
+      ],
+      "host": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "vramGb": 24,
+        "gpuPlatform": "Vulkan",
+        "cpu": "12th Gen Intel(R) Core(TM) i9-12900K",
+        "memGb": 32
+      }
+    }
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 11938
+  },
+  "tokens": {
+    "input": 175,
+    "output": 678
+  },
+  "createdAt": "2026-04-29T07:37:34.788Z",
+  "gitCommit": "68749000bf3ae142c6c66326a1b9238f5dc855f4"
+}

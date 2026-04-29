@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import type OpenAI from "openai";
-import { createOpenAISelfHostedProvider } from "./openai-self-hosted.js";
+import {
+  createOpenAISelfHostedProvider,
+  parseHardwareSurvey,
+  resolveSelfHostedBaseUrl,
+} from "./openai-self-hosted.js";
 
 /** OpenAI SDK 互換の最小モック client。chat.completions.create の引数を
  *  キャプチャしてレスポンスを返すだけ。 */
@@ -117,3 +121,118 @@ describe("ollama provider (OpenAI-compat /v1/chat/completions)", () => {
     );
   });
 });
+
+describe("parseHardwareSurvey", () => {
+  // 実際に asuha (LM Studio) から surveyHardware で取った応答の最小骨子。
+  const ASUHA_SAMPLE = {
+    status: "ok",
+    engines: [
+      {
+        name: "llama.cpp-cuda",
+        hardwareSurvey: {
+          cpuSurveyResult: {
+            cpuInfo: {
+              name: "12th Gen Intel(R) Core(TM) i9-12900K",
+              architecture: "x86_64",
+            },
+          },
+          gpuSurveyResult: {
+            gpuInfo: [
+              {
+                name: "NVIDIA GeForce RTX 3090",
+                deviceId: 0,
+                totalMemoryCapacityBytes: 42555912192,
+                dedicatedMemoryCapacityBytes: 25503465472,
+                detectionPlatform: "Vulkan",
+              },
+              {
+                name: "Microsoft Direct3D12 (NVIDIA GeForce RTX 3090)",
+                deviceId: 1,
+              },
+            ],
+          },
+        },
+        // memoryInfo は engine 直下(hardwareSurvey の外)に出る。
+        memoryInfo: {
+          ramCapacity: 34104893440,
+          vramCapacity: 25503465472,
+          totalMemory: 59608358912,
+        },
+      },
+    ],
+  };
+
+  it("extracts GPU name + dedicated VRAM (GB) from the first engine", () => {
+    const info = parseHardwareSurvey(ASUHA_SAMPLE)!;
+    expect(info.gpu).toBe("NVIDIA GeForce RTX 3090");
+    // 25503465472 / 1024^3 ≈ 23.75 → round to 24
+    expect(info.vramGb).toBe(24);
+    expect(info.gpuPlatform).toBe("Vulkan");
+  });
+
+  it("extracts CPU name and main RAM (GB)", () => {
+    const info = parseHardwareSurvey(ASUHA_SAMPLE)!;
+    expect(info.cpu).toBe("12th Gen Intel(R) Core(TM) i9-12900K");
+    expect(info.memGb).toBe(32); // 34104893440 / 1024^3 ≈ 31.76 → 32
+  });
+
+  it("does not include hostname / baseURL / any host identity", () => {
+    // ★ meta.json には hostname を残さない契約。survey の output には
+    //   GPU/CPU/RAM のハードウェア値だけを含めること。
+    const info = parseHardwareSurvey(ASUHA_SAMPLE);
+    expect(info).not.toHaveProperty("name");
+    expect(info).not.toHaveProperty("baseUrl");
+    expect(info).not.toHaveProperty("hostname");
+  });
+
+  it("returns undefined for empty / malformed responses", () => {
+    expect(parseHardwareSurvey(undefined)).toBeUndefined();
+    expect(parseHardwareSurvey({})).toBeUndefined();
+    expect(parseHardwareSurvey({ engines: [] })).toBeUndefined();
+    expect(parseHardwareSurvey({ engines: [{}] })).toBeUndefined();
+  });
+
+  it("falls through to the next engine when the first has no usable hardware fields", () => {
+    const sample = {
+      engines: [
+        { name: "stub", hardwareSurvey: { gpuSurveyResult: {} } },
+        {
+          name: "real",
+          hardwareSurvey: {
+            gpuSurveyResult: {
+              gpuInfo: [
+                {
+                  name: "Some GPU",
+                  dedicatedMemoryCapacityBytes: 8 * 1024 ** 3,
+                },
+              ],
+            },
+          },
+        },
+      ],
+    };
+    expect(parseHardwareSurvey(sample)?.gpu).toBe("Some GPU");
+  });
+});
+
+describe("resolveSelfHostedBaseUrl", () => {
+  it("prefers OPENAI_SELF_HOSTED_BASE_URL", () => {
+    expect(
+      resolveSelfHostedBaseUrl({
+        OPENAI_SELF_HOSTED_BASE_URL: "http://asuha:1234/v1",
+      }),
+    ).toBe("http://asuha:1234/v1");
+  });
+  it("falls back to OLLAMA_HOST and appends /v1", () => {
+    expect(resolveSelfHostedBaseUrl({ OLLAMA_HOST: "http://h:11434" })).toBe(
+      "http://h:11434/v1",
+    );
+    expect(resolveSelfHostedBaseUrl({ OLLAMA_HOST: "http://h:11434/" })).toBe(
+      "http://h:11434/v1",
+    );
+  });
+  it("defaults to local ollama when neither env is set", () => {
+    expect(resolveSelfHostedBaseUrl({})).toBe("http://127.0.0.1:11434/v1");
+  });
+});
+

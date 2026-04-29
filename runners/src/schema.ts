@@ -335,6 +335,17 @@ export type SubagentLog = z.infer<typeof SubagentLogSchema>;
  * publisher / quantization が違うと挙動も変わるので、後で再現性を
  * 追えるよう meta.json に同梱しておく。
  */
+/** Self-hosted ランタイムを動かしているホスト機のハードウェア情報。
+ *  LM Studio から runtime 取得した値を入れる。**hostname は含めない**。 */
+export const HostInfoSchema = z.object({
+  gpu: z.string().optional(),
+  vramGb: z.number().positive().optional(),
+  gpuPlatform: z.string().optional(),
+  cpu: z.string().optional(),
+  memGb: z.number().positive().optional(),
+});
+export type HostInfo = z.infer<typeof HostInfoSchema>;
+
 const ModelMetadataSchema = z.object({
   publisher: z.string().optional(),
   type: z.string().optional(),
@@ -344,6 +355,7 @@ const ModelMetadataSchema = z.object({
   capabilities: z.array(z.string()).optional(),
   parameterSize: z.string().optional(),
   size: z.number().optional(),
+  host: HostInfoSchema.optional(),
   raw: z.record(z.string(), z.unknown()).optional(),
 });
 
@@ -392,8 +404,15 @@ export const RunMetaSchema = z.object({
   harness: RunHarnessLogSchema,
   status: RunStatusSchema,
   timing: z.object({
+    /** Wallclock の総実行時間。プロンプト送信〜レスポンス受信完了まで。
+     *  ロード/プロンプト評価/生成/ネットワークすべてを含む。 */
     totalMs: z.number().nonnegative(),
+    /** First token までの時間(ms)。LM Studio 等が応答に含めるとき記録。 */
     firstTokenMs: z.number().nonnegative().optional(),
+    /** 純粋な生成時間(ms、ロード・プロンプト評価を除く)。LM Studio
+     *  `stats.generation_time` を ms に変換したもの。token/sec の計算で
+     *  wallclock と分けて見たいときに使う。 */
+    generationMs: z.number().nonnegative().optional(),
   }),
   tokens: z
     .object({

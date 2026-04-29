@@ -353,6 +353,14 @@ matrix:
     harness: { kind: bare }
     provider: openai-self-hosted
     model: openai/gpt-oss-20b
+  - id: bare/gemma-3-27b
+    harness: { kind: bare }
+    provider: openai-self-hosted
+    model: google/gemma-3-27b
+  - id: bare/nemotron-3-nano-4b
+    harness: { kind: bare }
+    provider: openai-self-hosted
+    model: nvidia/nemotron-3-nano-4b
 
   # --- iteration chain (PNG feedback) ---
   # 各 iteration step は独立した benchmark run。iter-png-1 は bare の出力を

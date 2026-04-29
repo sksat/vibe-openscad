@@ -31,23 +31,158 @@ import type {
   ChatMessage,
   CompletionRequest,
   CompletionResponse,
+  HostInfo,
   ModelMetadata,
   Provider,
 } from "./types.js";
+
+/**
+ * LM Studio の WebSocket RPC `surveyHardware` を呼んでホスト機の GPU /
+ * CPU / RAM を取得する。LM Studio は内部で llama.cpp engine ごとに
+ * survey を持っており、`type: "selected"` で現在選択中 engine の結果が
+ * 返る。失敗時は undefined(LM Studio 以外の自前 OpenAI 互換サーバ等で
+ * /runtime namespace が無い、認証拒否、タイムアウト等)。
+ *
+ * **hostname は返り値に含めない**。GPU 名と VRAM など、ベンチ結果の
+ * 解釈に使うハードウェア情報だけを返す。
+ */
+export async function surveyLMStudioHardware(
+  baseUrl: string,
+  opts: { timeoutMs?: number } = {},
+): Promise<HostInfo | undefined> {
+  const timeoutMs = opts.timeoutMs ?? 5000;
+  const wsUrl = baseUrl
+    .replace(/\/v1\/?$/, "")
+    .replace(/^http/, "ws") + "/runtime";
+  return new Promise<HostInfo | undefined>((resolve) => {
+    let ws: WebSocket;
+    try {
+      ws = new WebSocket(wsUrl);
+    } catch {
+      resolve(undefined);
+      return;
+    }
+    const timer = setTimeout(() => {
+      try {
+        ws.close();
+      } catch {
+        /* ignore */
+      }
+      resolve(undefined);
+    }, timeoutMs);
+    const done = (info: HostInfo | undefined) => {
+      clearTimeout(timer);
+      try {
+        ws.close();
+      } catch {
+        /* ignore */
+      }
+      resolve(info);
+    };
+    ws.addEventListener("open", () => {
+      ws.send(
+        JSON.stringify({
+          type: "authenticate",
+          authVersion: 1,
+          clientIdentifier: "vibe-openscad-bench",
+          clientPasskey: "vibe-openscad-bench",
+        }),
+      );
+    });
+    ws.addEventListener("message", (ev) => {
+      let msg: unknown;
+      try {
+        msg = JSON.parse(typeof ev.data === "string" ? ev.data : "");
+      } catch {
+        return;
+      }
+      const obj = msg as { success?: boolean; type?: string; result?: unknown };
+      if (obj.success === true && obj.type === undefined) {
+        // auth ok → call surveyHardware
+        ws.send(
+          JSON.stringify({
+            type: "rpcCall",
+            callId: 1,
+            endpoint: "surveyHardware",
+            parameter: { type: "selected" },
+          }),
+        );
+        return;
+      }
+      if (obj.type === "rpcResult") {
+        done(parseHardwareSurvey(obj.result));
+      }
+    });
+    ws.addEventListener("error", () => done(undefined));
+    ws.addEventListener("close", () => done(undefined));
+  });
+}
+
+/** surveyHardware 応答から HostInfo を抜き出す。LM Studio は engines の
+ *  配列を返し、各 engine が hardwareSurvey を持つ。最初に成功している
+ *  engine の値を採用する。GPU が複数あれば 1 台目だけ採る。 */
+export function parseHardwareSurvey(result: unknown): HostInfo | undefined {
+  const r = result as
+    | {
+        engines?: Array<{
+          hardwareSurvey?: {
+            cpuSurveyResult?: {
+              cpuInfo?: { name?: string };
+            };
+            gpuSurveyResult?: {
+              gpuInfo?: Array<{
+                name?: string;
+                dedicatedMemoryCapacityBytes?: number;
+                detectionPlatform?: string;
+              }>;
+            };
+          };
+          // memoryInfo は engine 直下(hardwareSurvey の外)で返ってくる。
+          memoryInfo?: { ramCapacity?: number };
+        }>;
+      }
+    | undefined;
+  if (!r?.engines || r.engines.length === 0) return undefined;
+  for (const eng of r.engines) {
+    const hs = eng.hardwareSurvey;
+    if (!hs && !eng.memoryInfo) continue;
+    const out: HostInfo = {};
+    const gpu0 = hs?.gpuSurveyResult?.gpuInfo?.[0];
+    if (gpu0?.name) out.gpu = gpu0.name;
+    if (typeof gpu0?.dedicatedMemoryCapacityBytes === "number") {
+      out.vramGb = Math.round(gpu0.dedicatedMemoryCapacityBytes / 1024 ** 3);
+    }
+    if (gpu0?.detectionPlatform) out.gpuPlatform = gpu0.detectionPlatform;
+    if (hs?.cpuSurveyResult?.cpuInfo?.name) {
+      out.cpu = hs.cpuSurveyResult.cpuInfo.name;
+    }
+    if (typeof eng.memoryInfo?.ramCapacity === "number") {
+      out.memGb = Math.round(eng.memoryInfo.ramCapacity / 1024 ** 3);
+    }
+    if (Object.keys(out).length === 0) continue;
+    return out;
+  }
+  return undefined;
+}
 
 /**
  * `OPENAI_SELF_HOSTED_BASE_URL` をそのまま、無ければ旧来の `OLLAMA_HOST`
  * を /v1 に補正、両方無ければ ollama 既定 + /v1 を返す。末尾の `/` は
  * caller 側で正規化。
  */
-function defaultBaseUrl(): string {
-  const explicit = process.env["OPENAI_SELF_HOSTED_BASE_URL"];
+export function resolveSelfHostedBaseUrl(
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const explicit = env["OPENAI_SELF_HOSTED_BASE_URL"];
   if (explicit) return explicit;
-  const legacy = process.env["OLLAMA_HOST"];
+  const legacy = env["OLLAMA_HOST"];
   if (legacy) {
     return legacy.replace(/\/$/, "") + "/v1";
   }
   return "http://127.0.0.1:11434/v1";
+}
+function defaultBaseUrl(): string {
+  return resolveSelfHostedBaseUrl();
 }
 
 /**
@@ -92,13 +227,36 @@ export function createOpenAISelfHostedProvider(
   deps: OpenAISelfHostedProviderDeps = {},
 ): Provider {
   const baseURL = (deps.baseURL ?? defaultBaseUrl()).replace(/\/$/, "");
-  const client =
-    deps.client ??
-    new OpenAI({
-      baseURL,
-      // SDK は apiKey 必須。LM Studio / Ollama 双方ダミーで通る。
-      apiKey: deps.apiKey ?? "self-hosted",
-    });
+  // ★ LM Studio は OpenAI 互換 `/v1/chat/completions` も受け付けるが、
+  //   その場合 `stats` 等のレスポンス拡張が空になる(generation_time /
+  //   time_to_first_token が取れない)。対して LM Studio 独自の
+  //   `/api/v0/chat/completions` は同じリクエストで stats を埋めて返す。
+  //   --- 起動時に `/api/v0/models` を probe して LM Studio なら
+  //   baseURL を `/api/v0` に差し替える(他 runtime — Ollama / vLLM /
+  //   llama.cpp server — は probe が失敗するので `/v1` のまま)。
+  //   probe は最初の complete() 呼び出しで lazy 実行 → 1 プロセス内で
+  //   1 回だけ。
+  let clientPromise: Promise<OpenAI> | null = null;
+  const getClient = (): Promise<OpenAI> => {
+    if (deps.client) return Promise.resolve(deps.client);
+    if (clientPromise) return clientPromise;
+    clientPromise = (async () => {
+      const apiKey = deps.apiKey ?? "self-hosted";
+      const hostRoot = baseURL.replace(/\/v1$/, "");
+      try {
+        const res = await fetch(`${hostRoot}/api/v0/models`, {
+          signal: AbortSignal.timeout(2000),
+        });
+        if (res.ok) {
+          return new OpenAI({ baseURL: `${hostRoot}/api/v0`, apiKey });
+        }
+      } catch {
+        // not LM Studio (or unreachable) → fall through
+      }
+      return new OpenAI({ baseURL, apiKey });
+    })();
+    return clientPromise;
+  };
   return {
     name: "openai-self-hosted",
     async complete(req: CompletionRequest): Promise<CompletionResponse> {
@@ -123,6 +281,7 @@ export function createOpenAISelfHostedProvider(
         // 等)。modelOptions に `max_tokens` を入れて override する想定。
         ...(req.modelOptions ?? {}),
       };
+      const client = await getClient();
       const res = await client.chat.completions.create(params);
       const choice = res.choices[0];
       const out: CompletionResponse = {
@@ -136,6 +295,20 @@ export function createOpenAISelfHostedProvider(
           input: res.usage.prompt_tokens,
           output: res.usage.completion_tokens,
         };
+      }
+      // LM Studio は OpenAI-compat レスポンスに非標準の `stats` を足して
+      // 返してくる(`tokens_per_second` は wallclock じゃなく純粋な生成
+      // throughput、`time_to_first_token` は秒、`generation_time` も秒)。
+      // load + prompt-eval + 生成 + network の塊である wallclock の
+      // `durationMs` と区別するため、別フィールドとして引っ張り出す。
+      const stats = (res as unknown as { stats?: LMStudioStats }).stats;
+      if (stats) {
+        if (typeof stats.time_to_first_token === "number") {
+          out.firstTokenMs = stats.time_to_first_token * 1000;
+        }
+        if (typeof stats.generation_time === "number") {
+          out.generationMs = stats.generation_time * 1000;
+        }
       }
       return out;
     },
@@ -152,15 +325,31 @@ export function createOpenAISelfHostedProvider(
     async getModelMetadata(model: string): Promise<ModelMetadata | null> {
       const cached = metadataCache.get(`${baseURL}::${model}`);
       if (cached !== undefined) return cached;
-      const md = await fetchModelMetadata(baseURL, model);
-      metadataCache.set(`${baseURL}::${model}`, md);
-      return md;
+      // model metadata と hardware survey を並列で取る。後者は LM Studio
+      // 以外の自前 OpenAI 互換サーバでは undefined。
+      const [md, host] = await Promise.all([
+        fetchModelMetadata(baseURL, model),
+        surveyLMStudioHardware(baseURL).catch(() => undefined),
+      ]);
+      const merged: ModelMetadata | null =
+        md ?? (host ? { host } : null);
+      if (merged && host) merged.host = host;
+      metadataCache.set(`${baseURL}::${model}`, merged);
+      return merged;
     },
   };
 }
 
 /** プロセス内 LRU 代わりの単純 Map。base URL × model 単位でキャッシュ。 */
 const metadataCache = new Map<string, ModelMetadata | null>();
+
+/** LM Studio が OpenAI-compat レスポンスに付加する非標準の `stats`。 */
+interface LMStudioStats {
+  tokens_per_second?: number;
+  time_to_first_token?: number;
+  generation_time?: number;
+  stop_reason?: string;
+}
 
 interface LMStudioModelEntry {
   id: string;

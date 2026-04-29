@@ -492,7 +492,15 @@ async function executeBareRun(
     model: provEntry.model,
     harness: harnessLog,
     status: result.status,
-    timing: { totalMs: Math.round(result.durationMs) },
+    timing: {
+      totalMs: Math.round(result.durationMs),
+      ...(result.firstTokenMs !== undefined
+        ? { firstTokenMs: Math.round(result.firstTokenMs) }
+        : {}),
+      ...(result.generationMs !== undefined
+        ? { generationMs: Math.round(result.generationMs) }
+        : {}),
+    },
     ...(result.tokens ? { tokens: result.tokens } : {}),
     ...(cost !== null ? { cost_usd: cost } : {}),
     createdAt: new Date().toISOString(),

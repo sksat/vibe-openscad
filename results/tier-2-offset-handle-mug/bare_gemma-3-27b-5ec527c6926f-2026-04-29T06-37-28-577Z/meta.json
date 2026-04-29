@@ -1,0 +1,50 @@
+{
+  "runId": "bare_gemma-3-27b-5ec527c6926f-2026-04-29T06-37-28-577Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "bare/gemma-3-27b",
+  "signature": "5ec527c6926f643d9aba9c1662c1521bfbfb1f077de3416f3176b79b7f6ad578",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "google/gemma-3-27b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "google/gemma-3-27b",
+  "harness": {
+    "kind": "bare",
+    "modelMetadata": {
+      "raw": {
+        "id": "google/gemma-3-27b",
+        "object": "model",
+        "type": "vlm",
+        "publisher": "google",
+        "arch": "gemma3",
+        "compatibility_type": "gguf",
+        "quantization": "Q4_0",
+        "state": "not-loaded",
+        "max_context_length": 131072
+      },
+      "publisher": "google",
+      "type": "vlm",
+      "arch": "gemma3",
+      "quantization": "Q4_0",
+      "maxContextLength": 131072
+    }
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 162979
+  },
+  "tokens": {
+    "input": 239,
+    "output": 332
+  },
+  "createdAt": "2026-04-29T06:37:28.577Z",
+  "gitCommit": "68749000bf3ae142c6c66326a1b9238f5dc855f4"
+}

@@ -1,0 +1,269 @@
+---
+/**
+ * 1 個の run を「サムネイル + オーバーレイ pill 群」で表示する共通
+ * コンポーネント。RunCard / ModelTaskCard などの bare 表示ブロックで使う。
+ *
+ * pill のレイアウト(下から上へ overlay-row が重なる):
+ *   - publisher 行(self-hosted のときのみ)
+ *       publisher: [logo] {publisher}  [{quantization}]
+ *   - identity 行
+ *       [vendor logo] {vendor}  {model}
+ *   - harness 行
+ *       {harness}
+ *
+ * status="render_error" 等のとき thumb 全体を赤くオーバーレイ tint する。
+ */
+import type { LoadedRun } from "../lib/results.js";
+import { publisherVendor, runBadges } from "../lib/dataset.js";
+import VendorIcon from "./VendorIcon.astro";
+
+interface Props {
+  run: LoadedRun;
+  /** card 全体のクリック先(thumb img のリンク先)。指定しなければ
+   *  `/run/<runId>`。 */
+  href?: string;
+  /** img alt テキスト。default は `bare render of <taskId>`。 */
+  alt?: string;
+  /** thumb-link の aria-label。 */
+  ariaLabel?: string;
+}
+const { run, href, alt, ariaLabel } = Astro.props;
+const m = run.meta;
+const segments = runBadges(m);
+const harnessPills = segments.filter((s) => s.kind === "harness");
+const idPills = segments.filter(
+  (s) => s.kind === "vendor" || s.kind === "model" || s.kind === "other",
+);
+const modelMetadata =
+  m.harness.kind === "bare" || m.harness.kind === "pdf-page"
+    ? m.harness.modelMetadata
+    : undefined;
+const linkHref = href ?? `/run/${m.runId}`;
+const linkLabel = ariaLabel ?? `open run ${m.runId}`;
+const altText = alt ?? `render of ${m.taskId}`;
+const vendorPills = idPills.filter((s) => s.kind === "vendor");
+const modelPills = idPills.filter(
+  (s) => s.kind === "model" || s.kind === "other",
+);
+const showPublisherRow = !!modelMetadata?.publisher;
+
+function pillHref(s: typeof segments[number]): string | null {
+  if (s.href) return s.href;
+  if (s.kind === "model" && m.model) return `/models/${m.model}`;
+  if (s.kind === "harness") return `/harnesses/${s.label}`;
+  return null;
+}
+---
+
+<div class="run-thumb-wrap" data-status={m.status}>
+  <a class="run-thumb-link" href={linkHref} aria-label={linkLabel}>
+    {run.pngUrl ? (
+      <div class="run-thumb">
+        <img src={run.pngUrl} alt={altText} loading="lazy" />
+      </div>
+    ) : (
+      <div class="run-thumb empty"><span>no render</span></div>
+    )}
+  </a>
+
+  <div class="run-overlay" title={m.matrixId}>
+    {harnessPills.length > 0 && (
+      <div class="overlay-row">
+        {harnessPills.map((s) => {
+          const h = pillHref(s);
+          return h ? (
+            <a class={`pill pill-${s.kind}`} data-vendor={s.vendor ?? ""} title={s.title ?? s.label} href={h}>
+              {s.label}
+            </a>
+          ) : (
+            <span class={`pill pill-${s.kind}`} data-vendor={s.vendor ?? ""} title={s.title ?? s.label}>
+              {s.label}
+            </span>
+          );
+        })}
+      </div>
+    )}
+
+    {/* レイアウト(上から下):
+        1. harness
+        2. vendor (model provider)
+        3. publisher (self-hosted のみ)
+        4. model name + quant inline */}
+    {vendorPills.length > 0 && (
+      <div class="overlay-row">
+        {vendorPills.map((s) => {
+          const inner = (
+            <Fragment>
+              {s.vendor && <VendorIcon vendor={s.vendor} />}
+              {s.label}
+            </Fragment>
+          );
+          const h = pillHref(s);
+          return h ? (
+            <a class={`pill pill-${s.kind}`} data-vendor={s.vendor ?? ""} title={s.title ?? s.label} href={h}>
+              {inner}
+            </a>
+          ) : (
+            <span class={`pill pill-${s.kind}`} data-vendor={s.vendor ?? ""} title={s.title ?? s.label}>
+              {inner}
+            </span>
+          );
+        })}
+      </div>
+    )}
+
+    {showPublisherRow && (
+      <div class="overlay-row">
+        {(() => {
+          const pubVendor = publisherVendor(modelMetadata!.publisher!);
+          return (
+            <span class="pill pill-publisher" data-vendor={pubVendor ?? ""} title={`publisher: ${modelMetadata!.publisher}`}>
+              {pubVendor && <VendorIcon vendor={pubVendor} />}
+              {modelMetadata!.publisher}
+            </span>
+          );
+        })()}
+      </div>
+    )}
+
+    {(modelPills.length > 0 || modelMetadata?.quantization) && (
+      <div class="overlay-row">
+        {modelPills.map((s) => {
+          const h = pillHref(s);
+          return h ? (
+            <a class={`pill pill-${s.kind}`} data-vendor={s.vendor ?? ""} title={s.title ?? s.label} href={h}>
+              {s.label}
+            </a>
+          ) : (
+            <span class={`pill pill-${s.kind}`} data-vendor={s.vendor ?? ""} title={s.title ?? s.label}>
+              {s.label}
+            </span>
+          );
+        })}
+        {modelMetadata?.quantization && (
+          <span class="pill pill-quant">{modelMetadata.quantization}</span>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+
+<style>
+  .run-thumb-wrap {
+    position: relative;
+    width: 100%;
+  }
+  .run-thumb-link {
+    display: block;
+    text-decoration: none;
+  }
+  .run-thumb {
+    aspect-ratio: 4 / 3;
+    width: 100%;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .run-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  .run-thumb.empty {
+    background: var(--bg-3);
+    color: var(--fg-dim);
+    font-family: var(--mono);
+    font-size: 13px;
+    border-style: dashed;
+  }
+  .run-thumb-link:hover .run-thumb {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+  /* render_error / no_code 等の失敗を視覚的に示す赤い tint。 */
+  .run-thumb-wrap[data-status="render_error"]::after,
+  .run-thumb-wrap[data-status="no_code"]::after,
+  .run-thumb-wrap[data-status="submit_missing"]::after,
+  .run-thumb-wrap[data-status="timeout"]::after,
+  .run-thumb-wrap[data-status="api_error"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(239, 111, 108, 0.25);
+    pointer-events: none;
+    border-radius: 8px;
+  }
+  .run-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 6px 8px;
+    pointer-events: none;
+  }
+  .run-overlay .overlay-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+  }
+  .run-overlay .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.5;
+    white-space: nowrap;
+    text-decoration: none;
+    pointer-events: auto;
+    /* 白背景の thumb 上で読めるよう、暗い不透明背景を強制。 */
+    background: rgba(20, 25, 32, 0.92);
+    backdrop-filter: blur(2px);
+    color: var(--fg);
+    border: 1px solid var(--line);
+  }
+  .run-overlay .pill-vendor[data-vendor="claude"] {
+    color: #f3a585;
+    border-color: rgba(217, 119, 87, 0.7);
+  }
+  .run-overlay .pill-vendor[data-vendor="gemini"] {
+    color: #d6bcfa;
+    border-color: rgba(139, 92, 246, 0.7);
+  }
+  .run-overlay .pill-vendor[data-vendor="openai"] {
+    color: #5ed5b3;
+    border-color: rgba(16, 163, 127, 0.7);
+  }
+  .run-overlay .pill-vendor[data-vendor="nvidia"] {
+    color: #a4e063;
+    border-color: rgba(118, 185, 0, 0.7);
+  }
+  .run-overlay .pill-model {
+    color: var(--fg);
+    border-color: rgba(108, 182, 255, 0.5);
+  }
+  .run-overlay .pill-publisher {
+    color: #e8c573;
+    border-color: rgba(232, 184, 109, 0.7);
+  }
+  .run-overlay .pill-quant {
+    color: #6cb6ff;
+    border-color: rgba(108, 182, 255, 0.7);
+  }
+  /* VendorIcon の inline svg(.vendor-icon)サイズを overlay 用に小さく。 */
+  .run-overlay :global(.vendor-icon) {
+    width: 11px;
+    height: 11px;
+  }
+</style>

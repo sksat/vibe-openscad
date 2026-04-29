@@ -176,6 +176,14 @@ export async function runBare(ctx: HarnessContext): Promise<HarnessResult> {
   const tokens = response.tokens;
   const modelId = response.modelId;
   const rawResponse = response.text;
+  const timing = {
+    ...(response.firstTokenMs !== undefined
+      ? { firstTokenMs: response.firstTokenMs }
+      : {}),
+    ...(response.generationMs !== undefined
+      ? { generationMs: response.generationMs }
+      : {}),
+  };
 
   const scad = extractScad(response.text);
   if (!scad) {
@@ -189,6 +197,7 @@ export async function runBare(ctx: HarnessContext): Promise<HarnessResult> {
       status: "no_code",
       errorMessage: reason,
       ...(tokens ? { tokens } : {}),
+      ...timing,
       modelId,
       rawResponse,
     });
@@ -202,6 +211,7 @@ export async function runBare(ctx: HarnessContext): Promise<HarnessResult> {
       stl: rendered.stl,
       png: rendered.png,
       ...(tokens ? { tokens } : {}),
+      ...timing,
       modelId,
       rawResponse,
     });
@@ -211,6 +221,7 @@ export async function runBare(ctx: HarnessContext): Promise<HarnessResult> {
       scad,
       errorMessage: (e as Error).message,
       ...(tokens ? { tokens } : {}),
+      ...timing,
       modelId,
       rawResponse,
     });

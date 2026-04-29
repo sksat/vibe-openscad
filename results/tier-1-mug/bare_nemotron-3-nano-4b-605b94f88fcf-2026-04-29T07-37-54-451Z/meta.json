@@ -1,0 +1,64 @@
+{
+  "runId": "bare_nemotron-3-nano-4b-605b94f88fcf-2026-04-29T07-37-54-451Z",
+  "taskId": "tier-1-mug",
+  "matrixId": "bare/nemotron-3-nano-4b",
+  "signature": "605b94f88fcf794954b193453e646098b8d82e3c22a780cfb1270daa908878ab",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "883b512feb40f76c3fdcb332c7c513c491c27c8511f65b90fecbad6b6c197cd5",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "nvidia/nemotron-3-nano-4b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "nvidia/nemotron-3-nano-4b",
+  "harness": {
+    "kind": "bare",
+    "modelMetadata": {
+      "raw": {
+        "id": "nvidia/nemotron-3-nano-4b",
+        "object": "model",
+        "type": "llm",
+        "publisher": "nvidia",
+        "arch": "nemotron_h",
+        "compatibility_type": "gguf",
+        "quantization": "Q4_K_M",
+        "state": "not-loaded",
+        "max_context_length": 1048576,
+        "capabilities": [
+          "tool_use"
+        ]
+      },
+      "publisher": "nvidia",
+      "type": "llm",
+      "arch": "nemotron_h",
+      "quantization": "Q4_K_M",
+      "maxContextLength": 1048576,
+      "capabilities": [
+        "tool_use"
+      ],
+      "host": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "vramGb": 24,
+        "gpuPlatform": "Vulkan",
+        "cpu": "12th Gen Intel(R) Core(TM) i9-12900K",
+        "memGb": 32
+      }
+    }
+  },
+  "status": "render_error",
+  "timing": {
+    "totalMs": 19641
+  },
+  "tokens": {
+    "input": 193,
+    "output": 2150
+  },
+  "createdAt": "2026-04-29T07:37:54.451Z",
+  "gitCommit": "68749000bf3ae142c6c66326a1b9238f5dc855f4",
+  "error": "openscad stl render failed (exit 1): WARNING: \"inner_h\" was assigned on line 5 but was overwritten in file input.scad, line 15\nERROR: Parser error: syntax error in file ../../../../../tmp/render-MP7Sd9/input.scad, line 16\nCan't parse file '/tmp/render-MP7Sd9/input.scad'!\n\n"
+}

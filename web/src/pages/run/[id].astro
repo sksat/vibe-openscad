@@ -189,9 +189,21 @@ const subagents =
           </>
         )}
         <tr><th>status</th><td>{m.status}</td></tr>
-        <tr><th>duration</th><td>{(m.timing.totalMs / 1000).toFixed(2)}s</td></tr>
+        <tr><th>duration</th><td>{(m.timing.totalMs / 1000).toFixed(2)}s <span class="muted small">(wallclock: load + prompt eval + generation + network)</span></td></tr>
+        {m.timing.firstTokenMs !== undefined && (
+          <tr><th>TTFT</th><td>{(m.timing.firstTokenMs / 1000).toFixed(3)}s</td></tr>
+        )}
+        {m.timing.generationMs !== undefined && (
+          <tr><th>generation time</th><td>{(m.timing.generationMs / 1000).toFixed(2)}s <span class="muted small">(pure decode, excludes load + prompt eval)</span></td></tr>
+        )}
         {m.tokens && (
           <tr><th>tokens</th><td>{m.tokens.input} in / {m.tokens.output} out</td></tr>
+        )}
+        {m.tokens && m.timing.generationMs !== undefined && m.timing.generationMs > 0 && m.tokens.output > 0 && (
+          <tr><th>generation tok/s</th><td>{(m.tokens.output / (m.timing.generationMs / 1000)).toFixed(1)} tok/s <span class="muted small">(pure decode rate)</span></td></tr>
+        )}
+        {m.tokens && m.timing.totalMs > 0 && m.tokens.output > 0 && (
+          <tr><th>wallclock tok/s</th><td>{(m.tokens.output / (m.timing.totalMs / 1000)).toFixed(1)} tok/s <span class="muted small">(end-to-end)</span></td></tr>
         )}
         {cost !== null && (
           <tr><th>cost</th><td>{formatCost(cost)}{m.cost_usd === undefined && <span class="muted"> (recomputed)</span>}</td></tr>
@@ -239,6 +251,18 @@ const subagents =
           )}
           {m.harness.modelMetadata.size && (
             <tr><th>size</th><td>{(m.harness.modelMetadata.size / (1024*1024*1024)).toFixed(2)} GB</td></tr>
+          )}
+          {m.harness.modelMetadata.host?.gpu && (
+            <tr><th>host GPU</th><td>{m.harness.modelMetadata.host.gpu}{m.harness.modelMetadata.host.gpuPlatform && <span class="muted small"> ({m.harness.modelMetadata.host.gpuPlatform})</span>}</td></tr>
+          )}
+          {m.harness.modelMetadata.host?.vramGb !== undefined && (
+            <tr><th>host VRAM</th><td>{m.harness.modelMetadata.host.vramGb} GB</td></tr>
+          )}
+          {m.harness.modelMetadata.host?.cpu && (
+            <tr><th>host CPU</th><td>{m.harness.modelMetadata.host.cpu}</td></tr>
+          )}
+          {m.harness.modelMetadata.host?.memGb !== undefined && (
+            <tr><th>host RAM</th><td>{m.harness.modelMetadata.host.memGb} GB</td></tr>
           )}
         </tbody>
       </table>

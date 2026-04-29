@@ -40,6 +40,11 @@ export interface CompletionResponse {
   durationMs: number;
   /** Stop reason from the API, if available. */
   stopReason?: string;
+  /** First token までの時間(ms)。provider が返すなら埋める。 */
+  firstTokenMs?: number;
+  /** 生成のみの時間(ms、プロンプト評価・load を除く)。LM Studio が
+   *  `stats.generation_time` を返すので、それを変換して入れる。 */
+  generationMs?: number;
 }
 
 /**
@@ -70,8 +75,31 @@ export interface ModelMetadata {
   parameterSize?: string;
   /** weight ファイル size in bytes(Ollama のみ)。 */
   size?: number;
+  /**
+   * 推論を走らせたホスト機の情報。LM Studio は WebSocket RPC
+   * (`ws://host:port/runtime` の `surveyHardware`)で GPU/CPU/RAM を返す
+   * ので、run のたびにそれを問い合わせて埋める。Ollama は対応 RPC が
+   * 無いので undefined。**hostname は記録しない**(個人ホスト名等の
+   * 漏洩防止)。
+   */
+  host?: HostInfo;
   /** デバッグ用に raw response も残す。 */
   raw?: Record<string, unknown>;
+}
+
+/** Self-hosted ランタイムのホスト機ハードウェア情報(LM Studio から
+ *  動的に取得)。hostname は含めない。 */
+export interface HostInfo {
+  /** GPU 名(複数台あれば 1 台目)。例: "NVIDIA GeForce RTX 3090" */
+  gpu?: string;
+  /** GPU 専用 VRAM(GB)。 */
+  vramGb?: number;
+  /** GPU 検出プラットフォーム(`Vulkan` / `Metal` 等)。 */
+  gpuPlatform?: string;
+  /** CPU 名。例: "Intel(R) Core(TM) i9-12900K" */
+  cpu?: string;
+  /** メインメモリ(GB)。 */
+  memGb?: number;
 }
 
 export interface Provider {

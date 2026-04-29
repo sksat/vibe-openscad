@@ -1,0 +1,66 @@
+{
+  "runId": "bare_gpt-oss-20b-59e6f0d1bbdb-2026-04-29T07-29-43-777Z",
+  "taskId": "tier-3-butt-hinge",
+  "matrixId": "bare/gpt-oss-20b",
+  "signature": "59e6f0d1bbdb7a1cacb6da903456b0e7d2f4bd8479ba46a39e2df12c2f71484f",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dd7199030a8827a181914869189fc45a2e5637023f0c8c59532d442557036e7c",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "openai/gpt-oss-20b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "openai/gpt-oss-20b",
+  "harness": {
+    "kind": "bare",
+    "modelMetadata": {
+      "raw": {
+        "id": "openai/gpt-oss-20b",
+        "object": "model",
+        "type": "llm",
+        "publisher": "openai",
+        "arch": "gpt-oss",
+        "compatibility_type": "gguf",
+        "quantization": "MXFP4",
+        "state": "loaded",
+        "max_context_length": 131072,
+        "loaded_context_length": 4096,
+        "capabilities": [
+          "tool_use"
+        ]
+      },
+      "publisher": "openai",
+      "type": "llm",
+      "arch": "gpt-oss",
+      "quantization": "MXFP4",
+      "maxContextLength": 131072,
+      "capabilities": [
+        "tool_use"
+      ],
+      "host": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "vramGb": 24,
+        "gpuPlatform": "Vulkan",
+        "cpu": "12th Gen Intel(R) Core(TM) i9-12900K",
+        "memGb": 32
+      }
+    }
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 10712,
+    "firstTokenMs": 76,
+    "generationMs": 10436
+  },
+  "tokens": {
+    "input": 653,
+    "output": 1588
+  },
+  "createdAt": "2026-04-29T07:29:43.777Z",
+  "gitCommit": "68749000bf3ae142c6c66326a1b9238f5dc855f4"
+}

@@ -1,0 +1,25 @@
+
+```openscad
+module bolt() {
+    // Shaft: M8 Ø8, length 30 mm (extends into negative Z)
+    shaft = difference() + cylinder(d = 8, h = 30);
+    
+    // Hexagonal head: across-flats 13 mm, height 5.3 mm
+    af   = 13 / 2;        // radius across flats
+    hf   = 5.3;
+    poly = polygon(points = [
+        (af/2,  af*sqrt(3)/2),
+        (-af/2, af*sqrt(3)/2),
+        (-af, 0),
+        (-af/2,-af*sqrt(3)/2),
+        (af/2, -af*sqrt(3)/2)
+    ]);
+    head = linear_extrude(height = hf) poly;
+    
+    // Assemble
+    bolt = shaft + head;
+}
+
+// Output the complete model
+bolt();
+```

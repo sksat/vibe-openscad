@@ -70,6 +70,11 @@ export interface HarnessResult {
   stl?: Buffer;
   png?: Buffer;
   durationMs: number;
+  /** First token までの時間(ms)。provider が返したときだけ。 */
+  firstTokenMs?: number;
+  /** 純粋な生成時間(ms、ロード/プロンプト評価を除く)。LM Studio 等が
+   *  返すときだけ。token/sec を wallclock と分けて見る用。 */
+  generationMs?: number;
   tokens?: { input: number; output: number };
   modelId?: string;
   harnessLog: HarnessLog;

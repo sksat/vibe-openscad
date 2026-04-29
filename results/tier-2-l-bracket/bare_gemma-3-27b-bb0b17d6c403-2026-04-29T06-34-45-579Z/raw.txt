@@ -1,0 +1,45 @@
+```openscad
+// L-bracket parameters
+width = 50;
+depth = 40;
+height = 40;
+thickness = 3;
+screw_diameter = 4.5;
+countersink_diameter = 8;
+countersink_depth = 2;
+hole_offset = 10;
+
+// Module for creating a countersunk hole
+module countersunk_hole(diameter, depth) {
+  difference() {
+    cylinder(h=thickness + depth, r=diameter/2);
+    translate([0, 0, -depth]) cylinder(h=depth, r=(countersink_diameter)/2);
+  }
+}
+
+// Horizontal flange
+module horizontal_flange() {
+  difference() {
+    cube([width, depth, thickness]);
+    // Countersunk holes on the top face
+    translate([hole_offset, depth/2, 0]) rotate([90,0,0]) countersunk_hole(screw_diameter, countersink_depth);
+    translate([width - hole_offset, depth/2, 0]) rotate([90,0,0]) countersunk_hole(screw_diameter, countersink_depth);
+  }
+}
+
+// Vertical flange
+module vertical_flange() {
+  difference() {
+    cube([width, thickness, height]);
+    // Countersunk holes on the front face
+    translate([width/2, 0, hole_offset]) rotate([0,90,0]) countersunk_hole(screw_diameter, countersink_depth);
+    translate([width/2, 0, height - hole_offset]) rotate([0,90,0]) countersunk_hole(screw_diameter, countersink_depth);
+  }
+}
+
+// L-bracket assembly
+union() {
+  horizontal_flange();
+  translate([0, depth, 0]) vertical_flange();
+}
+```

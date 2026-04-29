@@ -1,0 +1,51 @@
+{
+  "runId": "bare_gemma-3-27b-57f7a120c80d-2026-04-29T06-31-17-120Z",
+  "taskId": "tier-2-hex-bolt",
+  "matrixId": "bare/gemma-3-27b",
+  "signature": "57f7a120c80dbf07987040ea5f590e9c08dd574570d996fc5dde3bb6e769dd73",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "0fee46bf3152dd6738d6d2af93e06dad04bb6bddd3b2b528c57138298ec0b5d0",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "google/gemma-3-27b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "google/gemma-3-27b",
+  "harness": {
+    "kind": "bare",
+    "modelMetadata": {
+      "raw": {
+        "id": "google/gemma-3-27b",
+        "object": "model",
+        "type": "vlm",
+        "publisher": "google",
+        "arch": "gemma3",
+        "compatibility_type": "gguf",
+        "quantization": "Q4_0",
+        "state": "not-loaded",
+        "max_context_length": 131072
+      },
+      "publisher": "google",
+      "type": "vlm",
+      "arch": "gemma3",
+      "quantization": "Q4_0",
+      "maxContextLength": 131072
+    }
+  },
+  "status": "render_error",
+  "timing": {
+    "totalMs": 132007
+  },
+  "tokens": {
+    "input": 180,
+    "output": 269
+  },
+  "createdAt": "2026-04-29T06:31:17.120Z",
+  "gitCommit": "68749000bf3ae142c6c66326a1b9238f5dc855f4",
+  "error": "openscad stl render failed (exit 1): ERROR: Parser error: syntax error in file ../../../../../tmp/render-KXZu4t/input.scad, line 10\nCan't parse file '/tmp/render-KXZu4t/input.scad'!\n\n"
+}

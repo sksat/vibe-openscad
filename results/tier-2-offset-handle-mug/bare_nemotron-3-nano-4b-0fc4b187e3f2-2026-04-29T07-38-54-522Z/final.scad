@@ -1,0 +1,24 @@
+r_body = 40;          // outer radius (80 mm)
+Rinner = 35;          // inner radius (70 mm)
+h_mug   = 90;         // mug height
+mid_z   = h_mug/2;
+
+mug = difference() {
+    outer = cylinder(r=r_body, h=h_mug);
+    inner = translate([0,0,-6]) cylinder(r=Rinner, h=h_mug-6); // bottom 6 mm thick
+}
+
+r_handle = 12;        // handle radius (half‑circle)
+handle_height = 40;   // handle from ~45 mm to 85 mm above base
+
+// curved part of the D‑shaped handle (half cylinder)
+handle_curved = rotate(90, X) translate([r_body+0.5*r_handle, 0, mid_z]) \
+    cylinder(r=r_handle, h=handle_height);
+
+// straight back slab that closes the D shape
+handle_back = translate([r_body - 2*r_handle, 0, mid_z-10]) \
+    extrude(height=handle_height) cube(r=r_handle);
+
+handle = hull(handle_curved, handle_back); // combine to a solid D
+
+mug_with_handle = union(mug, handle);

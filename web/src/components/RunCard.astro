@@ -1,13 +1,7 @@
 ---
 import type { LoadedRun } from "../lib/results.js";
-import {
-  formatCost,
-  providerVendor,
-  runBadges,
-  runCostUsd,
-  statusBadgeClass,
-} from "../lib/dataset.js";
-import VendorIcon from "./VendorIcon.astro";
+import { formatCost, runCostUsd } from "../lib/dataset.js";
+import RunThumb from "./RunThumb.astro";
 
 interface Props {
   run: LoadedRun;
@@ -22,13 +16,6 @@ const subagentModels =
     : [];
 const dataModels = [m.model, ...subagentModels].filter(Boolean).join(",");
 const cost = runCostUsd(m);
-const segments = runBadges(m);
-// セルフホストの場合、weight 個体を識別する publisher + quantization を
-// 抜き出してカードに出す。クラウドモデルでは undefined。
-const modelMetadata =
-  (m.harness.kind === "bare" || m.harness.kind === "pdf-page")
-    ? m.harness.modelMetadata
-    : undefined;
 ---
 
 <article
@@ -42,71 +29,8 @@ const modelMetadata =
   data-task={m.taskId}
   data-tier={tier !== undefined ? String(tier) : ""}
 >
-  <a class="thumb-link" href={`/run/${m.runId}`} aria-label={`open run ${m.runId}`}>
-    {run.pngUrl ? (
-      <div class="thumb"><img src={run.pngUrl} alt={`render of ${m.taskId} by ${m.matrixId}`} loading="lazy" /></div>
-    ) : (
-      <div class="thumb empty"><span>no render</span></div>
-    )}
-  </a>
+  <RunThumb run={run} alt={`render of ${m.taskId} by ${m.matrixId}`} />
   <div class="meta">
-    <div class="row matrix-row">
-      <div class="matrix-badges" title={m.matrixId}>
-        {segments.map((s) => {
-          const inner = (
-            <Fragment>
-              {s.kind === "vendor" && s.vendor && <VendorIcon vendor={s.vendor} />}
-              {s.label}
-            </Fragment>
-          );
-          let href: string | null = null;
-          if (s.href) href = s.href;
-          else if (s.kind === "model" && m.model) href = `/models/${m.model}`;
-          else if (s.kind === "harness") href = `/harnesses/${s.label}`;
-          if (href) {
-            return (
-              <a
-                class={`pill pill-${s.kind}`}
-                data-vendor={s.vendor ?? ""}
-                title={s.title ?? s.label}
-                href={href}
-              >{inner}</a>
-            );
-          }
-          return (
-            <span
-              class={`pill pill-${s.kind}`}
-              data-vendor={s.vendor ?? ""}
-              title={s.title ?? s.label}
-            >{inner}</span>
-          );
-        })}
-      </div>
-      {m.status !== "success" && (
-        <a class={`${statusBadgeClass(m.status)} status-link`} href={`/run/${m.runId}`}>{m.status}</a>
-      )}
-    </div>
-    {m.status === "success" && modelMetadata && (modelMetadata.publisher || modelMetadata.quantization) && (
-      /* 成功 self-hosted run は「model provider」と「publisher(weight 配布元)」
-         が別物のことがあるので、行を分けてラベル付きで出す。publisher が
-         既知 vendor (openai / google / anthropic) なら logo も付ける。
-         quant も同行で抱き合わせ。 */
-      <div class="row publisher-row">
-        <span class="row-label muted small">publisher:</span>
-        {modelMetadata.publisher && (() => {
-          const pubVendor = providerVendor(modelMetadata.publisher);
-          return (
-            <span class="pill pill-publisher" data-vendor={pubVendor ?? ""}>
-              {pubVendor && <VendorIcon vendor={pubVendor} />}
-              {modelMetadata.publisher}
-            </span>
-          );
-        })()}
-        {modelMetadata.quantization && (
-          <span class="pill pill-quant">{modelMetadata.quantization}</span>
-        )}
-      </div>
-    )}
     {showTask && <div class="task muted">{m.taskId}</div>}
     <div class="row sub muted">
       <span>{(m.timing.totalMs / 1000).toFixed(1)}s</span>
@@ -138,57 +62,6 @@ const modelMetadata =
     transform: translateY(-1px);
     border-color: var(--accent);
   }
-  .thumb-link {
-    display: block;
-    color: inherit;
-  }
-  .thumb-link:hover { text-decoration: none; }
-  .status-link { text-decoration: none; }
-  /* self-hosted run のときは matrix-row の下に publisher 行を出す。
-     行の頭に "model:" / "publisher:" の小さいラベルを置いて、各 pill が
-     何を表すかを明示する。両者が同じ "openai" でも別概念なので、視覚的
-     に区別したい。 */
-  .row-label {
-    flex-shrink: 0;
-    color: var(--fg-dim);
-  }
-  .publisher-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 4px;
-    flex-wrap: wrap;
-  }
-  .pill-publisher {
-    color: var(--fg);
-    border-color: rgba(232, 184, 109, 0.4);
-    background: rgba(232, 184, 109, 0.06);
-    display: inline-flex;
-    align-items: center;
-  }
-  .pill-quant {
-    color: var(--accent);
-    border-color: rgba(108, 182, 255, 0.4);
-    background: rgba(108, 182, 255, 0.08);
-  }
-  .thumb {
-    aspect-ratio: 4 / 3;
-    background: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .thumb img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-  }
-  .thumb.empty {
-    background: var(--bg-3);
-    color: var(--fg-dim);
-    font-size: 12px;
-    font-family: var(--mono);
-  }
   .meta {
     padding: 10px 12px;
     display: flex;
@@ -201,59 +74,6 @@ const modelMetadata =
     align-items: center;
     gap: 8px;
     font-size: 13px;
-  }
-  .matrix-row {
-    align-items: flex-start;
-  }
-  .matrix-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    flex: 1;
-    min-width: 0;
-  }
-  .pill {
-    display: inline-block;
-    padding: 1px 7px;
-    border-radius: 999px;
-    font-family: var(--mono);
-    font-size: 11px;
-    line-height: 1.5;
-    background: var(--bg-3);
-    border: 1px solid var(--line);
-    color: var(--fg-dim);
-    white-space: nowrap;
-  }
-  .pill-harness {
-    color: var(--fg);
-    border-color: rgba(108, 182, 255, 0.3);
-  }
-  .pill-vendor {
-    color: var(--fg-dim);
-  }
-  .pill-model {
-    color: var(--fg);
-    background: rgba(108, 182, 255, 0.10);
-    border-color: rgba(108, 182, 255, 0.4);
-  }
-
-  /* Vendor theming — Anthropic Claude (coral) */
-  .pill-vendor[data-vendor="claude"] {
-    color: #f3a585;
-    border-color: rgba(217, 119, 87, 0.5);
-    background: rgba(217, 119, 87, 0.14);
-  }
-  /* Vendor theming — Google Gemini (purple) */
-  .pill-vendor[data-vendor="gemini"] {
-    color: #d6bcfa;
-    border-color: rgba(139, 92, 246, 0.5);
-    background: rgba(139, 92, 246, 0.14);
-  }
-  /* Vendor theming — OpenAI (teal/sage; brand color #10a37f) */
-  .pill-vendor[data-vendor="openai"] {
-    color: #5ed5b3;
-    border-color: rgba(16, 163, 127, 0.55);
-    background: rgba(16, 163, 127, 0.14);
   }
   .task {
     font-family: var(--mono);

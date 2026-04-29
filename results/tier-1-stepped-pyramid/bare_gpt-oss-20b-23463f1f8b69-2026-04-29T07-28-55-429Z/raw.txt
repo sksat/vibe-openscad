@@ -1,0 +1,6 @@
+```openscad
+// 3段階段状ピラミッド（底面60mm×60mm、上層40mm×40mm、最上層20mm×20mm）
+cube([60, 60, 10], center = true);
+translate([0, 0, 10]) cube([40, 40, 10], center = true);
+translate([0, 0, 20]) cube([20, 20, 10], center = true);
+```

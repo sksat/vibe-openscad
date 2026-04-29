@@ -1,0 +1,64 @@
+{
+  "runId": "bare_nemotron-3-nano-4b-c12ab956c24c-2026-04-29T07-39-23-151Z",
+  "taskId": "tier-3-butt-hinge",
+  "matrixId": "bare/nemotron-3-nano-4b",
+  "signature": "c12ab956c24c8cdcaa262ade048fed8127b270b6e8a976cfe6dd41a8efebb9ea",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dd7199030a8827a181914869189fc45a2e5637023f0c8c59532d442557036e7c",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "nvidia/nemotron-3-nano-4b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "nvidia/nemotron-3-nano-4b",
+  "harness": {
+    "kind": "bare",
+    "modelMetadata": {
+      "raw": {
+        "id": "nvidia/nemotron-3-nano-4b",
+        "object": "model",
+        "type": "llm",
+        "publisher": "nvidia",
+        "arch": "nemotron_h",
+        "compatibility_type": "gguf",
+        "quantization": "Q4_K_M",
+        "state": "not-loaded",
+        "max_context_length": 1048576,
+        "capabilities": [
+          "tool_use"
+        ]
+      },
+      "publisher": "nvidia",
+      "type": "llm",
+      "arch": "nemotron_h",
+      "quantization": "Q4_K_M",
+      "maxContextLength": 1048576,
+      "capabilities": [
+        "tool_use"
+      ],
+      "host": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "vramGb": 24,
+        "gpuPlatform": "Vulkan",
+        "cpu": "12th Gen Intel(R) Core(TM) i9-12900K",
+        "memGb": 32
+      }
+    }
+  },
+  "status": "render_error",
+  "timing": {
+    "totalMs": 28610
+  },
+  "tokens": {
+    "input": 650,
+    "output": 3116
+  },
+  "createdAt": "2026-04-29T07:39:23.152Z",
+  "gitCommit": "68749000bf3ae142c6c66326a1b9238f5dc855f4",
+  "error": "openscad stl render failed (exit 1): ERROR: Parser error: syntax error in file ../../../../../tmp/render-SszXTG/input.scad, line 17\nCan't parse file '/tmp/render-SszXTG/input.scad'!\n\n"
+}

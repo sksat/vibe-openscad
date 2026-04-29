@@ -1,0 +1,5 @@
+$fn = 1;
+difference() {
+    cube([50, 50, 50]);
+    cylinder(d = 20, h = 50);
+}

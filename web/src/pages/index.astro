@@ -13,7 +13,9 @@ import {
   formatCost,
   getDataset,
   harnessGroupSlug,
+  providerDisplayLabel,
   runCostUsd,
+  runGroupProvider,
   taskSlug,
   thinkingInfoFor,
 } from "../lib/dataset.js";
@@ -366,7 +368,16 @@ interface OuterGroup {
   innerGroups: { innerKey: string; tiles: TaskTile[] }[];
 }
 const HARNESS_ORDER = ["bare", "external-agent"];
-const PROVIDER_ORDER = ["anthropic", "openai", "google", "ollama"];
+const PROVIDER_ORDER = [
+  "anthropic",
+  "openai",
+  "google",
+  "anthropic-self-hosted",
+  "openai-self-hosted",
+  "google-self-hosted",
+  "self-hosted",
+  "ollama",
+];
 function compareInOrder(order: string[]): (a: string, b: string) => number {
   return (a, b) => {
     const ai = order.indexOf(a);
@@ -383,7 +394,7 @@ function tileHarness(tile: TaskTile): string {
 }
 function tileProvider(tile: TaskTile): string {
   const r = tile.kind === "single" ? tile.run : tile.bare;
-  return r.meta.provider ?? "unknown";
+  return runGroupProvider(r.meta);
 }
 function groupTiles(tiles: TaskTile[], mode: Grouping): OuterGroup[] {
   const outer = mode === "harness-first" ? tileHarness : tileProvider;
@@ -501,10 +512,10 @@ function groupTiles(tiles: TaskTile[], mode: Grouping): OuterGroup[] {
               <div class="hierarchy" data-mode="harness-first">
                 {harnessFirst.map((og) => (
                   <section class="outer-group" data-outer={og.outerKey}>
-                    <header class="group-label outer">{og.outerKey}</header>
+                    <header class="group-label outer">{providerDisplayLabel(og.outerKey)}</header>
                     {og.innerGroups.map((ig) => (
                       <section class="inner-group" data-inner={ig.innerKey}>
-                        <header class="group-label inner">{ig.innerKey}</header>
+                        <header class="group-label inner">{providerDisplayLabel(ig.innerKey)}</header>
                         <div class="grid">
                           {ig.tiles.map((tile) =>
                             tile.kind === "single" ? (
@@ -528,10 +539,10 @@ function groupTiles(tiles: TaskTile[], mode: Grouping): OuterGroup[] {
               <div class="hierarchy" data-mode="provider-first" hidden>
                 {providerFirst.map((og) => (
                   <section class="outer-group" data-outer={og.outerKey}>
-                    <header class="group-label outer">{og.outerKey}</header>
+                    <header class="group-label outer">{providerDisplayLabel(og.outerKey)}</header>
                     {og.innerGroups.map((ig) => (
                       <section class="inner-group" data-inner={ig.innerKey}>
-                        <header class="group-label inner">{ig.innerKey}</header>
+                        <header class="group-label inner">{providerDisplayLabel(ig.innerKey)}</header>
                         <div class="grid">
                           {ig.tiles.map((tile) =>
                             tile.kind === "single" ? (

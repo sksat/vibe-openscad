@@ -34,10 +34,37 @@ export function providerDisplayLabel(provider: string): string {
 }
 
 /**
- * Provider 文字列を VendorIcon の vendor プロパティ(`claude` / `gemini` /
- * `openai`)に対応付ける。`<vendor>-self-hosted` は同じ vendor のロゴを
- * 使う(同じモデル提供者の重みを self-host しているケースが多いし、
- * ローカル UI では「ロゴで一目」が一番分かりやすい)。
+ * 一覧グルーピング用の「論理 provider キー」を返す。
+ *
+ * セルフホスト run の `meta.provider` は API protocol を表すだけで、実際に
+ * 動かしているモデルの vendor とは独立している(例: LM Studio = `openai-
+ * self-hosted` 上で gemma を動かすケース)。素直に `meta.provider` で
+ * グルーピングすると `openai-self-hosted` バケツに gemma が紛れて見えるので、
+ * セルフホストのときは model id から vendor を推定して
+ * `<vendor>-self-hosted` を返す。推定できなければ `self-hosted`。
+ *
+ * 非セルフホストではそのまま `meta.provider` を返す。
+ */
+export function runGroupProvider(meta: RunMeta): string {
+  const provider = meta.provider ?? "unknown";
+  if (!isSelfHostedProvider(provider)) return provider;
+  if (meta.model) {
+    for (const s of parseModelLabel(meta.model)) {
+      if (s.kind === "vendor" && s.vendor) {
+        const v = s.vendor;
+        const base = v === "claude" ? "anthropic" : v === "gemini" ? "google" : v;
+        return `${base}-self-hosted`;
+      }
+    }
+  }
+  return "self-hosted";
+}
+
+/**
+ * Provider 文字列を VendorIcon の vendor プロパティに対応付ける。
+ * cloud product 用のロゴ(Claude / Gemini / OpenAI)を優先する。
+ * `<vendor>-self-hosted` は同じロゴ(self-host = 同じモデル提供者の
+ * 重みを動かしているケースが多い)。
  */
 export function providerVendor(
   provider: string,
@@ -50,6 +77,51 @@ export function providerVendor(
       return "openai";
     case "google":
       return "gemini";
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * LM Studio / Ollama の `publisher` 文字列を VendorIcon の vendor キーに
+ * 対応付ける。publisher は「重み配布元」(社名・コミュニティ名)なので
+ * cloud product (Gemini, Claude) ではなく **会社・組織** のロゴを使う:
+ *
+ *   - `openai`              → openai (custom inline)
+ *   - `google`              → google (Gemma 等は Google 名義)
+ *   - `anthropic`           → anthropic
+ *   - `qwen` / `alibaba`    → qwen
+ *
+ * `lmstudio-community` / `unsloth` / `HauhauCS` / `ggml-org` 等は
+ * simple-icons に無いので undefined(テキストのみ表示)。
+ */
+export function publisherVendor(
+  publisher: string,
+):
+  | "claude"
+  | "anthropic"
+  | "gemini"
+  | "google"
+  | "openai"
+  | "nvidia"
+  | "qwen"
+  | "huggingface"
+  | undefined {
+  switch (publisher.toLowerCase()) {
+    case "openai":
+      return "openai";
+    case "google":
+      return "google";
+    case "anthropic":
+      return "anthropic";
+    case "nvidia":
+      return "nvidia";
+    case "qwen":
+    case "alibaba":
+      return "qwen";
+    case "huggingface":
+    case "hugging-face":
+      return "huggingface";
     default:
       return undefined;
   }
@@ -203,7 +275,7 @@ export interface MatrixSegment {
   label: string;
   title?: string;
   /** Vendor identifier — used for theme tinting. */
-  vendor?: "claude" | "gemini" | "openai";
+  vendor?: "claude" | "gemini" | "openai" | "nvidia";
   /**
    * Override the default href derived from `kind` + `label`. Used when the
    * harness label and the harness group slug differ — e.g., a label of
@@ -317,14 +389,16 @@ function parseModelLabel(modelStr: string): MatrixSegment[] {
   if (slashed) {
     const publisher = slashed[1]!.toLowerCase();
     const localModel = slashed[2]!;
-    const vendor: "openai" | "claude" | "gemini" | undefined =
+    const vendor: MatrixSegment["vendor"] =
       publisher === "openai"
         ? "openai"
         : publisher === "anthropic"
           ? "claude"
           : publisher === "google"
             ? "gemini"
-            : undefined;
+            : publisher === "nvidia"
+              ? "nvidia"
+              : undefined;
     if (vendor) {
       return [
         { kind: "vendor", label: publisher, vendor },
@@ -423,13 +497,17 @@ export function runBadges(meta: RunMeta): MatrixSegment[] {
   if (meta.model) {
     const segs = parseModelLabel(meta.model);
     // セルフホスト run の vendor badge は「<vendor> (self-hosted)」と
-    // 表記して、cloud との区別を一目で付けられるようにする。
-    // `-self-hosted` suffix の命名規約で判定するので、将来
-    // `anthropic-self-hosted` 等が増えても自動で効く。
+    // 表記して cloud との区別を一目で付けられるようにする。
+    // ただし provider 文字列の base("openai-self-hosted" → "openai")は
+    // API protocol を表すだけで、実際の model vendor とは独立。
+    // 例: LM Studio (= openai-self-hosted) で gemma を動かすと
+    //   model = google/gemma-3-27b → vendor = "google" (or "gemini")
+    // なので「openai (self-hosted)」と書くと嘘になる。model 自身の
+    // vendor label に "(self-hosted)" を付加するだけにする。
     if (meta.provider && isSelfHostedProvider(meta.provider)) {
       for (const s of segs) {
         if (s.kind === "vendor") {
-          s.label = providerDisplayLabel(meta.provider);
+          s.label = `${s.label} (self-hosted)`;
         }
       }
     }

@@ -1,0 +1,48 @@
+// マグカップ本体（外径 80mm、内径 70mm、厚み 5mm、底面厚み 6mm）
+module mug_body() {
+    // 外側の円筒 (高さ 90mm)
+    outer = cylinder(r=40, h=90, $fn=100);
+    // 内側の空洞 (高さ 96mm＝90+6 で底を含む)
+    inner = translate([0,0,-6]) cylinder(r=35, h=96, $fn=100);
+    body = difference() {
+        outer;
+        inner;
+    };
+    // 底面厚み 6mm
+    bottom = cylinder(r=40, h=6, $fn=100);
+    union() { body; bottom; }
+}
+
+// D 字形取手（+X側にのみ付ける）
+module handle() {
+    // D字型の断面を作成
+    d_shape = polygon(points=[
+        [0, 15],           // 内側直線端（左上）
+        [25, 15],          // 外側直線端（右上）
+        [25, -15],         // 外側直線端（右下）
+        [0, -15]           // 内側直線端（左下）
+    ]);
+    // 半円を外側に付ける
+    semicircle = rotate_extrude(angle=180)
+                 translate([12.5, 0, 0])
+                 circle(r=12.5, $fn=100);
+    // D字型断面の押し出し（厚み 5mm）
+    handle_profile = linear_extrude(height=5, center=true) d_shape;
+    // 半円を付けて形状化
+    handle_body = union() {
+        handle_profile;
+        translate([0,0,2.5]) semicircle;   // 半円は厚み方向に重ねる
+    };
+    // 取手の位置（+X側、中央付近）
+    translate([45, 0, 30]) rotate([90,0,0]) handle_body;
+}
+
+// 本体と取手を確実に union してマニフォールド化
+module mug_with_handle() {
+    union() {
+        mug_body();
+        handle();
+    }
+}
+
+mug_with_handle();

@@ -1,18 +1,58 @@
 ---
-import { siClaude, siGooglegemini } from "simple-icons";
+import {
+  siAnthropic,
+  siClaude,
+  siGoogle,
+  siGooglegemini,
+  siHuggingface,
+  siNvidia,
+  siQwen,
+} from "simple-icons";
 
+/**
+ * vendor キー一覧:
+ * - `claude`        — Anthropic Claude (chat product)
+ * - `anthropic`     — 会社 Anthropic ロゴ。publisher 表記用
+ * - `gemini`        — Google Gemini (chat product)
+ * - `google`        — 会社 Google ロゴ。Gemma 等の publisher 表記用
+ * - `openai`        — OpenAI(simple-icons 非収録なので custom inline)
+ * - `qwen`          — Alibaba Qwen
+ * - `huggingface`   — HuggingFace 経由配布モデルの汎用 fallback
+ *
+ * 同じ会社でも cloud product 用と publisher 用でロゴが違いうるので
+ * VendorIcon 側で複数キーを並立させ、呼び側がコンテキストに応じて選ぶ。
+ */
 interface Props {
-  vendor: "claude" | "gemini" | "openai";
+  vendor:
+    | "claude"
+    | "anthropic"
+    | "gemini"
+    | "google"
+    | "openai"
+    | "nvidia"
+    | "qwen"
+    | "huggingface";
   size?: number;
 }
 const { vendor, size = 12 } = Astro.props;
 
+const SI_LOOKUP = {
+  claude: siClaude,
+  anthropic: siAnthropic,
+  gemini: siGooglegemini,
+  google: siGoogle,
+  nvidia: siNvidia,
+  qwen: siQwen,
+  huggingface: siHuggingface,
+} as const;
+type SiKey = keyof typeof SI_LOOKUP;
 const icon =
-  vendor === "claude"
-    ? { path: siClaude.path, label: siClaude.title }
-    : vendor === "gemini"
-      ? { path: siGooglegemini.path, label: siGooglegemini.title }
-      : null;
+  vendor in SI_LOOKUP
+    ? {
+        path: SI_LOOKUP[vendor as SiKey].path,
+        label: SI_LOOKUP[vendor as SiKey].title,
+      }
+    : null;
 ---
 
 {icon && (
