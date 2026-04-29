@@ -14,7 +14,7 @@ export const PAGES_WITH_STATIC_PATHS = [
   "./src/pages/run/[id].astro",
   "./src/pages/task/[slug].astro",
   "./src/pages/task/[slug]/[model].astro",
-  "./src/pages/models/[id].astro",
+  "./src/pages/models/[...id].astro",
   "./src/pages/harnesses/[id].astro",
   "./src/pages/index.astro",
 ];

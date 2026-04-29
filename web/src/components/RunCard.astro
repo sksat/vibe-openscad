@@ -22,6 +22,12 @@ const subagentModels =
 const dataModels = [m.model, ...subagentModels].filter(Boolean).join(",");
 const cost = runCostUsd(m);
 const segments = runBadges(m);
+// セルフホストの場合、weight 個体を識別する publisher + quantization を
+// 抜き出してカードに出す。クラウドモデルでは undefined。
+const modelMetadata =
+  (m.harness.kind === "bare" || m.harness.kind === "pdf-page")
+    ? m.harness.modelMetadata
+    : undefined;
 ---
 
 <article
@@ -75,7 +81,21 @@ const segments = runBadges(m);
           );
         })}
       </div>
-      <a class={`${statusBadgeClass(m.status)} status-link`} href={`/run/${m.runId}`}>{m.status}</a>
+      {m.status !== "success" ? (
+        <a class={`${statusBadgeClass(m.status)} status-link`} href={`/run/${m.runId}`}>{m.status}</a>
+      ) : modelMetadata && (modelMetadata.publisher || modelMetadata.quantization) ? (
+        /* 成功 run はステータス表示を消し、代わりに self-hosted の
+           weight 個体識別 (publisher / quantization) を pill で出す。
+           cloud モデルは modelMetadata 無しでこのスロットは空。 */
+        <div class="self-hosted-pills" title={`publisher: ${modelMetadata.publisher ?? "—"}, quant: ${modelMetadata.quantization ?? "—"}`}>
+          {modelMetadata.publisher && (
+            <span class="pill pill-publisher">{modelMetadata.publisher}</span>
+          )}
+          {modelMetadata.quantization && (
+            <span class="pill pill-quant">{modelMetadata.quantization}</span>
+          )}
+        </div>
+      ) : null}
     </div>
     {showTask && <div class="task muted">{m.taskId}</div>}
     <div class="row sub muted">
@@ -114,6 +134,23 @@ const segments = runBadges(m);
   }
   .thumb-link:hover { text-decoration: none; }
   .status-link { text-decoration: none; }
+  /* self-hosted の publisher / quantization は他の pill と同じ形にして
+     視覚的なリズムを揃える。色は弱めに(モデル名 pill より控えめ)。 */
+  .self-hosted-pills {
+    display: inline-flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .pill-publisher {
+    color: var(--fg);
+    border-color: rgba(232, 184, 109, 0.4);
+    background: rgba(232, 184, 109, 0.06);
+  }
+  .pill-quant {
+    color: var(--accent);
+    border-color: rgba(108, 182, 255, 0.4);
+    background: rgba(108, 182, 255, 0.08);
+  }
   .thumb {
     aspect-ratio: 4 / 3;
     background: #fff;

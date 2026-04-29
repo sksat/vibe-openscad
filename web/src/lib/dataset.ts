@@ -4,6 +4,43 @@ import type { RunMeta, Task } from "@vibe-openscad/runners/src/schema.js";
 import { loadDataset } from "./results.js";
 
 /**
+ * Provider 文字列(`anthropic` / `openai` / `openai-self-hosted` / `google`
+ * / `ollama` 等)を「人間に見せたい label」に変換。
+ *  - `openai-self-hosted` → "openai (self-hosted)"
+ *  - その他はそのまま返す(将来必要なら追加)
+ */
+export function providerDisplayLabel(provider: string): string {
+  switch (provider) {
+    case "openai-self-hosted":
+      return "openai (self-hosted)";
+    default:
+      return provider;
+  }
+}
+
+/**
+ * Provider 文字列を VendorIcon の vendor プロパティ(`claude` / `gemini` /
+ * `openai`)に対応付ける。`openai-self-hosted` も openai ロゴを使う(同じ
+ * モデル提供者である OpenAI のものを self-host しているケースが多いし、
+ * ローカル UI では「ロゴで一目」が一番分かりやすい)。
+ */
+export function providerVendor(
+  provider: string,
+): "claude" | "gemini" | "openai" | undefined {
+  switch (provider) {
+    case "anthropic":
+      return "claude";
+    case "openai":
+    case "openai-self-hosted":
+      return "openai";
+    case "google":
+      return "gemini";
+    default:
+      return undefined;
+  }
+}
+
+/**
  * モデル id を「並べたい順」のキーに変換する。一覧表示で
  *   Claude: opus > sonnet > haiku、新しい version が先
  *   OpenAI: gpt-5.5 > gpt-5.4 > gpt-5 > gpt-4.x、 mini/nano は後ろ、o3 / o4 系は別バケツ
@@ -256,6 +293,32 @@ function parseModelLabel(modelStr: string): MatrixSegment[] {
     ];
   }
 
+  // セルフホスト系の publisher 接頭辞付きモデル(LM Studio / Ollama):
+  //   openai/gpt-oss-20b、qwen/qwen3.6-27b、google/gemma-3-27b 等
+  // 既知 publisher なら vendor logo と組み合わせて出し、その他は単一の
+  // model badge にする。どちらも `kind: "model"` を返してクリック可能に
+  // する(行き先は /models/<encodeURIComponent(modelStr)>)。
+  const slashed = modelStr.match(/^([a-z][\w-]*)\/(.+)$/i);
+  if (slashed) {
+    const publisher = slashed[1]!.toLowerCase();
+    const localModel = slashed[2]!;
+    const vendor: "openai" | "claude" | "gemini" | undefined =
+      publisher === "openai"
+        ? "openai"
+        : publisher === "anthropic"
+          ? "claude"
+          : publisher === "google"
+            ? "gemini"
+            : undefined;
+    if (vendor) {
+      return [
+        { kind: "vendor", label: publisher, vendor },
+        { kind: "model", label: localModel, title: modelStr, vendor },
+      ];
+    }
+    return [{ kind: "model", label: modelStr, title: modelStr }];
+  }
+
   return [{ kind: "other", label: modelStr }];
 }
 
@@ -342,7 +405,19 @@ export function runBadges(meta: RunMeta): MatrixSegment[] {
   // Order: vendor · model · harness — model identity comes first when
   // scanning cards, harness mode is the trailing qualifier.
   const out: MatrixSegment[] = [];
-  if (meta.model) out.push(...parseModelLabel(meta.model));
+  if (meta.model) {
+    const segs = parseModelLabel(meta.model);
+    // セルフホスト run の vendor badge は「openai (self-hosted)」のように
+    // 表記して、cloud との区別を一目で付けられるようにする。
+    if (meta.provider === "openai-self-hosted") {
+      for (const s of segs) {
+        if (s.kind === "vendor") {
+          s.label = providerDisplayLabel(meta.provider);
+        }
+      }
+    }
+    out.push(...segs);
+  }
   const headPart = meta.matrixId.split("/")[0];
   const fpHarness = meta.fingerprint.harness;
   const isIter = fpHarness.kind === "bare" && !!fpHarness.iteration;
