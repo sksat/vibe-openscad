@@ -51,9 +51,6 @@ const modelMetadata =
   </a>
   <div class="meta">
     <div class="row matrix-row">
-      {modelMetadata && (modelMetadata.publisher || modelMetadata.quantization) && (
-        <span class="row-label muted small">model:</span>
-      )}
       <div class="matrix-badges" title={m.matrixId}>
         {segments.map((s) => {
           const inner = (
