@@ -345,6 +345,14 @@ matrix:
     provider: google
     model: gemini-3-flash-preview
 
+  # --- ローカル LLM (Ollama / LM Studio 等。OLLAMA_HOST .env で接続) ---
+  # ローカルは VRAM 制約で並走できないので concurrency 1 で回す前提。
+  # 試運転として 1 モデルだけ。動いたら他のローカルモデルを順次足す。
+  - id: bare/gpt-oss-20b
+    harness: { kind: bare }
+    provider: ollama
+    model: openai/gpt-oss-20b
+
   # --- iteration chain (PNG feedback) ---
   # 各 iteration step は独立した benchmark run。iter-png-1 は bare の出力を
   # 見せて修正させ、iter-png-2 は iter-png-1 の出力を見せて、… と数珠繋ぎ。
