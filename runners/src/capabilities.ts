@@ -19,6 +19,9 @@ const VISION_CAPABLE: RegExp[] = [
   /^claude-(opus|sonnet|haiku)-\d/,
   // Google Gemini: 1.5 / 2.5 / 3.x families all accept inline images.
   /^gemini-/,
+  // Google Gemma 3+ (vlm) self-hosted: `google/gemma-3-27b`, `google/gemma-4-e2b` 等。
+  // LM Studio 上で `type: "vlm"` として配布されている系統。
+  /^google\/gemma-[34]-/,
   // OpenAI multimodal chat models.
   /^gpt-4o/,
   /^gpt-4\.1/,

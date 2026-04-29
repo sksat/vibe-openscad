@@ -1,0 +1,65 @@
+{
+  "runId": "bare_gemma-4-e2b-ddd5475294a6-2026-04-29T13-33-35-200Z",
+  "taskId": "tier-1-cube-with-hole",
+  "matrixId": "bare/gemma-4-e2b",
+  "signature": "ddd5475294a6c77a065fcb2085c21aca42675e64229e5eba4c8d388fa589bc69",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "8ff7e36af4bc202429ec68b7eb9cc3f195b6a3c68668be31239bcea23345a048",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "google/gemma-4-e2b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "google/gemma-4-e2b",
+  "harness": {
+    "kind": "bare",
+    "modelMetadata": {
+      "raw": {
+        "id": "google/gemma-4-e2b",
+        "object": "model",
+        "type": "vlm",
+        "publisher": "google",
+        "arch": "gemma4",
+        "compatibility_type": "gguf",
+        "quantization": "Q4_K_M",
+        "state": "not-loaded",
+        "max_context_length": 131072,
+        "capabilities": [
+          "tool_use"
+        ]
+      },
+      "publisher": "google",
+      "type": "vlm",
+      "arch": "gemma4",
+      "quantization": "Q4_K_M",
+      "maxContextLength": 131072,
+      "capabilities": [
+        "tool_use"
+      ],
+      "host": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "vramGb": 24,
+        "gpuPlatform": "Vulkan",
+        "cpu": "12th Gen Intel(R) Core(TM) i9-12900K",
+        "memGb": 32
+      }
+    }
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 18595,
+    "firstTokenMs": 2607,
+    "generationMs": 5270
+  },
+  "tokens": {
+    "input": 82,
+    "output": 713
+  },
+  "createdAt": "2026-04-29T13:33:35.200Z",
+  "gitCommit": "27221824780d51aad264405898c7b9a1bf308c51"
+}

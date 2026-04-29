@@ -1,0 +1,66 @@
+{
+  "runId": "bare_gemma-4-e4b-ba4402fb045e-2026-04-29T13-36-58-322Z",
+  "taskId": "tier-2-l-bracket",
+  "matrixId": "bare/gemma-4-e4b",
+  "signature": "ba4402fb045ef42499d0fb0bfe7f9108e82303fcaf918fbc347326b95e648027",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "b20dcf3dd07e532496944d76485b954e0ab614f3cda1919fee5dc406f59b3ea5",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "google/gemma-4-e4b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "google/gemma-4-e4b",
+  "harness": {
+    "kind": "bare",
+    "modelMetadata": {
+      "raw": {
+        "id": "google/gemma-4-e4b",
+        "object": "model",
+        "type": "vlm",
+        "publisher": "google",
+        "arch": "gemma4",
+        "compatibility_type": "gguf",
+        "quantization": "Q4_K_M",
+        "state": "not-loaded",
+        "max_context_length": 131072,
+        "capabilities": [
+          "tool_use"
+        ]
+      },
+      "publisher": "google",
+      "type": "vlm",
+      "arch": "gemma4",
+      "quantization": "Q4_K_M",
+      "maxContextLength": 131072,
+      "capabilities": [
+        "tool_use"
+      ],
+      "host": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "vramGb": 24,
+        "gpuPlatform": "Vulkan",
+        "cpu": "12th Gen Intel(R) Core(TM) i9-12900K",
+        "memGb": 32
+      }
+    }
+  },
+  "status": "render_error",
+  "timing": {
+    "totalMs": 26046,
+    "firstTokenMs": 230,
+    "generationMs": 25739
+  },
+  "tokens": {
+    "input": 266,
+    "output": 2471
+  },
+  "createdAt": "2026-04-29T13:36:58.322Z",
+  "gitCommit": "27221824780d51aad264405898c7b9a1bf308c51",
+  "error": "openscad stl render failed (exit 1): ERROR: Parser error: syntax error in file ../../../../../tmp/render-ILtQAW/input.scad, line 20\nCan't parse file '/tmp/render-ILtQAW/input.scad'!\n\n"
+}

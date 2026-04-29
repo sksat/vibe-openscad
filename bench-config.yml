@@ -357,6 +357,26 @@ matrix:
     harness: { kind: bare }
     provider: openai-self-hosted
     model: google/gemma-3-27b
+  - id: pdf-page/gemma-3-27b
+    harness: { kind: pdf-page }
+    provider: openai-self-hosted
+    model: google/gemma-3-27b
+  - id: bare/gemma-4-e2b
+    harness: { kind: bare }
+    provider: openai-self-hosted
+    model: google/gemma-4-e2b
+  - id: bare/gemma-4-e4b
+    harness: { kind: bare }
+    provider: openai-self-hosted
+    model: google/gemma-4-e4b
+  - id: pdf-page/gemma-4-e2b
+    harness: { kind: pdf-page }
+    provider: openai-self-hosted
+    model: google/gemma-4-e2b
+  - id: pdf-page/gemma-4-e4b
+    harness: { kind: pdf-page }
+    provider: openai-self-hosted
+    model: google/gemma-4-e4b
   - id: bare/nemotron-3-nano-4b
     harness: { kind: bare }
     provider: openai-self-hosted

@@ -1,0 +1,35 @@
+// パラメータ設定
+plate_height = 10; // 各段の高さ
+z_offset = 0;      // Z軸のオフセット（ここでは積み上げを表現するため、各段がZ方向に分かれて配置されます）
+
+// 段1: 底辺 (60mm x 60mm)
+size_base = 60;
+plate_base = [size_base, size_base, plate_height];
+
+// 段2: 中央 (40mm x 40mm)
+size_middle = 40;
+plate_middle = [size_middle, size_middle, plate_height];
+
+// 段3: 上辺 (20mm x 20mm)
+size_top = 20;
+plate_top = [size_top, size_top, plate_height];
+
+
+// --- 構造の構築 ---
+
+// 1. 底辺を配置 (中心 (0, 0))
+translate([0, 0, z_offset]) {
+    cube(size = plate_base, center = true);
+}
+
+// 2. 中央の板を配置 (底辺の上に、中央揃えで)
+// Z座標は前の板の高さ分上に移動
+translate([0, 0, plate_height]) {
+    cube(size = plate_middle, center = true);
+}
+
+// 3. 最上の板を配置 (中央の板の上に、中央揃えで)
+// Z座標は2段目の高さ分上に移動
+translate([0, 0, 2 * plate_height]) {
+    cube(size = plate_top, center = true);
+}

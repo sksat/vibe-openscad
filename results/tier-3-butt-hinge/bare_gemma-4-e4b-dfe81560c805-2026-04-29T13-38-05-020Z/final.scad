@@ -1,0 +1,103 @@
+// ======================================================
+// Furniture Butt Hinge Model (180 Degrees Open)
+// Components: Left Leaf, Right Leaf, Pin Axis
+// Dimensions: 30x25 leaf, D4 pin, 2mm thickness.
+// ======================================================
+
+// --- Global Parameters ---
+LEAF_WIDTH = 25;   // Width along X axis
+LEAF_HEIGHT = 30;  // Height along Y axis
+THICKNESS = 2;     // Thickness along Z axis
+PIN_DIA = 4;       // Pin diameter
+KNUCKLE_OUTER_DIA = 8;
+KNUCKLE_INNER_DIA = PIN_DIA + 0.3; // 4.3mm clearance hole
+
+// Screw parameters (M3)
+SCREW_DIAMETER_THROUGH = 3.2; // mm
+SCREW_DEPTH_COUNTERBORE = 1;   // mm
+SCREW_COUNTERBORE_DIA = 6;     // mm
+
+// Y-coordinates for knuckle centers
+KNUCKLE_Y_L = [-12, 0, 12];    // Left Leaf (Outer 2 + Center 1)
+KNUCKLE_Y_R = [-6, 6];         // Right Leaf (Intermediate 2)
+
+// Y-coordinates for screw holes (3 spots, approx 8mm pitch spacing)
+SCREW_Y_POSITIONS = [-10, 0, 10];
+
+
+// ======================================================
+// 1. Pin Axis Component
+// ======================================================
+module pin_axis() {
+    translate([0, 0, -(THICKNESS/2)]) {
+        cylinder(h=LEAF_HEIGHT + 4, r=PIN_DIA/2, $fn=60);
+    }
+}
+
+// ======================================================
+// 2. Single Leaf Module (Handles the basic shape and cutouts)
+// @param is_left: True if this leaf should be modeled for the left side (X<0).
+//               False if for the right side (X>0).
+// @param knuckles_y: Array of Y coordinates for knuckle placement.
+module hinged_leaf(is_left = true, knuckles_y, screws_y) {
+
+    // Determine translation offset based on position
+    translate([-(LEAF_WIDTH/2) * (if(is_left)) : 1, 0, 0]) {
+        color([0.4, 0.2, 0.1]) { // Brownish color for wood look
+            difference() {
+                // A. Base Block (The solid leaf)
+                cube([LEAF_WIDTH, LEAF_HEIGHT, THICKNESS]);
+
+                // B. Cutouts to make space for knuckles and screws
+                union() {
+                    // 1. Knuckle Holes (These holes must pass through the center axis Y=0)
+                    for (y = knuckles_y) {
+                        translate([0, y, -(THICKNESS/2)]) {
+                            cylinder(h=THICKNESS + 0.1, r=(KNUCKLE_OUTER_DIA/2) + 0.5, $fn=60); // Slightly larger to guarantee removal
+                        }
+                    }
+
+                    // 2. Screw Holes (3 spots per leaf)
+                    for (y = screws_y) {
+                         translate([0, y, -(THICKNESS/2)]) {
+                            // Counterbore cut (D=6mm, Depth=1mm)
+                            cylinder(h=SCREW_DEPTH_COUNTERBORE + 0.1, r=(SCREW_COUNTERBORE_DIA/2), $fn=36);
+
+                            // Through hole (Must pass through the full thickness)
+                            translate([0, y, SCREW_DEPTH_COUNTERBORE]) {
+                                cylinder(h=THICKNESS + 0.1, r=(SCREW_DIAMETER_THROUGH/2), $fn=36);
+                            }
+                        }
+                    }
+
+                    // 3. Pin Axis Clearance (Must pass through all knuckles)
+                    // This cutout ensures the central pin can rotate freely while leaving structural integrity around knuckle centers.
+                    translate([0, -15, -(THICKNESS/2)]) { // Start slightly outside Y range to ensure full passage
+                        cylinder(h=LEAF_HEIGHT + 3, r=(KNUCKLE_INNER_DIA / 2) + 0.3, $fn=60);
+                    }
+
+                }
+            }
+        }
+    }
+}
+
+
+// ======================================================
+// ASSEMBLY AND DISPLAY (180 Degree Open State)
+// ======================================================
+
+// Use a union to display all parts together in the final open configuration.
+union() {
+
+    // 1. Left Leaf (X < 0 side)
+    // Knuckles: Y=-12, 0, 12
+    hinged_leaf(is_left = true, knuckles_y = KNUCKLE_Y_L, screws_y = SCREW_Y_POSITIONS);
+
+    // 2. Right Leaf (X > 0 side)
+    // Knuckles: Y=-6, 6
+    hinged_leaf(is_left = false, knuckles_y = KNUCKLE_Y_R, screws_y = SCREW_Y_POSITIONS);
+
+    // 3. Pin Axis (Central Pivot)
+    pin_axis();
+}

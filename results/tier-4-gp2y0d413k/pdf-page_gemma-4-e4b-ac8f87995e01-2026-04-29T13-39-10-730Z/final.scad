@@ -1,0 +1,77 @@
+// Sharp GP2Y0D413K0F Distance Sensor Housing Model
+// Coordinate System: +Z = Up (Connector direction), +Y = Front/Lenses direction
+// Units: mm
+
+// --- Global Parameters & Tolerances ---
+tolerance = 0.3; // Unspecified tolerance
+pwb_thickness = 1.5; // Assumed thickness for PWB
+case_material = "Carbonic ABS";
+
+// ==============================================
+// 1. Main Body Case (Housing)
+// Based on overall dimensions, the case must encompass all components.
+// Dimensions: Approx 56.3 (X length) x ~20 (Z height estimate based on components) x 17 (Y depth).
+// We will model a slightly over-sized block to contain everything.
+// ==============================================
+module main_case(x_length, z_height, y_depth) {
+    color([0.6, 0.6, 0.7]) cube([x_length, y_depth, z_height]); // Light blue/gray for ABS plastic
+}
+
+// ==============================================
+// 2. PWB (Printed Circuit Board) and Connector Base
+// Dimensions: L=39.4mm, W=16.3mm. Located near the bottom of the case.
+// ==============================================
+module pwbcase() {
+    // A slight recess/base for mounting
+    translate([0, -2, 0]) // Positioning slightly lower than main body floor (Z axis)
+    cube([39.4, 16.3, pwb_thickness]);
+
+    // Connector (Simplified representation of JCTC 12001W90-3P-HF)
+    translate([0, -pwb_thickness*2, -5]) // Positioned on the edge of the PWB base
+    cylinder(r=4, h=6, center=true);
+
+    // Note: The main case should integrate around this. We assume the bottom part is cut out for mounting/access.
+}
+
+// ==============================================
+// 3. Lens Assembly (Front Protrusion)
+// This assembly extends along +Y from the main body face.
+// ==============================================
+module lens_assembly() {
+    // General Housing Block for lenses
+    translate([0, -5, 0]) // Positioned slightly in front of the main case plane
+    cube([62, 15, 8]);
+
+    // --- A. Emitter Lens (Circular, Left Side) ---
+    // Center position: X approx -24.8 mm. Window size estimated (e.g., 7mm diameter).
+    translate([-24.8, 0, 3]) // Positioned on the left side of the protrusion housing
+    color([1, 0, 0, 0.5]) cylinder(r=7, h=6); // Redish semi-transparent window
+
+    // --- B. Detector Lens (Rectangular, Right Side) ---
+    // Center position: X approx 24.8 mm. Visible dimensions estimated (~10mm width, ~5mm height).
+    translate([24.8, 0, 3]) // Positioned on the right side of the protrusion housing
+    color([0, 0, 1, 0.5]) cube([10, 5, 1]); // Blueish semi-transparent window (Cube approximation)
+
+    // Add a simple bezel/rim around the lenses for structural integrity
+}
+
+
+// ==============================================
+// 4. Final Composition and Assembly
+// Estimate dimensions to encompass all parts:
+// X Max: ~30 mm (Detector side)
+// X Min: ~-28 mm (Emitter side) -> Total Length L_X = 58 mm
+// Y Depth: ~17 mm (PWB depth + protrusion length)
+// Z Height: ~14 mm (Case height estimate)
+// ==============================================
+
+union() {
+    // Main Body Case (The large outer shell)
+    main_case(x_length = 58, z_height = 14, y_depth = 20);
+
+    // PWB and Connector Base (Placed inside/on the bottom of the case)
+    pwbcase();
+
+    // Lens Assembly (Protrusion) - This structure is complexly integrated into the main case volume.
+    lens_assembly();
+}

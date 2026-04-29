@@ -1,0 +1,63 @@
+{
+  "runId": "pdf-page_gemma-3-27b-022b769f8f70-2026-04-29T13-29-34-057Z",
+  "taskId": "tier-4-gp2y0d413k",
+  "matrixId": "pdf-page/gemma-3-27b",
+  "signature": "022b769f8f706fc4f434241e91e84058a24d10ee04501a66820e15f8b8ae5e2b",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "7e6fa16f202f13fec95f52e82a3fdae7e470b031753647eea0c4491422ab78ab",
+    "harness": {
+      "kind": "pdf-page",
+      "provider": "openai-self-hosted",
+      "model": "google/gemma-3-27b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "google/gemma-3-27b",
+  "harness": {
+    "kind": "pdf-page",
+    "pdfUrl": "https://jp.sharp/products/device/doc/opto/gp2y0d413k_e.pdf",
+    "pages": [
+      2
+    ],
+    "modelMetadata": {
+      "raw": {
+        "id": "google/gemma-3-27b",
+        "object": "model",
+        "type": "vlm",
+        "publisher": "google",
+        "arch": "gemma3",
+        "compatibility_type": "gguf",
+        "quantization": "Q4_0",
+        "state": "not-loaded",
+        "max_context_length": 131072
+      },
+      "publisher": "google",
+      "type": "vlm",
+      "arch": "gemma3",
+      "quantization": "Q4_0",
+      "maxContextLength": 131072,
+      "host": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "vramGb": 24,
+        "gpuPlatform": "Vulkan",
+        "cpu": "12th Gen Intel(R) Core(TM) i9-12900K",
+        "memGb": 32
+      }
+    }
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 187115,
+    "firstTokenMs": 9031,
+    "generationMs": 176516
+  },
+  "tokens": {
+    "input": 593,
+    "output": 333
+  },
+  "createdAt": "2026-04-29T13:29:34.057Z",
+  "gitCommit": "27221824780d51aad264405898c7b9a1bf308c51"
+}

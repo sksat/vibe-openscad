@@ -1,0 +1,66 @@
+{
+  "runId": "bare_gemma-4-e4b-dfe81560c805-2026-04-29T13-38-05-020Z",
+  "taskId": "tier-3-butt-hinge",
+  "matrixId": "bare/gemma-4-e4b",
+  "signature": "dfe81560c80590a40d1c43a9878dcf08b7e6dfd147c9e4a6f2324846b5a9ee96",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dd7199030a8827a181914869189fc45a2e5637023f0c8c59532d442557036e7c",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "google/gemma-4-e4b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "google/gemma-4-e4b",
+  "harness": {
+    "kind": "bare",
+    "modelMetadata": {
+      "raw": {
+        "id": "google/gemma-4-e4b",
+        "object": "model",
+        "type": "vlm",
+        "publisher": "google",
+        "arch": "gemma4",
+        "compatibility_type": "gguf",
+        "quantization": "Q4_K_M",
+        "state": "not-loaded",
+        "max_context_length": 131072,
+        "capabilities": [
+          "tool_use"
+        ]
+      },
+      "publisher": "google",
+      "type": "vlm",
+      "arch": "gemma4",
+      "quantization": "Q4_K_M",
+      "maxContextLength": 131072,
+      "capabilities": [
+        "tool_use"
+      ],
+      "host": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "vramGb": 24,
+        "gpuPlatform": "Vulkan",
+        "cpu": "12th Gen Intel(R) Core(TM) i9-12900K",
+        "memGb": 32
+      }
+    }
+  },
+  "status": "render_error",
+  "timing": {
+    "totalMs": 35589,
+    "firstTokenMs": 331,
+    "generationMs": 35177
+  },
+  "tokens": {
+    "input": 529,
+    "output": 3316
+  },
+  "createdAt": "2026-04-29T13:38:05.020Z",
+  "gitCommit": "27221824780d51aad264405898c7b9a1bf308c51",
+  "error": "openscad stl render failed (exit 1): ERROR: Parser error: syntax error in file ../../../../../tmp/render-jOtaX4/input.scad, line 45\nCan't parse file '/tmp/render-jOtaX4/input.scad'!\n\n"
+}

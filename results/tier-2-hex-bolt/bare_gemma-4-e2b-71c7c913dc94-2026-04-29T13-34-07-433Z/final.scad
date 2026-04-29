@@ -1,0 +1,56 @@
+// M8 Hex Bolt (Simplified Shank)
+// Head dimensions: Across-flats = 13mm, Height = 5.3mm
+// Shank dimensions: Diameter = 8mm, Length = 30mm
+// Configuration: Head base at Z=0, Shank extends into Z < 0
+
+// --- Parameters ---
+head_across_flats = 13;   // 六角部の対辺距離 (Across flats)
+head_height = 5.3;        // 頭部の高さ (Height)
+shank_diameter = 8;       // シャンクの直径 (Diameter)
+shank_length = 30;        // シャンクの長さ (Length)
+
+// --- Head Definition (Hexagonal Prism) ---
+head_z_start = 0;         // 頭部の底面がZ=0に来るように設定
+head_z_end = head_height;
+
+module hex_head() {
+    difference() {
+        // 六角柱の本体
+        cube([head_across_flats, head_across_flats, head_height]);
+
+        // 頭部を六角形にするための穴あけ (Center alignment)
+        // 穴の中心座標: X=across_flats/2, Y=across_flats/2, Z=head_height
+        translate([0, 0, head_height]) {
+            rotate([90, 0, 0]) { // 六角形がZ軸に沿うように向きを調整
+                // 外側の六角形を定義する穴 (少し深めに切り取る)
+                cube([head_across_flats + 0.2, head_across_flats + 0.2, head_height + 0.1]);
+            }
+        }
+    }
+}
+
+// --- Shank Definition (Cylinder) ---
+module cylindrical_shank() {
+    shank_z_start = head_z_end; // シャンクの開始Z位置 (頭部の頂上)
+    shank_z_end = shank_z_start - shank_length; // シャンクの終了Z位置
+
+    difference() {
+        // 円柱本体
+        cylinder(h = shank_length, r = shank_diameter / 2, center = true);
+
+        // 頭部との接続部分を切り取るための穴 (頭部の底面がZ=0にあるため、Z軸方向の切り取り)
+        // シャンクが始まる位置 Z=shank_z_start から、頭部の高さ分だけ切り取る。
+        translate([0, 0, shank_z_start - head_z_end]) {
+             cube([shank_diameter + 1, shank_diameter + 1, head_height + 0.2]);
+        }
+    }
+}
+
+// --- Final Assembly ---
+// ボルト全体を定義 (中心軸は+Z方向)
+union() {
+    color("steelCC") {
+        hex_head();
+        cylindrical_shank();
+    }
+}

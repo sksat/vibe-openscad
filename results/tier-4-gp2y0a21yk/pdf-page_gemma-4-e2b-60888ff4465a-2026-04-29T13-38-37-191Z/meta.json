@@ -1,0 +1,70 @@
+{
+  "runId": "pdf-page_gemma-4-e2b-60888ff4465a-2026-04-29T13-38-37-191Z",
+  "taskId": "tier-4-gp2y0a21yk",
+  "matrixId": "pdf-page/gemma-4-e2b",
+  "signature": "60888ff4465a1e20402c3cdd9bc7551e3005a70743e1bc1e2134d3316314d3b0",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "39f92e12d2dfdb195dbee569649e23fd41693fa29181616083d4d5f58ca34c1c",
+    "harness": {
+      "kind": "pdf-page",
+      "provider": "openai-self-hosted",
+      "model": "google/gemma-4-e2b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "google/gemma-4-e2b",
+  "harness": {
+    "kind": "pdf-page",
+    "pdfUrl": "https://jp.sharp/products/device/doc/opto/gp2y0a21yk_e.pdf",
+    "pages": [
+      2
+    ],
+    "modelMetadata": {
+      "raw": {
+        "id": "google/gemma-4-e2b",
+        "object": "model",
+        "type": "vlm",
+        "publisher": "google",
+        "arch": "gemma4",
+        "compatibility_type": "gguf",
+        "quantization": "Q4_K_M",
+        "state": "not-loaded",
+        "max_context_length": 131072,
+        "capabilities": [
+          "tool_use"
+        ]
+      },
+      "publisher": "google",
+      "type": "vlm",
+      "arch": "gemma4",
+      "quantization": "Q4_K_M",
+      "maxContextLength": 131072,
+      "capabilities": [
+        "tool_use"
+      ],
+      "host": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "vramGb": 24,
+        "gpuPlatform": "Vulkan",
+        "cpu": "12th Gen Intel(R) Core(TM) i9-12900K",
+        "memGb": 32
+      }
+    }
+  },
+  "status": "render_error",
+  "timing": {
+    "totalMs": 13684,
+    "firstTokenMs": 777,
+    "generationMs": 12678
+  },
+  "tokens": {
+    "input": 719,
+    "output": 1876
+  },
+  "createdAt": "2026-04-29T13:38:37.191Z",
+  "gitCommit": "27221824780d51aad264405898c7b9a1bf308c51",
+  "error": "openscad stl render failed (exit 1): ERROR: Parser error: syntax error in file ../../../../../tmp/render-Pbnghd/input.scad, line 36\nCan't parse file '/tmp/render-Pbnghd/input.scad'!\n\n"
+}

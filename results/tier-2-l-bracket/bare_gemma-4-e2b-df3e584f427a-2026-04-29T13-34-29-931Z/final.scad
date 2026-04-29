@@ -1,0 +1,112 @@
+// L-Bracket (L字金具)
+// 水平面: 50mm (幅 Y軸方向) x 40mm (奥行き X軸方向)
+// 垂直面: 50mm (幅 X軸方向) x 40mm (高さ Z軸方向)
+
+// パラメータ設定
+plate_thickness = 3; // 板厚 (mm)
+flange_length = 50;   // 長さ (mm) - 水平方向と垂直方向の長さ
+flange_width = 40;    // 幅/奥行き/高さ (mm)
+
+// 皿穴パラメータ (M4 countersink)
+hole_diameter_through = 4.5;  // 貫通穴 Φ4.5mm
+hole_diameter_countersink = 8; // 皿座面 Φ8mm
+hole_depth = 2;                // 深さ (mm)
+
+// オフセット設定
+offset_from_edge = 10;          // 縁からのオフセット (mm)
+
+// --- 幾何形状の定義 ---
+
+// 1. 水平面フランジ (Horizontal Flange - X-Y面)
+module horizontal_flange() {
+    cube([flange_width, flange_length, plate_thickness]);
+}
+
+// 2. 垂直面フランジ (Vertical Flange - X-Z面)
+module vertical_flange() {
+    cube([flange_length, plate_thickness, flange_width]);
+}
+
+// 3. 穴の配置計算と実行関数
+module create_countersunk_holes(face_normal_axis, face_offset_axis, length, width) {
+    // 面の中心線上の位置を定義 (左右対称に2個)
+    // 中心線 = width / 2
+    // オフセットされた位置 = center - offset_from_edge, center + offset_from_edge
+
+    // 水平面フランジの穴 (Y方向に走る、X-Z面に出る)
+    // 面の中心線: X=20, Z=20付近。長さ50mmに沿って配置。
+    // 左右対称に2個を配置するため、中心線に対して±offset_from_edgeの位置を採用する。
+
+    // 水平面 (Y軸方向の穴)
+    // 中心 Y = flange_length / 2 (25mm)
+    // X座標: 20 - 10 = 10, 20 + 10 = 30
+
+    // 垂直面 (X軸方向の穴)
+    // 中心 X = flange_length / 2 (25mm)
+    // Z座標: 20 - 10 = 10, 20 + 10 = 30
+
+    // 注: この実装は、各フランジの中心線に対して左右対称に配置されることを保証します。
+
+    // 水平面上の穴 (Y軸方向)
+    translate([offset_from_edge, 0, 0]) {
+        cylinder(h = hole_depth, r = hole_diameter_countersink / 2, $fn=64); // 左側の穴
+    }
+    translate([flange_length - offset_from_edge, 0, 0]) {
+        cylinder(h = hole_depth, r = hole_diameter_countersink / 2, $fn=64); // 右側の穴
+    }
+
+    // 垂直面上の穴 (Z軸方向)
+    translate([0, 0, offset_from_edge]) {
+        cylinder(h = hole_depth, r = hole_diameter_countersink / 2, $fn=64); // 下側の穴
+    }
+    translate([0, 0, flange_width - offset_from_edge]) {
+        cylinder(h = hole_depth, r = hole_diameter_countersink / 2, $fn=64); // 上側の穴
+    }
+}
+
+
+// --- 全体の結合 ---
+
+difference() {
+    // ベース形状: 水平面フランジと垂直面フランジを結合したL字型
+    union() {
+        // 水平面 (X-Y) に沿った板
+        horizontal_flange();
+        
+        // 垂直面 (X-Z) に沿った板。水平面とX軸で重なるように配置。
+        translate([0, 0, 0]) {
+            vertical_flange();
+        }
+    }
+
+    // 穴の除去（差分）
+    
+    // 水平面上の穴 (Y方向) - X-Z面に切り込む
+    // 座標系: Y軸方向の中央線がX=25に配置されるように調整。
+    translate([offset_from_edge, flange_width / 2, 0]) {
+        // 水平面の中心線上 (X方向) の穴を、垂直面に穿つ
+        difference() {
+             // 水平面の形状を定義し、穴を開ける
+            horizontal_flange();
+            
+            // 穴を開けるための形状（円柱）
+            translate([0, 0, -hole_depth]) { // 垂直面方向へ掘るためZ軸方向に移動
+                cylinder(r = hole_diameter_countersink / 2, h = plate_thickness + hole_depth);
+            }
+        }
+    }
+
+    // 垂直面上の穴 (Z方向) - X-Y面に切り込む
+    translate([0, 0, offset_from_edge]) {
+        // 垂直面の中心線上 (Z方向) の穴を、水平面に穿つ
+        difference() {
+            // 垂直面の形状を定義し、穴を開ける
+            vertical_flange();
+
+            // 穴を開けるための形状（円柱）
+            translate([0, -hole_depth, 0]) { // 水平面方向へ掘るためY軸方向に移動
+                cylinder(r = hole_diameter_countersink / 2, h = plate_thickness + hole_depth);
+            }
+        }
+    }
+}
