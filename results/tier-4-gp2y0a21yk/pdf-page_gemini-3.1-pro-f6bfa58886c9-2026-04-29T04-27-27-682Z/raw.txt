@@ -1,0 +1,57 @@
+```openscad
+// Sharp GP2Y0A21YK0F Distance Sensor
+// All dimensions in mm
+// Coordinate system: Origin at the center of the main body
+// +Z: Up (lens side)
+// +Y: Forward
+
+$fn = 64;
+
+module gp2y0a21yk0f() {
+    // ---------------------------------------------------
+    // 1. Mounting Flange (Connecting Bar)
+    // ---------------------------------------------------
+    difference() {
+        union() {
+            // Main rectangular part of the flange
+            // Width: 29.5 (between hole centers), Depth: 8.4, Thickness: 2.0
+            translate([-14.75, -4.2, 0])
+                cube([29.5, 8.4, 2.0]);
+            
+            // Left semicircular end
+            translate([-14.75, 0, 0])
+                cylinder(h=2.0, r=3.75);
+                
+            // Right semicircular end
+            translate([14.75, 0, 0])
+                cylinder(h=2.0, r=3.75);
+        }
+        
+        // Left mounting hole (phi 3.2 -> r=1.6)
+        translate([-14.75, 0, -1.0])
+            cylinder(h=4.0, r=1.6);
+            
+        // Right mounting hole (phi 3.2 -> r=1.6)
+        translate([14.75, 0, -1.0])
+            cylinder(h=4.0, r=1.6);
+            
+        // Cutout for connector/cable routing
+        // Width 10.1, opening towards -Y
+        translate([-5.05, -5.0, -1.0])
+            cube([10.1, 5.0, 4.0]);
+    }
+
+    // ---------------------------------------------------
+    // 2. Main Lens Case Body
+    // ---------------------------------------------------
+    // Extends from Z=2.0 up to Z=12.0
+    // Depth: 13.0 (Y = -6.7 to 6.3)
+    // Width: approx 28.0 (X = -14.0 to 14.0)
+    translate([-14.0, -6.7, 2.0])
+        cube([28.0, 13.0, 10.0]);
+
+    // ---------------------------------------------------
+    // 3. Lenses (Light Emitter & Detector)
+    // ---------------------------------------------------
+    // Lens positions are referenced from the left hole (X = -14.75)
+    // Left lens center: X = -14.

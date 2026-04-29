@@ -1,0 +1,37 @@
+{
+  "runId": "pdf-page_gpt-5.5-b265dc10940d-2026-04-29T04-27-21-356Z",
+  "taskId": "tier-4-gp2y0a21yk",
+  "matrixId": "pdf-page/gpt-5.5",
+  "signature": "b265dc10940d25fdfecc3dd902681e78975c73b7dde36e5ea970d3d840be798b",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "39f92e12d2dfdb195dbee569649e23fd41693fa29181616083d4d5f58ca34c1c",
+    "harness": {
+      "kind": "pdf-page",
+      "provider": "openai",
+      "model": "gpt-5.5-2026-04-23"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5.5-2026-04-23",
+  "harness": {
+    "kind": "pdf-page",
+    "pdfUrl": "https://jp.sharp/products/device/doc/opto/gp2y0a21yk_e.pdf",
+    "pages": [
+      2
+    ]
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 140161
+  },
+  "tokens": {
+    "input": 3101,
+    "output": 7945
+  },
+  "cost_usd": 0.08332625,
+  "createdAt": "2026-04-29T04:27:21.356Z",
+  "gitCommit": "eb1085a143278902a174dc3c9eb012890972256a"
+}

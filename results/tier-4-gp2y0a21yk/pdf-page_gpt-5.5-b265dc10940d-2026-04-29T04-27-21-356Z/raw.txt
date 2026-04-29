@@ -1,0 +1,161 @@
+```openscad
+$fn = 96;
+
+// GP2Y0A21YK0F outline model, units: mm
+// Coordinate system: main lens-case center at origin, +Z up, +Y front
+
+body_x = 29.5;
+body_y = 13.5;
+body_z = 13.0;
+
+overall_x = 37.0;
+
+mount_boss_d = 7.5;      // R3.75
+mount_hole_d = 3.2;
+mount_x = overall_x/2 - mount_boss_d/2;
+
+lens_sep = 20.0;         // * reference lens-center spacing
+emitter_x = -body_x/2 + 4.5;   // * reference from left side
+detector_x = emitter_x + lens_sep;
+
+plate_th = 2.0;
+plate_z = -body_z/2 + plate_th/2;
+
+bar_len = 7.5;
+bar_y_front = -body_y/2;
+bar_y_center = bar_y_front - bar_len/2;
+
+neck_w = 14.75;
+neck_len = 7.25;
+neck_y_center = bar_y_front - bar_len - neck_len/2;
+rear_y = bar_y_front - bar_len - neck_len;   // -21.5
+
+cable_notch_w = 10.1;
+cable_notch_d = 3.3;
+
+module cube_c(size, pos=[0,0,0]) {
+    translate(pos) cube(size, center=true);
+}
+
+module rounded_rect_2d(w, h, r) {
+    hull() {
+        translate([ w/2-r,  h/2-r]) circle(r=r);
+        translate([-w/2+r,  h/2-r]) circle(r=r);
+        translate([ w/2-r, -h/2+r]) circle(r=r);
+        translate([-w/2+r, -h/2+r]) circle(r=r);
+    }
+}
+
+module mounting_bar_2d() {
+    difference() {
+        union() {
+            hull() {
+                translate([-mount_x, bar_y_center]) circle(d=mount_boss_d);
+                translate([ mount_x, bar_y_center]) circle(d=mount_boss_d);
+            }
+            translate([0, neck_y_center])
+                rounded_rect_2d(neck_w, neck_len, 0.6);
+        }
+
+        translate([-mount_x, bar_y_center]) circle(d=mount_hole_d);
+        translate([ mount_x, bar_y_center]) circle(d=mount_hole_d);
+
+        translate([0, rear_y + cable_notch_d/2])
+            square([cable_notch_w, cable_notch_d + 0.02], center=true);
+    }
+}
+
+module mounting_bar() {
+    color([0.03,0.03,0.03])
+    translate([0,0,plate_z])
+        linear_extrude(height=plate_th, center=true)
+            mounting_bar_2d();
+}
+
+module main_case() {
+    color([0.035,0.035,0.035])
+        cube_c([body_x, body_y, body_z]);
+
+    color([0.01,0.01,0.01])
+        cube_c([body_x, 6.3, 1.2], [0, 0, body_z/2 + 0.6]);
+
+    color([0.012,0.012,0.012])
+        cube_c([body_x - 2.0, body_y - 2.0, 0.35], [0, 0, body_z/2 + 0.18]);
+}
+
+module plano_lens(d=6.3, h=1.6) {
+    color([0.75,0.90,1.0,0.55])
+    union() {
+        cylinder(d=d, h=h*0.65, center=false);
+        translate([0,0,h*0.65])
+            scale([d/2, d/2, h*0.35])
+                sphere(r=1);
+    }
+}
+
+module emitter_lens() {
+    z0 = body_z/2 + 0.22;
+
+    color([0.0,0.0,0.0])
+        cube_c([8.4, 8.4, 0.45], [emitter_x, 0, z0]);
+
+    color([0.12,0.12,0.12])
+        translate([emitter_x, 0, body_z/2 + 0.45])
+            cylinder(d=7.2, h=0.45, center=false);
+
+    translate([emitter_x, 0, body_z/2 + 0.82])
+        plano_lens(5.8, 1.65);
+}
+
+module detector_lens() {
+    z0 = body_z/2 + 0.22;
+
+    color([0.0,0.0,0.0])
+        cube_c([11.0, 8.4, 0.45], [detector_x, 0, z0]);
+
+    color([0.16,0.16,0.16])
+        cube_c([8.0, 5.8, 0.55], [detector_x, 0, body_z/2 + 0.52]);
+
+    translate([detector_x, 0, body_z/2 + 0.82])
+        plano_lens(6.3, 1.65);
+}
+
+module mounting_hole_visuals() {
+    color([0.0,0.0,0.0]) {
+        translate([-mount_x, bar_y_center, plate_z])
+            cylinder(d=mount_hole_d, h=plate_th + 0.06, center=true);
+        translate([ mount_x, bar_y_center, plate_z])
+            cylinder(d=mount_hole_d, h=plate_th + 0.06, center=true);
+    }
+}
+
+module cable() {
+    cable_len = 35;
+    cable_d = 3.3;
+
+    color([0.02,0.02,0.02])
+        translate([0, rear_y - cable_len/2, plate_z])
+            rotate([90,0,0])
+                cylinder(d=cable_d, h=cable_len, center=true);
+
+    wire_len = 18;
+    for (i=[-1,0,1]) {
+        col = i == -1 ? [1,1,1] : i == 0 ? [0.05,0.05,0.05] : [0.85,0.05,0.05];
+        color(col)
+            translate([i*1.25, rear_y - wire_len/2 - 2.0, plate_z + 0.05])
+                rotate([90,0,0])
+                    cylinder(d=0.75, h=wire_len, center=true);
+    }
+}
+
+module gp2y0a21yk0f() {
+    mounting_bar();
+    main_case();
+    emitter_lens();
+    detector_lens();
+    mounting_hole_visuals();
+    cable();
+}
+
+gp2y0a21yk0f();
+```
