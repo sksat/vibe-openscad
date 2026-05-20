@@ -1,0 +1,23 @@
+$fn = 100;
+
+union() {
+    // 本体 (Mug Body)
+    difference() {
+        cylinder(h=90, r=40);
+        translate([0, 0, 6])
+            cylinder(h=90, r=35);
+    }
+
+    // 取手 (Handle) - +X軸方向
+    rotate([90, 0, 0])
+    linear_extrude(height=15, center=true)
+    difference() {
+        // 取手の外形 (D字形状: 外側が半円、本体側が直線)
+        hull() {
+            translate([38, 20]) square([10, 50]);
+            translate([45, 45]) circle(r=25);
+        }
+        // 取手の内側空間 (高さ30mm × 幅25mm)
+        translate([40, 30]) square([25, 30]);
+    }
+}

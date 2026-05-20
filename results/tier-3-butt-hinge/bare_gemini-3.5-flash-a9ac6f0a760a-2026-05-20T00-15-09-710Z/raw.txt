@@ -1,0 +1,90 @@
+```openscad
+$fn = 60;
+
+// --- パラメータ設定 ---
+plate_w = 25;       // 板の幅 (X方向)
+plate_h = 30;       // 板の長さ (Y方向)
+plate_t = 2;        // 板の厚さ (Z方向)
+
+pin_d = 4;          // ピンの直径
+pin_len = 32;       // ピンの長さ (30mm + 両端1mmずつ)
+
+knuckle_od = 8;     // ナックル外径
+knuckle_id = 4.6;   // ナックル内径 (4.0mm + 0.6mm クリアランス、半径2.3mm)
+knuckle_h = 6;      // ナックル1個の長さ (30mm / 5)
+
+hole_x_offset = 17; // 皿穴のX方向位置 (端から8mmの位置: 25 - 8 = 17)
+
+// --- 皿穴モジュール ---
+module countersunk_hole() {
+    // Z=0 (板の表面) から -Z方向に向けて穴をあける
+    // テーパ部: 直径6mmから3.2mmへ、深さ1mm
+    translate([0, 0, -1.01]) 
+        cylinder(h=1.02, r1=3.2/2, r2=6/2);
+    // 貫通穴部: 直径3.2mm、板を貫通する高さ
+    translate([0, 0, -3]) 
+        cylinder(h=3, r=3.2/2);
+}
+
+// --- 左板 (Left Leaf) ---
+color("LightGray")
+difference() {
+    union() {
+        // メインプレート
+        translate([-plate_w, 0, -plate_t]) 
+            cube([plate_w, plate_h, plate_t]);
+        
+        // ナックル (3個: Y=0..6, 12..18, 24..30)
+        for (y = [0, 12, 24]) {
+            translate([0, y, 0]) 
+                rotate([-90, 0, 0]) 
+                cylinder(h=knuckle_h, r=knuckle_od/2);
+        }
+    }
+    
+    // ピン用内穴の貫通
+    translate([0, -0.1, 0]) 
+        rotate([-90, 0, 0]) 
+        cylinder(h=plate_h + 0.2, r=knuckle_id/2);
+    
+    // M3皿穴 (3個: Y=7, 15, 23)
+    for (y = [7, 15, 23]) {
+        translate([-hole_x_offset, y, 0]) 
+            countersunk_hole();
+    }
+}
+
+// --- 右板 (Right Leaf) ---
+color("DarkGray")
+difference() {
+    union() {
+        // メインプレート
+        translate([0, 0, -plate_t]) 
+            cube([plate_w, plate_h, plate_t]);
+        
+        // ナックル (2個: Y=6..12, 18..24)
+        for (y = [6, 18]) {
+            translate([0, y, 0]) 
+                rotate([-90, 0, 0]) 
+                cylinder(h=knuckle_h, r=knuckle_od/2);
+        }
+    }
+    
+    // ピン用内穴の貫通
+    translate([0, -0.1, 0]) 
+        rotate([-90, 0, 0]) 
+        cylinder(h=plate_h + 0.2, r=knuckle_id/2);
+    
+    // M3皿穴 (3個: Y=7, 15, 23)
+    for (y = [7, 15, 23]) {
+        translate([hole_x_offset, y, 0]) 
+            countersunk_hole();
+    }
+}
+
+// --- ピン軸 (Pin) ---
+color("Silver")
+translate([0, -1, 0]) 
+    rotate([-90, 0, 0]) 
+    cylinder(h=pin_len, r=pin_d/2);
+```

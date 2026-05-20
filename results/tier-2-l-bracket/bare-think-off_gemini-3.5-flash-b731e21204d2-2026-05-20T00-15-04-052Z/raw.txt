@@ -1,0 +1,70 @@
+```openscad
+// L-bracket parameters
+width = 50;       // Width of the bracket (X direction)
+depth = 40;       // Depth of the horizontal flange (Y direction)
+height = 40;      // Height of the vertical flange (Z direction)
+thickness = 3;   // Thickness of the bracket
+
+// Screw hole parameters (M4 countersunk)
+d_hole = 4.5;     // Through hole diameter
+d_sink = 8.0;     // Countersink maximum diameter
+h_sink = 2.0;     // Countersink depth
+hole_offset = 10; // Distance from the edge
+
+$fn = 60;         // Smoothness of circles
+
+module countersunk_hole() {
+    // Generates a countersunk hole along the Z-axis
+    // The head of the screw is on the Z+ side, pointing downwards (Z-)
+    union() {
+        // Through hole (extended to ensure clean cut)
+        translate([0, 0, -20])
+            cylinder(d = d_hole, h = 40);
+        
+        // Countersink cone
+        translate([0, 0, -0.01])
+            cylinder(d1 = d_hole, d2 = d_sink, h = h_sink + 0.01);
+        
+        // Excess upper cylinder for clean subtraction
+        translate([0, 0, h_sink])
+            cylinder(d = d_sink, h = 10);
+    }
+}
+
+difference() {
+    // 1. Bracket Base Shape (with inner corner at origin [0,0,0])
+    union() {
+        // Horizontal flange (Y+ direction)
+        // Outside is at Z = -thickness
+        translate([-width/2, 0, -thickness])
+            cube([width, depth, thickness]);
+        
+        // Vertical flange (Z+ direction)
+        // Outside is at Y = -thickness
+        translate([-width/2, -thickness, 0])
+            cube([width, thickness, height]);
+    }
+
+    // 2. Holes on the Horizontal Flange
+    // Outside surface is at Z = -thickness. Screw enters from Z- (outside) towards Z+ (inside).
+    // We rotate the hole 180 degrees around X-axis so the head is on the Z- side.
+    translate([-(width/2 - hole_offset), depth - hole_offset, -thickness])
+        rotate([180, 0, 0])
+            countersunk_hole();
+
+    translate([width/2 - hole_offset, depth - hole_offset, -thickness])
+        rotate([180, 0, 0])
+            countersunk_hole();
+
+    // 3. Holes on the Vertical Flange
+    // Outside surface is at Y = -thickness. Screw enters from Y- (outside) towards Y+ (inside).
+    // We rotate the hole -90 degrees around X-axis so the head is on the Y- side.
+    translate([-(width/2 - hole_offset), -thickness, height - hole_offset])
+        rotate([-90, 0, 0])
+            countersunk_hole();
+
+    translate([width/2 - hole_offset, -thickness, height - hole_offset])
+        rotate([-90, 0, 0])
+            countersunk_hole();
+}
+```

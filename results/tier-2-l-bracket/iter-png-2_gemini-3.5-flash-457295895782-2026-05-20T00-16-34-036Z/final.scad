@@ -1,0 +1,63 @@
+$fn = 100;
+
+// 寸法定義
+width = 50;
+depth = 40;
+height = 40;
+thickness = 3;
+
+hole_d1 = 4.5; // 貫通穴径
+hole_d2 = 8.0; // 皿座面径
+hole_h = 2.0;  // 皿座深さ
+
+// 穴の配置位置 (内側コーナーの左端を原点(0,0,0)とした場合)
+hole_x1 = 10;
+hole_x2 = width - 10;
+hole_y = depth / 2;
+hole_z = height / 2;
+
+module countersunk_hole_z() {
+    epsilon = 0.1;
+    union() {
+        // 貫通穴
+        translate([0, 0, -thickness - epsilon])
+            cylinder(d = hole_d1, h = thickness + 2*epsilon);
+        // 皿部 (外側 Z=-3 から 内側 Z=-1 へ狭まる)
+        translate([0, 0, -thickness - epsilon])
+            cylinder(d1 = hole_d2, d2 = hole_d1, h = hole_h + epsilon);
+    }
+}
+
+module countersunk_hole_y() {
+    epsilon = 0.1;
+    union() {
+        // 貫通穴
+        translate([0, -thickness - epsilon, 0])
+            rotate([-90, 0, 0])
+            cylinder(d = hole_d1, h = thickness + 2*epsilon);
+        // 皿部 (外側 Y=-3 から 内側 Y=-1 へ狭まる)
+        translate([0, -thickness - epsilon, 0])
+            rotate([-90, 0, 0])
+            cylinder(d1 = hole_d2, d2 = hole_d1, h = hole_h + epsilon);
+    }
+}
+
+difference() {
+    // L字金具本体 (内側コーナーの左端が原点)
+    union() {
+        // 水平面 (+Y 方向に伸びる)
+        translate([0, 0, -thickness])
+            cube([width, depth, thickness]);
+        // 垂直面 (+Z 方向に伸びる)
+        translate([0, -thickness, 0])
+            cube([width, thickness, height]);
+    }
+    
+    // 水平面の皿穴
+    translate([hole_x1, hole_y, 0]) countersunk_hole_z();
+    translate([hole_x2, hole_y, 0]) countersunk_hole_z();
+    
+    // 垂直面の皿穴
+    translate([hole_x1, 0, hole_z]) countersunk_hole_y();
+    translate([hole_x2, 0, hole_z]) countersunk_hole_y();
+}
