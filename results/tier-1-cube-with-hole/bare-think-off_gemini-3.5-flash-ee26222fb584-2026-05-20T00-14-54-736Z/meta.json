@@ -1,0 +1,40 @@
+{
+  "runId": "bare-think-off_gemini-3.5-flash-ee26222fb584-2026-05-20T00-14-54-736Z",
+  "taskId": "tier-1-cube-with-hole",
+  "matrixId": "bare-think-off/gemini-3.5-flash",
+  "signature": "ee26222fb584da784d732bd1e981256a5cecd38a4f8978ad963e1c66505f58e3",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "8ff7e36af4bc202429ec68b7eb9cc3f195b6a3c68668be31239bcea23345a048",
+    "harness": {
+      "kind": "bare",
+      "provider": "google",
+      "model": "gemini-3.5-flash",
+      "modelOptions": {
+        "config": {
+          "thinkingConfig": {
+            "thinkingLevel": "minimal"
+          }
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "google",
+  "model": "gemini-3.5-flash",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 1863
+  },
+  "tokens": {
+    "input": 68,
+    "output": 99
+  },
+  "cost_usd": 0.000993,
+  "createdAt": "2026-05-20T00:14:54.736Z",
+  "gitCommit": "c16a216592f0836dd5c761f4445f5ff0def6e45b"
+}

@@ -1,0 +1,40 @@
+$fn = 100;
+
+difference() {
+    // 1. 本体の外筒と取手の外形を結合
+    union() {
+        // マグ本体の外筒 (外径80mm = 半径40mm, 高さ90mm)
+        cylinder(h=90, r=40);
+
+        // 取手のソリッド外形 (高さ50mm, 厚み15mm)
+        // 高さ方向の中央 (Z=45) に配置、+X軸方向に伸ばす
+        translate([0, 0, 45])
+        rotate([90, 0, 0])
+        linear_extrude(height=15, center=true)
+        hull() {
+            // 本体にしっかり食い込ませるため X=20 から配置
+            translate([20, -25]) square([30, 50]); 
+            // 外側は半円 (D字形状、右端は X=75)
+            translate([50, 0]) circle(r=25);        
+        }
+    }
+
+    // 2. 内側の中空化 (内径70mm = 半径35mm, 底面の厚み6mm)
+    // Zファイティングを防ぐため、上方向(Z)は十分に長く突き抜けさせる
+    translate([0, 0, 6])
+        cylinder(h=100, r=35);
+
+    // 3. 取手の内側空間のくり抜き (高さ30mm × 幅25mm、持ちやすい角丸形状)
+    // 確実に貫通させるため、厚み(height)は取手より厚い20mmに設定
+    translate([0, 0, 45])
+    rotate([90, 0, 0])
+    linear_extrude(height=20, center=true)
+    hull() {
+        // 幅 25mm (X: 40.5mm から 65.5mm), 高さ 30mm (Y: -15mm から 15mm)
+        // 角の丸み半径 r=4mm
+        translate([44.5, -11]) circle(r=4);
+        translate([61.5, -11]) circle(r=4);
+        translate([61.5, 11]) circle(r=4);
+        translate([44.5, 11]) circle(r=4);
+    }
+}

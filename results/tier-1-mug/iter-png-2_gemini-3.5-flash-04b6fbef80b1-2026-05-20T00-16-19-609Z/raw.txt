@@ -1,0 +1,37 @@
+```openscad
+$fn = 100;
+
+// マグカップの寸法
+cup_height = 100;
+cup_outer_radius = 40; // 外径 80mm のため、半径は 40mm
+cup_wall_thickness = 4;
+cup_bottom_thickness = 6;
+
+// 取手（リング状）の寸法
+// 「指を通せる形」にするため、リングの内半径（穴の半径）を 12mm とします。
+handle_inner_radius = 12; 
+handle_thickness = 4;     // 取手自体の肉厚（チューブの半径）
+handle_radius = handle_inner_radius + handle_thickness; // トーラスの中心半径 (16mm)
+
+// 取手をカップ外壁にしっかりと結合させつつ、内壁（r=36）に突き出さない位置に配置
+// 取手の最内端がカップの肉厚の中間（x=38）に位置するように計算
+handle_x = (cup_outer_radius - cup_wall_thickness / 2) + handle_radius + handle_thickness;
+
+difference() {
+    union() {
+        // マグカップ本体（外側）
+        cylinder(h=cup_height, r=cup_outer_radius);
+        
+        // 取手（中心の高さに配置）
+        translate([handle_x, 0, cup_height / 2])
+        rotate([90, 0, 0])
+        rotate_extrude()
+        translate([handle_radius, 0, 0])
+        circle(r=handle_thickness);
+    }
+    
+    // 内側のくり抜き
+    translate([0, 0, cup_bottom_thickness])
+        cylinder(h=cup_height - cup_bottom_thickness + 1, r=cup_outer_radius - cup_wall_thickness);
+}
+```

@@ -1,0 +1,26 @@
+```openscad
+$fn = 100;
+
+difference() {
+    union() {
+        // 本体外径 (Mug Outer Body)
+        cylinder(h=90, r=40);
+
+        // 取手 (Handle) - +X軸方向
+        rotate([90, 0, 0])
+        linear_extrude(height=15, center=true)
+        difference() {
+            // 取手の外形 (D字形状: 外側が半円、本体側が直線)
+            hull() {
+                translate([30, 20]) square([24, 50]);
+                translate([54, 45]) circle(r=25);
+            }
+            // 取手の内側空間 (高さ30mm × 幅25mm、角を丸めて持ちやすく)
+            translate([50, 34]) offset(r=4) square([17, 22]);
+        }
+    }
+    // 内側の中空化 (Mug Inner Cavity)
+    translate([0, 0, 6])
+        cylinder(h=91, r=35); // 上部のZファイティングを防ぐため高さをわずかに高く設定
+}
+```

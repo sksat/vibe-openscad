@@ -1,0 +1,14 @@
+// 1段目 (底辺: 60x60x10, 位置: z=0)
+translate([0, 0, 0]) {
+    cube([60, 60, 10], center = true);
+}
+
+// 2段目 (中段: 40x40x10, 位置: z=10)
+translate([0, 0, 10]) {
+    cube([40, 40, 10], center = true);
+}
+
+// 3段目 (上段: 20x20x10, 位置: z=20)
+translate([0, 0, 20]) {
+    cube([20, 20, 10], center = true);
+}

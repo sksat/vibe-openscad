@@ -37,9 +37,11 @@ const ANTHROPIC_RATES: Entry[] = [
   { prefix: "claude-3-haiku", rate: { inputPerMtok: 0.25, outputPerMtok: 1.25 } },
 ];
 
-// Gemini pricing 出典: https://ai.google.dev/pricing (2026-04 時点)
+// Gemini pricing 出典: https://ai.google.dev/pricing (2026-05 時点)
 // Gemini 3 (preview) は公式価格未公表のため 2.5 同等で仮置き — 公開され次第更新。
 const GOOGLE_RATES: Entry[] = [
+  // 3.5 世代(GA、2026-05-19 I/O)
+  { prefix: "gemini-3.5-flash", rate: { inputPerMtok: 1.5, outputPerMtok: 9 } },
   // 3 世代(preview、暫定価格)
   { prefix: "gemini-3.1-pro", rate: { inputPerMtok: 1.25, outputPerMtok: 10 } },
   { prefix: "gemini-3-pro", rate: { inputPerMtok: 1.25, outputPerMtok: 10 } },
