@@ -1,0 +1,170 @@
+// =========================================================
+// Small Butt Hinge for Furniture (M3 mounting holes)
+// Open state: 180 degrees (both leaves coplanar)
+// =========================================================
+//
+// Coordinate system:
+//   - Pin axis along +Y (centerline on Y-axis)
+//   - Leaf flat faces perpendicular to Z
+//   - Left leaf extends to x<0, right leaf to x>0
+//   - Knuckles centered at X=0, stacked along Y in 6mm bands
+//
+// =========================================================
+
+$fn = 64;
+
+// ---------------- Parameters ----------------
+leaf_len    = 30;    // dimension along pin axis (Y)
+leaf_width  = 25;    // dimension in opening direction (X)
+leaf_thk    = 2;     // plate thickness (Z)
+
+pin_dia     = 4;     // pin shaft diameter
+pin_len     = 32;    // pin total length (1mm overhang each end)
+
+knuckle_n   = 5;     // total knuckle bands
+knuckle_h   = leaf_len / knuckle_n;   // = 6
+knuckle_od  = 8;     // knuckle outer diameter
+clearance   = 0.3;   // pin-to-bore clearance
+knuckle_id  = pin_dia + clearance;    // = 4.3 -> spec says 4.6; use +0.3 from pin? 
+// NOTE: spec text: inner = pin + 0.3 clearance (=4.6 hole). 
+// pin=4, +0.3 clearance => bore 4.6 (0.3 radial? diametral?). Use 4.6 as written.
+knuckle_bore = 4.6;
+
+// M3 countersunk holes
+screw_clear_dia = 3.2;   // through hole
+csk_dia         = 6;     // countersink top diameter
+csk_depth       = 1;     // countersink depth
+screw_n         = 3;     // holes per leaf
+screw_pitch     = 8;     // spacing along Y
+
+// derived: place screws near far edge of each leaf
+// knuckle sits at X=0 spanning radius knuckle_od/2 = 4
+// flat plate goes from edge of knuckle outward.
+
+// ---------------- Helper: knuckle band ----------------
+module knuckle_band() {
+    // cylinder centered on Y-axis, length knuckle_h along Y
+    rotate([-90, 0, 0])              // align cylinder axis to +Y
+        cylinder(h = knuckle_h, d = knuckle_od);
+}
+
+module pin_bore_band() {
+    rotate([-90, 0, 0])
+        cylinder(h = knuckle_h + 0.2, d = knuckle_bore);
+}
+
+// ---------------- Helper: leaf plate ----------------
+// A flat plate of size width x leaf_len x thk.
+// dir = +1 -> extends to +X (right leaf)
+// dir = -1 -> extends to -X (left leaf)
+// The plate's flat face is on Z. We center it so top face at z=+thk/2.
+// It starts from the knuckle outer edge and extends outward by leaf_width.
+module leaf_plate(dir) {
+    // knuckle outer radius
+    kr = knuckle_od / 2;
+
+    // plate spans X from kr to kr+leaf_width (then mirrored by dir)
+    // but to nicely blend with knuckle, start a bit inside (overlap).
+    overlap = kr;        // overlap region for solid joint
+    x_start = -overlap;  // begin inside knuckle for union
+    x_end   = leaf_width + kr;
+
+    // For 180-deg open, both plates lie in same plane (z around 0).
+    translate([0, 0, -leaf_thk/2])
+        if (dir > 0) {
+            translate([x_start, 0, 0])
+                cube([x_end - x_start, leaf_len, leaf_thk]);
+        } else {
+            mirror([1,0,0])
+                translate([x_start, 0, 0])
+                    cube([x_end - x_start, leaf_len, leaf_thk]);
+        }
+}
+
+// ---------------- Helper: countersunk screw hole ----------------
+// Drilled from top (+Z) downward through the plate.
+// Positioned at given (x, y).
+module csk_hole(x, y) {
+    translate([x, y, 0]) {
+        // through hole
+        translate([0, 0, -leaf_thk/2 - 0.1])
+            cylinder(h = leaf_thk + 0.2, d = screw_clear_dia);
+        // countersink (taper) opening upward from top face
+        translate([0, 0, leaf_thk/2 - csk_depth])
+            cylinder(h = csk_depth + 0.01,
+                     d1 = screw_clear_dia,
+                     d2 = csk_dia);
+    }
+}
+
+// ---------------- Screw hole pattern for a leaf ----------------
+// dir = +1 right leaf, -1 left leaf
+module screw_pattern(dir) {
+    kr = knuckle_od / 2;
+    // place holes near the far edge of the plate
+    // center column at some X away from knuckle
+    hole_x = dir * (leaf_width + kr - 6);   // 6mm in from outer edge
+
+    // center the 3 holes along Y about leaf center
+    y0 = leaf_len/2 - ((screw_n - 1) * screw_pitch)/2;
+    for (i = [0 : screw_n - 1]) {
+        csk_hole(hole_x, y0 + i * screw_pitch);
+    }
+}
+
+// ---------------- Left leaf ----------------
+// Left leaf knuckles: outer 2 (band 0 and band 4) + center (band 2)
+left_bands = [0, 2, 4];
+// Right leaf knuckles: middle 2 (band 1 and band 3)
+right_bands = [1, 3];
+
+module left_leaf() {
+    color("silver")
+    difference() {
+        union() {
+            leaf_plate(-1);
+            for (b = left_bands)
+                translate([0, b * knuckle_h, 0])
+                    knuckle_band();
+        }
+        // bore through left-leaf knuckles
+        for (b = left_bands)
+            translate([0, b * knuckle_h - 0.1, 0])
+                pin_bore_band();
+        // screw holes
+        screw_pattern(-1);
+    }
+}
+
+module right_leaf() {
+    color("lightsteelblue")
+    difference() {
+        union() {
+            leaf_plate(+1);
+            for (b = right_bands)
+                translate([0, b * knuckle_h, 0])
+                    knuckle_band();
+        }
+        // bore through right-leaf knuckles
+        for (b = right_bands)
+            translate([0, b * knuckle_h - 0.1, 0])
+                pin_bore_band();
+        // screw holes
+        screw_pattern(+1);
+    }
+}
+
+// ---------------- Pin ----------------
+module pin() {
+    color("dimgray")
+    // total length pin_len, centered so it overhangs 1mm each end
+    // knuckle stack spans Y = 0 .. leaf_len (=30); pin from -1 .. 31
+    translate([0, -1, 0])
+        rotate([-90, 0, 0])
+            cylinder(h = pin_len, d = pin_dia);
+}
+
+// ---------------- Assembly (180 deg open) ----------------
+left_leaf();
+right_leaf();
+pin();

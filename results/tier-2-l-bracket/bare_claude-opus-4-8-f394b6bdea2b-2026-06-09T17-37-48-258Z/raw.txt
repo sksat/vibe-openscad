@@ -1,0 +1,58 @@
+```openscad
+// L-bracket with countersunk holes
+
+// パラメータ
+width      = 50;   // 幅 (X方向)
+depth      = 40;   // 水平面の奥行き / 垂直面の高さ
+thickness  = 3;    // 板厚
+
+hole_d     = 4.5;  // 貫通穴径 M4
+cs_d       = 8;    // 皿座面径
+cs_depth   = 2;    // 皿座面深さ
+edge_off   = 10;   // 面の縁からの距離
+
+// 穴中心のX座標（左右対称）
+x1 = width/2 - 12.5;
+x2 = width/2 + 12.5;
+
+// 皿穴モジュール（Z軸方向に貫通、上面側に皿座）
+// 座面は -Z 側へ向く（穴は下から上へ貫通、上面が外側）
+module countersunk_hole(plate_thickness) {
+    // 貫通穴
+    translate([0, 0, -1])
+        cylinder(h = plate_thickness + 2, d = hole_d, $fn = 48);
+    // 皿座面（上面=外側）
+    translate([0, 0, plate_thickness - cs_depth])
+        cylinder(h = cs_depth + 1, d = cs_d, $fn = 48);
+}
+
+module l_bracket() {
+    difference() {
+        union() {
+            // 水平面 (+Y方向に伸びる)
+            cube([width, depth, thickness]);
+            // 垂直面 (+Z方向に伸びる)
+            cube([width, thickness, depth]);
+        }
+
+        // --- 水平面の皿穴 (外側 = -Z 側) ---
+        // Y位置: 縁(Y=depth)から10mm内側 -> Y = depth - 10
+        for (x = [x1, x2]) {
+            translate([x, depth - edge_off, 0])
+                rotate([180, 0, 0])
+                    translate([0, 0, -thickness])
+                        countersunk_hole(thickness);
+        }
+
+        // --- 垂直面の皿穴 (外側 = -Y 側) ---
+        // Z位置: 縁(Z=depth)から10mm内側 -> Z = depth - 10
+        for (x = [x1, x2]) {
+            translate([x, thickness, depth - edge_off])
+                rotate([90, 0, 0])
+                    countersunk_hole(thickness);
+        }
+    }
+}
+
+l_bracket();
+```

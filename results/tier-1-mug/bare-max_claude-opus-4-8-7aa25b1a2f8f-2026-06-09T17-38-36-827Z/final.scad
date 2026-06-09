@@ -1,0 +1,41 @@
+$fn = 100;
+
+// パラメータ
+outer_diameter = 80;
+height = 100;
+wall = 4;
+bottom_thickness = 6;
+
+outer_radius = outer_diameter / 2;
+inner_radius = outer_radius - wall;
+inner_height = height - bottom_thickness;
+
+// 取手パラメータ
+handle_minor_radius = 6;   // チューブの太さ
+handle_major_radius = 12;  // リングの半径（指を通す穴の半径）
+handle_center_z = height / 2;
+
+module mug_body() {
+    difference() {
+        // 外形（カップ本体）
+        cylinder(h = height, r = outer_radius);
+        // 内側くり抜き
+        translate([0, 0, bottom_thickness])
+            cylinder(h = inner_height + 1, r = inner_radius);
+    }
+}
+
+module handle() {
+    // リング状の取手をカップ側面に配置
+    // トーラスをY-Z平面に立てて、外周からはみ出す位置へ
+    translate([outer_radius + handle_major_radius - wall, 0, handle_center_z])
+        rotate([90, 0, 0])
+            rotate_extrude(convexity = 4)
+                translate([handle_major_radius, 0, 0])
+                    circle(r = handle_minor_radius);
+}
+
+union() {
+    mug_body();
+    handle();
+}

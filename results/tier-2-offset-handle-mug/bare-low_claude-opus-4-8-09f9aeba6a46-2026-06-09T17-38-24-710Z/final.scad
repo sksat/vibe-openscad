@@ -1,0 +1,73 @@
+// マグカップ（取手は +X 方向のみ）
+
+$fn = 100;
+
+// ===== パラメータ =====
+outer_d   = 80;   // 外径
+inner_d   = 70;   // 内径
+height    = 90;   // 全体高さ
+bottom_th = 6;    // 底厚
+
+outer_r = outer_d / 2;
+inner_r = inner_d / 2;
+
+// 取手パラメータ
+handle_hole_h = 30;   // 内側空間の高さ
+handle_hole_w = 25;   // 内側空間の幅
+handle_th     = 8;    // 取手の太さ（断面）
+handle_z      = height / 2;  // 取手の高さ中心
+
+// ===== 本体 =====
+module body() {
+    difference() {
+        cylinder(h = height, r = outer_r);
+        // 内側中空
+        translate([0, 0, bottom_th])
+            cylinder(h = height - bottom_th + 1, r = inner_r);
+    }
+}
+
+// ===== 取手（D字形状）=====
+module handle() {
+    // 外側半径と内側半径
+    inner_handle_r = handle_hole_h / 2;          // D字の内側半円半径（高さ方向）
+    outer_handle_r = inner_handle_r + handle_th; // 外側半径
+
+    // 取手を rotate_extrude で D 字状リングとして作り、
+    // 半分（外側半円側）だけを使う方式ではなく、
+    // ここでは平面 D 字形を押し出して構成する。
+
+    translate([0, 0, handle_z])
+    rotate([90, 0, 0])   // XZ平面の形を Y 方向に厚みを持たせる
+    linear_extrude(height = handle_th, center = true)
+        difference() {
+            // 外形 D 字（外側半円 + 本体側直線）
+            hull() {
+                // 本体側の上下端（直線部）
+                translate([0, -handle_hole_h/2 - handle_th/2])
+                    square([handle_th, handle_th], center = true);
+                translate([0,  handle_hole_h/2 + handle_th/2])
+                    square([handle_th, handle_th], center = true);
+                // 外側半円
+                translate([handle_hole_w, 0])
+                    circle(r = outer_handle_r);
+            }
+            // 内側の穴
+            hull() {
+                translate([0, -handle_hole_h/2])
+                    square([0.1, handle_th], center = true);
+                translate([0,  handle_hole_h/2])
+                    square([0.1, handle_th], center = true);
+                translate([handle_hole_w, 0])
+                    circle(r = inner_handle_r);
+            }
+        }
+}
+
+// ===== 組み立て =====
+union() {
+    body();
+    // 取手を本体外周に接続（少し本体側へめり込ませて確実に union）
+    translate([outer_r - 2, 0, 0])
+        handle();
+}
