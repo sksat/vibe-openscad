@@ -93,7 +93,11 @@ export function createAnthropicProvider(
         .map((b) => b.text)
         .join("");
 
-      if (!text) {
+      // max_tokens で text block ゼロのまま停止するのは「SCAD を返さなかった」
+      // というモデル挙動の観測(→ harness 側で no_code になる)。throw すると
+      // api_error 扱いで results に残らず永久リトライになるので、空テキストの
+      // まま返す。それ以外の text 欠落は想定外なので従来どおり throw。
+      if (!text && message.stop_reason !== "max_tokens") {
         throw new Error(
           `anthropic provider: no text blocks in response (stop_reason=${message.stop_reason})`,
         );
