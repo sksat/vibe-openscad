@@ -1,0 +1,44 @@
+$fn = 64;
+
+// ---- パラメータ ----
+flange_w = 50;   // 幅(X方向)
+flange_l = 40;   // 奥行き / 高さ
+t        = 3;    // 板厚
+
+hole_d   = 4.5;  // M4 貫通穴
+cs_d     = 8;    // 皿座面 直径
+cs_depth = 2;    // 皿座面 深さ
+edge_off = 10;   // 縁からのオフセット
+eps      = 0.1;  // 差分演算用の余裕
+
+// 皿穴: +Z 方向に貫通、z=0 側(外側)に皿座面
+module csk_hole(len = t) {
+    // 貫通穴
+    translate([0, 0, -eps])
+        cylinder(d = hole_d, h = len + 2 * eps);
+    // 皿座面(円錐)
+    translate([0, 0, -eps])
+        cylinder(d1 = cs_d, d2 = hole_d, h = cs_depth + eps);
+}
+
+difference() {
+    union() {
+        // 水平フランジ: +Y 方向に伸び、板厚は下側(-Z)
+        translate([0, 0, -t])
+            cube([flange_w, flange_l, t]);
+        // 垂直フランジ: +Z 方向に伸び、板厚は背面側(-Y)
+        translate([0, -t, 0])
+            cube([flange_w, t, flange_l]);
+    }
+
+    // 水平フランジの皿穴(皿座面は下面=外側)
+    for (x = [edge_off, flange_w - edge_off])
+        translate([x, flange_l / 2, -t])
+            csk_hole();
+
+    // 垂直フランジの皿穴(皿座面は背面=外側)
+    for (x = [edge_off, flange_w - edge_off])
+        translate([x, -t, flange_l / 2])
+            rotate([-90, 0, 0])
+                csk_hole();
+}

@@ -1,0 +1,20 @@
+// M8 六角ボルト(ねじ山省略・円柱シャンク)
+
+af      = 13;    // 頭部 対辺距離 (across-flats) [mm]
+head_h  = 5.3;   // 頭部高さ [mm]
+shank_d = 8;     // シャンク直径 [mm]
+shank_l = 30;    // シャンク長さ [mm]
+
+$fn = 64;        // 円柱の滑らかさ
+
+module hex_bolt_m8() {
+    // 頭部: 六角柱(底面が z=0、上方向 +Z へ)
+    // $fn=6 の cylinder は外接円基準なので、対辺距離から外接円直径に換算
+    cylinder(d = af / cos(30), h = head_h, $fn = 6);
+
+    // シャンク: z = -shank_l から z = 0 まで(-Z 側へ伸ばす)
+    translate([0, 0, -shank_l])
+        cylinder(d = shank_d, h = shank_l);
+}
+
+hex_bolt_m8();

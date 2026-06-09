@@ -1,0 +1,39 @@
+{
+  "runId": "bare-max_claude-fable-5-624f7083515e-2026-06-09T18-28-15-710Z",
+  "taskId": "tier-1-stepped-pyramid",
+  "matrixId": "bare-max/claude-fable-5",
+  "signature": "624f7083515efc36033a4cf576e588b48a442b7d0039d41955cd4e0cb2c1efd7",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "f33c33343b97cdee4ab2a95d84c7f4be5791294d1e997d9c55a752a15c9a2446",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-fable-5",
+      "modelOptions": {
+        "output_config": {
+          "effort": "max"
+        },
+        "max_tokens": 16000
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-fable-5",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 17496
+  },
+  "tokens": {
+    "input": 198,
+    "output": 1237
+  },
+  "cost_usd": 0.06383,
+  "createdAt": "2026-06-09T18:28:15.710Z",
+  "gitCommit": "2b674f55c19d0426c577a0242ee3997386fc1b9b"
+}

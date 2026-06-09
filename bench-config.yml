@@ -14,27 +14,31 @@ matrix:
   # (thinking 省略でも適用、明示の {type: disabled} は API がエラー)。
   # thinking off は存在しないため bare-think-off variant は持てない。
   # thinking 出力は display=omitted がデフォルト(blocks は返るが中身空)で、
-  # thinking トークンも max_tokens を消費する点に注意。
+  # thinking トークンも max_tokens を消費する。このため runner デフォルトの
+  # max_tokens=4096 では重いタスクで SCAD が出る前に切れる(tier-3 全滅)。
+  # 公式ドキュメントの標準例に合わせ 16000 を modelOptions で明示する
+  # (fingerprint に乗るので条件変更として検出される)。
   # https://platform.claude.com/docs/en/build-with-claude/adaptive-thinking
   - id: bare/claude-fable-5
     harness: { kind: bare }
     provider: anthropic
     model: claude-fable-5
+    modelOptions: { max_tokens: 16000 }
   - id: bare-low/claude-fable-5
     harness: { kind: bare }
     provider: anthropic
     model: claude-fable-5
-    modelOptions: { output_config: { effort: low } }
+    modelOptions: { output_config: { effort: low }, max_tokens: 16000 }
   - id: bare-max/claude-fable-5
     harness: { kind: bare }
     provider: anthropic
     model: claude-fable-5
-    modelOptions: { output_config: { effort: max } }
+    modelOptions: { output_config: { effort: max }, max_tokens: 16000 }
   - id: bare-xhigh/claude-fable-5
     harness: { kind: bare }
     provider: anthropic
     model: claude-fable-5
-    modelOptions: { output_config: { effort: xhigh } }
+    modelOptions: { output_config: { effort: xhigh }, max_tokens: 16000 }
   # Opus 4.8 — 4.7 と同じ API surface(breaking change なし)。
   - id: bare/claude-opus-4-8
     harness: { kind: bare }
@@ -385,6 +389,7 @@ matrix:
     harness: { kind: pdf-page }
     provider: anthropic
     model: claude-fable-5
+    modelOptions: { max_tokens: 16000 }
   - id: pdf-page/claude-opus-4-8
     harness: { kind: pdf-page }
     provider: anthropic
@@ -484,14 +489,17 @@ matrix:
     harness: { kind: bare, iterateFrom: bare/claude-fable-5, iteration: { kind: render-png-feedback } }
     provider: anthropic
     model: claude-fable-5
+    modelOptions: { max_tokens: 16000 }
   - id: iter-png-2/claude-fable-5
     harness: { kind: bare, iterateFrom: iter-png-1/claude-fable-5, iteration: { kind: render-png-feedback } }
     provider: anthropic
     model: claude-fable-5
+    modelOptions: { max_tokens: 16000 }
   - id: iter-png-3/claude-fable-5
     harness: { kind: bare, iterateFrom: iter-png-2/claude-fable-5, iteration: { kind: render-png-feedback } }
     provider: anthropic
     model: claude-fable-5
+    modelOptions: { max_tokens: 16000 }
 
   - id: iter-png-1/claude-opus-4-8
     harness: { kind: bare, iterateFrom: bare/claude-opus-4-8, iteration: { kind: render-png-feedback } }
