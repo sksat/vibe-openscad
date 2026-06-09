@@ -107,4 +107,25 @@ describe("createAnthropicProvider", () => {
       provider.complete({ prompt: "p", model: "claude-opus-4-7" }),
     ).rejects.toThrow(/no text/i);
   });
+
+  it("returns empty text (not throw) when max_tokens is hit before any text block", async () => {
+    // Fable 5 など出力の長いモデルは、重いタスクで max_tokens を text block
+    // ゼロのまま使い切ることがある。これは「SCAD を返さなかった」観測
+    // (no_code)であって precondition 失敗(api_error)ではないので、
+    // provider は throw せず空テキストとして返す。
+    const create = vi.fn().mockResolvedValue(
+      fakeMessage({
+        content: [] as never,
+        stop_reason: "max_tokens",
+      }),
+    );
+    const provider = createAnthropicProvider({ create });
+    const r = await provider.complete({
+      prompt: "p",
+      model: "claude-fable-5",
+    });
+    expect(r.text).toBe("");
+    expect(r.stopReason).toBe("max_tokens");
+    expect(r.tokens).toEqual({ input: 10, output: 20 });
+  });
 });

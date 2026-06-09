@@ -1,0 +1,112 @@
+レンダリング結果を確認しました。
+
+- 左板に knuckle 3 個(外側 2 + 中央 1)、右板に 2 個(中間)で互い違い配置 ✔
+- ピン軸が両端 1mm ずつ突出 ✔
+- 180° 開いた状態で両板の面が同一平面 ✔
+- 各板に M3 皿穴 3 個(8mm ピッチ、皿テーパ付き)✔
+
+形状・寸法・配置に問題は見当たらないため、同じコードを再度出力します。
+
+```openscad
+// ============================================================
+//  小型バット蝶番 (butt hinge) - 180° 開いた状態
+//  板: 30 x 25 x 2mm / ピン: φ4 x 32mm / knuckle: 外径8, 6mm x 5分割
+// ============================================================
+$fn = 64;
+
+// ---- パラメータ ----
+leaf_w   = 25;     // 板の幅 (X方向, 開く方向)
+leaf_len = 30;     // 板の長さ (Y方向, ヒンジ軸方向)
+leaf_t   = 2;      // 板厚
+
+pin_d    = 4;      // ピン直径
+pin_len  = 32;     // ピン長さ (両端1mmずつ突出)
+hole_d   = 4.6;    // knuckle 内径 (ピン + 0.3mm クリアランス)
+
+knuckle_od = 8;    // knuckle 外径
+seg_len    = 6;    // knuckle 1個の長さ (30mm を 5等分)
+gap        = 0.2;  // knuckle 同士の干渉防止クリアランス
+
+screw_x     = 19;  // ねじ穴の X 位置 (軸から)
+screw_pitch = 8;   // ねじ穴ピッチ (Y方向)
+screw_d     = 3.2; // M3 貫通穴
+csk_d       = 6;   // 皿穴 表面径
+csk_depth   = 1;   // 皿穴 テーパ深さ
+
+eps = 0.01;
+
+// 左板: 外側2個 + 中央1個 / 右板: 中間2個 (互い違い)
+left_segs  = [[0,               seg_len   - gap],
+              [2*seg_len + gap, 3*seg_len - gap],
+              [4*seg_len + gap, 5*seg_len      ]];
+right_segs = [[  seg_len + gap, 2*seg_len - gap],
+              [3*seg_len + gap, 4*seg_len - gap]];
+
+// ---- knuckle (筒部) ----
+module knuckle(y0, y1) {
+    translate([0, y0, 0])
+        rotate([-90, 0, 0])
+            cylinder(h = y1 - y0, d = knuckle_od);
+}
+
+// ---- 板と knuckle をつなぐウェブ ----
+module web(y0, y1) {
+    translate([-(knuckle_od/2 + gap + eps), y0, -leaf_t/2])
+        cube([knuckle_od/2 + gap + 2*eps, y1 - y0, leaf_t]);
+}
+
+// ---- M3 皿穴 (表面 z=+1 側から皿) ----
+module csk_hole() {
+    // 貫通穴 φ3.2
+    translate([0, 0, -leaf_t/2 - eps])
+        cylinder(h = leaf_t + 2*eps, d = screw_d);
+    // 皿テーパ φ6 x 深さ1mm
+    translate([0, 0, leaf_t/2 - csk_depth])
+        cylinder(h  = csk_depth + eps,
+                 d1 = screw_d,
+                 d2 = screw_d + (csk_d - screw_d) * (csk_depth + eps) / csk_depth);
+}
+
+// ---- 板 (leaf): -X 方向に伸びる形で定義 ----
+module leaf(segs) {
+    difference() {
+        union() {
+            // 平板部 (knuckle 列からクリアランス分離して開始)
+            translate([-leaf_w, 0, -leaf_t/2])
+                cube([leaf_w - knuckle_od/2 - gap, leaf_len, leaf_t]);
+            // knuckle + ウェブ
+            for (s = segs) {
+                knuckle(s[0], s[1]);
+                web(s[0], s[1]);
+            }
+        }
+        // ピン穴 (φ4.6 貫通)
+        translate([0, -1, 0])
+            rotate([-90, 0, 0])
+                cylinder(h = leaf_len + 2, d = hole_d);
+        // 皿穴 x3 (Y方向 8mm ピッチ, 中央寄せ)
+        for (i = [-1, 0, 1])
+            translate([-screw_x, leaf_len/2 + i*screw_pitch, 0])
+                csk_hole();
+    }
+}
+
+// ============================================================
+//  組み立て (180° 開いた状態)
+// ============================================================
+
+// 左板 (x < 0)
+color("LightSteelBlue")
+    leaf(left_segs);
+
+// 右板 (x > 0) : ミラーで反転配置
+color("SteelBlue")
+    mirror([1, 0, 0])
+        leaf(right_segs);
+
+// ピン軸 (Y軸上, y = -1 ... 31)
+color("Silver")
+    translate([0, -1, 0])
+        rotate([-90, 0, 0])
+            cylinder(h = pin_len, d = pin_d);
+```

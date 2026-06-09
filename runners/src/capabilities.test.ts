@@ -4,6 +4,7 @@ import { modelSupportsVision } from "./capabilities.js";
 describe("modelSupportsVision", () => {
   it("accepts Claude 4.x families regardless of date suffix", () => {
     expect(modelSupportsVision("claude-opus-4-7")).toBe(true);
+    expect(modelSupportsVision("claude-fable-5")).toBe(true);
     expect(modelSupportsVision("claude-sonnet-4-6")).toBe(true);
     expect(modelSupportsVision("claude-haiku-4-5-20251001")).toBe(true);
     expect(modelSupportsVision("claude-opus-4-20250514")).toBe(true);

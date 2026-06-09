@@ -138,12 +138,21 @@ export function publisherVendor(
  * 用に最後に model 文字列を入れて辞書順 fallback。
  */
 export function modelSortKey(model: string): [number, number, number, string] {
-  // Anthropic: claude-{opus|sonnet|haiku}-X-Y[-...]
-  let m = /^claude-(opus|sonnet|haiku)-(\d+)-(\d+)/.exec(model);
+  // Anthropic: claude-{fable|opus|sonnet|haiku}-X[-Y][-YYYYMMDD]
+  // Fable(Opus の上のティア)は minor を持たない(claude-fable-5)。
+  // minor は 1-3 桁に限定して 8 桁の date suffix と区別する。
+  let m = /^claude-(fable|opus|sonnet|haiku)-(\d+)(?:-(\d{1,3}))?(?:-\d{8})?$/.exec(
+    model,
+  );
   if (m) {
-    const familyMap: Record<string, number> = { opus: 0, sonnet: 1, haiku: 2 };
+    const familyMap: Record<string, number> = {
+      fable: 0,
+      opus: 1,
+      sonnet: 2,
+      haiku: 3,
+    };
     const major = Number(m[2]);
-    const minor = Number(m[3]);
+    const minor = m[3] ? Number(m[3]) : 0;
     return [familyMap[m[1]!] ?? 99, -(major * 1000 + minor), 0, model];
   }
   // Gemini: gemini-X[.Y]-{pro|flash-lite|flash}[-...]
@@ -294,20 +303,22 @@ const HARNESS_NAMES = new Set([
 /**
  * Treat the matrixId head as a harness label when it matches one of the
  * known names or a `bare-<variant>` form (e.g. `bare-low`, `bare-max`,
- * `bare-xhigh` for reasoning effort variants).
+ * `bare-xhigh` for reasoning effort variants, `bare-think-off` /
+ * `bare-think-adaptive` for thinking variants).
  */
 function isHarnessHead(part: string): boolean {
   if (HARNESS_NAMES.has(part)) return true;
-  return /^bare-[a-z0-9]+$/.test(part);
+  return /^bare(-[a-z0-9]+)+$/.test(part);
 }
 
 /** Parse one model id string into vendor + model badges (or fall through). */
 function parseModelLabel(modelStr: string): MatrixSegment[] {
-  // Anthropic model: claude-(opus|sonnet|haiku)-MAJOR[-MINOR][-YYYYMMDD]
+  // Anthropic model: claude-(fable|opus|sonnet|haiku)-MAJOR[-MINOR][-YYYYMMDD]
   // Minor is constrained to 1-3 digits to disambiguate from an 8-digit date
   // (e.g. claude-opus-4-20250514 has no minor, just major + date).
+  // Fable carries only a major version (claude-fable-5).
   const claude = modelStr.match(
-    /^claude-(opus|sonnet|haiku)-(\d+)(?:-(\d{1,3}))?(?:-(\d{8}))?$/,
+    /^claude-(fable|opus|sonnet|haiku)-(\d+)(?:-(\d{1,3}))?(?:-(\d{8}))?$/,
   );
   if (claude) {
     let label = claude[3]
@@ -438,7 +449,7 @@ function parseModelLabel(modelStr: string): MatrixSegment[] {
 export function shortModelLabel(model: string): string {
   if (!model) return model;
   const claude = model.match(
-    /^claude-(opus|sonnet|haiku)-(\d+)(?:-(\d{1,3}))?(?:-\d{8})?$/,
+    /^claude-(fable|opus|sonnet|haiku)-(\d+)(?:-(\d{1,3}))?(?:-\d{8})?$/,
   );
   if (claude) {
     const ver = claude[3] ? `${claude[2]}.${claude[3]}` : claude[2];
@@ -576,7 +587,9 @@ function defaultEffortFor(
   if (!provider || !model) return null;
   const base = modelBaseName(model);
   if (provider === "anthropic") {
-    // Opus 4.5+ / Sonnet 4.6+ accept `output_config.effort` and default to "high".
+    // Fable 5 / Opus 4.5+ / Sonnet 4.6+ accept `output_config.effort` and
+    // default to "high".
+    if (/^claude-fable-\d/.test(base)) return "high";
     if (/^claude-opus-4-([5-9]|\d{2,})/.test(base)) return "high";
     if (/^claude-sonnet-4-6$/.test(base)) return "high";
     if (/^claude-sonnet-4-([7-9]|\d{2,})/.test(base)) return "high";
@@ -608,6 +621,10 @@ function defaultThinkingFor(
   if (!model) return null;
   const base = modelBaseName(model);
   if (provider === "anthropic") {
+    // Fable 5: adaptive thinking が常時 on(thinking 省略でも適用される)。
+    // 明示の `{type: "disabled"}` は API がエラーを返す = thinking off は
+    // 存在しない。https://platform.claude.com/docs/en/build-with-claude/adaptive-thinking
+    if (/^claude-fable-\d/.test(base)) return "adaptive";
     // Adaptive thinking is the default on Opus 4.6+/Sonnet 4.6+.
     if (/^claude-opus-4-([6-9]|\d{2,})$/.test(base)) return "adaptive";
     if (/^claude-sonnet-4-([6-9]|\d{2,})$/.test(base)) return "adaptive";

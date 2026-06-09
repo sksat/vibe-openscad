@@ -1,0 +1,39 @@
+{
+  "runId": "bare-low_claude-fable-5-88a6af58801f-2026-06-09T18-27-57-161Z",
+  "taskId": "tier-3-butt-hinge",
+  "matrixId": "bare-low/claude-fable-5",
+  "signature": "88a6af58801f9c649caa32128bc8bbae2ab582cea27fdb0cef3f82334f719f3b",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dd7199030a8827a181914869189fc45a2e5637023f0c8c59532d442557036e7c",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-fable-5",
+      "modelOptions": {
+        "output_config": {
+          "effort": "low"
+        },
+        "max_tokens": 16000
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-fable-5",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 18149
+  },
+  "tokens": {
+    "input": 743,
+    "output": 1131
+  },
+  "cost_usd": 0.06398000000000001,
+  "createdAt": "2026-06-09T18:27:57.161Z",
+  "gitCommit": "2b674f55c19d0426c577a0242ee3997386fc1b9b"
+}

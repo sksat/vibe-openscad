@@ -1,0 +1,64 @@
+```openscad
+// 取手付きマグカップ(取手は +X 方向のみ)
+$fn = 120;
+
+// ===== パラメータ =====
+outer_r   = 40;    // 外半径(外径 80mm)
+inner_r   = 35;    // 内半径(内径 70mm、肉厚 5mm)
+mug_h     = 90;    // 高さ
+bottom_t  = 6;     // 底面の厚み
+
+handle_t  = 8;     // 取手の棒の太さ
+handle_d  = 12;    // 取手の奥行き(Y方向の幅)
+open_w    = 25;    // 取手内側空間の幅(X方向、指3本分)
+open_h    = 30;    // 取手内側空間の高さ(Z方向)
+open_x0   = 42;    // 内側開口の開始X位置(外壁のすぐ外)
+handle_z  = mug_h / 2;  // 取手の中心高さ(マグ中央)
+
+// ===== 取手の内側開口(D字の内側): 平らな辺 + 半円 =====
+module handle_opening_2d() {
+    hull() {
+        // 本体側の直線部分
+        translate([open_x0, -open_h/2])
+            square([0.01, open_h]);
+        // 外側の半円部分
+        translate([open_x0 + open_w - open_h/2, 0])
+            circle(r = open_h/2);
+    }
+}
+
+// ===== D字リング断面(内側開口を太さ handle_t で囲む) =====
+module handle_2d() {
+    difference() {
+        offset(r = handle_t) handle_opening_2d();
+        handle_opening_2d();
+    }
+}
+
+// ===== 取手本体(XZ平面のD字をY方向に押し出し、+X側面へ配置) =====
+// 内側の縁は本体外壁より内側まで食い込ませており、
+// 後段で飲み物用キャビティを差し引くことで内壁面はきれいに保たれる
+module handle() {
+    translate([0, 0, handle_z])
+        rotate([90, 0, 0])
+            linear_extrude(height = handle_d, center = true)
+                handle_2d();
+}
+
+// ===== マグ全体 =====
+module mug() {
+    difference() {
+        // 本体外形と取手を先に union → マニフォールドを保証
+        union() {
+            cylinder(r = outer_r, h = mug_h);
+            handle();
+        }
+        // 飲み物用の中空(底厚 6mm を残す)
+        // 取手の食い込み部分も同時にトリムされ、内壁は滑らか
+        translate([0, 0, bottom_t])
+            cylinder(r = inner_r, h = mug_h);
+    }
+}
+
+mug();
+```

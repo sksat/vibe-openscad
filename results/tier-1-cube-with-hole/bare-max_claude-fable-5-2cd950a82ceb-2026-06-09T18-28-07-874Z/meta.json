@@ -1,0 +1,39 @@
+{
+  "runId": "bare-max_claude-fable-5-2cd950a82ceb-2026-06-09T18-28-07-874Z",
+  "taskId": "tier-1-cube-with-hole",
+  "matrixId": "bare-max/claude-fable-5",
+  "signature": "2cd950a82cebff06cfbfd42c296a32815542fb838c3505cf6bc7be60a3b96f60",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "8ff7e36af4bc202429ec68b7eb9cc3f195b6a3c68668be31239bcea23345a048",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-fable-5",
+      "modelOptions": {
+        "output_config": {
+          "effort": "max"
+        },
+        "max_tokens": 16000
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-fable-5",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 10677
+  },
+  "tokens": {
+    "input": 111,
+    "output": 646
+  },
+  "cost_usd": 0.03341,
+  "createdAt": "2026-06-09T18:28:07.874Z",
+  "gitCommit": "2b674f55c19d0426c577a0242ee3997386fc1b9b"
+}
