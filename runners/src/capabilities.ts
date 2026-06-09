@@ -15,8 +15,9 @@ function baseName(model: string): string {
 }
 
 const VISION_CAPABLE: RegExp[] = [
-  // Anthropic: Claude 3+ multimodal across the board.
-  /^claude-(opus|sonnet|haiku)-\d/,
+  // Anthropic: Claude 3+ multimodal across the board. Fable は Opus の上の
+  // 新ティア(claude-fable-5、version は major のみ)。
+  /^claude-(fable|opus|sonnet|haiku)-\d/,
   // Google Gemini: 1.5 / 2.5 / 3.x families all accept inline images.
   /^gemini-/,
   // Google Gemma 3+ (vlm) self-hosted: `google/gemma-3-27b`, `google/gemma-4-e2b` 等。

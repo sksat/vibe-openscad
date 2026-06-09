@@ -53,6 +53,19 @@ describe("parseMatrixId", () => {
     ]);
   });
 
+  it("parses Fable (major-only version, no minor) into vendor + model", () => {
+    expect(parseMatrixId("bare/claude-fable-5")).toEqual([
+      { kind: "harness", label: "bare" },
+      { kind: "vendor", label: "claude", vendor: "claude" },
+      {
+        kind: "model",
+        label: "fable 5",
+        title: "claude-fable-5",
+        vendor: "claude",
+      },
+    ]);
+  });
+
   it("merges the snapshot date into the model badge label", () => {
     expect(parseMatrixId("bare/claude-haiku-4-5-20251001")).toEqual([
       { kind: "harness", label: "bare" },
@@ -64,6 +77,17 @@ describe("parseMatrixId", () => {
         vendor: "claude" as const,
       },
     ]);
+  });
+
+  it("treats multi-segment bare variants (bare-think-off / bare-think-adaptive) as harness", () => {
+    expect(parseMatrixId("bare-think-adaptive/claude-fable-5")[0]).toEqual({
+      kind: "harness",
+      label: "bare-think-adaptive",
+    });
+    expect(parseMatrixId("bare-think-off/claude-opus-4-7")[0]).toEqual({
+      kind: "harness",
+      label: "bare-think-off",
+    });
   });
 
   it("recognizes external-agent as a harness", () => {
@@ -311,6 +335,14 @@ describe("effortInfoFor", () => {
     ).toEqual({ value: "high", isDefault: true });
   });
 
+  it("returns { high, isDefault: true } for default bare on Fable 5", () => {
+    expect(
+      effortInfoFor(
+        makeBare({ provider: "anthropic", model: "claude-fable-5" }),
+      ),
+    ).toEqual({ value: "high", isDefault: true });
+  });
+
   it("returns explicit value for bare-low on Opus 4.7", () => {
     expect(
       effortInfoFor(
@@ -454,6 +486,27 @@ describe("thinkingInfoFor", () => {
     ).toEqual({ value: "adaptive", isDefault: true });
   });
 
+  it("returns 'off' default for Fable 5 (omitted thinking = off; explicit disable is a 400)", () => {
+    expect(
+      thinkingInfoFor(
+        makeBare({ provider: "anthropic", model: "claude-fable-5" }),
+      ),
+    ).toEqual({ value: "off", isDefault: true });
+  });
+
+  it("returns adaptive (explicit) for Fable 5 think-adaptive variant", () => {
+    expect(
+      thinkingInfoFor(
+        makeBare({
+          provider: "anthropic",
+          model: "claude-fable-5",
+          matrixId: "bare-think-adaptive/claude-fable-5",
+          modelOptions: { thinking: { type: "adaptive" } },
+        }),
+      ),
+    ).toEqual({ value: "adaptive", isDefault: false });
+  });
+
   it("returns 'off' when thinking explicitly disabled", () => {
     expect(
       thinkingInfoFor(
@@ -580,6 +633,7 @@ describe("thinkingInfoFor", () => {
 describe("shortModelLabel", () => {
   it("formats Claude model with vendor + version (drops date)", () => {
     expect(shortModelLabel("claude-opus-4-7")).toBe("claude opus 4.7");
+    expect(shortModelLabel("claude-fable-5")).toBe("claude fable 5");
     expect(shortModelLabel("claude-haiku-4-5-20251001")).toBe("claude haiku 4.5");
     expect(shortModelLabel("claude-sonnet-4-6")).toBe("claude sonnet 4.6");
   });
@@ -662,16 +716,18 @@ describe("compareModelsByRank", () => {
     return [...models].sort(compareModelsByRank);
   }
 
-  it("sorts Claude models opus > sonnet > haiku, then newest version first", () => {
+  it("sorts Claude models fable > opus > sonnet > haiku, then newest version first", () => {
     expect(
       sorted([
         "claude-haiku-4-5-20251001",
         "claude-sonnet-4-6",
         "claude-opus-4-5-20251101",
+        "claude-fable-5",
         "claude-opus-4-7",
         "claude-sonnet-4-5-20250929",
       ]),
     ).toEqual([
+      "claude-fable-5",
       "claude-opus-4-7",
       "claude-opus-4-5-20251101",
       "claude-sonnet-4-6",
