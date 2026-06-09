@@ -1,0 +1,39 @@
+{
+  "runId": "bare-xhigh_claude-fable-5-f4fd85112f1b-2026-06-09T18-03-05-412Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "bare-xhigh/claude-fable-5",
+  "signature": "f4fd85112f1bd56c07dd6c6c9378a122032e5b6c5540a326af6c79fff6d09f22",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-fable-5",
+      "modelOptions": {
+        "output_config": {
+          "effort": "xhigh"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-fable-5",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "no_code",
+  "timing": {
+    "totalMs": 54585
+  },
+  "tokens": {
+    "input": 343,
+    "output": 4096
+  },
+  "cost_usd": 0.20822999999999997,
+  "createdAt": "2026-06-09T18:03:05.412Z",
+  "gitCommit": "b234e9f0d3b88ddd9544e5eea2747e7f84b19675",
+  "error": "no SCAD code block in response (stopReason=max_tokens)"
+}

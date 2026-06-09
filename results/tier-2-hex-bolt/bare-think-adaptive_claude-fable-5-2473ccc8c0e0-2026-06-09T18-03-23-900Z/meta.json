@@ -1,0 +1,38 @@
+{
+  "runId": "bare-think-adaptive_claude-fable-5-2473ccc8c0e0-2026-06-09T18-03-23-900Z",
+  "taskId": "tier-2-hex-bolt",
+  "matrixId": "bare-think-adaptive/claude-fable-5",
+  "signature": "2473ccc8c0e0501cfec34cedf4ce4b3cd0bb6d2aef44bc1a2bd4cc2ec789d46d",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "0fee46bf3152dd6738d6d2af93e06dad04bb6bddd3b2b528c57138298ec0b5d0",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-fable-5",
+      "modelOptions": {
+        "thinking": {
+          "type": "adaptive"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-fable-5",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 8369
+  },
+  "tokens": {
+    "input": 262,
+    "output": 516
+  },
+  "cost_usd": 0.028419999999999997,
+  "createdAt": "2026-06-09T18:03:23.900Z",
+  "gitCommit": "b234e9f0d3b88ddd9544e5eea2747e7f84b19675"
+}

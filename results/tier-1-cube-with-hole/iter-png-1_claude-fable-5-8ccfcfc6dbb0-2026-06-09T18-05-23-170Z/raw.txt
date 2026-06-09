@@ -1,0 +1,8 @@
+画像を確認しました。50mm 角の立方体の中央に直径 20mm の貫通穴が z 軸方向に正しく開いており、課題の要件を満たしています。修正は不要です。
+
+```openscad
+difference() {
+    cube([50, 50, 50], center = true);
+    cylinder(h = 52, d = 20, center = true, $fn = 100);
+}
+```

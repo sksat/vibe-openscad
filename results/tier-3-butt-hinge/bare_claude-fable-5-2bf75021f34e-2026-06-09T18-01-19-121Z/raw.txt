@@ -1,0 +1,42 @@
+```openscad
+// ============================================================
+//  小型バット蝶番 (Butt Hinge) - 180° 開いた状態
+//  左板 / 右板 / ピン軸 の 3 パーツ構成
+//  ピン軸中心線 = Y 軸 (+Y 方向)
+// ============================================================
+
+$fn = 64;
+
+// ---------- パラメータ ----------
+leaf_len      = 30;     // 板の縦 (ヒンジ軸方向, Y)
+leaf_width    = 25;     // 板の横 (開く方向, X)
+leaf_thick    = 2;      // 板厚 (Z)
+
+pin_d         = 4;      // ピン軸 直径
+pin_len       = 32;     // ピン軸 長さ (両端 1mm ずつ突出)
+
+knuckle_od    = 8;      // knuckle 外径
+clearance     = 0.3;    // ピンとのクリアランス
+knuckle_id    = pin_d + clearance * 2 - clearance; // = 4.3? -> 指定通り 4.6 に
+knuckle_hole  = pin_d + 0.6;  // 4.6mm 穴 (直径クリアランス 0.3 とみなす指定値)
+
+seg_len       = leaf_len / 5;          // 6mm
+left_segs     = [0, 2*seg_len, 4*seg_len];   // 左板: 外側2 + 中央1
+right_segs    = [seg_len, 3*seg_len];        // 右板: 中間2
+
+screw_x       = 20;     // 皿穴の X 位置 (軸からの距離)
+screw_pitch   = 8;      // 穴ピッチ
+screw_ys      = [leaf_len/2 - screw_pitch,
+                 leaf_len/2,
+                 leaf_len/2 + screw_pitch];  // y = 7, 15, 23
+
+cs_top_d      = 6;      // 皿穴 表面径
+cs_depth      = 1;      // 皿穴 テーパ深さ
+through_d     = 3.2;    // 貫通穴 (M3)
+
+zt = leaf_thick / 2;    // 板上面 z = +1, 下面 z = -1
+
+// ---------- 皿穴 (表面 z=+1 から) ----------
+module screw_hole(x, y) {
+    translate([x, y, 0]) {
+        // 貫通穴

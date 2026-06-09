@@ -1,0 +1,43 @@
+{
+  "runId": "iter-png-2_claude-fable-5-07d8d89b38f7-2026-06-09T18-08-57-364Z",
+  "taskId": "tier-2-l-bracket",
+  "matrixId": "iter-png-2/claude-fable-5",
+  "signature": "07d8d89b38f78558a2567b17e3a44bc5f81240efb182933203a4533d952055e7",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "b20dcf3dd07e532496944d76485b954e0ab614f3cda1919fee5dc406f59b3ea5",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-fable-5",
+      "iterateFrom": "iter-png-1/claude-fable-5",
+      "iteration": {
+        "kind": "render-png-feedback"
+      },
+      "parentSignature": "1fa1ae0e8884b9a91d83005e73245e7c956b1331c0b2ded4ae1ad9a49b2b4e20"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-fable-5",
+  "harness": {
+    "kind": "bare",
+    "iteration": {
+      "kind": "render-png-feedback"
+    }
+  },
+  "status": "no_code",
+  "timing": {
+    "totalMs": 56037
+  },
+  "tokens": {
+    "input": 1894,
+    "output": 4096
+  },
+  "cost_usd": 0.22374,
+  "createdAt": "2026-06-09T18:08:57.364Z",
+  "gitCommit": "b234e9f0d3b88ddd9544e5eea2747e7f84b19675",
+  "error": "no SCAD code block in response (stopReason=max_tokens)",
+  "parentRunId": "iter-png-1_claude-fable-5-1fa1ae0e8884-2026-06-09T18-08-01-265Z"
+}

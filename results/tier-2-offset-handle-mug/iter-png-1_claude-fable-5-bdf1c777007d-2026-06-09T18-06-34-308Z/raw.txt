@@ -1,0 +1,64 @@
+レンダリング結果を確認しました。
+
+- 本体: 外径 80mm / 内径 70mm / 高さ 90mm / 底厚 6mm ✓
+- 取手: +X 方向のみ、D 字形状(外側半円+直線アーム)✓
+- 内側空間: 高さ 30mm(zc±15)× 幅 25mm(x=40〜65)✓
+- 高さ方向中央(z=45)に配置、壁内に 4mm 埋め込みで確実に union、内側空洞への侵入なし ✓
+
+問題は見当たらないため、同じコードを再度出力します。
+
+```openscad
+// ===== マグカップ(取手は +X 軸方向のみ) =====
+$fn = 96;
+
+// ---- 本体パラメータ ----
+outer_d   = 80;   // 外径
+inner_d   = 70;   // 内径(肉厚 5mm)
+mug_h     = 90;   // 高さ
+bottom_t  = 6;    // 底面の厚み
+
+// ---- 取手パラメータ ----
+tube_r    = 6;                    // 取手の断面半径
+gap_h     = 30;                   // 取手内側空間の高さ
+gap_w     = 25;                   // 取手内側空間の幅
+R         = gap_h/2 + tube_r;     // 半円部のメジャー半径 (= 21)
+zc        = mug_h/2;              // 取手の中心高さ(本体中央)
+xc        = outer_d/2 + gap_w - (R - tube_r); // 半円中心の X 位置 (= 50)
+arm_x0    = 36;                   // 腕の根元(壁の中に埋め込み、空洞には入らない)
+
+// ---- マグ本体 ----
+module mug_body() {
+    difference() {
+        cylinder(h = mug_h, d = outer_d);
+        translate([0, 0, bottom_t])
+            cylinder(h = mug_h, d = inner_d);
+    }
+}
+
+// ---- D 字形取手(+X 方向のみ) ----
+module handle() {
+    // 上下の直線アーム(本体壁内に食い込ませて確実に union)
+    for (s = [-1, 1])
+        translate([arm_x0, 0, zc + s * R])
+            rotate([0, 90, 0])
+                cylinder(h = xc - arm_x0, r = tube_r);
+
+    // 外側の半円(半トーラス)。アームと 1mm オーバーラップさせる
+    translate([xc, 0, zc])
+        rotate([90, 0, 0])
+            difference() {
+                rotate_extrude()
+                    translate([R, 0])
+                        circle(r = tube_r);
+                // ローカル x < -1 の半分を切り落とす(+X 側半円だけ残す)
+                translate([-(R + tube_r + 2), -(R + tube_r + 1), -(tube_r + 1)])
+                    cube([R + tube_r + 1, 2 * (R + tube_r + 1), 2 * (tube_r + 1)]);
+            }
+}
+
+// ---- 組み立て ----
+union() {
+    mug_body();
+    handle();
+}
+```
