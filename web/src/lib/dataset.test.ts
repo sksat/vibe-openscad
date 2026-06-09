@@ -486,12 +486,12 @@ describe("thinkingInfoFor", () => {
     ).toEqual({ value: "adaptive", isDefault: true });
   });
 
-  it("returns 'off' default for Fable 5 (omitted thinking = off; explicit disable is a 400)", () => {
+  it("returns adaptive default for Fable 5 (always-on thinking; cannot be disabled)", () => {
     expect(
       thinkingInfoFor(
         makeBare({ provider: "anthropic", model: "claude-fable-5" }),
       ),
-    ).toEqual({ value: "off", isDefault: true });
+    ).toEqual({ value: "adaptive", isDefault: true });
   });
 
   it("returns adaptive (explicit) for Fable 5 think-adaptive variant", () => {

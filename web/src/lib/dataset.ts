@@ -621,9 +621,10 @@ function defaultThinkingFor(
   if (!model) return null;
   const base = modelBaseName(model);
   if (provider === "anthropic") {
-    // Fable 5: thinking 未指定 = off。adaptive はオプトインで、明示の
-    // `{type: "disabled"}` は API が 400 を返す(omit が唯一の off)。
-    if (/^claude-fable-\d/.test(base)) return "off";
+    // Fable 5: adaptive thinking が常時 on(thinking 省略でも適用される)。
+    // 明示の `{type: "disabled"}` は API がエラーを返す = thinking off は
+    // 存在しない。https://platform.claude.com/docs/en/build-with-claude/adaptive-thinking
+    if (/^claude-fable-\d/.test(base)) return "adaptive";
     // Adaptive thinking is the default on Opus 4.6+/Sonnet 4.6+.
     if (/^claude-opus-4-([6-9]|\d{2,})$/.test(base)) return "adaptive";
     if (/^claude-sonnet-4-([6-9]|\d{2,})$/.test(base)) return "adaptive";

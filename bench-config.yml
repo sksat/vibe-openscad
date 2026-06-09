@@ -10,10 +10,12 @@ matrix:
   # --- 現行世代 ---
   # Fable 5 — Opus の上の新ティア($10/$50 per Mtok)。API surface は
   # Opus 4.7/4.8 と同系(temperature 等の sampling params 不可、effort は
-  # low/medium/high/xhigh/max)だが、thinking の明示 disable
-  # (`thinking: {type: disabled}`)は 400 になる(thinking 省略 = off が唯一の
-  # off)。そのため bare-think-off variant は持てず、代わりに adaptive を
-  # 明示する bare-think-adaptive を比較用に置く。
+  # low/medium/high/xhigh/max)だが、adaptive thinking が **常時 on**
+  # (thinking 省略でも適用、明示の {type: disabled} は API がエラー)。
+  # thinking off は存在しないため bare-think-off variant は持てない。
+  # thinking 出力は display=omitted がデフォルト(blocks は返るが中身空)で、
+  # thinking トークンも max_tokens を消費する点に注意。
+  # https://platform.claude.com/docs/en/build-with-claude/adaptive-thinking
   - id: bare/claude-fable-5
     harness: { kind: bare }
     provider: anthropic
@@ -33,11 +35,6 @@ matrix:
     provider: anthropic
     model: claude-fable-5
     modelOptions: { output_config: { effort: xhigh } }
-  - id: bare-think-adaptive/claude-fable-5
-    harness: { kind: bare }
-    provider: anthropic
-    model: claude-fable-5
-    modelOptions: { thinking: { type: adaptive } }
   # Opus 4.8 — 4.7 と同じ API surface(breaking change なし)。
   - id: bare/claude-opus-4-8
     harness: { kind: bare }
