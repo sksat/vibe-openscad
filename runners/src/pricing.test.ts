@@ -3,6 +3,11 @@ import { computeCostUsd, getRate } from "./pricing.js";
 
 describe("getRate", () => {
   it("returns rate for current Anthropic models (alias and dated)", () => {
+    // catch-all の `claude-opus-4-`(旧世代 $15/$75)に落ちないこと。
+    expect(getRate("anthropic", "claude-opus-4-8")).toEqual({
+      inputPerMtok: 5,
+      outputPerMtok: 25,
+    });
     expect(getRate("anthropic", "claude-opus-4-7")).toEqual({
       inputPerMtok: 5,
       outputPerMtok: 25,

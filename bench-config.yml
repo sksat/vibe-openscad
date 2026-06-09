@@ -5,15 +5,40 @@ defaults:
 # 可能なら dated snapshot を使う。Anthropic がエイリアスを内部的に
 # 別スナップショットへ向け直しても、エイリアス文字列は変わらず
 # fingerprint で検出できないため、dated を書けるなら必ず書く。
-# (Opus 4.7 / Sonnet 4.6 は dated suffix が未公開なので alias のまま)
+# (Opus 4.8 / 4.7 / Sonnet 4.6 は dated suffix が未公開なので alias のまま)
 matrix:
   # --- 現行世代 ---
+  # Opus 4.8 — 4.7 と同じ API surface(breaking change なし)。
+  - id: bare/claude-opus-4-8
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-opus-4-8
+  - id: bare-low/claude-opus-4-8
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-opus-4-8
+    modelOptions: { output_config: { effort: low } }
+  - id: bare-max/claude-opus-4-8
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-opus-4-8
+    modelOptions: { output_config: { effort: max } }
+  - id: bare-xhigh/claude-opus-4-8
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-opus-4-8
+    modelOptions: { output_config: { effort: xhigh } }
+  - id: bare-think-off/claude-opus-4-8
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-opus-4-8
+    modelOptions: { thinking: { type: disabled } }
   - id: bare/claude-opus-4-7
     harness: { kind: bare }
     provider: anthropic
     model: claude-opus-4-7
   # Effort variants of opus 4.7 — default `bare/...` is effort=high.
-  # max は Opus 系のみ。xhigh は Opus 4.7 のみ。
+  # max は Opus 系のみ。xhigh は Opus 4.7+。
   - id: bare-low/claude-opus-4-7
     harness: { kind: bare }
     provider: anthropic
@@ -329,6 +354,10 @@ matrix:
   # --- pdf-page (tier-4 vision tasks: PDF page → image → bare-style call) ---
   # bare の単発と同形だが、task 側 `pdf_source` を pdftoppm で PNG に切り出して
   # provider に投げる前段が入る。vision capable な現行世代モデルだけ並べる。
+  - id: pdf-page/claude-opus-4-8
+    harness: { kind: pdf-page }
+    provider: anthropic
+    model: claude-opus-4-8
   - id: pdf-page/claude-opus-4-7
     harness: { kind: pdf-page }
     provider: anthropic
@@ -420,6 +449,19 @@ matrix:
   # 全部走らせると Claude 7 モデル × 3 step × 3 task = 63 call で結構嵩む
   # (opus 系 1 step ~ $0.02-0.05)。`--filter iter-png:sonnet-4-6` などで絞ると
   # よい。
+  - id: iter-png-1/claude-opus-4-8
+    harness: { kind: bare, iterateFrom: bare/claude-opus-4-8, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-opus-4-8
+  - id: iter-png-2/claude-opus-4-8
+    harness: { kind: bare, iterateFrom: iter-png-1/claude-opus-4-8, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-opus-4-8
+  - id: iter-png-3/claude-opus-4-8
+    harness: { kind: bare, iterateFrom: iter-png-2/claude-opus-4-8, iteration: { kind: render-png-feedback } }
+    provider: anthropic
+    model: claude-opus-4-8
+
   - id: iter-png-1/claude-sonnet-4-6
     harness: { kind: bare, iterateFrom: bare/claude-sonnet-4-6, iteration: { kind: render-png-feedback } }
     provider: anthropic
