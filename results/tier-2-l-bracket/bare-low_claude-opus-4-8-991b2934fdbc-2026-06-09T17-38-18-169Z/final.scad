@@ -1,0 +1,53 @@
+// L-bracket with countersunk holes
+
+// パラメータ
+width      = 50;   // 幅 (X)
+depth      = 40;   // 水平面の奥行き (Y)
+height     = 40;   // 垂直面の高さ (Z)
+thickness  = 3;    // 板厚
+
+hole_dia   = 4.5;  // 貫通穴径
+cs_dia     = 8;    // 皿座面径
+cs_depth   = 2;    // 皿座面深さ
+edge_off   = 10;   // 縁からの距離
+
+$fn = 64;
+
+// 皿穴(Z軸方向に貫通、皿座面は -Z 側=外側)
+// 原点を穴中心として、+Z 側が内側、-Z 側が外側になるように作る
+module countersunk_hole(len) {
+    union() {
+        // 貫通穴(十分に長く)
+        translate([0, 0, -len])
+            cylinder(h = len * 2, d = hole_dia);
+        // 皿座面(外側 = -Z 側)
+        translate([0, 0, -cs_depth])
+            cylinder(h = cs_depth + 0.01, d = cs_dia);
+    }
+}
+
+difference() {
+    // 本体
+    union() {
+        // 水平面: +Y 方向, 厚みは -Z〜0
+        translate([-width/2, 0, -thickness])
+            cube([width, depth, thickness]);
+        // 垂直面: +Z 方向, 厚みは -Y〜0
+        translate([-width/2, -thickness, 0])
+            cube([width, thickness, height]);
+    }
+
+    // 水平面の穴 2 個(外側 = 下面 = -Z 側)
+    for (x = [-1, 1]) {
+        translate([x * width/4, edge_off, 0])
+            countersunk_hole(50);
+    }
+
+    // 垂直面の穴 2 個(外側 = -Y 側)
+    // X軸まわりに回転して垂直面用に向ける
+    for (x = [-1, 1]) {
+        translate([x * width/4, 0, edge_off])
+            rotate([-90, 0, 0])
+                countersunk_hole(50);
+    }
+}

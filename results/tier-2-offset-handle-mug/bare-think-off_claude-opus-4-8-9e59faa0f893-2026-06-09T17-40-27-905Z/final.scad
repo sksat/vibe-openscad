@@ -1,0 +1,108 @@
+// マグカップ(取手は +X 方向のみ)
+
+// ===== パラメータ =====
+outer_d   = 80;   // 本体外径
+inner_d   = 70;   // 本体内径
+wall      = (outer_d - inner_d) / 2; // 肉厚 5mm
+height    = 90;   // 全体高さ
+bottom_th = 6;    // 底厚
+
+// 取手パラメータ
+handle_inner_h = 30;  // 取手内側の高さ
+handle_inner_w = 25;  // 取手内側の幅(本体外周からの突き出し方向)
+handle_th      = 8;   // 取手の太さ(断面直径)
+handle_z       = height / 2; // 取手中心の高さ
+
+$fn = 100;
+
+// ===== 本体 =====
+module body() {
+    difference() {
+        // 外形
+        cylinder(d = outer_d, h = height);
+        // 内側中空
+        translate([0, 0, bottom_th])
+            cylinder(d = inner_d, h = height - bottom_th + 1);
+    }
+}
+
+// ===== 取手 =====
+module handle() {
+    // 取手の D 字外形:本体外周から +X 方向へ伸びる
+    // 内側の空間を確保するため、外側の輪郭を rounded で作り、
+    // 内側をくり抜く
+
+    // 取手中心軸の X 位置
+    x_outer = outer_d / 2;             // 本体外面 X
+    // D字の外側半円中心
+    inner_top_z    = handle_z + handle_inner_h / 2;
+    inner_bottom_z = handle_z - handle_inner_h / 2;
+
+    // 取手リングの中心線が描く矩形+半円の経路を太らせる
+    // 簡易的に rotate_extrude 風ではなく hull で構成
+
+    translate([0, 0, 0]) {
+        // 上下の接続部(本体側 → 外側)を太い棒で作り、外側は半円
+        difference() {
+            // 取手の外側ソリッド形状
+            hull_handle_outer();
+            // 内側の空間をくり抜く
+            hull_handle_inner();
+        }
+    }
+
+    module hull_handle_outer() {
+        // 外側の D 形状を太さ handle_th で作る
+        // 経路上の点に球を配置して hull
+        // 経路:本体側(x_outer)から外側(x_outer + handle_inner_w)へ
+        x_far = x_outer + handle_inner_w;
+
+        // 上側コーナー
+        a_top    = [x_outer, 0, inner_top_z];
+        b_top    = [x_far,   0, inner_top_z];
+        // 下側コーナー
+        a_bot    = [x_outer, 0, inner_bottom_z];
+        b_bot    = [x_far,   0, inner_bottom_z];
+
+        // 上辺
+        hull() {
+            place_sphere(a_top);
+            place_sphere(b_top);
+        }
+        // 下辺
+        hull() {
+            place_sphere(a_bot);
+            place_sphere(b_bot);
+        }
+        // 外側辺
+        hull() {
+            place_sphere(b_top);
+            place_sphere(b_bot);
+        }
+        // 本体接続部(上)を本体内部まで食い込ませる
+        hull() {
+            place_sphere([x_outer - wall, 0, inner_top_z]);
+            place_sphere(a_top);
+        }
+        // 本体接続部(下)
+        hull() {
+            place_sphere([x_outer - wall, 0, inner_bottom_z]);
+            place_sphere(a_bot);
+        }
+    }
+
+    module place_sphere(p) {
+        translate(p) sphere(d = handle_th);
+    }
+
+    module hull_handle_inner() {
+        // 何もくり抜かない(経路太らせ方式なので穴は自然にできる)
+        // ダミー
+    }
+}
+
+// ===== 組み立て =====
+union() {
+    body();
+    handle();
+}

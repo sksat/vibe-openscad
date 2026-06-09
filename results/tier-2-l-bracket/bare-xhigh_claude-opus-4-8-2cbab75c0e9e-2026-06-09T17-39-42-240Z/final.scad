@@ -1,0 +1,61 @@
+// L-bracket with countersunk holes
+// Internal corner at origin
+// Horizontal flange extends in +Y, vertical flange extends in +Z
+
+// ===== Parameters =====
+width      = 50;   // 幅 (X)
+depth      = 40;   // 水平面の奥行き (Y)
+height     = 40;   // 垂直面の高さ (Z)
+thickness  = 3;    // 板厚
+
+hole_dia   = 4.5;  // 貫通穴 Φ
+cs_dia     = 8;    // 皿座面 Φ
+cs_depth   = 2;    // 皿座面 深さ
+edge_off   = 10;   // 面の縁からの距離
+hole_pitch = 20;   // 左右の穴間隔 (中心からの対称配置)
+
+$fn = 64;
+
+// ===== Countersunk hole (cutter) =====
+// 穴の中心軸は +Z 方向、座面(外側)は -Z 側に出るように作る
+module countersink_cutter() {
+    // 貫通穴 (十分長く貫通させる)
+    translate([0, 0, -thickness - 1])
+        cylinder(d = hole_dia, h = thickness + 2);
+    // 皿座面: 外側(-Z 側 = ボルト頭が当たる側)
+    translate([0, 0, -0.01])
+        cylinder(d = cs_dia, h = cs_depth);
+}
+
+// ===== L-bracket =====
+module l_bracket() {
+    difference() {
+        union() {
+            // 水平面 (XY 平面に置く, 板厚は -Z 方向)
+            translate([-width/2, 0, -thickness])
+                cube([width, depth, thickness]);
+            // 垂直面 (XZ 平面に置く, 板厚は -Y 方向)
+            translate([-width/2, -thickness, 0])
+                cube([width, thickness, height]);
+        }
+
+        // --- 水平面の皿穴 (2個) ---
+        // 中心線上 = X=0, 縁(Y=depth)から 10mm 内側 → Y = depth - edge_off
+        // 外側 = 下面(-Z)
+        for (x = [-hole_pitch/2, hole_pitch/2]) {
+            translate([x, depth - edge_off, 0])
+                countersink_cutter();
+        }
+
+        // --- 垂直面の皿穴 (2個) ---
+        // 中心線上 = X=0, 縁(Z=height)から 10mm 内側 → Z = height - edge_off
+        // 外側 = 背面(-Y) → 軸を Y 方向に向ける
+        for (x = [-hole_pitch/2, hole_pitch/2]) {
+            translate([x, 0, height - edge_off])
+                rotate([-90, 0, 0])
+                    countersink_cutter();
+        }
+    }
+}
+
+l_bracket();

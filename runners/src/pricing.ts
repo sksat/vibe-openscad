@@ -21,6 +21,7 @@ interface Entry {
 
 const ANTHROPIC_RATES: Entry[] = [
   // 現行
+  { prefix: "claude-opus-4-8", rate: { inputPerMtok: 5, outputPerMtok: 25 } },
   { prefix: "claude-opus-4-7", rate: { inputPerMtok: 5, outputPerMtok: 25 } },
   { prefix: "claude-opus-4-6", rate: { inputPerMtok: 5, outputPerMtok: 25 } },
   { prefix: "claude-sonnet-4-6", rate: { inputPerMtok: 3, outputPerMtok: 15 } },

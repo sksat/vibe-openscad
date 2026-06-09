@@ -1,0 +1,69 @@
+画像を確認すると、垂直面の2つの皿穴の高さ（Z位置）が揃っていません。これは穴中心のX座標計算に問題があるためではなく、よく見ると2つの穴が左右で別の高さに見えますが、実際の原因は **皿座面の向き** が誤っている点です。
+
+課題では「皿座面は外側（ボルト頭が当たる側）に向ける」とあります。
+- 水平面の外側は **-Z 側**（下面）
+- 垂直面の外側は **-Y 側**（手前）
+
+現状コードを確認すると、皿座の広がる向きが内側を向いてしまっています。皿座（テーパー）が外側に向くように修正します。
+
+```openscad
+// L-bracket with countersunk holes
+
+// パラメータ
+width      = 50;   // 幅 (X方向)
+depth      = 40;   // 水平面の奥行き / 垂直面の高さ
+thickness  = 3;    // 板厚
+
+hole_d     = 4.5;  // 貫通穴径 M4
+cs_d       = 8;    // 皿座面径
+cs_depth   = 2;    // 皿座面深さ
+edge_off   = 10;   // 面の縁からの距離
+
+// 穴中心のX座標（面の中心線X=25に対して左右対称、間隔25mm）
+x1 = width/2 - 12.5;   // 12.5
+x2 = width/2 + 12.5;   // 37.5
+
+// 皿穴モジュール
+// ローカル座標で板厚方向 +Z に貫通させる。
+// 外側 = ローカル -Z 面（z=0 側）に皿座が広がるように作る。
+module countersunk_hole(plate_thickness) {
+    // 貫通穴
+    translate([0, 0, -1])
+        cylinder(h = plate_thickness + 2, d = hole_d, $fn = 48);
+    // 皿座（外側=z=0側に向かって広がる円錐）
+    translate([0, 0, 0])
+        cylinder(h = cs_depth, d1 = cs_d, d2 = hole_d, $fn = 48);
+}
+
+module l_bracket() {
+    difference() {
+        union() {
+            // 水平面 (+Y方向に伸びる)
+            cube([width, depth, thickness]);
+            // 垂直面 (+Z方向に伸びる)
+            cube([width, thickness, depth]);
+        }
+
+        // --- 水平面の皿穴 (外側 = -Z 側 / 下面) ---
+        // Y位置: 縁(Y=depth)から10mm内側 -> Y = depth - edge_off
+        // 板のローカル+Z軸が +Z（板内方向）になるよう、回転なしで z=0 を下面に合わせる。
+        // ただし外側=z=0=下面に皿座が来るので回転不要。
+        for (x = [x1, x2]) {
+            translate([x, depth - edge_off, 0])
+                countersunk_hole(thickness);
+        }
+
+        // --- 垂直面の皿穴 (外側 = -Y 側 / 手前) ---
+        // Z位置: 縁(Z=depth)から10mm内側 -> Z = depth - edge_off
+        // 板のローカル+Z軸を +Y（板内方向）に向ける = X軸まわり -90度回転。
+        // これで z=0 面が -Y 側（外側）になり、皿座が外側に広がる。
+        for (x = [x1, x2]) {
+            translate([x, 0, depth - edge_off])
+                rotate([-90, 0, 0])
+                    countersunk_hole(thickness);
+        }
+    }
+}
+
+l_bracket();
+```

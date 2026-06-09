@@ -1,0 +1,38 @@
+{
+  "runId": "bare-think-off_claude-opus-4-8-9e59faa0f893-2026-06-09T17-40-27-905Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "bare-think-off/claude-opus-4-8",
+  "signature": "9e59faa0f893857208806bf3cffb3de41295f8cbaab9d2a0cf5cc264ae83a0ee",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-opus-4-8",
+      "modelOptions": {
+        "thinking": {
+          "type": "disabled"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-opus-4-8",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 21422
+  },
+  "tokens": {
+    "input": 343,
+    "output": 1325
+  },
+  "cost_usd": 0.03484,
+  "createdAt": "2026-06-09T17:40:27.905Z",
+  "gitCommit": "c8a77106d384377102ee118ce0aa302073107041"
+}

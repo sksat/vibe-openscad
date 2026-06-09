@@ -1,0 +1,72 @@
+// マグカップ(取手は +X 方向のみ)
+
+$fn = 100;
+
+// ===== パラメータ =====
+outer_d   = 80;   // 本体外径
+inner_d   = 70;   // 本体内径
+wall      = (outer_d - inner_d) / 2; // 肉厚 5mm
+height    = 90;   // 全体高さ
+bottom_th = 6;    // 底面厚み
+
+// 取手パラメータ
+handle_inner_h = 30;  // 取手内側の高さ
+handle_inner_w = 25;  // 取手内側の幅(本体側面からの張り出し)
+handle_th      = 10;  // 取手の太さ(断面)
+handle_z       = height / 2; // 取手中心の高さ(中央付近)
+
+// ===== 本体 =====
+module body() {
+    difference() {
+        // 外形
+        cylinder(d = outer_d, h = height);
+        // 内側の中空(底厚を残す)
+        translate([0, 0, bottom_th])
+            cylinder(d = inner_d, h = height - bottom_th + 1);
+    }
+}
+
+// ===== 取手(D 字形状)=====
+// 本体側が直線、外側が半円の D 字。
+// rotate_extrude で D 字断面のリングを作り、半分(外側半円)+ 直線部で構成する。
+module handle() {
+    // 取手中心線が描く D 字パスの寸法
+    // 内側空間: 高さ handle_inner_h, 幅 handle_inner_w
+    inner_h = handle_inner_h;
+    inner_w = handle_inner_w;
+    t       = handle_th; // 取手の太さ
+
+    // 本体外周に接続する基準 X 位置
+    x_base = outer_d / 2 - 1; // わずかに本体へ食い込ませて確実に union
+
+    // D 字を構成する 3 つの円柱(上の直線・下の直線・外側半円)
+    // 中心線の半径
+    r_mid = t / 2;
+
+    // 上下の水平直線部(本体から外側へ伸びる)
+    // 半円部の中心 X
+    half_x = x_base + inner_w;
+
+    union() {
+        // 上の水平バー
+        translate([x_base, 0, handle_z + inner_h/2])
+            rotate([0, 90, 0])
+                cylinder(d = t, h = inner_w);
+        // 下の水平バー
+        translate([x_base, 0, handle_z - inner_h/2])
+            rotate([0, 90, 0])
+                cylinder(d = t, h = inner_w);
+        // 外側の半円(縦の円弧)
+        translate([half_x, 0, handle_z])
+            rotate([90, 0, 0])
+                rotate_extrude(angle = 180)
+                    translate([inner_h/2, 0, 0])
+                        circle(d = t);
+    }
+}
+
+// ===== 結合 =====
+union() {
+    body();
+    handle();
+}

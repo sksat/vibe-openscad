@@ -1,0 +1,32 @@
+レンダリング結果を確認したところ、形状・寸法・配置は課題プロンプトの要件をすべて満たしています。
+
+- 頭部の六角柱(対辺距離13mm、高さ5.3mm)が z=0 から上に配置 ✓
+- シャンク(直径8mm、長さ30mm)が z<0 側へ伸びている ✓
+- 中心軸が +Z 方向 ✓
+
+問題が無いため、同じコードをそのまま再度出力します。
+
+```openscad
+// M8 六角ボルト
+// 頭部: 対辺距離 13mm, 高さ 5.3mm
+// シャンク: 直径 8mm, 長さ 30mm
+
+across_flats = 13;
+head_height = 5.3;
+shank_diameter = 8;
+shank_length = 30;
+
+// 対辺距離から外接円半径を計算
+head_radius = across_flats / 2 / cos(30);
+
+module hex_bolt() {
+    // 頭部(六角柱) z=0 から z=head_height へ
+    cylinder(h = head_height, r = head_radius, $fn = 6);
+
+    // シャンク(円柱) z=0 から z=-shank_length へ
+    translate([0, 0, -shank_length])
+        cylinder(h = shank_length, d = shank_diameter, $fn = 64);
+}
+
+hex_bolt();
+```
