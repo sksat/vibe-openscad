@@ -1,0 +1,38 @@
+// ===== パラメータ =====
+outer_d  = 80;     // 外径 80mm
+cup_h    = 100;    // 高さ 100mm
+wall_t   = 4;      // 肉厚 4mm
+bottom_t = 6;      // 底面の厚み 6mm
+
+handle_R = 12;     // 取手リングの半径(大半径)
+handle_r = 5;      // 取手の太さ(小半径)
+
+$fn = 120;
+
+// ===== 計算値 =====
+outer_r  = outer_d / 2;
+inner_d  = outer_d - 2 * wall_t;
+// 取手中心を外周より外側に配置(壁に少し食い込ませて接続)
+handle_cx = outer_r + handle_R - 2;
+
+// ===== 取手(トーラス) =====
+module handle() {
+    translate([handle_cx, 0, cup_h / 2])
+        rotate([90, 0, 0])
+            rotate_extrude(convexity = 10)
+                translate([handle_R, 0, 0])
+                    circle(r = handle_r);
+}
+
+// ===== マグカップ本体 =====
+difference() {
+    union() {
+        // 外形
+        cylinder(d = outer_d, h = cup_h);
+        // 取手
+        handle();
+    }
+    // 内側のくり抜き(底厚 6mm を残す)
+    translate([0, 0, bottom_t])
+        cylinder(d = inner_d, h = cup_h - bottom_t + 1);
+}

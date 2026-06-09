@@ -1,0 +1,20 @@
+// M8 六角ボルト(ねじ山省略)
+// 頭部: 対辺距離 13mm, 高さ 5.3mm
+// シャンク: 直径 8mm, 長さ 30mm
+
+af = 13;          // 対辺距離 (across-flats)
+head_h = 5.3;     // 頭部高さ
+shank_d = 8;      // シャンク直径
+shank_l = 30;     // シャンク長さ
+
+// 六角形の外接円半径 = (対辺距離/2) / cos(30°)
+hex_r = (af / 2) / cos(30);
+
+union() {
+    // 頭部(底面が z=0)
+    cylinder(h = head_h, r = hex_r, $fn = 6);
+
+    // シャンク(z=0 から z=-30 へ)
+    translate([0, 0, -shank_l])
+        cylinder(h = shank_l, d = shank_d, $fn = 64);
+}

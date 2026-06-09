@@ -1,0 +1,9 @@
+$fn = 100;
+
+difference() {
+    // 50mm 角の立方体
+    cube([50, 50, 50], center = true);
+    
+    // 直径 20mm の貫通穴（Z 軸方向）
+    cylinder(h = 52, d = 20, center = true);
+}
