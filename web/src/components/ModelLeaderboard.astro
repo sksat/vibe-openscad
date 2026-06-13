@@ -65,6 +65,12 @@ const STATUS_LEGEND: { status: string; label: string }[] = [
   { status: "submit_missing", label: "submit_missing / timeout" },
 ];
 
+// 番号チップは tier>=2 を枠色で区別する(tier1 は中立色)。注記は実際に
+// 表示されるチップの tier だけを列挙して、出ていない tier を誤って説明しない。
+const coloredTiers = [...new Set(tasks.map((t) => t.tier))]
+  .filter((t) => t >= 2)
+  .sort((a, b) => a - b);
+
 function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number]["run"]>): string {
   const m = run.meta;
   const parts = [m.status, fmtLat(m.timing.totalMs)];
@@ -103,7 +109,11 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
         <span class="tl-name">{t.slug}</span>
       </span>
     ))}
-    <span class="tl-note muted">枠色 = <span class="t2">tier2</span> / <span class="t3">tier3</span></span>
+    {coloredTiers.length > 0 && (
+      <span class="tl-note muted">枠色 = {coloredTiers.map((t, i) => (
+        <Fragment><span class={`t${t}`}>tier{t}</span>{i < coloredTiers.length - 1 ? " / " : ""}</Fragment>
+      ))}</span>
+    )}
   </div>
 
   <div class="lb-scroll">
@@ -716,6 +726,7 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
   .tl-note { margin-left: 6px; font-family: var(--mono); font-size: 10px; }
   .tl-note .t2 { color: var(--accent); }
   .tl-note .t3 { color: #c79bff; }
+  .tl-note .t4 { color: var(--warn); }
 
   .task-strip {
     display: grid;
