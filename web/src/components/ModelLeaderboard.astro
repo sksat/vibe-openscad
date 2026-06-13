@@ -43,7 +43,10 @@ const minCost = costVals.length ? Math.min(...costVals) : 0;
 const maxCost = costVals.length ? Math.max(...costVals) : 0;
 function barW(v: number | null, min: number, max: number): string {
   if (v == null) return "0%";
+  // 退化スケール(全行同値・データ無し)は中央に。
   if (min <= 0 || !(max > min)) return "50%";
+  // v<=0(例: $0 のローカルモデル)は log が未定義なので最小バー扱い。
+  if (v <= 0) return "3%";
   const f = (Math.log(v) - Math.log(min)) / (Math.log(max) - Math.log(min));
   return `${Math.min(100, Math.max(3, Math.round(f * 100)))}%`;
 }
