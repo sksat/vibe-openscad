@@ -534,10 +534,11 @@ const ogDescription = [
     align-items: baseline;
     gap: 8px;
     font-family: var(--mono);
-    font-size: 18px;
+    font-size: 20px;
     margin-bottom: 8px;
   }
-  .title .model code { color: var(--accent); }
+  .title .model code { color: var(--fg); }
+  .title .task-id { color: var(--fg-dim); }
   .small { font-size: 12px; }
   .badges {
     display: flex;
@@ -624,7 +625,7 @@ const ogDescription = [
   }
   .step-img {
     width: 100%;
-    background: #fff;
+    background: var(--render-bg);
     border: 1px solid var(--line);
     border-radius: 4px;
     aspect-ratio: 4 / 3;

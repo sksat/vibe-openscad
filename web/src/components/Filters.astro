@@ -52,26 +52,36 @@ groups.push({
 });
 ---
 
-<aside class="filters" data-filter-root>
-  {groups.map((g) => (
-    <div class="group" data-group-label={g.label}>
-      <div class="label">{g.label}</div>
-      <div class="chips">
-        {g.values.map((v) => (
-          <button
-            type="button"
-            class="chip"
-            data-filter-chip
-            data-facet={g.facet}
-            data-value={v.value}
-          >
-            {v.label}
-          </button>
-        ))}
+<details class="filters" data-filter-root>
+  <summary class="filters-summary">
+    <span class="fs-disc" aria-hidden="true">▸</span>
+    <span class="fs-label">フィルタ</span>
+    <span class="fs-hint muted">{groups.map((g) => g.label).join(" / ")}</span>
+    <span class="fs-count" data-filter-count hidden></span>
+    <button type="button" class="fs-clear" data-filter-clear hidden>clear</button>
+    <span class="sr-only" data-filter-status aria-live="polite"></span>
+  </summary>
+  <div class="filters-body">
+    {groups.map((g) => (
+      <div class="group" data-group-label={g.label}>
+        <div class="label">{g.label}</div>
+        <div class="chips">
+          {g.values.map((v) => (
+            <button
+              type="button"
+              class="chip"
+              data-filter-chip
+              data-facet={g.facet}
+              data-value={v.value}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
       </div>
-    </div>
-  ))}
-</aside>
+    ))}
+  </div>
+</details>
 
 <script is:inline>
   (() => {
@@ -126,9 +136,46 @@ groups.push({
       }
     }
 
+    function activeCount() {
+      let n = 0;
+      for (const set of active.values()) n += set.size;
+      return n;
+    }
+    function updateSummary() {
+      const n = activeCount();
+      const count = root.querySelector("[data-filter-count]");
+      const clear = root.querySelector("[data-filter-clear]");
+      if (count) {
+        count.textContent = n > 0 ? n + " 適用中" : "";
+        count.hidden = n === 0;
+      }
+      if (clear) clear.hidden = n === 0;
+      // SR への通知(視覚バッジとは別の polite live region)。
+      const live = root.querySelector("[data-filter-status]");
+      if (live) live.textContent = n > 0 ? `フィルタ ${n} 件適用中` : "フィルタ解除";
+    }
+
     root.addEventListener("click", (e) => {
       const t = e.target;
       if (!(t instanceof Element)) return;
+      // 件数バッジ(非インタラクティブ span)クリックで summary のネイティブ
+      // トグルが暴発して畳まれるのを止める。
+      if (t.closest("[data-filter-count]")) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      // clear ボタン: details の開閉トグルを止めて全フィルタ解除。
+      if (t.closest("[data-filter-clear]")) {
+        e.preventDefault();
+        e.stopPropagation();
+        active.clear();
+        applyToChips();
+        applyToCards();
+        syncHash();
+        updateSummary();
+        return;
+      }
       const chip = t.closest("[data-filter-chip]");
       if (!chip) return;
       e.preventDefault();
@@ -143,23 +190,94 @@ groups.push({
       applyToChips();
       applyToCards();
       syncHash();
+      updateSummary();
     });
 
-    applyToChips();
-    applyToCards();
+    // init は [data-task] カード群が DOM に出てから走らせる。is:inline は
+    // パース時に同期実行され、Filters はカードより前に出力されるため、即時に
+    // applyToCards() しても querySelectorAll('[data-task]') が 0 件で、URL 共有の
+    // フィルタが初回ロードで効かない(「適用中」バッジだけ出て未絞り込みになる)。
+    function initFilters() {
+      applyToChips();
+      applyToCards();
+      updateSummary();
+      // 起動時にフィルタが効いていれば開いた状態にする(URL 共有時など)。
+      if (activeCount() > 0 && "open" in root) root.open = true;
+    }
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initFilters);
+    } else {
+      initFilters();
+    }
   })();
 </script>
 
 <style>
   .filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px 24px;
-    padding: 12px 16px;
     margin-bottom: 16px;
     background: var(--bg-2);
     border: 1px solid var(--line);
     border-radius: 8px;
+  }
+  /* 既定で畳んで本文(結果)を前に出す。開くとチップ群が出る。 */
+  .filters-summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    user-select: none;
+  }
+  .filters-summary::-webkit-details-marker { display: none; }
+  .filters-summary:hover { background: var(--bg-3); border-radius: 8px; }
+  .fs-disc {
+    font-size: 10px;
+    color: var(--fg-dim);
+    transition: transform 0.12s ease;
+  }
+  .filters[open] .fs-disc { transform: rotate(90deg); }
+  .filters[open] .filters-summary:hover { border-radius: 8px 8px 0 0; }
+  .fs-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--fg);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .fs-hint {
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .filters[open] .fs-hint { display: none; }
+  .fs-count {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--bg);
+    background: var(--accent);
+    border-radius: 999px;
+    padding: 1px 9px;
+  }
+  .fs-clear {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--fg-dim);
+    background: var(--bg-3);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 2px 9px;
+    cursor: pointer;
+  }
+  .fs-count[hidden] + .fs-clear { margin-left: auto; }
+  .fs-clear:hover { color: var(--bad); border-color: var(--bad); }
+  .filters-body {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    padding: 4px 16px 14px;
+    border-top: 1px solid var(--line);
   }
   .group { display: flex; flex-direction: column; gap: 4px; }
   .label {

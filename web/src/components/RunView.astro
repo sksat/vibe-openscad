@@ -133,7 +133,9 @@ const hasStl = typeof stlUrl === "string" && stlUrl.length > 0;
     gap: 16px;
   }
   @media (min-width: 720px) {
-    .run-view-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    /* render 列は上限を設けて巨大化を防ぎ(白レンダが画面を占有しない)、
+       余りは SCAD 列に回す。 */
+    .run-view-body { grid-template-columns: minmax(0, 440px) minmax(0, 1fr); }
   }
 
   .run-view-render-col {
@@ -146,7 +148,7 @@ const hasStl = typeof stlUrl === "string" && stlUrl.length > 0;
   .render-frame {
     aspect-ratio: 4 / 3;
     width: 100%;
-    background: #fff;
+    background: var(--render-bg);
     border: 1px solid var(--line);
     border-radius: 6px;
     display: flex;

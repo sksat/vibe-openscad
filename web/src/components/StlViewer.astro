@@ -40,7 +40,7 @@ const { src, height = 480 } = Astro.props;
       const height = host.clientHeight;
 
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0xffffff);
+      scene.background = new THREE.Color(0xe7e7e7);
 
       const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 5000);
       camera.up.set(0, 0, 1);
@@ -138,7 +138,7 @@ const { src, height = 480 } = Astro.props;
 <style>
   .stl-host {
     position: relative;
-    background: #fff;
+    background: var(--render-bg);
     border: 1px solid var(--line);
     border-radius: 8px;
     overflow: hidden;

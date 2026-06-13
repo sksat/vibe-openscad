@@ -321,7 +321,7 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
   }
   .bare-thumb {
     aspect-ratio: 4 / 3;
-    background: #fff;
+    background: var(--render-bg);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -435,7 +435,7 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #fff;
+    background: var(--render-bg);
     aspect-ratio: 1 / 1;
     text-decoration: none;
     color: inherit;
@@ -500,7 +500,7 @@ const bareAriaLabel = `open card detail for ${m.taskId} on ${m.model ?? m.matrix
   .strategy-strip:has(.iter-thumb:hover) { overflow: visible; }
   .hover-img {
     width: 100%;
-    background: #fff;
+    background: var(--render-bg);
     border-radius: 4px;
     aspect-ratio: 1 / 1;
     object-fit: contain;
