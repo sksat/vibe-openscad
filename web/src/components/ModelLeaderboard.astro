@@ -1,5 +1,5 @@
 ---
-import type { LeaderboardData } from "../lib/leaderboard.js";
+import type { LeaderboardData, LeaderboardRow } from "../lib/leaderboard.js";
 import {
   formatCost,
   modelVendorIcon,
@@ -22,12 +22,31 @@ function fmtLat(ms: number): string {
   return `${(ms / 60000).toFixed(1)}m`;
 }
 
-// 相対バーの最大値(コスト・レイテンシは「低いほど良い」が、まずは量の
-// 大小を一目で掴めるよう絶対量バーにする)。
-const maxCost = Math.max(0, ...rows.map((r) => r.avgCostUsd ?? 0));
-const maxLat = Math.max(0, ...rows.map((r) => r.avgLatencyMs ?? 0));
-const barW = (v: number | null, max: number) =>
-  v != null && max > 0 ? `${Math.max(2, Math.round((v / max) * 100))}%` : "0%";
+// バー幅: コスト・レイテンシは値域が桁違いに広い(数秒〜十数分 /
+// $0.0001〜$0.1)。線形 + 単純 max だと「1 サンプルだけの外れ値」1 行が
+// スケールを支配して大半の行が潰れ、バーが空に見える。対策として
+//  (1) サンプルの薄い行(tasksAttempted < 3)を min/max 算出から除外し、
+//  (2) min..max の対数スケールで幅を割り当てる(短い=速い/安い=良い)。
+// 数値ラベルは常に併記しているので、バーは「相対的な大小の目安」に徹する。
+const wellSampled = rows.filter((r) => r.tasksAttempted >= 3);
+function posValues(sel: (r: LeaderboardRow) => number | null): number[] {
+  const pick = (rs: LeaderboardRow[]) =>
+    rs.map(sel).filter((v): v is number => v != null && v > 0);
+  const robust = pick(wellSampled);
+  return robust.length > 1 ? robust : pick(rows);
+}
+const latVals = posValues((r) => r.avgLatencyMs);
+const costVals = posValues((r) => r.avgCostUsd);
+const minLat = latVals.length ? Math.min(...latVals) : 0;
+const maxLat = latVals.length ? Math.max(...latVals) : 0;
+const minCost = costVals.length ? Math.min(...costVals) : 0;
+const maxCost = costVals.length ? Math.max(...costVals) : 0;
+function barW(v: number | null, min: number, max: number): string {
+  if (v == null) return "0%";
+  if (min <= 0 || !(max > min)) return "50%";
+  const f = (Math.log(v) - Math.log(min)) / (Math.log(max) - Math.log(min));
+  return `${Math.min(100, Math.max(3, Math.round(f * 100)))}%`;
+}
 
 // data-rank 用: モデル順(既定ソートではなく「モデル順」ボタンが使う順)。
 // rows は既に success 降順なので、モデル順は别途インデックスを振る。
@@ -37,12 +56,13 @@ const rankIndex = new Map<string, number>();
   .sort((a, b) => a.localeCompare(b))
   .forEach((m, i) => rankIndex.set(m, i));
 
+// 色は3値(success=緑 / render_error+no_code=赤 / submit_missing+timeout=橙)
+// なので凡例も色に合わせて3グループに畳む。さもないと「5色で見分けられる」
+// と誤解させる(実際の配色は dataset.ts の重大度グルーピングに対応)。
 const STATUS_LEGEND: { status: string; label: string }[] = [
   { status: "success", label: "success" },
-  { status: "render_error", label: "render_error" },
-  { status: "no_code", label: "no_code" },
-  { status: "submit_missing", label: "submit_missing" },
-  { status: "timeout", label: "timeout" },
+  { status: "render_error", label: "render_error / no_code" },
+  { status: "submit_missing", label: "submit_missing / timeout" },
 ];
 
 function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number]["run"]>): string {
@@ -83,6 +103,7 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
         <span class="tl-name">{t.slug}</span>
       </span>
     ))}
+    <span class="tl-note muted">枠色 = <span class="t2">tier2</span> / <span class="t3">tier3</span></span>
   </div>
 
   <div class="lb-scroll">
@@ -93,11 +114,11 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
           <th class="c-model">model</th>
           <th class="c-ok">成功率</th>
           <th class="c-num">試行</th>
-          <th class="c-bar">平均レイテンシ</th>
-          <th class="c-bar">平均コスト</th>
+          <th class="c-bar">平均レイテンシ<span class="dir">短い=速い</span></th>
+          <th class="c-bar">平均コスト<span class="dir">短い=安い</span></th>
           <th class="c-strip">
             <div class="strip-head-label">renders / task</div>
-            <div class="strip-head">
+            <div class="strip-head" aria-hidden="true">
               {tasks.map((t, i) => (
                 <span class="strip-head-cell" data-tier={t.tier} title={`${t.title}(tier ${t.tier})`}>
                   <span class="sh-num">{i + 1}</span>
@@ -142,7 +163,7 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
               <td class="c-bar">
                 {row.avgLatencyMs != null ? (
                   <div class="mbar-cell">
-                    <div class="mbar lat"><span style={`width:${barW(row.avgLatencyMs, maxLat)}`}></span></div>
+                    <div class="mbar lat"><span style={`width:${barW(row.avgLatencyMs, minLat, maxLat)}`}></span></div>
                     <span class="mbar-text">{fmtLat(row.avgLatencyMs)}</span>
                   </div>
                 ) : (
@@ -152,7 +173,7 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
               <td class="c-bar">
                 {row.avgCostUsd != null ? (
                   <div class="mbar-cell">
-                    <div class="mbar cost"><span style={`width:${barW(row.avgCostUsd, maxCost)}`}></span></div>
+                    <div class="mbar cost"><span style={`width:${barW(row.avgCostUsd, minCost, maxCost)}`}></span></div>
                     <span class="mbar-text">{formatCost(row.avgCostUsd)}</span>
                   </div>
                 ) : (
@@ -210,7 +231,7 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
        ↑↓ 同一タスクの別モデルへ移動できる(直接 A/B 比較用)。 -->
   <div class="lightbox" data-lightbox hidden>
     <div class="lb-backdrop" data-lb-close></div>
-    <figure class="lb-figure">
+    <figure class="lb-figure" role="dialog" aria-modal="true" aria-label="レンダ拡大プレビュー" tabindex="-1">
       <button type="button" class="lb-nav prev" data-lb-prev aria-label="前(←)">‹</button>
       <img class="lb-img" alt="" />
       <button type="button" class="lb-nav next" data-lb-next aria-label="次(→)">›</button>
@@ -289,7 +310,16 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
     const elStatus = lb.querySelector<HTMLElement>(".lb-status")!;
     const elMeta = lb.querySelector<HTMLElement>(".lb-meta")!;
     const elLink = lb.querySelector<HTMLAnchorElement>(".lb-link")!;
+    const figure = lb.querySelector<HTMLElement>(".lb-figure")!;
     let current: HTMLElement | null = null;
+    let opener: HTMLElement | null = null;
+    function focusables(): HTMLElement[] {
+      return Array.from(
+        figure.querySelectorAll<HTMLElement>(
+          'button, a[href], [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => !el.hasAttribute("disabled") && el.offsetParent !== null);
+    }
 
     function render(t: HTMLElement) {
       current = t;
@@ -303,14 +333,20 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
       elLink.href = t.dataset.href ?? "#";
     }
     function open(t: HTMLElement) {
+      opener = document.activeElement as HTMLElement | null;
       render(t);
       lb!.removeAttribute("hidden");
       document.body.style.overflow = "hidden";
+      // フォーカスをダイアログ内へ移す(キーボード/SR がモーダル操作に到達できる)。
+      (lb!.querySelector<HTMLElement>(".lb-close") ?? figure).focus();
     }
     function close() {
       lb!.setAttribute("hidden", "");
       document.body.style.overflow = "";
       current = null;
+      // 起点要素にフォーカスを戻す。
+      opener?.focus?.();
+      opener = null;
     }
     function visibleRows(): HTMLElement[] {
       return Array.from(
@@ -361,6 +397,26 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
     });
     document.addEventListener("keydown", (e) => {
       if (lb!.hasAttribute("hidden")) return;
+      if (e.key === "Tab") {
+        // フォーカストラップ: ダイアログ内の focusable を循環させ、背景へ抜けない。
+        const f = focusables();
+        if (f.length === 0) {
+          e.preventDefault();
+          return;
+        }
+        const first = f[0]!;
+        const last = f[f.length - 1]!;
+        const active = document.activeElement as HTMLElement | null;
+        const inside = active ? figure.contains(active) : false;
+        if (e.shiftKey && (active === first || !inside)) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && (active === last || !inside)) {
+          e.preventDefault();
+          first.focus();
+        }
+        return;
+      }
       if (e.key === "Escape") close();
       else if (e.key === "ArrowLeft" && current) move(rowSiblings(current), -1);
       else if (e.key === "ArrowRight" && current) move(rowSiblings(current), 1);
@@ -456,8 +512,12 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
   .legend-item[data-status="submit_missing"] .swatch,
   .legend-item[data-status="timeout"] .swatch { background: var(--warn); }
 
+  /* 高さを拘束して内部スクロールコンテナにすることで sticky thead を実際に
+     効かせる(overflow-x:auto だけだと縦スクロールは document 側で起き、
+     ヘッダが一緒に流れて固定されない)。横スクロールもこのコンテナ内。 */
   .lb-scroll {
-    overflow-x: auto;
+    overflow: auto;
+    max-height: calc(100vh - 150px);
   }
   .lb-table {
     border-collapse: collapse;
@@ -467,7 +527,7 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
   .lb-table thead th {
     position: sticky;
     top: 0;
-    z-index: 2;
+    z-index: 3;
     background: var(--bg-3);
     border-bottom: 2px solid var(--accent);
     text-align: left;
@@ -479,13 +539,35 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
     padding: 9px 10px;
     white-space: nowrap;
   }
+  /* 横スクロールしてもモデルが分かるよう # と model 列を左 sticky 化。
+     sticky セルは不透明背景が必須(下に流れる内容を隠す)。zebra/hover に
+     合わせた実色を当てる。 */
+  .lb-table .c-rank,
+  .lb-table .c-model {
+    position: sticky;
+    z-index: 1;
+    background: var(--bg);
+  }
+  .lb-table .c-rank { left: 0; }
+  .lb-table .c-model { left: 34px; }
+  .lb-table tbody tr:nth-child(even) .c-rank,
+  .lb-table tbody tr:nth-child(even) .c-model { background: #181b20; }
+  .lb-table tbody tr:hover .c-rank,
+  .lb-table tbody tr:hover .c-model { background: #16202b; }
+  /* 左 sticky 列の見出しは「縦×横」両 sticky の角セルなので最前面に。 */
+  .lb-table thead th.c-rank,
+  .lb-table thead th.c-model { z-index: 4; background: var(--bg-3); }
   /* メトリクス列とサムネ帯の境界を明示。 */
   .lb-table .c-strip { border-left: 1px solid var(--line); padding-left: 14px; }
+  /* thead th は `padding: 9px 10px` shorthand を持ち、Astro scope 後の詳細度で
+     `.lb-table .c-strip` の padding-left:14px を上書きしてしまう(番号チップが
+     サムネ列より 4px 左にずれる)。th.c-strip を明示して 14px に揃える。 */
+  .lb-table thead th.c-strip { padding-left: 14px; }
   .lb-table tbody tr {
     border-bottom: 1px solid var(--line);
   }
   /* ゼブラ + 強めの hover で横長行を追いやすく。 */
-  .lb-table tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.022); }
+  .lb-table tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.045); }
   .lb-table tbody tr:hover { background: rgba(108, 182, 255, 0.09); }
   .lb-table td {
     padding: var(--row-pad);
@@ -527,11 +609,21 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
 
   .c-num { width: 44px; text-align: right; font-family: var(--mono); color: var(--fg); font-variant-numeric: tabular-nums; }
   .c-bar { width: 124px; }
+  /* 列見出しの方向ヒント(短い=速い/安い)。 */
+  .lb-table thead th .dir {
+    display: block;
+    font-size: 9px;
+    font-weight: 400;
+    color: var(--fg-dim);
+    letter-spacing: 0;
+    margin-top: 1px;
+  }
   .mbar-cell { display: flex; align-items: center; gap: 7px; }
   .mbar {
     flex: 1;
     height: 8px;
     background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 4px;
     overflow: hidden;
     min-width: 30px;
@@ -616,6 +708,10 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
   }
   .tl-name { color: var(--fg-dim); }
   .tl-item:hover .tl-name { color: var(--fg); }
+  /* tier 枠色の意味を一言で示す注記。 */
+  .tl-note { margin-left: 6px; font-family: var(--mono); font-size: 10px; }
+  .tl-note .t2 { color: var(--accent); }
+  .tl-note .t3 { color: #c79bff; }
 
   .task-strip {
     display: grid;
