@@ -483,6 +483,21 @@ export function shortModelLabel(model: string): string {
 }
 
 /**
+ * Vendor icon key for a model id (`claude` / `gemini` / `openai` / `nvidia` /
+ * `qwen`), or undefined when none matches. Derived from the same parser the
+ * badges use, so self-hosted `google/gemma-3-27b` resolves to its weight
+ * publisher's icon. Used by the leaderboard's model cell.
+ */
+export function modelVendorIcon(
+  model: string,
+): "claude" | "gemini" | "openai" | "nvidia" | "qwen" | undefined {
+  for (const s of parseModelLabel(model)) {
+    if (s.vendor) return s.vendor;
+  }
+  return undefined;
+}
+
+/**
  * Decompose a matrixId like `bare/claude-opus-4-7` into displayable segments
  * so the dashboard can render them as a row of badges instead of one wide
  * string that clips with ellipsis. When the model carries a date suffix it

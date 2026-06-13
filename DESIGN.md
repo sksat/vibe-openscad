@@ -182,6 +182,7 @@ pdf_source:
 - `/task/` — task 一覧
 - `/task/<slug>` — task 詳細(slug は YAML の `slug:` か、無ければ id から `tier-N-` prefix を剥がしたもの)
 - `/task/<slug>/<model>` — (task, model) 詳細
+- `/models` — モデル比較リーダーボード(一覧)
 - `/models/<id>` — モデル別ページ
 - `/harnesses/<id>` — ハーネス別ページ
 
@@ -240,6 +241,39 @@ Claude Code / Cursor / 自作 SDK エージェント等を **MCP 経由で** 動
 - `<model-viewer>` は STL 非対応のため不採用
 - **パラメトリック 3D ビューア**: SCAD の top-level 変数(数値・bool)をスライダーで動かすと openscad-wasm で再レンダして即時反映。openscad-wasm の `callMain` が同期 blocking で UI を凍らせるため Web Worker に分離。`console.error.bind(console)` で stderr が固定参照になる Emscripten ラッパーの仕様に合わせて、worker 起動時に console を差し替えて bind 経由で実エラーメッセージをキャプチャする(さもないと exit code の数値だけが見える)
 - **ダッシュボード階層表示**: `(harness × provider × model)` を二段ネスト表示し、`harness > provider > model` ↔ `provider > harness > model` を localStorage に保存して全 task row 共有。両方を SSR してハードコード CSS の `[hidden]` で切り替える(client 側で DOM を組み直さない)
+
+## モデル比較(`/models` leaderboard)
+
+ダッシュボード(`/`)は **タスク先頭**で、1 タスクを行に、その中のモデルを
+harness × provider で 2 段ネストして並べる。これは「あるタスクを全モデルでどう
+解いたか」を見るのに向くが、**モデル同士の横断比較**には向かない(同じタスク内
+でも provider が違うとサブボックスが分かれて opus と gpt-5 が隣り合わない)。
+
+そこを埋めるのが `/models` リーダーボード。**モデル先頭**で 1 モデルを 1 行に
+畳み、成功率・平均コスト・平均レイテンシで横並び/ソートできる。右端にタスク別の
+レンダ帯(全行で列が縦に揃う)を置き、クリックで拡大ライトボックス
+(←→ で同一モデルの別タスク、↑↓ で同一タスクの別モデルへ移動)。
+
+### 集計のベースライン軸(不変条件)
+
+リーダーボードの headline 指標は **provider 既定の単発 bare run**
+(matrixId 先頭セグメントが厳密に `bare` のもの)だけで計算する。これがモデル
+横断で最も apples-to-apples な比較になる(全体方針「素のモデル単発呼び出しを
+1 級市民として扱う」に対応)。次は **意図的に除外**する:
+
+- effort variant(`bare-high/...` 等)・thinking variant(`bare-think-off/...` の
+  ように 2 セグメント以上の head)
+- iteration chain step(`iter-png-1/...`)
+- external-agent
+
+判定 `isBaselineRun()` は `bare-<...>` を正規表現で個別に弾くのではなく
+**「head === `bare`」の allow-list** で通す。`bare-think-off` のような複合
+セグメント variant が将来増えても baseline に誤って混入しない(ここを
+regex の deny-list にすると新 variant のたびに漏れる、というのが実装上の罠)。
+
+variant / iteration を含めた深掘りは各モデル行のリンク先 `/models/<id>`
+(task × variant グリッド)に委ねる。リーダーボードのセルは
+`results/` の最新 baseline run を (model, task) ごとに 1 枚選ぶ。
 
 ## デプロイ
 

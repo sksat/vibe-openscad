@@ -1,0 +1,48 @@
+---
+import Base from "../../layouts/Base.astro";
+import Breadcrumb from "../../components/Breadcrumb.astro";
+import ModelLeaderboard from "../../components/ModelLeaderboard.astro";
+import { getDataset } from "../../lib/dataset.js";
+import { buildLeaderboard } from "../../lib/leaderboard.js";
+
+const ds = await getDataset();
+const data = buildLeaderboard(
+  ds.runs.values(),
+  ds.tasks.map((t) => t.task),
+);
+const modelCount = data.rows.length;
+const taskCount = data.tasks.length;
+---
+
+<Base
+  title="モデル比較 (leaderboard) — vibe-openscad"
+  description={`${modelCount} モデルを ${taskCount} タスクの単発 bare 成功率・コスト・レイテンシで横並び比較するリーダーボード`}
+>
+  <Breadcrumb items={[{ label: "home", href: "/" }, { label: "models" }]} />
+  <h1>モデル比較 <span class="muted h-sub">leaderboard</span></h1>
+  <p class="muted lead">
+    各モデルの <strong>provider 既定の単発 bare run</strong> を {taskCount} タスク横断で集計。
+    成功率・平均コスト・平均レイテンシでソートでき、右のサムネ帯はタスク別のレンダ結果。
+    クリックで拡大(←→ / ↑↓ で隣のモデル・タスクへ)。
+    effort/thinking variant や iteration chain を含む詳細は各モデル名のリンク先で。
+  </p>
+
+  {modelCount === 0 ? (
+    <p class="muted">まだ run がありません。<code>pnpm bench run</code> で実行してください。</p>
+  ) : (
+    <ModelLeaderboard data={data} />
+  )}
+</Base>
+
+<style>
+  .h-sub {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 400;
+  }
+  .lead {
+    font-size: 13px;
+    max-width: 760px;
+    margin: 0 0 18px;
+  }
+</style>
