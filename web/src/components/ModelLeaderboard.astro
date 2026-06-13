@@ -73,6 +73,18 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
     </div>
   </div>
 
+  <!-- タスク凡例: 右のサムネ帯の列番号 ①②… を task 名にデコードする。
+       列ヘッダは番号だけにして、識別はここで取る。 -->
+  <div class="task-legend" aria-label="タスク凡例">
+    <span class="ctl-label">tasks</span>
+    {tasks.map((t, i) => (
+      <span class="tl-item" data-tier={t.tier} title={`${t.title}(tier ${t.tier})`}>
+        <span class="tl-num">{i + 1}</span>
+        <span class="tl-name">{t.slug}</span>
+      </span>
+    ))}
+  </div>
+
   <div class="lb-scroll">
     <table class="lb-table">
       <thead>
@@ -84,11 +96,11 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
           <th class="c-bar">平均レイテンシ</th>
           <th class="c-bar">平均コスト</th>
           <th class="c-strip">
-            <div class="strip-head" aria-hidden="true">
+            <div class="strip-head-label">renders / task</div>
+            <div class="strip-head">
               {tasks.map((t, i) => (
                 <span class="strip-head-cell" data-tier={t.tier} title={`${t.title}(tier ${t.tier})`}>
                   <span class="sh-num">{i + 1}</span>
-                  <span class="sh-name">{t.slug}</span>
                 </span>
               ))}
             </div>
@@ -456,30 +468,35 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
     position: sticky;
     top: 0;
     z-index: 2;
-    background: var(--bg-2);
-    border-bottom: 1px solid var(--line);
+    background: var(--bg-3);
+    border-bottom: 2px solid var(--accent);
     text-align: left;
-    font-weight: 500;
-    color: var(--fg-dim);
+    font-weight: 600;
+    color: var(--fg);
     font-family: var(--mono);
-    font-size: 11px;
-    padding: 8px 10px;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    padding: 9px 10px;
     white-space: nowrap;
   }
+  /* メトリクス列とサムネ帯の境界を明示。 */
+  .lb-table .c-strip { border-left: 1px solid var(--line); padding-left: 14px; }
   .lb-table tbody tr {
     border-bottom: 1px solid var(--line);
   }
-  .lb-table tbody tr:hover {
-    background: var(--bg-2);
-  }
+  /* ゼブラ + 強めの hover で横長行を追いやすく。 */
+  .lb-table tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.022); }
+  .lb-table tbody tr:hover { background: rgba(108, 182, 255, 0.09); }
   .lb-table td {
     padding: var(--row-pad);
     vertical-align: middle;
   }
-  .c-rank { width: 30px; text-align: right; color: var(--fg-dim); font-family: var(--mono); }
+  .c-rank { width: 34px; text-align: right; color: var(--fg-dim); font-family: var(--mono); font-variant-numeric: tabular-nums; }
   tbody { counter-reset: rank; }
   tbody tr { counter-increment: rank; }
   .rank-n::before { content: counter(rank); }
+  /* 上位3行(現ソート基準)を強調。 */
+  tbody tr:nth-child(-n + 3) .rank-n::before { color: var(--accent); font-weight: 700; }
   .c-model { min-width: 170px; }
   .model-link {
     display: inline-flex;
@@ -491,11 +508,11 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
   .model-name { font-size: 13px; }
   .model-sub { font-family: var(--mono); font-size: 10px; margin-top: 1px; }
 
-  .c-ok { width: 130px; }
-  .ok-cell { display: flex; flex-direction: column; gap: 2px; }
+  .c-ok { width: 134px; }
+  .ok-cell { display: flex; flex-direction: column; gap: 3px; }
   .ok-bar {
-    height: 7px;
-    background: var(--bg-3);
+    height: 8px;
+    background: rgba(255, 255, 255, 0.08);
     border-radius: 4px;
     overflow: hidden;
   }
@@ -505,35 +522,43 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
     background: linear-gradient(90deg, var(--ok), #8ee0a5);
     border-radius: 4px;
   }
-  .ok-text { font-family: var(--mono); font-size: 11px; }
-  .ok-text strong { font-variant-numeric: tabular-nums; }
+  .ok-text { font-family: var(--mono); font-size: 11px; color: var(--fg); }
+  .ok-text strong { font-variant-numeric: tabular-nums; font-size: 12px; }
 
-  .c-num { width: 44px; text-align: right; font-family: var(--mono); color: var(--fg-dim); }
-  .c-bar { width: 120px; }
-  .mbar-cell { display: flex; align-items: center; gap: 6px; }
+  .c-num { width: 44px; text-align: right; font-family: var(--mono); color: var(--fg); font-variant-numeric: tabular-nums; }
+  .c-bar { width: 124px; }
+  .mbar-cell { display: flex; align-items: center; gap: 7px; }
   .mbar {
     flex: 1;
-    height: 6px;
-    background: var(--bg-3);
+    height: 8px;
+    background: rgba(255, 255, 255, 0.08);
     border-radius: 4px;
     overflow: hidden;
     min-width: 30px;
   }
   .mbar span { display: block; height: 100%; border-radius: 4px; }
-  .mbar.lat span { background: #6c9cff; }
-  .mbar.cost span { background: #c79bff; }
+  .mbar.lat span { background: linear-gradient(90deg, #5b86e8, #7fb0ff); }
+  .mbar.cost span { background: linear-gradient(90deg, #a978f0, #cba6ff); }
   .mbar-text {
     font-family: var(--mono);
-    font-size: 10px;
-    color: var(--fg-dim);
+    font-size: 11px;
+    color: var(--fg);
     white-space: nowrap;
-    min-width: 38px;
+    min-width: 40px;
     text-align: right;
+    font-variant-numeric: tabular-nums;
   }
 
   /* タスクサムネ帯。各行同じ列数・列幅なので縦に揃い、列方向に 1 タスクを
-     モデル横断で見比べられる。 */
+     モデル横断で見比べられる。列の識別は番号チップ + 上のタスク凡例で取る。 */
   .c-strip { width: 1px; white-space: nowrap; }
+  .strip-head-label {
+    font-size: 10px;
+    color: var(--fg-dim);
+    text-transform: none;
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
   .strip-head {
     display: grid;
     grid-template-columns: repeat(var(--ncols), var(--thumb));
@@ -541,33 +566,56 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
   }
   .strip-head-cell {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    line-height: 1.1;
-    overflow: hidden;
-  }
-  .sh-num {
-    font-size: 9px;
-    color: var(--fg);
-    background: var(--bg-3);
-    border-radius: 999px;
-    width: 14px;
-    height: 14px;
-    display: flex;
     align-items: center;
     justify-content: center;
   }
-  .strip-head-cell[data-tier="2"] .sh-num { box-shadow: inset 0 0 0 1px rgba(108,182,255,0.4); }
-  .strip-head-cell[data-tier="3"] .sh-num { box-shadow: inset 0 0 0 1px rgba(199,155,255,0.5); }
-  .strip-head-cell[data-tier="4"] .sh-num { box-shadow: inset 0 0 0 1px rgba(232,184,109,0.5); }
-  .sh-name {
-    font-size: 8px;
-    color: var(--fg-dim);
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  /* 番号チップ: 凡例(.tl-num)と同じ見た目で対応関係を取りやすく。 */
+  .sh-num,
+  .tl-num {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--fg);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
   }
+  /* tier ごとに番号チップを色分け(凡例と帯ヘッダで共通)。 */
+  .strip-head-cell[data-tier="2"] .sh-num,
+  .tl-item[data-tier="2"] .tl-num { border-color: var(--accent); color: var(--accent); }
+  .strip-head-cell[data-tier="3"] .sh-num,
+  .tl-item[data-tier="3"] .tl-num { border-color: #c79bff; color: #c79bff; }
+  .strip-head-cell[data-tier="4"] .sh-num,
+  .tl-item[data-tier="4"] .tl-num { border-color: var(--warn); color: var(--warn); }
+
+  /* タスク凡例 */
+  .task-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    padding: 8px 14px;
+    margin: -4px 0 14px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+  .tl-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--fg);
+  }
+  .tl-name { color: var(--fg-dim); }
+  .tl-item:hover .tl-name { color: var(--fg); }
 
   .task-strip {
     display: grid;
