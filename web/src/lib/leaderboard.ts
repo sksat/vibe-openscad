@@ -74,7 +74,12 @@ export function buildLeaderboard(
   runs: Iterable<LoadedRun>,
   tasks: Task[],
 ): LeaderboardData {
+  // `pdf_source` タスクは pdf-page harness 専用で、planner(runners/src/matrix.ts)
+  // が bare run を一切スケジュールしない。baseline(単発 bare)リーダーボードでは
+  // 全モデル永久に空列になり `x/y task` の分母も水増しされるので、軸から外す。
+  // text タスク(prompt_images 含む)は vision 対応モデルが bare で走るので残す。
   const orderedTasks: LeaderboardTask[] = [...tasks]
+    .filter((t) => !t.pdf_source)
     .sort((a, b) => a.tier - b.tier || a.id.localeCompare(b.id))
     .map((t) => ({ id: t.id, slug: taskSlug(t), title: t.title, tier: t.tier }));
 

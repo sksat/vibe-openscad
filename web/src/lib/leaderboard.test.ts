@@ -183,6 +183,25 @@ describe("buildLeaderboard", () => {
     expect(row.cells[1]!.status).toBeNull();
   });
 
+  it("excludes pdf_source tasks from the task axis (bare runs are never scheduled for them)", () => {
+    const visionTask: Task = {
+      id: "tier-4-v",
+      tier: 4,
+      title: "Vision",
+      prompt: "p",
+      pdf_source: { url: "https://example.com/x.pdf", pages: [2] },
+    };
+    const lb = buildLeaderboard(
+      [fakeRun({ taskId: "tier-1-a" })],
+      [task("tier-1-a", 1), visionTask],
+    );
+    expect(lb.tasks.map((t) => t.id)).toEqual(["tier-1-a"]);
+    const row = lb.rows[0]!;
+    // denominator counts only bare-eligible tasks
+    expect(row.cells).toHaveLength(1);
+    expect(row.tasksAttempted).toBe(1);
+  });
+
   it("sorts rows by success rate desc by default", () => {
     const lb = buildLeaderboard(
       [
