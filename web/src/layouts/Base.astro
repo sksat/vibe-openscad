@@ -107,6 +107,10 @@ function navActive(href: string): boolean {
         --ok: #6cd58c;
         --warn: #e8b86d;
         --bad: #ef6f6c;
+        /* OpenSCAD レンダ(PNG)/STL ビューアの台紙色。純白 #fff はダーク UI 上で
+           眩しいので、ごくわずかに落ち着いた台紙にし、PNG 側も下の filter で
+           合わせて白を弱める(モデルの色味は saturate で補正)。 */
+        --render-bg: #e9ebef;
         --mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
         --sans: ui-sans-serif, system-ui, "Hiragino Sans", "Yu Gothic", sans-serif;
       }
@@ -120,6 +124,10 @@ function navActive(href: string): boolean {
       }
       a { color: var(--accent); text-decoration: none; }
       a:hover { text-decoration: underline; }
+      /* レンダ PNG は白背景が焼き込まれているので、台紙(--render-bg)に合わせて
+         わずかに輝度を落とし、彩度を少し補ってモデルの見栄えを保つ。/results/
+         配下の全レンダ画像(サムネ・拡大・チェーン等)に一括で効く。 */
+      img[src*="/results/"] { filter: brightness(0.93) saturate(1.04); }
       code, pre { font-family: var(--mono); }
       pre {
         background: var(--bg-2);

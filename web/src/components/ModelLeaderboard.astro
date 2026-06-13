@@ -737,7 +737,7 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
     position: relative;
     width: var(--thumb);
     height: var(--thumb);
-    background: #fff;
+    background: var(--render-bg);
     border: 1px solid var(--line);
     border-radius: 3px;
     padding: 0;
@@ -812,7 +812,7 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
     width: min(70vw, 560px);
     aspect-ratio: 4 / 3;
     object-fit: contain;
-    background: #fff;
+    background: var(--render-bg);
     border-radius: 6px;
   }
   .lb-nav {
