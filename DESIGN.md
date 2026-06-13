@@ -272,8 +272,25 @@ harness × provider で 2 段ネストして並べる。これは「あるタス
 regex の deny-list にすると新 variant のたびに漏れる、というのが実装上の罠)。
 
 variant / iteration を含めた深掘りは各モデル行のリンク先 `/models/<id>`
-(task × variant グリッド)に委ねる。リーダーボードのセルは
-`results/` の最新 baseline run を (model, task) ごとに 1 枚選ぶ。
+(task × variant グリッド)に委ねる。
+
+**task 軸**は baseline(bare)run が成立しうるタスクだけにする。`pdf_source`
+タスクは `pdf-page` harness 専用で planner(`matrix.ts`)が bare を一切
+スケジュールしないため、リーダーボードからは除外する(さもないと全モデル
+永久に空列になり `x/y task` 分母も水増しされる)。`prompt_images` の text
+タスクは vision モデルが bare で走るので残す。
+
+**sample 集計**は (model, task) ごとに **最新 baseline run と同一 `signature`
+の run だけ**を pool する。サムネには最新 1 枚を出すが、成功率・平均コスト・
+平均レイテンシは同 signature の全サンプルで平均する。これにより:
+
+- `samples>1` で最新サンプル 1 件に依存しない(4 失敗 → 1 成功を 100% と
+  誤表示しない)
+- stale で再実行して signature が変わった場合、旧 signature の run は集計から
+  外れる(古い失敗を引きずらない)
+
+`samples:1` の現データでは「最新 1 件」と一致するので出力は不変。成功率の
+分母はタスク数ではなく **sample 数**(`successCount / sampleCount`)。
 
 ## デプロイ
 

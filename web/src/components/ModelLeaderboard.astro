@@ -120,7 +120,7 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
                 {row.successRate != null ? (
                   <div class="ok-cell">
                     <div class="ok-bar"><span style={`width:${pct(row.successRate)}%`}></span></div>
-                    <div class="ok-text"><strong>{pct(row.successRate)}%</strong> <span class="muted">{row.successCount}/{row.tasksAttempted}</span></div>
+                    <div class="ok-text"><strong>{pct(row.successRate)}%</strong> <span class="muted">{row.successCount}/{row.sampleCount}</span></div>
                   </div>
                 ) : (
                   <span class="muted">—</span>

@@ -45,6 +45,7 @@ function makeData(): LeaderboardData {
         model: "claude-opus-4-7",
         provider: "anthropic",
         tasksAttempted: 2,
+        sampleCount: 2,
         successCount: 1,
         successRate: 0.5,
         avgLatencyMs: 2000,

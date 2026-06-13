@@ -44,10 +44,13 @@ export interface LeaderboardRow {
   model: string;
   /** グルーピング用の論理 provider(self-hosted は vendor 推定済み)。 */
   provider: string | null;
-  /** baseline run があったタスク数。 */
+  /** baseline run があったタスク数(タスクカバレッジ)。 */
   tasksAttempted: number;
+  /** 集計対象になった baseline sample 総数(各タスクの最新 signature batch の和)。
+   *  samples:1 なら tasksAttempted と一致する。 */
+  sampleCount: number;
   successCount: number;
-  /** success / tasksAttempted。未実行なら null。 */
+  /** success / sampleCount。未実行なら null。 */
   successRate: number | null;
   avgLatencyMs: number | null;
   avgCostUsd: number | null;
@@ -94,45 +97,63 @@ export function buildLeaderboard(
 
   const rows: LeaderboardRow[] = [];
   for (const [model, modelRuns] of byModel) {
-    const baselineByTask = new Map<string, LoadedRun>();
+    // タスクごとに baseline run を集め、最新(createdAt 最大)を覚える。
+    const baselineRunsByTask = new Map<string, LoadedRun[]>();
+    const newestByTask = new Map<string, LoadedRun>();
     let provider: string | null = null;
     for (const r of modelRuns) {
       if (provider === null) provider = runGroupProvider(r.meta);
       if (!isBaselineRun(r.meta)) continue;
-      const cur = baselineByTask.get(r.meta.taskId);
-      if (!cur || cur.meta.createdAt < r.meta.createdAt) {
-        baselineByTask.set(r.meta.taskId, r);
-      }
+      const t = r.meta.taskId;
+      const list = baselineRunsByTask.get(t) ?? [];
+      list.push(r);
+      baselineRunsByTask.set(t, list);
+      const cur = newestByTask.get(t);
+      if (!cur || cur.meta.createdAt < r.meta.createdAt) newestByTask.set(t, r);
     }
 
+    // サムネは従来どおり (model, task) ごとの最新 run。
     const cells: LeaderboardCell[] = orderedTasks.map((t) => {
-      const run = baselineByTask.get(t.id) ?? null;
+      const run = newestByTask.get(t.id) ?? null;
       return { task: t, run, status: run?.meta.status ?? null };
     });
 
+    // 行集計は「最新 run と同一 signature の run」だけを sample として pool する。
+    // - samples>1: 同一 signature の全サンプルが平均に効く(最新 1 件依存を解消)
+    // - stale で再実行 → signature が変わる場合: 旧 signature の run は除外され、
+    //   現条件のサンプルだけが残る(古い失敗を引きずらない)
     let successCount = 0;
+    let sampleCount = 0;
     let latSum = 0;
     let latN = 0;
     let costSum = 0;
     let costN = 0;
-    for (const run of baselineByTask.values()) {
-      if (run.meta.status === "success") successCount++;
-      latSum += run.meta.timing.totalMs;
-      latN++;
-      const c = runCostUsd(run.meta);
-      if (c !== null) {
-        costSum += c;
-        costN++;
+    for (const [taskId, newest] of newestByTask) {
+      const sig = newest.meta.signature;
+      const batch = (baselineRunsByTask.get(taskId) ?? []).filter(
+        (r) => r.meta.signature === sig,
+      );
+      for (const run of batch) {
+        sampleCount++;
+        if (run.meta.status === "success") successCount++;
+        latSum += run.meta.timing.totalMs;
+        latN++;
+        const c = runCostUsd(run.meta);
+        if (c !== null) {
+          costSum += c;
+          costN++;
+        }
       }
     }
-    const tasksAttempted = baselineByTask.size;
+    const tasksAttempted = newestByTask.size;
 
     rows.push({
       model,
       provider,
       tasksAttempted,
+      sampleCount,
       successCount,
-      successRate: tasksAttempted > 0 ? successCount / tasksAttempted : null,
+      successRate: sampleCount > 0 ? successCount / sampleCount : null,
       avgLatencyMs: latN > 0 ? latSum / latN : null,
       avgCostUsd: costN > 0 ? costSum / costN : null,
       totalCostUsd: costN > 0 ? costSum : null,

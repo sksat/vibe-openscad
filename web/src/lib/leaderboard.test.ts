@@ -162,6 +162,41 @@ describe("buildLeaderboard", () => {
     expect(row.totalRuns).toBe(3);
   });
 
+  it("pools all same-signature samples for one task into the success rate (samples>1)", () => {
+    // 3 samples for the same task sharing one signature: 2 ok + 1 fail.
+    const lb = buildLeaderboard(
+      [
+        fakeRun({ runId: "s1", taskId: "tier-1-a", signature: "sig".padEnd(64, "x"), status: "success" }),
+        fakeRun({ runId: "s2", taskId: "tier-1-a", signature: "sig".padEnd(64, "x"), status: "success" }),
+        fakeRun({ runId: "s3", taskId: "tier-1-a", signature: "sig".padEnd(64, "x"), status: "render_error" }),
+      ],
+      tasks,
+    );
+    const row = lb.rows[0]!;
+    expect(row.tasksAttempted).toBe(1);
+    expect(row.sampleCount).toBe(3);
+    expect(row.successCount).toBe(2);
+    expect(row.successRate).toBeCloseTo(2 / 3);
+  });
+
+  it("excludes stale runs whose signature differs from the newest baseline run", () => {
+    // old run (different signature, render_error) is superseded by the newest
+    // run; only the newest signature's batch counts toward metrics.
+    const lb = buildLeaderboard(
+      [
+        fakeRun({ runId: "stale", taskId: "tier-1-a", signature: "old".padEnd(64, "x"), status: "render_error", createdAt: "2026-01-01T00:00:00.000Z" }),
+        fakeRun({ runId: "fresh", taskId: "tier-1-a", signature: "new".padEnd(64, "x"), status: "success", createdAt: "2026-05-01T00:00:00.000Z" }),
+      ],
+      tasks,
+    );
+    const row = lb.rows[0]!;
+    expect(row.cells[0]!.run?.meta.runId).toBe("fresh");
+    expect(row.sampleCount).toBe(1);
+    expect(row.successCount).toBe(1);
+    expect(row.successRate).toBe(1);
+    expect(row.totalRuns).toBe(2);
+  });
+
   it("keeps the newest baseline run per (model, task)", () => {
     const lb = buildLeaderboard(
       [
