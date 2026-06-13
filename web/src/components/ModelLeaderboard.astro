@@ -438,6 +438,10 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
     --thumb: 44px;
     --strip-gap: 3px;
     --row-pad: 7px 10px;
+    /* rank 列の固定幅。sticky な model 列の left オフセットと共有して、
+       2桁ランク+padding でも両 sticky 列が重ならない/隙間が空かないよう
+       決定的にする(auto table-layout だと width だけだと列が伸びてズレる)。 */
+    --rank-w: 40px;
   }
   .lb-controls {
     display: flex;
@@ -549,7 +553,7 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
     background: var(--bg);
   }
   .lb-table .c-rank { left: 0; }
-  .lb-table .c-model { left: 34px; }
+  .lb-table .c-model { left: var(--rank-w); }
   .lb-table tbody tr:nth-child(even) .c-rank,
   .lb-table tbody tr:nth-child(even) .c-model { background: #181b20; }
   .lb-table tbody tr:hover .c-rank,
@@ -573,7 +577,7 @@ function cellMeta(run: NonNullable<Props["data"]["rows"][number]["cells"][number
     padding: var(--row-pad);
     vertical-align: middle;
   }
-  .c-rank { width: 34px; text-align: right; color: var(--fg-dim); font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .c-rank { width: var(--rank-w); min-width: var(--rank-w); text-align: right; color: var(--fg-dim); font-family: var(--mono); font-variant-numeric: tabular-nums; }
   tbody { counter-reset: rank; }
   tbody tr { counter-increment: rank; }
   .rank-n::before { content: counter(rank); }
