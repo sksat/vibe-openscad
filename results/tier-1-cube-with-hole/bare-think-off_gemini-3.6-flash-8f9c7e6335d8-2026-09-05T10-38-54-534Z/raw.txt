@@ -1,0 +1,12 @@
+```openscad
+$fn = 100;
+
+difference() {
+    // 50mm角の立方体（中心を原点に配置）
+    cube([50, 50, 50], center = true);
+    
+    // 直径20mm（半径10mm）の貫通穴
+    // チラつき（Z-fighting）を防ぐため、高さ方向に少し大きく（52mm）しています
+    cylinder(h = 52, r = 10, center = true);
+}
+```

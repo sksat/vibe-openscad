@@ -1,0 +1,59 @@
+// Mug Parameters
+outer_d = 80;
+inner_d = 70;
+height = 90;
+bottom_thickness = 6;
+
+// Handle Parameters
+handle_inner_h = 30;
+handle_inner_w = 25;
+handle_thickness = 8;
+$fn = 100;
+
+module mug_body() {
+    difference() {
+        // Outer Cylinder
+        cylinder(d = outer_d, h = height);
+        
+        // Inner Hollow Part
+        translate([0, 0, bottom_thickness])
+            cylinder(d = inner_d, h = height - bottom_thickness + 1);
+    }
+}
+
+module handle() {
+    handle_outer_h = handle_inner_h + handle_thickness * 2;
+    handle_outer_w = handle_inner_w + handle_thickness;
+    
+    // Position the handle at the center height and attached to the +X side
+    translate([outer_d / 2, 0, height / 2]) {
+        rotate([90, 0, 0]) {
+            difference() {
+                // Outer D-shape profile
+                hull() {
+                    cylinder(r = handle_outer_h / 2, h = handle_thickness, center = true);
+                    translate([handle_outer_w - handle_outer_h / 2, 0, 0])
+                        cylinder(r = handle_outer_h / 2, h = handle_thickness, center = true);
+                }
+                
+                // Inner D-shape hole
+                hull() {
+                    translate([0, 0, 0])
+                        cylinder(r = handle_inner_h / 2, h = handle_thickness + 2, center = true);
+                    translate([handle_inner_w - handle_inner_h / 2, 0, 0])
+                        cylinder(r = handle_inner_h / 2, h = handle_thickness + 2, center = true);
+                }
+                
+                // Cut off the overlapping part inside the mug inner radius to keep clean interior
+                translate([-handle_outer_h, -handle_outer_h, -(handle_thickness + 2)/2])
+                    cube([handle_outer_h, handle_outer_h * 2, handle_thickness + 2]);
+            }
+        }
+    }
+}
+
+// Final Union
+union() {
+    mug_body();
+    handle();
+}

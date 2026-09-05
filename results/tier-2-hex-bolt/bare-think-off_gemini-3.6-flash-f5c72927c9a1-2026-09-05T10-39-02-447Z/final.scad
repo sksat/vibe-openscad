@@ -1,0 +1,19 @@
+// M8 Hex Bolt (Simplified)
+
+// Parameters
+s = 13;   // Across-flats distance (mm)
+k = 5.3;  // Head height (mm)
+d = 8;    // Shank diameter (mm)
+l = 30;   // Shank length (mm)
+
+$fn = 64; // Smoothness for cylindrical parts
+
+union() {
+    // Head (Hexagonal Prism at Z >= 0)
+    // Calculating circumcircle radius from across-flats distance (s): r = (s / 2) / cos(30)
+    cylinder(h = k, r = (s / 2) / cos(30), $fn = 6, center = false);
+
+    // Shank (Cylinder extending into Z < 0)
+    translate([0, 0, -l])
+        cylinder(h = l, d = d, center = false);
+}

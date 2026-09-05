@@ -1,0 +1,22 @@
+```openscad
+// M8 六角ボルトモデル
+$fn = 64;
+
+// 寸法定義
+across_flats = 13;   // 対辺距離 (mm)
+head_height  = 5.3;  // 頭部高さ (mm)
+shank_dia    = 8;    // シャンク径 (mm)
+shank_length = 30;   // シャンク長 (mm)
+
+// 六角形の外接円直径の計算
+hex_outer_dia = across_flats / cos(30);
+
+union() {
+    // 六角頭部 (z = 0 から z = 5.3 方向)
+    cylinder(h = head_height, d = hex_outer_dia, $fn = 6);
+
+    // シャンク部 (z = 0 から z = -30 方向)
+    translate([0, 0, -shank_length])
+        cylinder(h = shank_length, d = shank_dia);
+}
+```
