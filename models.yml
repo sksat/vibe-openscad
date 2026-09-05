@@ -36,6 +36,15 @@ claude-fable-5:
   effort: high
   thinking: adaptive
 
+# Opus 5 は thinking が **既定で on**(`thinking` 省略でも adaptive が走る)。
+# 4.8 / 4.7 は省略 = 思考しない、だったので既定値が反転している。
+claude-opus-5:
+  provider: anthropic
+  rate: { in: 5, out: 25 }
+  vision: true
+  effort: high
+  thinking: adaptive
+
 claude-opus-4-8:
   provider: anthropic
   rate: { in: 5, out: 25 }
