@@ -1,0 +1,147 @@
+以下は Sharp GP2Y0D413K0F の概略寸法（データシート記載値をベースに、造形上必要な部分は近似）を反映した OpenSCAD モデルです。
+本体（ケース／レンズケース部）のバウンディングボックス中心を原点とし、PWB・コネクタ側を -Z 方向に配置しています。
+
+```openscad
+// =====================================================================
+// Sharp GP2Y0D413K0F  距離センサ 簡易モデル
+// 単位: mm
+// 座標系:
+//   原点   : 本体(ケース)バウンディングボックスの中心
+//   +X     : センサ幅方向 (受発光素子の並び方向)
+//   +Y     : センシング面(レンズ面)を向く方向
+//   -Z     : 取付面 (PWB / コネクタ側)
+// =====================================================================
+
+$fn = 60;
+
+// ------------------------------------------------------------------
+// 主要寸法 (データシート値。造形上必要な一部は近似)
+// ------------------------------------------------------------------
+body_width       = 29.45;   // 全幅 (X)
+body_depth       = 13.5;    // 全奥行き (Y)
+lens_case_depth  = 7.1;     // レンズケース部の奥行き(背面側、段差の高い部分)
+front_depth      = body_depth - lens_case_depth; // 前面(受発光窓)部の奥行き
+
+main_height      = 18.9;    // レンズケース部を含む最大高さ(Z)
+front_height     = 8.4;     // 受発光窓側(前面)の低い部分の高さ
+
+emitter_offset_x   = 4.5;   // 左端から発光レンズ中心までの距離
+detector_offset_x   = 19.7; // 左端から受光レンズ中心までの距離
+lens_center_z_off   = 3.75; // 前面部下端からレンズ中心までの高さ
+
+emitter_dia    = 8.0;
+detector_dia   = 8.0;
+detector_win_w = 13.0;
+detector_win_h = 9.0;
+
+pwb_width     = 20;
+pwb_depth     = 10;
+pwb_thickness = 1.2;
+
+conn_width  = 10.1;
+conn_depth  = 6;
+conn_height = 4;
+
+pin_pitch  = 2.0;   // 3P コネクタ ピッチ
+pin_size   = 0.5;
+pin_length = 2.2;
+
+// ------------------------------------------------------------------
+// 派生座標
+// ------------------------------------------------------------------
+z_bottom = -main_height/2;          // 本体底面(取付面側)
+z_top    =  main_height/2;          // レンズケース上面
+
+y_front_face      =  body_depth/2;                  // 受発光面(外側)
+y_back            = -body_depth/2;                  // レンズケース背面
+y_lens_case_front = y_back + lens_case_depth;       // レンズケースと前面部の境界
+
+x_left = -body_width/2;
+
+emitter_x  = x_left + emitter_offset_x;
+detector_x = x_left + detector_offset_x;
+lens_z     = z_bottom + lens_center_z_off;
+
+// ------------------------------------------------------------------
+// モジュール定義
+// ------------------------------------------------------------------
+
+// 本体ケース(段付き形状: 背面のレンズケース部が高く、前面の受発光窓部が低い)
+module main_case() {
+    color("DimGray") {
+        // 背面: レンズケース部(高さ最大 main_height)
+        translate([x_left, y_back, z_bottom])
+            cube([body_width, lens_case_depth, main_height]);
+
+        // 前面: 受発光窓を持つ低い部分
+        translate([x_left, y_lens_case_front, z_bottom])
+            cube([body_width, front_depth, front_height]);
+    }
+}
+
+// 発光素子レンズ (円形)
+module emitter_lens() {
+    color("LightSteelBlue")
+    translate([emitter_x, y_front_face, lens_z])
+        rotate([-90, 0, 0])
+            cylinder(d = emitter_dia, h = 0.6);
+}
+
+// 受光素子レンズ (角枠 + 円形レンズ)
+module detector_lens() {
+    // 外側の窓枠(角丸長方形)
+    color("Gray")
+    translate([detector_x, y_front_face, lens_z])
+        rotate([-90, 0, 0])
+            linear_extrude(height = 0.4)
+                offset(r = 1)
+                    square([detector_win_w - 2, detector_win_h - 2], center = true);
+
+    // 内側の円形レンズ
+    color("LightSteelBlue")
+    translate([detector_x, y_front_face + 0.3, lens_z])
+        rotate([-90, 0, 0])
+            cylinder(d = detector_dia, h = 0.5);
+}
+
+// PWB (紙フェノール基板)
+module pwb() {
+    color("SaddleBrown")
+    translate([-pwb_width/2, -pwb_depth/2, z_bottom - pwb_thickness])
+        cube([pwb_width, pwb_depth, pwb_thickness]);
+}
+
+// コネクタ本体 + 3ピン (①Vo ②GND ③Vcc)
+module connector() {
+    color("Black")
+    translate([-conn_width/2, -conn_depth/2, z_bottom - pwb_thickness - conn_height])
+        cube([conn_width, conn_depth, conn_height]);
+
+    for (i = [-1, 0, 1]) {
+        translate([i*pin_pitch - pin_size/2, -pin_size/2,
+                    z_bottom - pwb_thickness - conn_height - pin_length])
+            cube([pin_size, pin_size, pin_length]);
+    }
+}
+
+// ------------------------------------------------------------------
+// 組み立て
+// ------------------------------------------------------------------
+module GP2Y0D413K0F() {
+    main_case();
+    emitter_lens();
+    detector_lens();
+    pwb();
+    connector();
+}
+
+GP2Y0D413K0F();
+```
+
+**モデルの構成概要**
+
+- `main_case()`：全幅29.45×全奥行き13.5、背面側(レンズケース部, 奥行7.1mm)が高さ18.9mm、前面側(受発光窓部, 奥行6.4mm)が高さ8.4mmの段付き形状。
+- `emitter_lens()` / `detector_lens()`：前面(+Y面)に発光用円形レンズ・受光用角窓＋円形レンズを配置（左端からの距離 4.5mm / 19.7mm、下端から3.75mmの高さ）。
+- `pwb()` / `connector()`：本体底面(-Z側)にPWB(t1.2mm)と3ピンコネクタ（①Vo ②GND ③Vcc）を配置し、取付面が-Z方向を向くようにしています。
+
+寸法はデータシート記載値を可能な限り反映していますが、内部構造や細部形状（スタンプ刻印、面取り等）は省略した簡易外形モデルです。

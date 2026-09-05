@@ -1,0 +1,148 @@
+```openscad
+// Sharp GP2Y0A21YK0F Distance Sensor Model
+// Units: mm
+// Origin: center of body
+// Mounting face (PWB / connector side) faces -Z
+
+$fn = 48;
+
+// ===== Main dimensions from datasheet =====
+body_length       = 29.5;   // main body length (between mounting tab bases)
+body_width        = 13.0;   // body width (Y)
+body_height       = 13.0;   // body height in front view (lens side)
+total_length      = 37.0;   // including mounting tabs
+tab_hole_dia      = 3.2;
+tab_radius        = 3.75;   // R3.75 around holes
+hole_spacing      = (total_length - 2*0); // hole-to-hole approx
+// Hole centers approx at ±(total_length/2 - tab_radius) from center? use datasheet: holes are at ends
+hole_offset_x     = total_length/2 - tab_radius;  // = 14.75
+
+// Lens center offsets from body center along X
+// 20 ± 0.1 between lens centers, 4.5 from edge to first lens center
+lens_spacing      = 20.0;
+lens_dia          = 8.0;    // approx lens aperture diameter
+lens_case_width   = 8.4;    // (approx from front view)
+
+// PWB / connector on -Z side
+pwb_thickness     = 1.2;
+pwb_width_x       = 16.3 + 4.15;  // approx from bottom view = 20.45
+pwb_length_y      = 13.5;
+connector_x       = 7.5;    // width of connector housing
+connector_y       = 8.0;
+connector_z       = 5.0;    // protrusion height below PWB
+
+// Reference: body height in front view is (18.9) total including PWB & connector
+// Body itself (case) ~ 13.5 - some. We'll set case height = 13 and PWB below.
+
+case_h = body_height;   // 13 mm
+// Position: body center at origin. Top of case at +Z = case_h/2, bottom at -case_h/2.
+// PWB sits at bottom (-Z side).
+
+// ===== Colors =====
+case_color   = [0.15, 0.15, 0.15];
+lens_color   = [0.1, 0.1, 0.1, 0.9];
+pwb_color    = [0.6, 0.5, 0.2];
+conn_color   = [0.9, 0.9, 0.9];
+pin_color    = [0.8, 0.7, 0.2];
+
+// ===== Main Case Body =====
+module main_body() {
+    color(case_color)
+    translate([0, 0, 0])
+        cube([body_length, body_width, case_h], center=true);
+}
+
+// ===== Mounting Tabs with holes =====
+module mounting_tab(x_center) {
+    color(case_color)
+    difference() {
+        union() {
+            // Rounded tab
+            translate([x_center, 0, -case_h/2 + 1.5])
+                cylinder(h=3.0, r=tab_radius, center=true);
+            // Connect tab to body
+            hull() {
+                translate([x_center, 0, -case_h/2 + 1.5])
+                    cylinder(h=3.0, r=tab_radius, center=true);
+                translate([sign(x_center)*(body_length/2 - 0.1), 0, -case_h/2 + 1.5])
+                    cube([0.2, body_width*0.6, 3.0], center=true);
+            }
+        }
+        // Mounting hole
+        translate([x_center, 0, -case_h/2 + 1.5])
+            cylinder(h=10, d=tab_hole_dia, center=true);
+    }
+}
+
+// ===== Lens Cases (two round lenses on +Y face) =====
+// Front view shows lenses on the front (let's put them on +Y face)
+module lens_case(x_offset) {
+    // Rectangular lens housing protruding slightly? 
+    // From datasheet the lenses are within the body face.
+    translate([x_offset, body_width/2 - 0.5, 0]) {
+        // Lens ring
+        color(case_color)
+            rotate([90, 0, 0])
+                cylinder(h=1.0, d=lens_dia + 1.0, center=false);
+        // Lens
+        color(lens_color)
+            translate([0, -0.6, 0])
+                rotate([90, 0, 0])
+                    cylinder(h=0.8, d=lens_dia, center=false);
+    }
+}
+
+// Rectangular window around detector lens (light detector has rectangular frame)
+module detector_frame(x_offset) {
+    color(case_color)
+    translate([x_offset, body_width/2 - 0.3, 0])
+        cube([12, 0.6, 10], center=true);
+}
+
+// ===== PWB (Printed Wiring Board) on -Z side =====
+module pwb() {
+    color(pwb_color)
+    translate([0, 0, -case_h/2 - pwb_thickness/2])
+        cube([pwb_width_x, pwb_length_y, pwb_thickness], center=true);
+}
+
+// ===== Connector on PWB (-Z side) =====
+module connector() {
+    // Connector positioned near center-bottom
+    conn_z_top = -case_h/2 - pwb_thickness;
+    color(conn_color)
+        translate([0, 0, conn_z_top - connector_z/2])
+            cube([connector_x, connector_y, connector_z], center=true);
+    
+    // 3 pins
+    for (i = [-1, 0, 1]) {
+        color(pin_color)
+            translate([i*1.5, 0, conn_z_top - connector_z/2])
+                cube([0.6, 0.6, connector_z + 1], center=true);
+    }
+}
+
+// ===== Assembly =====
+module gp2y0a21yk0f() {
+    main_body();
+    
+    // Two mounting tabs
+    mounting_tab( hole_offset_x);
+    mounting_tab(-hole_offset_x);
+    
+    // Lenses: centers at ±lens_spacing/2 from body center
+    // Left lens (Light emitter with round lens case)
+    lens_case(-lens_spacing/2);
+    // Right lens (Light detector) - has rectangular frame
+    detector_frame(lens_spacing/2);
+    lens_case(lens_spacing/2);
+    
+    // PWB
+    pwb();
+    
+    // Connector
+    connector();
+}
+
+gp2y0a21yk0f();
+```

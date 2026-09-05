@@ -1,0 +1,38 @@
+{
+  "runId": "pdf-page_claude-haiku-4-5-5a933672f1b4-2026-09-05T14-58-58-657Z",
+  "taskId": "tier-4-gp2y0a21yk",
+  "matrixId": "pdf-page/claude-haiku-4-5",
+  "signature": "5a933672f1b4675e116271e4de3d5a47038282d3714a5804fdc66ed98a305b41",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "be8447efaad1d128f8fe25ada8d6776d55e66bc75ed71840c218201a51da8e80",
+    "harness": {
+      "kind": "pdf-page",
+      "provider": "anthropic",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-haiku-4-5-20251001",
+  "resolvedModel": "claude-haiku-4-5-20251001",
+  "harness": {
+    "kind": "pdf-page",
+    "pdfUrl": "https://jp.sharp/products/device/doc/opto/gp2y0a21yk_e.pdf",
+    "pages": [
+      2
+    ]
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 10673
+  },
+  "tokens": {
+    "input": 1683,
+    "output": 972
+  },
+  "cost_usd": 0.006543,
+  "createdAt": "2026-09-05T14:58:58.657Z",
+  "gitCommit": "bd01efad622d57ee65048c4c01ae4b2fe74eaaa7"
+}
