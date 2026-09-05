@@ -1,0 +1,145 @@
+---
+import type { ComparisonModel, ComparisonTask } from "../lib/comparison.js";
+import { modelVendorIcon } from "../lib/dataset.js";
+import VendorIcon from "./VendorIcon.astro";
+interface Props { tasks: ComparisonTask[]; models: ComparisonModel[]; }
+const { tasks, models } = Astro.props;
+---
+
+<section class="comparison" data-comparison>
+  <script is:inline type="application/json" data-comparison-data set:html={JSON.stringify({ tasks, models }).replace(/</g, "\\u003c")} />
+  <div class="toolbar">
+    <details class="task-picker">
+      <summary>tasks <span data-task-selection></span></summary>
+      <div class="picker-body">
+        <button type="button" data-all-tasks>すべて選択</button>
+        <button type="button" data-clear-tasks>選択を解除</button>
+        <div class="task-options">
+          {tasks.map((task) => (
+            <label class="model-option">
+              <input type="checkbox" data-task-choice value={task.id} />
+              <span><small>Tier {task.tier}</small>{task.title}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+    </details>
+    <div class="task-navigation">
+      <button type="button" data-task-prev aria-label="前の task">←</button>
+      <button type="button" data-task-next aria-label="次の task">→</button>
+    </div>
+  </div>
+  <details class="model-picker">
+    <summary>比較するモデル <span data-selection-count></span></summary>
+    <div class="picker-body">
+      <label class="search-label">モデルを検索 <input type="search" data-model-search placeholder="モデル名・プロバイダ" /></label>
+      <button type="button" data-clear-models>選択を解除</button>
+      <div class="model-options">
+        {models.map((model) => {
+          const vendor = modelVendorIcon(model.id);
+          return (
+          <label class="model-option" data-model-option data-search={`${model.id} ${model.label} ${model.provider}`.toLowerCase()}>
+            <input type="checkbox" value={model.id} data-model-choice />
+            {vendor && <VendorIcon vendor={vendor} size={18} colored />}
+            <span title={model.id}>{model.label}<small>{model.provider}</small></span>
+          </label>
+        ); })}
+      </div>
+      <p class="search-empty" data-search-empty hidden>一致するモデルがありません。</p>
+    </div>
+  </details>
+  <div class="selected-models" data-selected-models aria-label="比較中のモデル（列順）"></div>
+  <p class="comparison-help">横にモデル、縦に実行条件。iter・effort・thinking は行を展開して比較できます。画像から実行詳細・3D 表示へ。</p>
+  <div class="comparison-summary">
+    <p class="comparison-status" data-comparison-status role="status" aria-live="polite"></p>
+    <button type="button" class="share-link" data-share aria-label="比較 URL をコピー" title="比較 URL をコピー">URL をコピー</button>
+  </div>
+  <div class="comparison-empty" data-comparison-empty hidden></div>
+  <div class="board-scroll" tabindex="0" role="region" aria-label="モデルと実行条件の比較表。横にスクロールできます。">
+    <table class="board" data-board>
+      <caption class="sr-only" data-board-caption>モデル間の生成形状の比較</caption>
+      <thead data-board-head></thead>
+      <tbody data-board-body></tbody>
+    </table>
+  </div>
+  <p class="footnote">各条件の最新結果を表示。success はレンダリング完了を表し、形状の正しさの評価ではありません。</p>
+  <noscript><p>比較対象の切り替えには JavaScript が必要です。<a href="/explore">全実行結果</a>または<a href="/task">課題一覧</a>から結果を閲覧できます。</p></noscript>
+</section>
+
+<script>
+  import { initComparison } from "./comparison-controller.js";
+  const root = document.querySelector<HTMLElement>("[data-comparison]");
+  if (root) initComparison(root);
+</script>
+
+<style is:global>
+  .comparison { --column-width: 280px; }
+  .comparison button, .comparison select, .comparison input[type="search"] { color: var(--fg); background: var(--bg-2); border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; min-height: 40px; }
+  .comparison button { cursor: pointer; }
+  .comparison button:hover { border-color: var(--accent); }
+  .comparison button:disabled { opacity: .35; cursor: default; }
+  .comparison .toolbar { display: flex; align-items: end; flex-wrap: wrap; gap: 8px; }
+  .comparison .task-picker { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-2); }
+  .comparison [data-task-selection] { margin-left: 8px; color: var(--fg-dim); }
+  .comparison .task-options { width: 100%; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px; }
+  .comparison select { flex: 1; min-width: 0; max-width: 620px; }
+  .comparison .task-navigation { display: flex; gap: 4px; }
+  .comparison .model-picker { border: 1px solid var(--line); border-radius: 8px; margin-top: 12px; background: var(--bg-2); }
+  .comparison summary { cursor: pointer; padding: 10px 12px; font-size: 13px; }
+  .comparison [data-selection-count] { color: var(--accent); margin-left: 8px; }
+  .comparison .picker-body { display: flex; flex-wrap: wrap; gap: 10px; padding: 0 12px 12px; }
+  .comparison .search-label { display: flex; align-items: center; gap: 10px; flex: 1; font-size: 12px; }
+  .comparison input[type="search"] { width: 100%; min-width: 120px; flex: 1; }
+  .comparison .model-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px; width: 100%; max-height: 180px; overflow-y: auto; }
+  .comparison .model-option { display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; font-size: 12px; }
+  .comparison .model-option:has(:checked) { border-color: var(--accent); background: #193047; }
+  .comparison .model-option span { overflow-wrap: anywhere; }
+  .comparison .model-option small { display: block; color: var(--fg-dim); font-size: 10px; }
+  .comparison .model-option .vendor-icon { margin-right: 0; }
+  .comparison .model-identity { display: inline-flex; align-items: center; gap: 7px; }
+  .comparison .model-identity .vendor-icon { width: 18px; height: 18px; margin-right: 0; }
+  .comparison input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; flex-shrink: 0; }
+  .comparison [hidden] { display: none !important; }
+  .comparison .selected-models { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 0; }
+  .comparison .selected-models button { min-height: 32px; font-size: 12px; color: var(--accent); }
+  .comparison .task-prompt { border-bottom: 1px solid var(--line); }
+  .comparison .task-prompt summary { padding-left: 0; }
+  .comparison .task-prompt a { margin-left: 16px; }
+  .comparison .task-prompt p { white-space: pre-wrap; max-height: 220px; overflow-y: auto; font-size: 13px; }
+  .comparison .comparison-help, .comparison .footnote { font-size: 12px; color: var(--fg-dim); margin: 10px 0; }
+  .comparison .comparison-status { font-size: 12px; color: var(--fg-dim); margin: 6px 0; }
+  .comparison .comparison-summary { display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; }
+  .comparison .share-link { margin-left: auto; padding: 4px 0; min-height: 28px; border: 0; border-radius: 0; background: transparent; color: var(--fg-dim); font-size: 11px; white-space: nowrap; }
+  .comparison .share-link:hover { color: var(--accent); text-decoration: underline; }
+  .comparison .board-scroll { overflow: auto; max-height: 74vh; border: 1px solid var(--line); border-radius: 8px; }
+  .comparison .board { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max(100%, calc(112px + var(--model-count, 3) * var(--column-width)) ); }
+  .comparison .board th, .comparison .board td { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 10px; vertical-align: top; }
+  .comparison .board thead th { position: sticky; top: 0; z-index: 3; background: var(--bg-2); text-align: left; font-size: 14px; }
+  .comparison .board thead th:first-child { width: 112px; left: 0; z-index: 4; }
+  .comparison .board th small { display: block; font-weight: 400; color: var(--fg-dim); font-size: 10px; overflow-wrap: anywhere; }
+  .comparison .board tbody th { width: 112px; position: sticky; left: 0; z-index: 1; background: var(--bg-2); text-align: left; font-size: 12px; overflow-wrap: anywhere; }
+  .comparison .board tbody tr.family-heading th { position: static; padding: 0; }
+  .comparison .board tbody tr.task-heading th { position: static; padding: 10px; border-top: 2px solid var(--line); }
+  .comparison .task-heading .task-info { position: sticky; left: 10px; width: min(640px, calc(100vw - 64px)); }
+  .comparison .task-heading a { font-size: 13px; }
+  .comparison .task-heading .task-prompt { border: 0; font-weight: normal; }
+  .comparison .task-heading summary { padding: 4px 0 0; font-size: 11px; color: var(--fg-dim); }
+  .comparison .family-heading button { position: sticky; left: 0; border: 0; text-align: left; font-size: 12px; min-width: 240px; color: var(--accent); }
+  .comparison .render-link { display: flex; align-items: center; justify-content: center; aspect-ratio: 4 / 3; background: var(--render-bg); border-radius: 5px; overflow: hidden; }
+  .comparison .render-link:hover { outline: 2px solid var(--accent); }
+  .comparison .render-link img { width: 100%; height: 100%; object-fit: contain; }
+  .comparison .run-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px; font: 11px var(--mono); margin-top: 8px; color: var(--fg-dim); }
+  .comparison .run-status { color: var(--warn); }
+  .comparison .run-status[data-status="success"] { color: var(--ok); }
+  .comparison .no-render { aspect-ratio: 4 / 3; display: flex; justify-content: center; align-items: center; text-align: center; font-size: 13px; color: var(--fg-dim); border: 1px dashed var(--line); border-radius: 5px; }
+  .comparison .comparison-empty { padding: 32px; text-align: center; border: 1px dashed var(--line); border-radius: 8px; }
+  @media (max-width: 640px) {
+    .comparison { --column-width: 230px; }
+    .comparison .task-picker { flex-basis: 100%; }
+    .comparison .board thead th:first-child, .comparison .board tbody th { width: 85px; }
+    .comparison .board { width: calc(85px + var(--model-count, 3) * var(--column-width)); }
+    .comparison .model-options { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 180px; }
+    .comparison button { min-height: 44px; }
+    .comparison .board-scroll { max-height: 70vh; }
+  }
+</style>

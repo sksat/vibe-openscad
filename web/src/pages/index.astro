@@ -445,18 +445,16 @@ function groupTiles(tiles: TaskTile[], mode: Grouping): OuterGroup[] {
 ---
 
 <Base title="vibe-openscad — dashboard">
-  <h1>3D 空間認識ベンチマーク</h1>
-  <p class="muted">
-    複数の AI モデル / ハーネスに同じ課題で OpenSCAD コードを生成させ、結果を横並びで比較する。
-  </p>
+  <h1>全実行結果</h1>
+  <p class="muted"><a href="/compare">モデルを選んで比較する →</a></p>
   <div class="stats">
     <div class="stat">
       <div class="label">課題</div>
       <div class="val">{completedTasks} / {ds.tasks.length}</div>
     </div>
     <div class="stat">
-      <div class="label">run</div>
-      <div class="val">{totalRuns} <span class="sub">({successCount} ok / {failedCount} fail)</span></div>
+      <div class="label">実行結果</div>
+      <div class="val">{totalRuns} <span class="sub">成功 {successCount} / 失敗 {failedCount}</span></div>
     </div>
     <div class="stat">
       <div class="label">累計コスト</div>
@@ -468,6 +466,10 @@ function groupTiles(tiles: TaskTile[], mode: Grouping): OuterGroup[] {
     </div>
   </div>
 
+  <div class="results-heading">
+    <h2>課題ごとの生成結果</h2>
+    <p class="muted">成功はレンダリングの完了を示します。形状の正しさは画像や 3D 表示で確認してください。</p>
+  </div>
   <Filters
     models={ds.facets.models.toSorted()}
     harnessKinds={ds.facets.harnessKinds.toSorted()}
@@ -489,6 +491,7 @@ function groupTiles(tiles: TaskTile[], mode: Grouping): OuterGroup[] {
             <h2>
               <a href={`/task/${taskSlug(task)}`}>{task.title}</a>
               <span class="badge">tier {task.tier}</span>
+              <a class="compare-task" href={`/compare?task=${encodeURIComponent(task.id)}`}>この課題でモデルを比較 →</a>
               <span class="muted task-id">{task.id}</span>
               {older > 0 && (
                 <a class="muted older" href={`/task/${taskSlug(task)}`}>+{older} 過去 run</a>
@@ -613,6 +616,9 @@ function groupTiles(tiles: TaskTile[], mode: Grouping): OuterGroup[] {
 </Base>
 
 <style>
+  .results-heading h2 { margin-bottom: 6px; font-size: 20px; }
+  .results-heading p { font-size: 13px; margin: 0 0 16px; }
+  .compare-task { font-size: 12px; font-weight: normal; }
   .task-list {
     display: flex;
     flex-direction: column;
@@ -620,6 +626,7 @@ function groupTiles(tiles: TaskTile[], mode: Grouping): OuterGroup[] {
   }
   .task-row header h2 {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 12px;
     font-size: 17px;
@@ -631,7 +638,7 @@ function groupTiles(tiles: TaskTile[], mode: Grouping): OuterGroup[] {
   }
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
     gap: 12px;
   }
   /* harness > provider > model または provider > harness > model の
@@ -728,6 +735,7 @@ function groupTiles(tiles: TaskTile[], mode: Grouping): OuterGroup[] {
     margin-top: 4px;
   }
   .stat .sub {
+    display: block;
     font-size: 12px;
     color: var(--fg-dim);
     font-weight: normal;
@@ -737,5 +745,12 @@ function groupTiles(tiles: TaskTile[], mode: Grouping): OuterGroup[] {
     font-family: var(--mono);
     font-size: 12px;
     margin-left: auto;
+  }
+  @media (max-width: 640px) {
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .stat { padding: 12px; }
+    .stat .val { font-size: 16px; overflow-wrap: anywhere; }
+    .task-row .task-id { width: 100%; margin-left: 0; overflow-wrap: anywhere; }
+    .hierarchy-toggle { min-height: 44px; }
   }
 </style>

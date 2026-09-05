@@ -1,0 +1,13 @@
+---
+import Base from "../layouts/Base.astro";
+import ComparisonBoard from "../components/ComparisonBoard.astro";
+import { getDataset } from "../lib/dataset.js";
+import { buildComparisonDataset } from "../lib/comparison-data.js";
+
+const { tasks, models } = buildComparisonDataset((await getDataset()).tasks);
+---
+
+<Base title="compare — vibe-openscad">
+  <h1 class="sr-only">モデル比較</h1>
+  <ComparisonBoard tasks={tasks} models={models} />
+</Base>

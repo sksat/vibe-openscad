@@ -26,6 +26,7 @@ const gaId = (import.meta.env["PUBLIC_GA_ID"] ?? "").trim();
 // グローバルナビ。現在ページをハイライトして「今どこに居るか」を出す。
 const navItems = [
   { href: "/", label: "dashboard" },
+  { href: "/compare", label: "compare" },
   { href: "/models", label: "models" },
   { href: "/task", label: "tasks" },
 ];
@@ -72,9 +73,10 @@ function navActive(href: string): boolean {
     )}
   </head>
   <body>
+    <a class="skip-link" href="#main-content">本文へスキップ</a>
     <header class="topbar">
       <a href="/" class="brand">vibe-openscad</a>
-      <nav>
+      <nav aria-label="メインナビゲーション">
         {navItems.map((it) => (
           <a href={it.href} aria-current={navActive(it.href) ? "page" : undefined}>{it.label}</a>
         ))}
@@ -91,12 +93,13 @@ function navActive(href: string): boolean {
         </svg>
       </a>
     </header>
-    <main>
+    <main id="main-content" tabindex="-1">
       <slot />
     </main>
 
     <style is:global>
       :root {
+        color-scheme: dark;
         --bg: #0e1116;
         --bg-2: #161b22;
         --bg-3: #1f262e;
@@ -125,6 +128,11 @@ function navActive(href: string): boolean {
       }
       a { color: var(--accent); text-decoration: none; }
       a:hover { text-decoration: underline; }
+      .skip-link { position: fixed; top: -100px; left: 16px; z-index: 100; padding: 12px 20px; background: var(--bg-2); border: 1px solid var(--accent); border-radius: 8px; }
+      .skip-link:focus { top: 8px; }
+      button, input, select { font: inherit; }
+      select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      img { max-width: 100%; }
       /* レンダ PNG は白背景が焼き込まれているので、台紙(--render-bg)に合わせて
          わずかに輝度を落とし、彩度を少し補ってモデルの見栄えを保つ。/results/
          配下の全レンダ画像(サムネ・拡大・チェーン等)に一括で効く。 */
@@ -186,7 +194,7 @@ function navActive(href: string): boolean {
         font-size: 14px;
         color: var(--fg);
         opacity: 0.74;
-        padding: 4px 11px;
+        padding: 10px 11px;
         border-radius: 6px;
         transition: opacity 0.1s ease, background 0.1s ease, color 0.1s ease;
       }
@@ -202,6 +210,9 @@ function navActive(href: string): boolean {
         font-weight: 600;
       }
       .repo-link {
+        min-width: 44px;
+        min-height: 44px;
+        justify-content: center;
         margin-left: auto;
         display: inline-flex;
         align-items: center;
@@ -231,6 +242,16 @@ function navActive(href: string): boolean {
       .badge.ok { color: var(--ok); border-color: rgba(108,213,140,0.4); }
       .badge.warn { color: var(--warn); border-color: rgba(232,184,109,0.4); }
       .badge.bad { color: var(--bad); border-color: rgba(239,111,108,0.4); }
+      @media (max-width: 640px) {
+        .topbar { flex-wrap: wrap; gap: 0 12px; padding: 8px 16px; }
+        .topbar nav { order: 3; width: 100%; overflow-x: auto; }
+        .topbar nav a { white-space: nowrap; font-size: 13px; flex: 1; text-align: center; }
+        main { padding: 24px 16px; }
+        h1 { font-size: 23px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+      }
     </style>
   </body>
 </html>

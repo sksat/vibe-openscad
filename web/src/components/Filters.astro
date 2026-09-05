@@ -58,10 +58,11 @@ groups.push({
     <span class="fs-label">フィルタ</span>
     <span class="fs-hint muted">{groups.map((g) => g.label).join(" / ")}</span>
     <span class="fs-count" data-filter-count hidden></span>
-    <button type="button" class="fs-clear" data-filter-clear hidden>clear</button>
+    <button type="button" class="fs-clear" data-filter-clear hidden>すべて解除</button>
     <span class="sr-only" data-filter-status aria-live="polite"></span>
   </summary>
   <div class="filters-body">
+    <p class="filter-help">同じ項目内は「いずれかに一致」、異なる項目間は「すべてに一致」で絞り込みます。</p>
     {groups.map((g) => (
       <div class="group" data-group-label={g.label}>
         <div class="label">{g.label}</div>
@@ -70,6 +71,7 @@ groups.push({
             <button
               type="button"
               class="chip"
+              aria-pressed="false"
               data-filter-chip
               data-facet={g.facet}
               data-value={v.value}
@@ -82,6 +84,11 @@ groups.push({
     ))}
   </div>
 </details>
+<div class="filter-empty" data-filter-empty hidden>
+  <strong>条件に一致する結果がありません</strong>
+  <p class="muted">条件を減らすか、フィルタを解除してもう一度お試しください。</p>
+  <button type="button" data-filter-reset>フィルタをすべて解除</button>
+</div>
 
 <script is:inline>
   (() => {
@@ -100,6 +107,7 @@ groups.push({
         const value = el.getAttribute("data-value");
         if (!facet || !value) return;
         const set = active.get(facet);
+        el.setAttribute("aria-pressed", String(!!set && set.has(value)));
         if (set && set.has(value)) el.classList.add("active");
         else el.classList.remove("active");
       });
@@ -123,6 +131,13 @@ groups.push({
         }
         el.style.display = visible ? "" : "none";
       });
+      const filtering = activeCount() > 0;
+      document.querySelectorAll(".inner-group, .outer-group, .task-row").forEach((group) => {
+        const cards = [...group.querySelectorAll("[data-task]")];
+        group.style.display = filtering && !cards.some((card) => card.style.display !== "none") ? "none" : "";
+      });
+      const empty = document.querySelector("[data-filter-empty]");
+      if (empty) empty.hidden = !filtering || [...document.querySelectorAll("[data-task]")].some((card) => card.style.display !== "none");
     }
     function syncHash() {
       const parts = [];
@@ -154,6 +169,15 @@ groups.push({
       const live = root.querySelector("[data-filter-status]");
       if (live) live.textContent = n > 0 ? `フィルタ ${n} 件適用中` : "フィルタ解除";
     }
+
+    document.querySelector("[data-filter-reset]")?.addEventListener("click", () => {
+      active.clear();
+      applyToChips();
+      applyToCards();
+      syncHash();
+      updateSummary();
+      root.querySelector("summary")?.focus();
+    });
 
     root.addEventListener("click", (e) => {
       const t = e.target;
@@ -213,6 +237,10 @@ groups.push({
 </script>
 
 <style>
+  .filter-help { width: 100%; margin: 8px 0 0; color: var(--fg-dim); font-size: 12px; }
+  .filter-empty { padding: 32px 20px; text-align: center; border: 1px dashed var(--line); border-radius: 12px; }
+  .filter-empty p { font-size: 14px; }
+  .filter-empty button { background: var(--accent); color: var(--bg); border: 0; border-radius: 8px; padding: 12px 16px; cursor: pointer; }
   .filters {
     margin-bottom: 16px;
     background: var(--bg-2);
@@ -226,7 +254,8 @@ groups.push({
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 9px 14px;
+    padding: 14px;
+    flex-wrap: wrap;
     user-select: none;
   }
   .filters-summary::-webkit-details-marker { display: none; }
@@ -289,6 +318,9 @@ groups.push({
   }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip {
+    min-height: 36px;
+    overflow-wrap: anywhere;
+    max-width: 100%;
     background: var(--bg-3);
     color: var(--fg-dim);
     border: 1px solid var(--line);
@@ -304,5 +336,10 @@ groups.push({
     background: var(--accent);
     color: var(--bg);
     border-color: var(--accent);
+  }
+  @media (max-width: 640px) {
+    .chip, .fs-clear { min-height: 44px; }
+    .fs-hint { display: none; }
+    .group { min-width: 0; max-width: 100%; }
   }
 </style>
