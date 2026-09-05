@@ -117,6 +117,35 @@ message 側を優先する。
 コストにも集計にも影響しないが、thinking がどれだけ占めたかが results から分から
 なくなる。
 
+### セルフホストの context 長は実行条件として宣言する
+
+コンテキスト長は **モデルの性質ではなくロード時の設定**。LM Studio は 2 つを
+別々に報告する:
+
+```
+"max_context_length": 32768,     ← GGUF に書かれたモデル側の上限
+"loaded_context_length": 8192    ← ロード時に確保した実際の枠(llama.cpp の n_ctx)
+```
+
+上限以下なら任意の値でロードでき、LM Studio は VRAM を抑えるため控えめな既定値を
+使う。同じモデルでもロードのしかたで結果が変わる: qwen3-8b は 8192 でロードすると
+tier-2 以降で思考の途中で `finish_reason: length` に達し、SCAD を書き始める前に
+切れる。モデルの実力ではなく実行条件の問題。
+
+そこで **bench-config の `modelOptions.context_length` に宣言する**。`modelOptions`
+は fingerprint に載るので、8192 用のエントリと 32768 用のエントリが別 signature に
+なり、両方が別の結果として並ぶ。provider は `context_length` をリクエストへ転送
+せず(サーバのロード条件であってリクエストのパラメータではない)、代わりに
+`/api/v0/models` の `loaded_context_length` と突き合わせ、食い違えば run を落とす。
+宣言と実態がずれたまま記録されるのを防ぐ。
+
+probe はリクエストの **後** に行う。LM Studio は最初のリクエストで JIT ロードする
+ので、前に読むと `state: "not-loaded"` で `loaded_context_length` 自体が無い。
+
+宣言しないエントリは従来どおり突き合わせを行わない。過去の run は context を記録
+しないまま残っているが、宣言を後から足すとその時点で signature が変わり回し直しに
+なるので、必要になったときに判断する。
+
 ### provider 呼び出しには明示的な上限を持たせる
 
 `bench-config.yml` の `defaults.timeoutSec` は provider 呼び出しに配線されていない。

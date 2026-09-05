@@ -236,6 +236,51 @@ export interface OpenAISelfHostedProviderDeps {
  */
 const REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
 
+
+/**
+ * 宣言した context 長で実際にロードされているかを確かめる。
+ *
+ * コンテキスト長は **モデルの性質ではなくロード時の設定**。GGUF に書かれた
+ * 上限(`max_context_length`)以下なら任意の値でロードでき、LM Studio は VRAM
+ * を抑えるため控えめな既定値を使う。同じモデルでもロードのしかたで出力が途中で
+ * 切れるかどうかが変わるので、実行条件として fingerprint に載せる
+ * (bench-config の `modelOptions.context_length`)。
+ *
+ * 宣言と実態がずれたまま記録されると、8192 で走った run が 32768 の signature
+ * で残ってしまう。突き合わせて落とす。
+ *
+ * probe はリクエストの **後** に行う。LM Studio は最初のリクエストで JIT ロード
+ * するので、前に読むと `state: "not-loaded"` で `loaded_context_length` 自体が
+ * 無い。
+ */
+async function assertLoadedContextLength(
+  baseURL: string,
+  model: string,
+  declared: number,
+): Promise<void> {
+  const hostRoot = baseURL.replace(/\/(v1|api\/v0)$/, "");
+  const res = await fetch(`${hostRoot}/api/v0/models`, {
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!res.ok) {
+    throw new Error(
+      `openai-self-hosted: /api/v0/models が ${res.status} を返したため ` +
+        `context_length を確認できない(宣言: ${declared})`,
+    );
+  }
+  const body = (await res.json()) as {
+    data?: { id?: string; loaded_context_length?: number }[];
+  };
+  const loaded = body.data?.find((m) => m.id === model)?.loaded_context_length;
+  if (loaded !== declared) {
+    throw new Error(
+      `openai-self-hosted: ${model} は context ${loaded ?? "不明"} でロード ` +
+        `されている(bench-config の宣言は ${declared})。` +
+        `\`lms load ${model} --context-length ${declared}\` でロードし直す`,
+    );
+  }
+}
+
 export function createOpenAISelfHostedProvider(
   deps: OpenAISelfHostedProviderDeps = {},
 ): Provider {
@@ -287,18 +332,28 @@ export function createOpenAISelfHostedProvider(
           "openai-self-hosted: prompt or messages must be provided",
         );
       }
+      // context_length はサーバのロード条件であってリクエストのパラメータ
+      // ではない。fingerprint に載せるために modelOptions へ書くので、
+      // ここで抜いてから残りを渡す。
+      const { context_length: declaredContext, ...modelOptions } =
+        (req.modelOptions ?? {}) as Record<string, unknown> & {
+          context_length?: unknown;
+        };
       const params: ChatCompletionCreateParamsNonStreaming = {
         model: req.model,
         messages,
         // ローカル LLM 側 max_tokens は実装によって名前が違う(num_predict
         // 等)。modelOptions に `max_tokens` を入れて override する想定。
-        ...(req.modelOptions ?? {}),
+        ...modelOptions,
       };
       const client = await getClient();
       const res = await client.chat.completions.create(params, {
         timeout: REQUEST_TIMEOUT_MS,
         maxRetries: 0,
       });
+      if (typeof declaredContext === "number") {
+        await assertLoadedContextLength(baseURL, req.model, declaredContext);
+      }
       const choice = res.choices[0];
       const out: CompletionResponse = {
         text: choice?.message?.content ?? "",
