@@ -355,8 +355,11 @@ export function parseModelLabel(modelStr: string): MatrixSegment[] {
     const vendor =
       slashedPublisherVendor(modelStr) ?? providerVendor(declared.provider);
     if (vendor) {
+      // バッジの文字は publisher(`google`)、アイコンキーは vendor
+      // (`gemini`)。両者は一致しないので使い分ける。
+      const publisher = modelStr.match(/^([a-z][\w-]*)\//i)?.[1]?.toLowerCase();
       return [
-        { kind: "vendor", label: vendor, vendor },
+        { kind: "vendor", label: publisher ?? vendor, vendor },
         { kind: "model", label: declared.label, title: modelStr, vendor },
       ];
     }

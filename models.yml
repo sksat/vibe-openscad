@@ -126,10 +126,13 @@ claude-sonnet-4-:
 
 # 3.x は extended thinking パラメータ自体が無い(= 軸が存在しないので null。
 # 「明示 opt-in すれば on にできるが既定は off」の 4.x 系とは別物)。
+# vision は true: Claude 3 系は画像入力に対応している。移行元の正規表現
+# `^claude-(fable|opus|sonnet|haiku)-\d` は `claude-3-haiku`(族名の前に
+# 世代が来る旧命名)にマッチせず false を返していたが、それはバグ。
 claude-3-haiku:
   provider: anthropic
   rate: { in: 0.25, out: 1.25 }
-  vision: false
+  vision: true
   effort: null
   thinking: null
 
