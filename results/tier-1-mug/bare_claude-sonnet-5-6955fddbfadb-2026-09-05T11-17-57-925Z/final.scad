@@ -1,0 +1,41 @@
+// ==== パラメータ ====
+outer_r  = 40;              // カップ外径半径 (外径80mm)
+wall_t   = 4;                // 側面の肉厚
+inner_r  = outer_r - wall_t; // カップ内径半径
+cup_h    = 100;               // カップの高さ
+bottom_t = 6;                 // 底面の厚み
+
+handle_tube_r   = 12;                       // 取手(リング)断面の半径
+handle_main_r   = 28;                       // 取手リングの主半径(中心から管中心までの距離)
+handle_embed    = 6;                        // 取手をカップ側面に埋め込む深さ
+handle_center_x = outer_r - handle_embed;   // 取手中心のX座標
+handle_center_z = cup_h / 2;                // 取手中心の高さ(カップ中心高さ)
+
+$fn = 100; // 曲面の分割数
+
+// 取手(リング状、断面半径 handle_tube_r のトーラス)
+module handle() {
+    translate([handle_center_x, 0, handle_center_z])
+        rotate([90, 0, 0])
+            rotate_extrude()
+                translate([handle_main_r, 0])
+                    circle(r = handle_tube_r);
+}
+
+// マグカップ本体
+module mug() {
+    difference() {
+        union() {
+            // 中身の詰まった外形の円柱
+            cylinder(r = outer_r, h = cup_h);
+            // 取手を側面に接続
+            handle();
+        }
+        // 内部をくり抜いて飲み物を入れられる形状にする
+        // (底面厚み bottom_t を残し、上端は開口させる)
+        translate([0, 0, bottom_t])
+            cylinder(r = inner_r, h = cup_h - bottom_t + 1);
+    }
+}
+
+mug();

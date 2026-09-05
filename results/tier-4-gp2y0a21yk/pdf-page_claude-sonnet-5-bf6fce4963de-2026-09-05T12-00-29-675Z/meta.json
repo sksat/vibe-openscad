@@ -1,0 +1,40 @@
+{
+  "runId": "pdf-page_claude-sonnet-5-bf6fce4963de-2026-09-05T12-00-29-675Z",
+  "taskId": "tier-4-gp2y0a21yk",
+  "matrixId": "pdf-page/claude-sonnet-5",
+  "signature": "bf6fce4963de82337388421f9b8350ae45af37ed639f436300d428e61600939f",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "39f92e12d2dfdb195dbee569649e23fd41693fa29181616083d4d5f58ca34c1c",
+    "harness": {
+      "kind": "pdf-page",
+      "provider": "anthropic",
+      "model": "claude-sonnet-5",
+      "modelOptions": {
+        "max_tokens": 64000
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-sonnet-5",
+  "harness": {
+    "kind": "pdf-page",
+    "pdfUrl": "https://jp.sharp/products/device/doc/opto/gp2y0a21yk_e.pdf",
+    "pages": [
+      2
+    ]
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 228165
+  },
+  "tokens": {
+    "input": 3521,
+    "output": 21089
+  },
+  "cost_usd": 0.217932,
+  "createdAt": "2026-09-05T12:00:29.675Z",
+  "gitCommit": "e18a2783a33873bb74f722264deabb1b79dee6e4"
+}

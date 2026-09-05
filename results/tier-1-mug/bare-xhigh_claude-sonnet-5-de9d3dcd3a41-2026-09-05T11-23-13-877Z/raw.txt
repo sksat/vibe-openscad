@@ -1,0 +1,56 @@
+```openscad
+// ==========================
+// マグカップ パラメータ設定
+// ==========================
+cup_outer_r   = 40;   // カップの外径半径（外径80mm）
+cup_wall_t    = 4;    // 側面の肉厚
+cup_height    = 100;  // カップの高さ
+cup_bottom_t  = 6;    // 底面の厚み
+cup_inner_r   = cup_outer_r - cup_wall_t; // 内径半径（36mm）
+
+handle_tube_r   = 12;                 // 取手の断面半径（要件通り12mm）
+handle_main_r   = 25;                 // 取手リングの主半径（大きさ）
+handle_embed    = 8;                  // カップ側面への埋め込み量
+handle_center_z = cup_height / 2;     // 取手の中心高さ（カップ中央=50mm）
+
+$fn = 100; // 全体の滑らかさ
+
+// ==========================
+// カップ本体（内側をくり抜いた円柱）
+// ==========================
+module cup_body() {
+    difference() {
+        cylinder(r = cup_outer_r, h = cup_height);
+
+        // 内側の空洞（底面厚み分は残し、上端を超えて貫通させる）
+        translate([0, 0, cup_bottom_t])
+            cylinder(r = cup_inner_r, h = cup_height);
+    }
+}
+
+// ==========================
+// 取手（半円状のリング／トーラスの半分）
+// ==========================
+module handle() {
+    // 断面円（半径12mm）をZ軸周りに180度回転してリングの半分を作成し、
+    // Y軸周りに90度回転することでカップの高さ方向（Z軸）に沿った
+    // 縦長のリング形状にする。
+    rotate([0, 90, 0])
+        rotate_extrude(angle = 180, convexity = 10)
+            translate([handle_main_r, 0])
+                circle(r = handle_tube_r);
+}
+
+// ==========================
+// 全体組み立て
+// ==========================
+union() {
+    cup_body();
+
+    // 取手をカップ側面に配置
+    // Y方向：外径からやや埋め込んでしっかり接続
+    // Z方向：カップの中心高さに配置
+    translate([0, cup_outer_r - handle_embed, handle_center_z])
+        handle();
+}
+```

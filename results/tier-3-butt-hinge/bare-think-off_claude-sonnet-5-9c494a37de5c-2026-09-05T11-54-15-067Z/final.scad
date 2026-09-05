@@ -1,0 +1,118 @@
+// ===== パラメータ =====
+$fn = 60;
+
+leaf_len   = 30;   // Y方向(ピン軸方向)
+leaf_wid   = 25;   // X方向(開く方向)
+leaf_thk   = 2;    // 板厚(Z方向)
+
+pin_dia    = 4;
+pin_len    = 32;
+
+knuckle_od = 8;
+knuckle_id = pin_dia + 0.3; // 4.6mm
+
+seg        = leaf_len / 5;  // 6mm
+
+screw_hole_dia   = 3.2;
+countersink_dia  = 6;
+countersink_depth= 1;
+screw_pitch      = 8;
+
+// ナックル半径(板の厚み方向中心をピン軸中心に合わせる)
+knuckle_r = knuckle_od / 2;
+
+// 板の厚みの中心をナックル中心軸からのオフセットとして計算
+// 板は knuckle_r - leaf_thk/2 だけ knuckle外周から張り出すように配置
+// (板の上面がナックルの円柱に接するように)
+
+// ===== モジュール定義 =====
+
+// 1つのナックル(円筒)
+module knuckle(y_start, y_end) {
+    len = y_end - y_start;
+    translate([0, y_start, 0])
+        difference() {
+            cylinder(h = len, d = knuckle_od, center = false);
+            translate([0, 0, -0.5])
+                cylinder(h = len + 1, d = knuckle_id, center = false);
+        }
+}
+
+// 皿穴付きネジ穴(Z方向に貫通、表面(上面)から見て皿座刳り)
+module countersunk_hole(depth_thk) {
+    // 貫通穴
+    translate([0, 0, -0.5])
+        cylinder(h = depth_thk + 1, d = screw_hole_dia, center = false);
+    // 皿(テーパ)穴、表面側(上面, z = depth_thkに近い側)から
+    translate([0, 0, depth_thk - countersink_depth])
+        cylinder(h = countersink_depth + 0.5,
+                  d1 = screw_hole_dia,
+                  d2 = countersink_dia,
+                  center = false);
+}
+
+// 左の板(X<0側)
+// 板は knuckle円筒に接する面を上面(Z = knuckle_r)、下面(Z = knuckle_r - leaf_thk)とする
+// 180度開いた状態なので、左右の板は同一平面(Z一定の板)として、X軸に沿って伸びる
+module left_leaf() {
+    z_top = knuckle_r;
+    z_bot = knuckle_r - leaf_thk;
+
+    difference() {
+        union() {
+            // 板本体(X: -leaf_wid ~ 0, Y: 0~leaf_len, Z: z_bot~z_top)
+            translate([-leaf_wid, 0, z_bot])
+                cube([leaf_wid, leaf_len, leaf_thk]);
+
+            // ナックル(左板は外側2個+中央1個 => seg 0-1, 2-3, 4-5)
+            knuckle(0 * seg, 1 * seg);
+            knuckle(2 * seg, 3 * seg);
+            knuckle(4 * seg, 5 * seg);
+        }
+
+        // 皿穴(板のknuckleから離れた側、X = -leaf_wid付近)
+        for (i = [0:2]) {
+            y_pos = leaf_len/2 - screw_pitch + i * screw_pitch;
+            translate([-leaf_wid + 6, y_pos, z_bot])
+                countersunk_hole(leaf_thk);
+        }
+    }
+}
+
+// 右の板(X>0側)
+module right_leaf() {
+    z_top = knuckle_r;
+    z_bot = knuckle_r - leaf_thk;
+
+    difference() {
+        union() {
+            // 板本体(X: 0~leaf_wid)
+            translate([0, 0, z_bot])
+                cube([leaf_wid, leaf_len, leaf_thk]);
+
+            // ナックル(右板は中間2個 => seg 1-2, 3-4)
+            knuckle(1 * seg, 2 * seg);
+            knuckle(3 * seg, 4 * seg);
+        }
+
+        // 皿穴
+        for (i = [0:2]) {
+            y_pos = leaf_len/2 - screw_pitch + i * screw_pitch;
+            translate([leaf_wid - 6, y_pos, z_bot])
+                countersunk_hole(leaf_thk);
+        }
+    }
+}
+
+// ピン軸(円柱、両端1mmずつknuckleから突出)
+module pin() {
+    color("silver")
+        translate([0, -1, 0])
+            rotate([-90, 0, 0])
+                cylinder(h = pin_len, d = pin_dia);
+}
+
+// ===== アセンブリ =====
+color("goldenrod") left_leaf();
+color("orange")    right_leaf();
+pin();

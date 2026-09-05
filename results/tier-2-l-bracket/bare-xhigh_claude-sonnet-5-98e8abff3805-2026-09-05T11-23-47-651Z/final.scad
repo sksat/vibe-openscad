@@ -1,0 +1,71 @@
+// ===================================================
+// L字金具 (L-bracket) パラメトリックモデル
+// ===================================================
+
+// ----- 基本寸法 -----
+flange_width = 50;    // 幅 (X方向、共通)
+h_depth      = 40;    // 水平面 奥行き (Y方向)
+v_height     = 40;    // 垂直面 高さ (Z方向)
+thickness    = 3;     // 板厚 (共通)
+
+// ----- 皿穴(M4用)寸法 -----
+hole_dia    = 4.5;    // 貫通穴 径
+csink_dia   = 8;      // 皿座面 径
+csink_depth = 2;      // 皿座面 深さ
+edge_offset = 10;     // 幅方向の縁からの距離
+
+hole_x = flange_width/2 - edge_offset; // 左右対称の穴X位置 (±15)
+
+eps = 0.5;  // 貫通穴を確実に貫通させるための余裕
+
+$fn = 64;
+
+// ----- L字本体（内側コーナーが原点） -----
+module bracket_base() {
+    // 水平面フランジ（外側コーナーを埋めるようY方向に板厚分延長）
+    translate([-flange_width/2, -thickness, -thickness])
+        cube([flange_width, h_depth + thickness, thickness]);
+
+    // 垂直面フランジ
+    translate([-flange_width/2, -thickness, 0])
+        cube([flange_width, thickness, v_height]);
+}
+
+// 水平面用 皿穴（Z方向に貫通、外側=下面 Z=-thickness に皿座面）
+module csink_hole_horizontal(x, y) {
+    // 貫通穴
+    translate([x, y, -thickness - eps])
+        cylinder(h = thickness + 2*eps, r = hole_dia/2);
+    // 皿座面（外側が大径、内側に向かって縮径）
+    translate([x, y, -thickness - 0.01])
+        cylinder(h = csink_depth + 0.01, r1 = csink_dia/2, r2 = hole_dia/2);
+}
+
+// 垂直面用 皿穴（Y方向に貫通、外側=背面 Y=-thickness に皿座面）
+module csink_hole_vertical(x, z) {
+    // 貫通穴
+    translate([x, -thickness - eps, z])
+        rotate([-90, 0, 0])
+            cylinder(h = thickness + 2*eps, r = hole_dia/2);
+    // 皿座面（外側が大径、内側に向かって縮径）
+    translate([x, -thickness - 0.01, z])
+        rotate([-90, 0, 0])
+            cylinder(h = csink_depth + 0.01, r1 = csink_dia/2, r2 = hole_dia/2);
+}
+
+// ----- 完成モデル -----
+module l_bracket() {
+    difference() {
+        bracket_base();
+
+        // 水平面の皿穴 x2（奥行き中央、幅方向に左右対称）
+        csink_hole_horizontal( hole_x, h_depth/2);
+        csink_hole_horizontal(-hole_x, h_depth/2);
+
+        // 垂直面の皿穴 x2（高さ中央、幅方向に左右対称）
+        csink_hole_vertical( hole_x, v_height/2);
+        csink_hole_vertical(-hole_x, v_height/2);
+    }
+}
+
+l_bracket();

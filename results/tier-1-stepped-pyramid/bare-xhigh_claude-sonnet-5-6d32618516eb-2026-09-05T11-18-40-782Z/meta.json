@@ -1,0 +1,39 @@
+{
+  "runId": "bare-xhigh_claude-sonnet-5-6d32618516eb-2026-09-05T11-18-40-782Z",
+  "taskId": "tier-1-stepped-pyramid",
+  "matrixId": "bare-xhigh/claude-sonnet-5",
+  "signature": "6d32618516eb15166f16a40117b32767d8a62a15c00a7023f0e464aa62ab142b",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "f33c33343b97cdee4ab2a95d84c7f4be5791294d1e997d9c55a752a15c9a2446",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-sonnet-5",
+      "modelOptions": {
+        "output_config": {
+          "effort": "xhigh"
+        },
+        "max_tokens": 64000
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-sonnet-5",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 2909
+  },
+  "tokens": {
+    "input": 198,
+    "output": 261
+  },
+  "cost_usd": 0.003006,
+  "createdAt": "2026-09-05T11:18:40.782Z",
+  "gitCommit": "e18a2783a33873bb74f722264deabb1b79dee6e4"
+}

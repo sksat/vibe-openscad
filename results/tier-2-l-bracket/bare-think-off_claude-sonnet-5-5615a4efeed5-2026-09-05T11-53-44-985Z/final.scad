@@ -1,0 +1,63 @@
+// L字金具 (L-bracket)
+// 水平面: 50(幅X) x 40(奥行きY) x 3(厚みZ)
+// 垂直面: 50(幅X) x 40(高さZ) x 3(厚みY)
+// 内側コーナーが原点
+
+width = 50;      // X方向の幅
+depth = 40;      // 水平面の奥行き(Y)
+height = 40;     // 垂直面の高さ(Z)
+thickness = 3;   // 板厚
+
+hole_dia = 4.5;      // 貫通穴径
+csk_dia = 8;         // 皿座面径
+csk_depth = 2;       // 皿座面深さ
+edge_offset = 10;    // 縁から穴中心までの距離
+hole_spacing = width - 2 * edge_offset; // 左右2穴の間隔
+
+module countersunk_hole(depth_total) {
+    // depth_total: 板厚全体を貫通させる長さ
+    union() {
+        // 貫通穴
+        cylinder(h = depth_total * 2, d = hole_dia, center = true, $fn = 50);
+        // 皿座面(円錐台) - 上端がcsk_dia, 下端がhole_dia
+        translate([0, 0, depth_total/2 - csk_depth])
+            cylinder(h = csk_depth + 0.01, d1 = hole_dia, d2 = csk_dia, $fn = 50);
+    }
+}
+
+module horizontal_plate() {
+    difference() {
+        // 水平面: X: 0~50, Y: 0~40, Z: 0~3
+        translate([0, 0, 0])
+            cube([width, depth, thickness]);
+
+        // 皿穴(外側=下面 Z=0 側に皿座面を向ける)
+        for (x = [edge_offset, width - edge_offset]) {
+            translate([x, depth - edge_offset, thickness/2])
+                rotate([180, 0, 0])
+                    countersunk_hole(thickness);
+        }
+    }
+}
+
+module vertical_plate() {
+    difference() {
+        // 垂直面: X: 0~50, Y: 0~3, Z: 0~40
+        translate([0, 0, 0])
+            cube([width, thickness, height]);
+
+        // 皿穴(外側=手前面 Y=0 側に皿座面を向ける)
+        for (x = [edge_offset, width - edge_offset]) {
+            translate([x, thickness/2, edge_offset])
+                rotate([-90, 0, 0])
+                    countersunk_hole(thickness);
+        }
+    }
+}
+
+module l_bracket() {
+    horizontal_plate();
+    vertical_plate();
+}
+
+l_bracket();

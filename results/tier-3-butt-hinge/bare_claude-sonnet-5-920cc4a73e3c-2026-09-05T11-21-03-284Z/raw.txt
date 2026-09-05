@@ -1,0 +1,138 @@
+```openscad
+// =====================================================================
+// 家具用 小型バット蝶番 (Butt Hinge) - 開いた状態 (180°) アセンブリ
+// パーツ: 左板(leaf_left) / 右板(leaf_right) / ピン軸(pin)
+// 座標系:
+//   - ピン軸中心線 = Y軸 (X=0, Z=pin_z)
+//   - 板の平面は Z軸に直交 (板は XY 平面内、厚み方向が Z)
+//   - 左板は X<0 側、右板は X>0 側へ伸びる (180°開いた状態)
+// =====================================================================
+
+$fn = 64;
+
+// ---------- 基本寸法 ----------
+leaf_length    = 30;   // Y方向 (ヒンジ軸方向)
+leaf_width     = 25;   // X方向 (開閉方向)
+leaf_thickness = 2;    // Z方向 (板厚)
+
+pin_dia    = 4;
+pin_r      = pin_dia / 2;
+pin_length = 32;       // 両端1mmずつ knuckle からはみ出す
+
+knuckle_outer_dia = 8;
+knuckle_outer_r   = knuckle_outer_dia / 2;
+knuckle_inner_dia = 4.6;                 // ピン軸 + 0.3mm クリアランス相当
+knuckle_inner_r   = knuckle_inner_dia / 2;
+
+segment      = leaf_length / 5;          // 6mm ずつ5等分
+knuckle_gap  = 0.4;                      // 隣接knuckle間の遊び(可動用)
+knuckle_len  = segment - knuckle_gap;    // 各knuckleの実長さ (5.6mm)
+
+pin_z = leaf_thickness / 2;              // ピン軸のZ位置(板厚中心)
+
+// 皿穴(M3用)関連
+hole_pitch   = 8;                        // 穴ピッチ (Y方向)
+hole_cs_dia  = 6;                        // 皿穴 直径
+hole_cs_r    = hole_cs_dia / 2;
+hole_cs_depth= 1;                        // 皿穴 深さ
+hole_thru_dia= 3.2;                      // 貫通穴 直径
+hole_thru_r  = hole_thru_dia / 2;
+
+// 板のX方向配置
+x_left_outer  = -(knuckle_outer_r + leaf_width); // -29
+x_right_outer =  (knuckle_outer_r + leaf_width); //  29
+ov = 0.01; // knuckleとの結合部のわずかなオーバーラップ(結合安定用)
+
+// 皿穴のX位置(knuckleから離れた側 = 外側寄り)
+hole_x_left  = x_left_outer + 7;   // -22
+hole_x_right = x_right_outer - 7;  //  22
+
+// 皿穴のY位置(板中心 Y=15 を中心に 8mmピッチで3個)
+hole_ys = [leaf_length/2 - hole_pitch, leaf_length/2, leaf_length/2 + hole_pitch];
+
+// ---------------------------------------------------------------
+// ユーティリティ: Y軸方向に伸びる円柱 (中心 yc, Z位置 zc)
+// ---------------------------------------------------------------
+module cyl_y(r, h, yc, zc) {
+    translate([0, yc - h/2, zc])
+        rotate([-90, 0, 0])
+            cylinder(h = h, r = r);
+}
+
+// ---------------------------------------------------------------
+// 皿穴(M3用): 貫通穴 + テーパー座ぐり (Z=leaf_thickness側から見て)
+// ---------------------------------------------------------------
+module countersink() {
+    eps = 0.5;
+    // 貫通穴 (直径3.2mm)
+    translate([0, 0, -eps])
+        cylinder(h = leaf_thickness + 2*eps, r = hole_thru_r);
+    // テーパー座ぐり (深さ1mm, 直径6mm -> 3.2mm)
+    translate([0, 0, leaf_thickness - hole_cs_depth])
+        cylinder(h = hole_cs_depth, r1 = hole_thru_r, r2 = hole_cs_r);
+}
+
+// ---------------------------------------------------------------
+// 左板 (外側2個 + 中央1個 の knuckle) : segment index 0,2,4
+// ---------------------------------------------------------------
+module leaf_left() {
+    difference() {
+        union() {
+            // 板本体
+            translate([x_left_outer, 0, 0])
+                cube([leaf_width + ov, leaf_length, leaf_thickness]);
+            // knuckle (筒部)
+            for (i = [0, 2, 4]) {
+                yc = i * segment + segment/2;
+                cyl_y(knuckle_outer_r, knuckle_len, yc, pin_z);
+            }
+        }
+        // ピン穴 (クリアランス込み)
+        cyl_y(knuckle_inner_r, pin_length + 10, leaf_length/2, pin_z);
+
+        // 皿穴 x3
+        for (y = hole_ys) {
+            translate([hole_x_left, y, 0]) countersink();
+        }
+    }
+}
+
+// ---------------------------------------------------------------
+// 右板 (中間2個の knuckle) : segment index 1,3
+// ---------------------------------------------------------------
+module leaf_right() {
+    difference() {
+        union() {
+            // 板本体
+            translate([knuckle_outer_r - ov, 0, 0])
+                cube([leaf_width + ov, leaf_length, leaf_thickness]);
+            // knuckle (筒部)
+            for (i = [1, 3]) {
+                yc = i * segment + segment/2;
+                cyl_y(knuckle_outer_r, knuckle_len, yc, pin_z);
+            }
+        }
+        // ピン穴 (クリアランス込み)
+        cyl_y(knuckle_inner_r, pin_length + 10, leaf_length/2, pin_z);
+
+        // 皿穴 x3
+        for (y = hole_ys) {
+            translate([hole_x_right, y, 0]) countersink();
+        }
+    }
+}
+
+// ---------------------------------------------------------------
+// ピン軸 (直径4mm, 長さ32mm)
+// ---------------------------------------------------------------
+module pin() {
+    cyl_y(pin_r, pin_length, leaf_length/2, pin_z);
+}
+
+// =====================================================================
+// アセンブリ (180° 開いた状態)
+// =====================================================================
+color("silver")     leaf_left();
+color("lightgray")  leaf_right();
+color("gold")       pin();
+```

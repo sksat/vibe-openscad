@@ -1,0 +1,39 @@
+{
+  "runId": "bare-think-off_claude-sonnet-5-5615a4efeed5-2026-09-05T11-53-44-985Z",
+  "taskId": "tier-2-l-bracket",
+  "matrixId": "bare-think-off/claude-sonnet-5",
+  "signature": "5615a4efeed537420ec7717a82f17dfcda3a3c54eb8ca1d634ed41dc4a02765f",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "b20dcf3dd07e532496944d76485b954e0ab614f3cda1919fee5dc406f59b3ea5",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-sonnet-5",
+      "modelOptions": {
+        "thinking": {
+          "type": "disabled"
+        },
+        "max_tokens": 64000
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-sonnet-5",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 9557
+  },
+  "tokens": {
+    "input": 381,
+    "output": 897
+  },
+  "cost_usd": 0.009732000000000001,
+  "createdAt": "2026-09-05T11:53:44.986Z",
+  "gitCommit": "e18a2783a33873bb74f722264deabb1b79dee6e4"
+}

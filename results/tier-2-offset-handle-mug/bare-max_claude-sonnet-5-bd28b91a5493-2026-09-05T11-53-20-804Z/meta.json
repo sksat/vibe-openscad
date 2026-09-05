@@ -1,0 +1,40 @@
+{
+  "runId": "bare-max_claude-sonnet-5-bd28b91a5493-2026-09-05T11-53-20-804Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "bare-max/claude-sonnet-5",
+  "signature": "bd28b91a549381572c70607bda3530598a37951f08b89c6cc56d5978c86a32d4",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-sonnet-5",
+      "modelOptions": {
+        "output_config": {
+          "effort": "max"
+        },
+        "max_tokens": 64000
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-sonnet-5",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "no_code",
+  "timing": {
+    "totalMs": 701368
+  },
+  "tokens": {
+    "input": 343,
+    "output": 64000
+  },
+  "cost_usd": 0.640686,
+  "createdAt": "2026-09-05T11:53:20.804Z",
+  "gitCommit": "e18a2783a33873bb74f722264deabb1b79dee6e4",
+  "error": "model returned empty response (stopReason=max_tokens)"
+}

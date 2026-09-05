@@ -1,0 +1,20 @@
+// ===== M8 六角ボルト パラメータ =====
+af           = 13;    // 対辺距離 (across-flats) [mm]
+head_height  = 5.3;   // 頭部高さ [mm]
+shank_dia    = 8;     // シャンク直径 [mm]
+shank_length = 30;    // シャンク長さ [mm]
+
+// 対辺距離から六角柱の外接円直径を算出
+// af = 2 * R * cos(30°)  →  R = af / (2*cos(30°))  →  直径 = af / cos(30°)
+hex_dia = af / cos(30);
+
+module hex_bolt() {
+    // 頭部(六角柱): 底面が z=0 に位置し、+Z方向へ伸びる
+    cylinder(h = head_height, d = hex_dia, $fn = 6);
+
+    // シャンク(円柱): z=0 から -Z方向へ伸びる
+    translate([0, 0, -shank_length])
+        cylinder(h = shank_length, d = shank_dia, $fn = 64);
+}
+
+hex_bolt();
