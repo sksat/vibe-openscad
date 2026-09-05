@@ -20,6 +20,7 @@ import type {
 } from "./harnesses/types.js";
 import { getOpenscadVersion } from "./env.js";
 import { type Candidate, expandMatrix, loadBenchConfig } from "./matrix.js";
+import { setModelRegistryRoot } from "./models.js";
 import { runScheduled, type ScheduleItem } from "./scheduler.js";
 import type { MatrixEntry } from "./schema.js";
 
@@ -629,6 +630,9 @@ async function main(): Promise<void> {
   }
 
   const root = args.rootDir;
+  // モデルカタログも --root で選ばれたチェックアウトから読む(cwd から
+  // 遡らせると別チェックアウトの models.yml を掴みうる)。
+  setModelRegistryRoot(root);
   const tasksDir = join(root, "tasks");
   const configPath = join(root, "bench-config.yml");
   const resultsDir = join(root, "results");

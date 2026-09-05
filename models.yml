@@ -1,0 +1,343 @@
+# モデルカタログ — モデル固有の事実を集約した単一情報源。
+#
+# ここに置くのは「モデルを見れば決まる事実」だけ:
+#   - rate         $/Mtok(in / out)。省略 = 価格不明(セルフホスト等)
+#   - vision       画像入力を受け付けるか
+#   - effort       provider 既定の reasoning effort。null = effort ノブ無し
+#   - thinking     provider 既定の thinking モード。null = thinking 軸無し
+#   - label / sort UI 表示名・並び順。**命名規則から外れるモデルだけ** 書く
+#                  (`claude-opus-5` や `gemini-3.8-flash` のような素直な id は
+#                   web 側のパターンマッチで自動導出されるので不要)。書いた
+#                   場合はパターン推論より優先される
+#
+# 「どの組み合わせを実行するか」は bench-config.yml の matrix 側の仕事。
+# ここには実行条件(temperature、max_tokens 等)を書かない。
+#
+# キーは **モデル id の prefix**。フィールド単位で「最長一致が勝つ」形で
+# 継承されるので、dated snapshot は alias のエントリを自動で引き継ぐ:
+#   claude-haiku-4-5-20251001 → `claude-haiku-4-5`
+#   gpt-5.4-2026-03-05        → `gpt-5.4` → `gpt-5`(未定義フィールドのみ)
+#
+# モデルを追加するときは、ここに 1 エントリ足して bench-config.yml の matrix に
+# 行を足すだけでよい(テストは models.test.ts / dataset.test.ts の網羅テストが
+# 自動でカバーする)。詳細は DESIGN.md「モデルカタログ」節。
+
+# ---------------------------------------------------------------------------
+# Anthropic
+# 出典: Anthropic 公式ドキュメント(価格は 2026-09 時点)
+# ---------------------------------------------------------------------------
+
+# Fable は Opus の上の新ティア。adaptive thinking が常時 on で、明示の
+# `{type: disabled}` は API が 400 を返す(= thinking off が存在しない)。
+claude-fable-5:
+  provider: anthropic
+  rate: { in: 10, out: 50 }
+  vision: true
+  effort: high
+  thinking: adaptive
+
+claude-opus-4-8:
+  provider: anthropic
+  rate: { in: 5, out: 25 }
+  vision: true
+  effort: high
+  thinking: adaptive
+
+claude-opus-4-7:
+  provider: anthropic
+  rate: { in: 5, out: 25 }
+  vision: true
+  effort: high
+  thinking: adaptive
+
+claude-opus-4-6:
+  provider: anthropic
+  rate: { in: 5, out: 25 }
+  vision: true
+  effort: high
+  thinking: adaptive
+
+claude-sonnet-4-6:
+  provider: anthropic
+  rate: { in: 3, out: 15 }
+  vision: true
+  effort: high
+  thinking: adaptive
+
+claude-haiku-4-5:
+  provider: anthropic
+  rate: { in: 1, out: 5 }
+  vision: true
+  effort: null # Haiku 4.5 は output_config.effort を受け付けない
+  thinking: "off" # `thinking` 省略時は思考しない(budget_tokens 明示でのみ on)
+
+# --- legacy(まだ API で叩ける世代)---
+
+# effort は Opus 4.5 から(high が最高)。thinking は明示 opt-in なので既定 off。
+claude-opus-4-5:
+  provider: anthropic
+  rate: { in: 5, out: 25 }
+  vision: true
+  effort: high
+  thinking: "off"
+
+claude-opus-4-1:
+  provider: anthropic
+  rate: { in: 15, out: 75 }
+  vision: true
+  effort: null
+  thinking: "off"
+
+claude-opus-4-0:
+  provider: anthropic
+  rate: { in: 15, out: 75 }
+  vision: true
+  effort: null
+  thinking: "off"
+
+# snapshot だけの id(claude-opus-4-20250514)を拾う catch-all。
+claude-opus-4-:
+  provider: anthropic
+  rate: { in: 15, out: 75 }
+  vision: true
+  effort: null
+  thinking: "off"
+
+claude-sonnet-4-5:
+  provider: anthropic
+  rate: { in: 3, out: 15 }
+  vision: true
+  effort: null
+  thinking: "off"
+
+claude-sonnet-4-0:
+  provider: anthropic
+  rate: { in: 3, out: 15 }
+  vision: true
+  effort: null
+  thinking: "off"
+
+claude-sonnet-4-:
+  provider: anthropic
+  rate: { in: 3, out: 15 }
+  vision: true
+  effort: null
+  thinking: "off"
+
+# 3.x は extended thinking パラメータ自体が無い(= 軸が存在しないので null。
+# 「明示 opt-in すれば on にできるが既定は off」の 4.x 系とは別物)。
+# vision は true: Claude 3 系は画像入力に対応している。移行元の正規表現
+# `^claude-(fable|opus|sonnet|haiku)-\d` は `claude-3-haiku`(族名の前に
+# 世代が来る旧命名)にマッチせず false を返していたが、それはバグ。
+claude-3-haiku:
+  provider: anthropic
+  rate: { in: 0.25, out: 1.25 }
+  vision: true
+  effort: null
+  thinking: null
+
+# ---------------------------------------------------------------------------
+# Google Gemini
+# 出典: https://ai.google.dev/pricing (2026-05 時点)
+# Gemini 3 (preview) は公式価格未公表のため 2.5 同等で仮置き — 公開され次第更新。
+# ---------------------------------------------------------------------------
+
+# Gemini は 1.5 以降すべて画像入力可。世代別エントリが未定義のフィールドを
+# ここから継承する。
+gemini-:
+  provider: google
+  vision: true
+  effort: null # Gemini は effort ではなく thinkingConfig 側の軸を持つ
+
+# 3.5 世代(GA、2026-05-19 I/O)
+gemini-3.5-flash:
+  provider: google
+  rate: { in: 1.5, out: 9 }
+  thinking: dynamic
+
+# 3 世代(preview、暫定価格)
+gemini-3.1-pro:
+  provider: google
+  rate: { in: 1.25, out: 10 }
+  thinking: dynamic
+
+gemini-3-pro:
+  provider: google
+  rate: { in: 1.25, out: 10 }
+  thinking: dynamic
+
+gemini-3.1-flash-lite:
+  provider: google
+  rate: { in: 0.1, out: 0.4 }
+  thinking: dynamic
+
+gemini-3.1-flash:
+  provider: google
+  rate: { in: 0.3, out: 2.5 }
+  thinking: dynamic
+
+gemini-3-flash:
+  provider: google
+  rate: { in: 0.3, out: 2.5 }
+  thinking: dynamic
+
+# 2.5 世代(GA)
+gemini-2.5-pro:
+  provider: google
+  rate: { in: 1.25, out: 10 }
+  thinking: dynamic
+
+gemini-2.5-flash-lite:
+  provider: google
+  rate: { in: 0.1, out: 0.4 }
+  thinking: dynamic
+
+gemini-2.5-flash:
+  provider: google
+  rate: { in: 0.3, out: 2.5 }
+  thinking: dynamic
+
+# 1.5 系(legacy、thinking 軸なし)
+gemini-1.5-pro:
+  provider: google
+  rate: { in: 1.25, out: 5 }
+  thinking: null
+
+gemini-1.5-flash:
+  provider: google
+  rate: { in: 0.075, out: 0.3 }
+  thinking: null
+
+# ---------------------------------------------------------------------------
+# OpenAI
+# 価格は **未検証の推定値 + リーダーボードからの逆算**(公式ページの web fetch が
+# ブロックされたため)。実勢と数倍違う可能性があるので、cost_usd を比較指標として
+# 使う前に https://openai.com/api/pricing で実値を確認・更新すること。
+#
+# thinking は指定しない: OpenAI は thinking を effort に内包していて、独立した
+# thinking 軸を持たない。
+# ---------------------------------------------------------------------------
+
+# gpt-5 系はすべて vision 対応・reasoning effort の既定 medium。個別世代の
+# エントリは rate だけ上書きする。
+gpt-5:
+  provider: openai
+  rate: { in: 1.25, out: 10 }
+  vision: true
+  effort: medium
+
+gpt-5-pro:
+  provider: openai
+  rate: { in: 15, out: 120 }
+
+gpt-5-mini:
+  provider: openai
+  rate: { in: 0.25, out: 2 }
+
+gpt-5-nano:
+  provider: openai
+  rate: { in: 0.05, out: 0.4 }
+
+gpt-5.1:
+  provider: openai
+  rate: { in: 1.4, out: 11 }
+
+gpt-5.2:
+  provider: openai
+  rate: { in: 1.6, out: 12 }
+
+gpt-5.2-pro:
+  provider: openai
+  rate: { in: 17, out: 130 }
+
+gpt-5.2-mini:
+  provider: openai
+  rate: { in: 0.3, out: 2.5 }
+
+gpt-5.2-nano:
+  provider: openai
+  rate: { in: 0.06, out: 0.5 }
+
+gpt-5.3:
+  provider: openai
+  rate: { in: 1.5, out: 12 }
+
+gpt-5.4:
+  provider: openai
+  rate: { in: 2, out: 16 }
+
+gpt-5.4-mini:
+  provider: openai
+  rate: { in: 0.4, out: 3 }
+
+gpt-5.4-nano:
+  provider: openai
+  rate: { in: 0.075, out: 0.6 }
+
+# gpt-4.1 系(reasoning 無し = effort ノブ無し)
+gpt-4.1:
+  provider: openai
+  rate: { in: 2, out: 8 }
+  vision: true
+  effort: null
+
+gpt-4.1-mini:
+  provider: openai
+  rate: { in: 0.4, out: 1.6 }
+
+gpt-4.1-nano:
+  provider: openai
+  rate: { in: 0.1, out: 0.4 }
+
+gpt-4o:
+  provider: openai
+  vision: true
+  effort: null
+
+# o-series(reasoning)
+o3:
+  provider: openai
+  rate: { in: 2, out: 8 }
+  vision: true
+  effort: medium
+
+o3-pro:
+  provider: openai
+  rate: { in: 20, out: 80 }
+
+o3-mini:
+  provider: openai
+  rate: { in: 1.1, out: 4.4 }
+  vision: false # o3-mini は画像入力不可
+
+o4-mini:
+  provider: openai
+  rate: { in: 1.1, out: 4.4 }
+  vision: true
+  effort: medium
+
+# ---------------------------------------------------------------------------
+# セルフホスト(LM Studio / Ollama / vLLM 等の OpenAI 互換 endpoint)
+# 課金が無いので rate は持たない。
+# ---------------------------------------------------------------------------
+
+openai/gpt-oss-20b:
+  provider: openai-self-hosted
+  vision: false
+
+# LM Studio 上で `type: "vlm"` として配布されている gemma 3 / 4 系。
+google/gemma-3-:
+  provider: openai-self-hosted
+  vision: true
+
+google/gemma-4-:
+  provider: openai-self-hosted
+  vision: true
+
+nvidia/nemotron-3-nano-4b:
+  provider: openai-self-hosted
+  vision: false
+
+qwen3-:
+  provider: openai-self-hosted
+  vision: false

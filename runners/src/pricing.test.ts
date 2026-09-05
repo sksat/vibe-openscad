@@ -1,40 +1,46 @@
 import { describe, expect, it } from "vitest";
 import { computeCostUsd, getRate } from "./pricing.js";
 
+/**
+ * 価格の **値そのもの** は models.yml(モデルカタログ)側にあり、
+ * 「bench-config の全モデルが価格を持つか」は models.test.ts の網羅テストが
+ * 見る。ここで固定するのは **解決規則** — どのエントリに解決されるべきか、
+ * と USD の計算式。個々のモデルの $ をここに二重に書かない(書くと
+ * モデル追加のたびにテストを書き足す羽目になる)。
+ */
 describe("getRate", () => {
-  it("returns rate for current Anthropic models (alias and dated)", () => {
-    expect(getRate("anthropic", "claude-fable-5")).toEqual({
-      inputPerMtok: 10,
-      outputPerMtok: 50,
-    });
-    // catch-all の `claude-opus-4-`(旧世代 $15/$75)に落ちないこと。
-    expect(getRate("anthropic", "claude-opus-4-8")).toEqual({
-      inputPerMtok: 5,
-      outputPerMtok: 25,
-    });
-    expect(getRate("anthropic", "claude-opus-4-7")).toEqual({
-      inputPerMtok: 5,
-      outputPerMtok: 25,
-    });
-    expect(getRate("anthropic", "claude-haiku-4-5")).toEqual({
-      inputPerMtok: 1,
-      outputPerMtok: 5,
-    });
-    expect(getRate("anthropic", "claude-haiku-4-5-20251001")).toEqual({
-      inputPerMtok: 1,
-      outputPerMtok: 5,
-    });
+  it("resolves a known model to a positive rate", () => {
+    const rate = getRate("anthropic", "claude-opus-4-7");
+    expect(rate).not.toBeNull();
+    expect(rate!.inputPerMtok).toBeGreaterThan(0);
+    expect(rate!.outputPerMtok).toBeGreaterThan(rate!.inputPerMtok);
   });
 
-  it("returns rate for legacy Anthropic models", () => {
-    expect(getRate("anthropic", "claude-opus-4-1-20250805")).toEqual({
-      inputPerMtok: 15,
-      outputPerMtok: 75,
-    });
-    expect(getRate("anthropic", "claude-sonnet-4-5-20250929")).toEqual({
-      inputPerMtok: 3,
-      outputPerMtok: 15,
-    });
+  it("lets a dated snapshot inherit its alias rate", () => {
+    // 将来 opus-4-7 に dated snapshot が付いても alias の価格で計算される。
+    expect(getRate("anthropic", "claude-opus-4-7-20260601")).toEqual(
+      getRate("anthropic", "claude-opus-4-7"),
+    );
+    expect(getRate("anthropic", "claude-haiku-4-5-20251001")).toEqual(
+      getRate("anthropic", "claude-haiku-4-5"),
+    );
+    expect(getRate("openai", "gpt-5.4-2026-03-05")).toEqual(
+      getRate("openai", "gpt-5.4"),
+    );
+  });
+
+  it("uses the more specific family rate, not the base family", () => {
+    // regression: gpt-5.4-mini が gpt-5 の prefix に落ちて誤った価格になった。
+    expect(getRate("openai", "gpt-5.4-mini-2026-03-17")).not.toEqual(
+      getRate("openai", "gpt-5.4-2026-03-05"),
+    );
+    expect(getRate("openai", "gpt-5.4-mini-2026-03-17")).not.toEqual(
+      getRate("openai", "gpt-5"),
+    );
+    // catch-all の `claude-opus-4-`(旧世代)に落ちないこと。
+    expect(getRate("anthropic", "claude-opus-4-8")).not.toEqual(
+      getRate("anthropic", "claude-opus-4-20250514"),
+    );
   });
 
   it("returns null for unknown providers/models", () => {
@@ -43,67 +49,14 @@ describe("getRate", () => {
     expect(getRate("openai", "wat-is-this")).toBeNull();
   });
 
-  it("returns rate for OpenAI models, longest prefix wins", () => {
-    expect(getRate("openai", "gpt-5")).toEqual({
-      inputPerMtok: 1.25,
-      outputPerMtok: 10,
-    });
-    expect(getRate("openai", "gpt-5-mini")).toEqual({
-      inputPerMtok: 0.25,
-      outputPerMtok: 2,
-    });
-    expect(getRate("openai", "gpt-5-nano")).toEqual({
-      inputPerMtok: 0.05,
-      outputPerMtok: 0.4,
-    });
-    expect(getRate("openai", "o3")).toEqual({
-      inputPerMtok: 2,
-      outputPerMtok: 8,
-    });
-    // dated snapshots inherit the alias rate via prefix
-    expect(getRate("openai", "gpt-5-2025-09-15")).toEqual({
-      inputPerMtok: 1.25,
-      outputPerMtok: 10,
-    });
+  it("does not cross provider boundaries", () => {
+    expect(getRate("openai", "claude-opus-4-7")).toBeNull();
+    expect(getRate("anthropic", "gpt-5")).toBeNull();
   });
 
-  it("uses the more specific 5.x family rate, not gpt-5 base", () => {
-    // regression: gpt-5.4-mini was hitting the gpt-5 prefix → wrong rate
-    expect(getRate("openai", "gpt-5.4-mini-2026-03-17")).toEqual({
-      inputPerMtok: 0.4,
-      outputPerMtok: 3,
-    });
-    expect(getRate("openai", "gpt-5.4-nano-2026-03-17")).toEqual({
-      inputPerMtok: 0.075,
-      outputPerMtok: 0.6,
-    });
-    expect(getRate("openai", "gpt-5.4-2026-03-05")).toEqual({
-      inputPerMtok: 2,
-      outputPerMtok: 16,
-    });
-  });
-
-  it("returns rate for Gemini models", () => {
-    expect(getRate("google", "gemini-2.5-pro")).toEqual({
-      inputPerMtok: 1.25,
-      outputPerMtok: 10,
-    });
-    expect(getRate("google", "gemini-2.5-flash")).toEqual({
-      inputPerMtok: 0.3,
-      outputPerMtok: 2.5,
-    });
-    expect(getRate("google", "gemini-2.5-flash-lite")).toEqual({
-      inputPerMtok: 0.1,
-      outputPerMtok: 0.4,
-    });
-  });
-
-  it("matches dated snapshot to its alias rate via prefix", () => {
-    // a future snapshot of opus-4-7 should still resolve
-    expect(getRate("anthropic", "claude-opus-4-7-20260601")).toEqual({
-      inputPerMtok: 5,
-      outputPerMtok: 25,
-    });
+  it("returns null for self-hosted models (no billing)", () => {
+    expect(getRate("openai-self-hosted", "openai/gpt-oss-20b")).toBeNull();
+    expect(getRate("openai-self-hosted", "qwen3-8b")).toBeNull();
   });
 });
 
@@ -115,19 +68,29 @@ describe("computeCostUsd", () => {
   });
 
   it("computes cost from token counts (per-Mtok rates)", () => {
+    const rate = getRate("anthropic", "claude-opus-4-7")!;
     const cost = computeCostUsd("anthropic", "claude-opus-4-7", {
       input: 1_000_000,
       output: 1_000_000,
     });
-    expect(cost).toBeCloseTo(30, 6); // 5 + 25
+    expect(cost).toBeCloseTo(rate.inputPerMtok + rate.outputPerMtok, 10);
   });
 
-  it("computes small fractional costs accurately", () => {
-    const cost = computeCostUsd("anthropic", "claude-haiku-4-5", {
-      input: 100,
-      output: 200,
-    });
-    // (100 / 1e6) * 1 + (200 / 1e6) * 5 = 1.1e-3
-    expect(cost).toBeCloseTo(0.0011, 8);
+  it("scales linearly with token counts", () => {
+    const one = computeCostUsd("anthropic", "claude-opus-4-7", {
+      input: 1000,
+      output: 500,
+    })!;
+    const ten = computeCostUsd("anthropic", "claude-opus-4-7", {
+      input: 10_000,
+      output: 5_000,
+    })!;
+    expect(ten).toBeCloseTo(one * 10, 10);
+  });
+
+  it("is zero for zero tokens", () => {
+    expect(
+      computeCostUsd("anthropic", "claude-opus-4-7", { input: 0, output: 0 }),
+    ).toBe(0);
   });
 });

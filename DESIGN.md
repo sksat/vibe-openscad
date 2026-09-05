@@ -209,6 +209,86 @@ tasks:
 
 `fingerprint` と `signature` が再現キー。それ以外はログ用途。詳細は `runners/src/schema.ts` の Zod 定義を参照。
 
+## モデルカタログ(`models.yml`)
+
+**モデル固有の事実は `models.yml` に集約し、コードには置かない。**
+
+| 置くもの | 置かないもの |
+|---|---|
+| `rate`(\$/Mtok)、`vision`、provider 既定の `effort` / `thinking`、命名規則から外れる場合の `label` / `sort` | 実行条件(どの variant を回すか、`max_tokens`、`temperature` 等) |
+
+実行条件は `bench-config.yml` の matrix 側の担当。「モデルを見れば決まる事実」と
+「今回どう回すか」を別ファイルに分けている。
+
+### なぜ分離したか
+
+以前はモデル 1 つ追加するのに **4 箇所のコード**(`pricing.ts` の価格表、
+`capabilities.ts` の vision 正規表現、`web/src/lib/dataset.ts` の既定 effort と
+既定 thinking)と、**それぞれに対応する手書きテスト** を触る必要があった。
+データがロジックに埋まっているせいで、本質的には「表に 1 行足す」だけの作業が
+コード変更として扱われ、モデル追加のたびにテストを書き足す運用になっていた。
+
+カタログに集約したことで **モデル追加は原則データだけで完結する**
+(`models.yml` に 1 エントリ + `bench-config.yml` に matrix 行)。
+
+### 解決規則: prefix × フィールド単位の最長一致
+
+キーは **モデル id の prefix**。あるモデル id に対して prefix が一致する
+エントリをすべて集め、**短い順に重ねて**マージする(長い prefix が同名
+フィールドを上書きする)。
+
+```
+gpt-5      : { vision: true, effort: medium, rate: 1.25/10 }
+gpt-5.4    : { rate: 2/16 }
+→ gpt-5.4-2026-03-05 は rate=2/16、vision と effort は gpt-5 から継承
+```
+
+これで 2 つの性質が同時に手に入る:
+
+- **dated snapshot が alias を自動で引き継ぐ** — `claude-haiku-4-5-20251001` は
+  `claude-haiku-4-5` のエントリに解決される。将来モデルに dated suffix が
+  付いてもカタログを触らなくてよい
+- **族の既定値と個体の上書きを同じ仕組みで書ける** — `gemini-` に vision を
+  一度書けば全 Gemini に効き、世代ごとのエントリは価格だけ書けばよい
+
+`effort: null` のような **明示 null は「その軸が存在しない」という宣言**であり、
+未宣言(キーが無い)とは区別する。Haiku 4.5 は `effort: null`(API が
+`output_config.effort` を拒否する)、OpenAI は thinking を effort に内包するので
+`thinking` を宣言しない、という違いをそのまま表現できる。
+
+### 網羅テストで手書きテストを置き換える(不変条件)
+
+モデル追加時に **新しいテストを書かない** かわりに、データ駆動の網羅テストが
+`bench-config.yml` の matrix を走査して穴を検出する:
+
+- `runners/src/models.test.ts` — matrix の全 (provider, model) がカタログで
+  解決でき、`vision` が宣言され、クラウド provider なら `rate` を持ち、
+  effort / thinking 軸を持つ provider ではその軸が宣言されていること
+- `web/src/lib/model-coverage.test.ts` — 全モデルが UI でラベル付けでき、
+  セルフホスト以外は既知の族バケツにソートされること(素の id が
+  そのまま表示されたり並び順が末尾に落ちたりしないこと)
+
+つまり **カタログへの登録漏れは CI で落ちる**。逆に言うと、これらの網羅テストを
+弱めるとモデル追加時の唯一のガードが消えるので、緩める変更は慎重に。
+
+個々のモデルの価格や vision 可否を `*.test.ts` に再度書かないこと(カタログと
+テストで同じ値を二重管理することになり、まさに分離した意味が無くなる)。
+テストが固定するのは **解決規則**(dated snapshot の継承、長い prefix が勝つ、
+provider を跨がない)と計算式。
+
+### `label` / `sort` を書くのはどういうときか
+
+web 側はモデル id の命名規則からラベルと並び順を導出する
+(`claude-opus-5` → 「opus 5」、`gemini-3.8-flash` → 「flash 3.8」)ので、
+素直な id なら何も書かなくてよい。カタログの `label` / `sort` は
+`gpt-5.6-sol` のように **世代とティアが別語彙になっている id** のためにある。
+
+宣言した場合は **パターン推論より優先される**(フォールバックではない)。
+`gpt-5.6-sol` は `^gpt-(\d+)(?:\.(\d+))?` に「それらしく」マッチしてしまい、
+sol / terra / luna のティア差がソートに乗らないまま素通りする。宣言を後段の
+フォールバックにすると、パターンが部分的に当たる id で宣言が黙って無視される
+という分かりにくい挙動になるので、明示が常に勝つ側に倒してある。
+
 ## ハーネス
 
 ### `bare`
