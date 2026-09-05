@@ -319,6 +319,29 @@ function isHarnessHead(part: string): boolean {
   return /^bare(-[a-z0-9]+)+$/.test(part);
 }
 
+/**
+ * `publisher/model` 形式のセルフホスト id から vendor アイコンキーを引く。
+ * publisher は「重み配布元」なので、`google/gemma-*` は Gemini ロゴになる。
+ */
+function slashedPublisherVendor(
+  modelStr: string,
+): MatrixSegment["vendor"] | undefined {
+  const m = modelStr.match(/^([a-z][\w-]*)\/(.+)$/i);
+  if (!m) return undefined;
+  switch (m[1]!.toLowerCase()) {
+    case "openai":
+      return "openai";
+    case "anthropic":
+      return "claude";
+    case "google":
+      return "gemini";
+    case "nvidia":
+      return "nvidia";
+    default:
+      return undefined;
+  }
+}
+
 /** Parse one model id string into vendor + model badges (or fall through). */
 export function parseModelLabel(modelStr: string): MatrixSegment[] {
   // カタログに表示名の宣言があればそれを使う(vendor バッジは provider から
@@ -326,7 +349,11 @@ export function parseModelLabel(modelStr: string): MatrixSegment[] {
   // 誤って拾わないよう宣言を先に見る。
   const declared = resolveModel(modelStr);
   if (declared?.label) {
-    const vendor = providerVendor(declared.provider);
+    // `google/gemma-4-e2b` のようなセルフホスト id では provider
+    // (`openai-self-hosted` = API プロトコル)ではなく **publisher** が
+    // vendor。provider から引くと Google のモデルが OpenAI ロゴになる。
+    const vendor =
+      slashedPublisherVendor(modelStr) ?? providerVendor(declared.provider);
     if (vendor) {
       return [
         { kind: "vendor", label: vendor, vendor },
@@ -434,16 +461,7 @@ export function parseModelLabel(modelStr: string): MatrixSegment[] {
   if (slashed) {
     const publisher = slashed[1]!.toLowerCase();
     const localModel = slashed[2]!;
-    const vendor: MatrixSegment["vendor"] =
-      publisher === "openai"
-        ? "openai"
-        : publisher === "anthropic"
-          ? "claude"
-          : publisher === "google"
-            ? "gemini"
-            : publisher === "nvidia"
-              ? "nvidia"
-              : undefined;
+    const vendor = slashedPublisherVendor(modelStr);
     if (vendor) {
       return [
         { kind: "vendor", label: publisher, vendor },

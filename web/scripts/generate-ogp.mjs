@@ -12,6 +12,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync } from "node
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
+import { parse as parseYaml } from "yaml";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -44,8 +45,30 @@ const PREFERRED_MODELS = [
   "gemini-3-flash-preview",
 ];
 
+/**
+ * モデルカタログ(models.yml)の `label:` 宣言。命名規則から外れる id
+ * (gpt-5.6-sol 等)はここで表示名が決まる。カード生成はページ本体と
+ * 別プロセスなので、同じカタログを読んで表示を一致させる。
+ */
+const declaredLabels = (() => {
+  try {
+    const raw = parseYaml(readFileSync(join(repoRoot, "models.yml"), "utf8"));
+    const out = [];
+    for (const [prefix, entry] of Object.entries(raw ?? {})) {
+      if (entry && typeof entry.label === "string") out.push([prefix, entry.label]);
+    }
+    // 最長 prefix を勝たせる(models.ts の解決規則と同じ)。
+    return out.sort((a, b) => b[0].length - a[0].length);
+  } catch {
+    return [];
+  }
+})();
+
 /** Short display label for a model id (vendor + family). */
 function shortModelLabel(model) {
+  for (const [prefix, label] of declaredLabels) {
+    if (model.startsWith(prefix)) return label;
+  }
   const claude = model.match(/^claude-(opus|sonnet|haiku)-(\d+)(?:-(\d{1,3}))?/);
   if (claude) {
     const ver = claude[3] ? `${claude[2]}.${claude[3]}` : claude[2];
