@@ -27,6 +27,65 @@ function fakeMessage(
 }
 
 describe("createAnthropicProvider", () => {
+  it("keeps the non-streaming path at or below the SDK's threshold", async () => {
+    // 既存エントリ(max_tokens 4096 / 16000)の転送方式を変えないための境界。
+    // ここを動かすと signature は同じまま転送方式だけが変わってしまう。
+    const create = vi.fn().mockResolvedValue(fakeMessage());
+    const stream = vi.fn();
+    const client = { messages: { create, stream } } as unknown as Anthropic;
+    const provider = createAnthropicProvider({ client });
+
+    await provider.complete({ prompt: "p", model: "claude-opus-5", maxTokens: 21333 });
+
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(stream).not.toHaveBeenCalled();
+  });
+
+  it("uses the streaming API above the SDK's non-streaming threshold", async () => {
+    // 非ストリーミングの messages.create は max_tokens > 16000 を
+    // "Streaming is required for operations that may take longer than
+    // 10 minutes" で SDK が弾く。thinking が既定 on のモデル(Sonnet 5 /
+    // Opus 5 等)は 16k を思考で使い切って SCAD 到達前に切れるため、
+    // 本番経路はストリーミングを使う。
+    const finalMessage = vi.fn().mockResolvedValue(fakeMessage());
+    const stream = vi.fn().mockReturnValue({ finalMessage });
+    const create = vi.fn();
+    const client = { messages: { stream, create } } as unknown as Anthropic;
+    const provider = createAnthropicProvider({ client });
+
+    const res = await provider.complete({
+      prompt: "p",
+      model: "claude-sonnet-5",
+      maxTokens: 21334,
+    });
+
+    expect(stream).toHaveBeenCalledTimes(1);
+    expect(create).not.toHaveBeenCalled();
+    expect(stream.mock.calls[0]?.[0]).toMatchObject({ max_tokens: 21334 });
+    expect(res.text).toBe("hello");
+  });
+
+  it("bounds the stream with a finite timeout", async () => {
+    // SSE が途中で無音になると finalMessage() は待ち続ける。bench-config の
+    // timeoutSec は provider 呼び出しに配線されていないので、ここで上限を
+    // 持たせないと 1 件の停止でベンチ全体が終わらなくなる。
+    const finalMessage = vi.fn().mockResolvedValue(fakeMessage());
+    const stream = vi.fn().mockReturnValue({ finalMessage });
+    const client = { messages: { stream } } as unknown as Anthropic;
+    const provider = createAnthropicProvider({ client });
+
+    await provider.complete({
+      prompt: "p",
+      model: "claude-sonnet-5",
+      maxTokens: 64000,
+    });
+
+    const opts = stream.mock.calls[0]?.[1];
+    expect(typeof opts?.timeout).toBe("number");
+    expect(opts.timeout).toBeGreaterThan(0);
+    expect(Number.isFinite(opts.timeout)).toBe(true);
+  });
+
   it("name is 'anthropic'", () => {
     const provider = createAnthropicProvider({ create: vi.fn() });
     expect(provider.name).toBe("anthropic");

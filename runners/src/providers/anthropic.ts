@@ -48,20 +48,57 @@ export interface AnthropicProviderDeps {
   client?: Anthropic;
 }
 
-// SCAD 出力は数百トークン程度。大きな値は古い Opus 系で
-// "Streaming is required for operations that may take longer than
-// 10 minutes" の SDK ガードに引っかかるため低めに。
+/**
+ * ストリーミング 1 回あたりの上限(30 分)。effort max + max_tokens 64000 の
+ * run でも数分で収まる一方、SSE が停止したときは確実に失敗させる。
+ */
+const STREAM_TIMEOUT_MS = 30 * 60 * 1000;
+
+/**
+ * 非ストリーミングで送れる max_tokens の上限。SDK は送信前に
+ * `3600 * max_tokens / 128000` 秒を見積もり、10 分を超えると
+ * "Streaming is required for operations that may take longer than 10 minutes"
+ * を投げる。境界は 600 * 128000 / 3600 = 21333.33 なので 21333 までが可
+ * (実測で 21333 は通り 21334 で拒否)。モデル非依存の固定式。
+ *
+ * **転送方式を max_tokens だけで決めるのが重要**: max_tokens は modelOptions
+ * 経由で fingerprint に乗るので、こうしておくと「同じ signature なら必ず同じ
+ * 転送方式」が成り立つ。無条件にストリーミングへ切り替えると、既存エントリは
+ * signature が変わらないまま転送方式だけが変わり、差が出たときに検出できない。
+ */
+const MAX_NONSTREAMING_TOKENS = 21333;
+
+// SCAD 出力は数百トークン程度なので、明示しないモデルはこの値で足りる。
+// thinking が既定 on のモデル(Fable 5 / Opus 5 / Sonnet 5 等)は thinking token
+// もこの上限を消費するので、bench-config 側の modelOptions で引き上げる。
 const DEFAULT_MAX_TOKENS = 4096;
 
 export function createAnthropicProvider(
   deps: AnthropicProviderDeps = {},
 ): Provider {
+  // max_tokens が SDK の非ストリーミング上限を超えるときだけストリーミングに
+  // 切り替える。thinking が既定 on のモデル(Fable 5 / Opus 5 / Sonnet 5 等)は
+  // thinking token も max_tokens を消費するので十分な上限が要るが、非ストリーミング
+  // では 21333 までしか送れない。
+  //
+  // 上限以下の既存エントリは従来どおり非ストリーミングのままにする。転送方式が
+  // max_tokens の関数になるので、同じ signature の run は必ず同じ経路を通る。
+  // テストは deps.create を注入してこの分岐ごと迂回する。
   const create: CreateMessage =
     deps.create ??
-    (((params) =>
-      (deps.client ?? new Anthropic()).messages.create(
-        params,
-      )) as CreateMessage);
+    (async (params) => {
+      const client = deps.client ?? new Anthropic();
+      if ((params.max_tokens ?? 0) <= MAX_NONSTREAMING_TOKENS) {
+        return client.messages.create(params);
+      }
+      // SSE が途中で無音になった場合、finalMessage() には打ち切る手段が無く
+      // 待ち続ける。bench-config の defaults.timeoutSec は provider 呼び出しに
+      // 配線されていないので、ここで明示的に上限を持たせないと 1 件の停止で
+      // ベンチ全体が終わらなくなる。
+      return client.messages
+        .stream(params, { timeout: STREAM_TIMEOUT_MS })
+        .finalMessage();
+    });
 
   return {
     name: "anthropic",
