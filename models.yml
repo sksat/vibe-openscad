@@ -245,6 +245,18 @@ gpt-6-astra:
   effort: medium
   label: gpt 6 astra
 
+# GPT-5.6。数字が世代、Sol / Terra / Luna がティア(Sol が最上位)という
+# 新しい命名で、web 側のパターン(gpt-<数字>-<mini|nano|pro>)から外れるため
+# label と sort を宣言する。sort.version は既存の派生値と同じ major*1000+minor、
+# sort.size はティア順(sol=0 / terra=1 / luna=2)。
+# effort は low / medium(既定) / high / xhigh / max。
+gpt-5.6-luna:
+  provider: openai
+  rate: { in: 0.2, out: 1.2 }
+  vision: true
+  effort: medium
+  label: gpt 5.6 luna
+  sort: { family: 0, version: 5006, size: 2 }
 # gpt-5 系はすべて vision 対応・reasoning effort の既定 medium。個別世代の
 # エントリは rate だけ上書きする。
 gpt-5:

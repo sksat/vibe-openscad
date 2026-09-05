@@ -413,6 +413,33 @@ matrix:
     model: gpt-6-astra
     modelOptions: { reasoning: { effort: max } }
 
+  # --- GPT-5.6 (数字=世代 / Sol・Terra・Luna=ティアの新命名) ---
+  # Luna は 3 ティアの最小。effort は low / medium(既定) / high / xhigh / max。
+  - id: bare/gpt-5.6-luna
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.6-luna
+  - id: bare-low/gpt-5.6-luna
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.6-luna
+    modelOptions: { reasoning: { effort: low } }
+  - id: bare-high/gpt-5.6-luna
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.6-luna
+    modelOptions: { reasoning: { effort: high } }
+  - id: bare-xhigh/gpt-5.6-luna
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.6-luna
+    modelOptions: { reasoning: { effort: xhigh } }
+  - id: bare-max/gpt-5.6-luna
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.6-luna
+    modelOptions: { reasoning: { effort: max } }
+
   # --- GPT-5.5 (current-gen general) ---
   - id: bare/gpt-5.5
     harness: { kind: bare }
@@ -484,6 +511,11 @@ matrix:
     harness: { kind: pdf-page }
     provider: openai
     model: gpt-6-astra
+
+  - id: pdf-page/gpt-5.6-luna
+    harness: { kind: pdf-page }
+    provider: openai
+    model: gpt-5.6-luna
   - id: pdf-page/gpt-5.5
     harness: { kind: pdf-page }
     provider: openai
