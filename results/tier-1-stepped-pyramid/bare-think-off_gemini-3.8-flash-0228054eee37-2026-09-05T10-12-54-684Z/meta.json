@@ -1,0 +1,40 @@
+{
+  "runId": "bare-think-off_gemini-3.8-flash-0228054eee37-2026-09-05T10-12-54-684Z",
+  "taskId": "tier-1-stepped-pyramid",
+  "matrixId": "bare-think-off/gemini-3.8-flash",
+  "signature": "0228054eee37dce65c0ad7f4ebec8e0753e331b8aeb0bf72747e607223bbff4f",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "f33c33343b97cdee4ab2a95d84c7f4be5791294d1e997d9c55a752a15c9a2446",
+    "harness": {
+      "kind": "bare",
+      "provider": "google",
+      "model": "gemini-3.8-flash",
+      "modelOptions": {
+        "config": {
+          "thinkingConfig": {
+            "thinkingLevel": "low"
+          }
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "google",
+  "model": "gemini-3.8-flash",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 2018
+  },
+  "tokens": {
+    "input": 138,
+    "output": 139
+  },
+  "cost_usd": 0.00062475,
+  "createdAt": "2026-09-05T10:12:54.684Z",
+  "gitCommit": "d69c2b8ad7096565c04e35c594251b6b21e60c3b"
+}

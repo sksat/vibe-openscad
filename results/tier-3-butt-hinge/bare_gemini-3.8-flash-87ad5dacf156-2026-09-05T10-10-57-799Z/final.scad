@@ -1,0 +1,110 @@
+$fn = 64;
+
+// --- 主要寸法パラメータ ---
+leaf_width      = 25;   // 板の横幅 (X方向)
+leaf_length     = 30;   // 板の縦長 (Y方向)
+leaf_thick      = 2;    // 板の厚さ (Z方向)
+
+knuckle_od      = 8;    // knuckle外径
+knuckle_id      = 4.6;  // knuckle内径 (ピン4mm + クリアランス)
+knuckle_seg     = leaf_length / 5; // 6mm
+
+pin_dia         = 4;    // ピン軸直径
+pin_length      = 32;   // ピン軸長さ (両端1mm突出)
+
+hole_pitch      = 8;    // 皿穴ピッチ
+hole_dist_axis  = 17;   // ピン軸中心からの皿穴位置 (X=±17)
+
+// --- 皿穴モジュール (M3用) ---
+module countersunk_hole() {
+    // 表面(Z=0)から深さ1mmで直径6mmから3.2mmへテーパ
+    translate([0, 0, -1])
+        cylinder(h = 1.01, d1 = 3.2, d2 = 6);
+    // 直径3.2mm 貫通穴
+    translate([0, 0, -leaf_thick - 0.5])
+        cylinder(h = leaf_thick + 1, d = 3.2);
+}
+
+// 板に配置する3つの皿穴
+module screw_holes(x_pos) {
+    for (i = [-1:1]) {
+        translate([x_pos, leaf_length / 2 + i * hole_pitch, 0])
+            countersunk_hole();
+    }
+}
+
+// --- 左板 (Leaf Left: x < 0, knuckle: 0, 2, 4) ---
+module left_leaf() {
+    difference() {
+        union() {
+            // 平板部
+            translate([-leaf_width, 0, -leaf_thick])
+                cube([leaf_width, leaf_length, leaf_thick]);
+
+            // knuckle (外側2個 + 中央1個)
+            for (i = [0, 2, 4]) {
+                translate([0, i * knuckle_seg, 0])
+                    rotate([-90, 0, 0])
+                        cylinder(h = knuckle_seg, d = knuckle_od);
+            }
+        }
+
+        // ピン軸穴貫通
+        translate([0, -1, 0])
+            rotate([-90, 0, 0])
+                cylinder(h = leaf_length + 2, d = knuckle_id);
+
+        // 右板knuckle用の逃げ（クリアランス切欠き）
+        for (i = [1, 3]) {
+            translate([-knuckle_od / 2 - 0.1, i * knuckle_seg, -knuckle_od / 2 - 0.1])
+                cube([knuckle_od / 2 + 0.2, knuckle_seg, knuckle_od + 0.2]);
+        }
+
+        // M3皿穴 3箇所
+        screw_holes(-hole_dist_axis);
+    }
+}
+
+// --- 右板 (Leaf Right: x > 0, knuckle: 1, 3) ---
+module right_leaf() {
+    difference() {
+        union() {
+            // 平板部
+            translate([0, 0, -leaf_thick])
+                cube([leaf_width, leaf_length, leaf_thick]);
+
+            // knuckle (中間2個)
+            for (i = [1, 3]) {
+                translate([0, i * knuckle_seg, 0])
+                    rotate([-90, 0, 0])
+                        cylinder(h = knuckle_seg, d = knuckle_od);
+            }
+        }
+
+        // ピン軸穴貫通
+        translate([0, -1, 0])
+            rotate([-90, 0, 0])
+                cylinder(h = leaf_length + 2, d = knuckle_id);
+
+        // 左板knuckle用の逃げ（クリアランス切欠き）
+        for (i = [0, 2, 4]) {
+            translate([-0.1, i * knuckle_seg, -knuckle_od / 2 - 0.1])
+                cube([knuckle_od / 2 + 0.2, knuckle_seg, knuckle_od + 0.2]);
+        }
+
+        // M3皿穴 3箇所
+        screw_holes(hole_dist_axis);
+    }
+}
+
+// --- ピン軸 ---
+module pin() {
+    translate([0, -1, 0])
+        rotate([-90, 0, 0])
+            cylinder(h = pin_length, d = pin_dia);
+}
+
+// --- 全体アセンブリ（180° 開いた状態） ---
+color("Silver")    left_leaf();
+color("LightGray") right_leaf();
+color("DimGray")   pin();

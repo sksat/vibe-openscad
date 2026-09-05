@@ -1,0 +1,110 @@
+// Sharp GP2Y0D413K0F Distance Measuring Sensor
+// Unit: mm, Origin at center of main case body
+
+$fn = 32;
+
+// Main Dimensions
+case_w = 29.45;      // Width (X)
+case_d = 7.1;        // Depth (Y)
+case_h = 13.05;      // Height (Z)
+total_h = 18.9;      // Total height including PWB/connector
+
+lens_proj_base = 4.3; // Lens case base protrusion (Y)
+lens_proj_tip = 2.0;  // Front lens tip protrusion (Y)
+lens_case_h1 = 8.4;   // Lens case base height
+lens_case_h2 = 7.2;   // Lens case tip height
+
+emitter_w = 7.5;      // Left lens case width
+gap_w = 4.15;         // Gap between lens cases
+detector_w = 16.3;    // Right lens case width
+
+// Positions
+emitter_x = -case_w/2 + 4.5;       // *4.5 mm from left edge
+detector_x = emitter_x + 19.7;     // *19.7 mm pitch between lens centers
+
+pwb_t = 1.2;          // PWB thickness
+pwb_drop = total_h - case_h; // 5.85 mm below case bottom
+conn_w = 10.1;        // Connector width
+conn_d = 3.3;         // Connector depth
+
+// Colors
+c_case      = [0.18, 0.18, 0.18]; // Carbonic ABS (conductive black)
+c_lens      = [0.25, 0.05, 0.08, 0.85]; // Visible light cut-off acrylic
+c_pwb       = [0.58, 0.38, 0.22]; // Paper phenol board
+c_conn      = [0.92, 0.90, 0.82]; // JCTC connector housing (natural white)
+c_pin       = [0.85, 0.75, 0.30]; // Connector pins
+
+module gp2y0d413k0f() {
+    // 1. Main Case (Carbonic ABS)
+    color(c_case) {
+        difference() {
+            cube([case_w, case_d, case_h], center=true);
+            // Bottom cutout for connector & PWB seating
+            translate([0, -case_d/4, -case_h/2])
+                cube([case_w + 1, case_d/2 + 0.1, 2], center=true);
+        }
+    }
+
+    // 2. Lens Case (Protrusion on front +Y)
+    color(c_case) {
+        // Emitter side housing (Left)
+        translate([emitter_x, case_d/2 + lens_proj_base/2, 0])
+            cube([emitter_w, lens_proj_base, lens_case_h1], center=true);
+        translate([emitter_x, case_d/2 + lens_proj_base + lens_proj_tip/2, 0])
+            cube([emitter_w - 0.6, lens_proj_tip, lens_case_h2], center=true);
+
+        // Detector side housing (Right)
+        det_case_x = -case_w/2 + 0.75 + emitter_w + gap_w + detector_w/2;
+        translate([det_case_x, case_d/2 + lens_proj_base/2, 0])
+            cube([detector_w, lens_proj_base, lens_case_h1], center=true);
+        translate([det_case_x, case_d/2 + lens_proj_base + lens_proj_tip/2, 0])
+            cube([detector_w - 0.6, lens_proj_tip, lens_case_h2], center=true);
+    }
+
+    // 3. Lenses (Front Windows)
+    color(c_lens) {
+        // Emitter lens: Circular window on the left
+        translate([emitter_x, case_d/2 + lens_proj_base + lens_proj_tip, 0])
+            rotate([-90, 0, 0])
+            cylinder(d=5.0, h=0.4, center=true);
+
+        // Detector lens: Rectangular window with rounded edge on the right
+        translate([detector_x, case_d/2 + lens_proj_base + lens_proj_tip, 0])
+            rotate([-90, 0, 0])
+            hull() {
+                translate([-3.2, 0, 0]) cylinder(d=4.6, h=0.4, center=true);
+                translate([ 3.2, 0, 0]) cylinder(d=4.6, h=0.4, center=true);
+            }
+    }
+
+    // 4. PWB (Printed Wiring Board, Paper Phenol)
+    color(c_pwb) {
+        translate([0, case_d/2 - pwb_t/2 - 0.2, -case_h/2 - pwb_drop/2 + 0.5])
+            cube([case_w, pwb_t, pwb_drop + 1.0], center=true);
+    }
+
+    // 5. 3-Pin Connector (JCTC 12001W90-3P-HF)
+    conn_center_z = -case_h/2 - pwb_drop/2;
+    conn_center_y = case_d/2 - pwb_t - conn_d/2 - 0.2;
+    
+    // Connector Housing
+    color(c_conn) {
+        difference() {
+            translate([0, conn_center_y, conn_center_z])
+                cube([conn_w, conn_d, pwb_drop], center=true);
+            // Slot for mating header
+            translate([0, conn_center_y - 0.5, conn_center_z - 1])
+                cube([conn_w - 1.6, conn_d - 0.8, pwb_drop], center=true);
+        }
+    }
+
+    // Metal Pins
+    color(c_pin) {
+        for (i = [-1, 0, 1]) {
+            translate([i * 2.0, conn_center_y, conn_center_z - pwb_drop/4])
+                cube([0.5, 0.5, pwb_drop/2 + 1.5], center=true);
+        }
+    }
+}
+
+gp2y0d413k0f();

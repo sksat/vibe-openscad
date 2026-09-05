@@ -1,0 +1,20 @@
+```openscad
+$fn = 60;
+
+// Dimensions
+shank_dia = 8;
+shank_len = 30;
+head_af = 13;       // Across-flats distance
+head_height = 5.3;
+
+// Hexagon radius (distance from center to vertex)
+head_radius = (head_af / 2) / cos(30);
+
+// Hexagonal Head (z >= 0)
+translate([0, 0, 0])
+    cylinder(r = head_radius, h = head_height, $fn = 6);
+
+// Shank (z <= 0)
+translate([0, 0, -shank_len])
+    cylinder(d = shank_dia, h = shank_len);
+```

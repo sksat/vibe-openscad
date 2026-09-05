@@ -1,0 +1,30 @@
+$fn = 100;
+
+// マグカップ本体と取手の結合
+difference() {
+    union() {
+        // 本体外側
+        cylinder(h = 90, r = 40);
+
+        // 取手 (+X軸方向に配置)
+        translate([0, 0, 45])
+        rotate([90, 0, 0])
+        linear_extrude(height = 12, center = true)
+        difference() {
+            // 取手 外形 (本体へ確実に食い込ませるため X=36 から開始)
+            hull() {
+                translate([36, -23]) square([14, 46]);
+                translate([50, 0]) circle(r = 23);
+            }
+            // 取手 内側の空間 (高さ 30mm × 幅 25mm: X=40〜65, Z=-15〜15)
+            hull() {
+                translate([40, -15]) square([10, 30]);
+                translate([50, 0]) circle(r = 15);
+            }
+        }
+    }
+
+    // 内側の中空部 (底の厚み 6mm、内径 70mm)
+    translate([0, 0, 6])
+        cylinder(h = 90 - 6 + 1, r = 35);
+}
