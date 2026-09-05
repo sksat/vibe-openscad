@@ -1,0 +1,36 @@
+{
+  "runId": "bare_claude-opus-5-f5c7f89062d0-2026-09-05T09-45-04-820Z",
+  "taskId": "tier-1-cube-with-hole",
+  "matrixId": "bare/claude-opus-5",
+  "signature": "f5c7f89062d09b3e9d0b54f79d3ae22747440ff4e41bbf08b4c5df5201e8c714",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "8ff7e36af4bc202429ec68b7eb9cc3f195b6a3c68668be31239bcea23345a048",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-opus-5",
+      "modelOptions": {
+        "max_tokens": 16000
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-opus-5",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 3605
+  },
+  "tokens": {
+    "input": 111,
+    "output": 180
+  },
+  "cost_usd": 0.0050550000000000005,
+  "createdAt": "2026-09-05T09:45:04.821Z",
+  "gitCommit": "ae06af89b6388affad3c5beb21f2e8723e659e93"
+}

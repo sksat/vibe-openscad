@@ -1,0 +1,134 @@
+```openscad
+// ============================================================
+//  Small Butt Hinge for Furniture  (open 180 degrees)
+//  - Left leaf  : x < 0  (3 knuckles : outer 2 + center 1)
+//  - Right leaf : x > 0  (2 knuckles : intermediate 2)
+//  - Pin        : along +Y axis, dia 4mm, length 32mm
+// ============================================================
+
+$fn = 64;
+
+// ---------------- Parameters ----------------
+leaf_len      = 30;    // along Y (hinge axis)
+leaf_wid      = 25;    // along X (opening direction)
+leaf_thk      = 2;     // plate thickness (Z)
+
+pin_dia       = 4;
+pin_len       = 32;    // 1mm protrusion at each end
+
+knuckle_od    = 8;
+knuckle_clr   = 0.3;
+knuckle_id    = pin_dia + knuckle_clr;   // 4.6
+seg           = leaf_len / 5;            // 6mm each
+gap           = 0.2;                     // axial clearance between knuckles
+
+// countersunk screw holes (M3)
+hole_dia      = 3.2;
+cs_dia        = 6;
+cs_depth      = 1;
+hole_pitch    = 8;                       // along Y
+hole_x_off    = leaf_wid - 6;            // distance from axis to hole centres
+
+y0            = -leaf_len/2;             // = -15
+
+// ---------------- Helper modules ----------------
+
+// counter-sunk hole, drilled from +Z surface downward
+module cs_hole() {
+    translate([0, 0, -leaf_thk])
+        cylinder(h = leaf_thk * 3, d = hole_dia, center = false);
+    translate([0, 0, leaf_thk/2 - cs_depth])
+        cylinder(h = cs_depth, d1 = hole_dia, d2 = cs_dia);
+    translate([0, 0, leaf_thk/2])
+        cylinder(h = leaf_thk, d = cs_dia);
+}
+
+// three counter-sunk holes for one leaf ( sign = -1 left, +1 right )
+module leaf_holes(sign) {
+    for (i = [-1, 0, 1])
+        translate([sign * hole_x_off, i * hole_pitch, 0])
+            cs_hole();
+}
+
+// one knuckle barrel segment
+module knuckle(y_start, len) {
+    translate([0, y_start + gap/2, 0])
+        rotate([-90, 0, 0])
+            difference() {
+                cylinder(h = len - gap, d = knuckle_od);
+                translate([0, 0, -1])
+                    cylinder(h = len + 2, d = knuckle_id);
+            }
+}
+
+// flat plate of one leaf ( sign = -1 left, +1 right )
+module leaf_plate(sign) {
+    // plate spans from knuckle outer radius out to leaf_wid
+    x_start = knuckle_od/2 - 1;          // slight overlap into knuckle
+    translate([ sign < 0 ? -leaf_wid : x_start, -leaf_len/2, -leaf_thk/2])
+        cube([ leaf_wid - x_start, leaf_len, leaf_thk]);
+}
+
+// web that blends plate into the knuckle barrels
+module web(sign, y_start, len) {
+    translate([ sign < 0 ? -knuckle_od/2 : 0, y_start + gap/2, -leaf_thk/2])
+        cube([knuckle_od/2, len - gap, leaf_thk]);
+}
+
+// ---------------- Left leaf (x < 0) : segments 0, 2, 4 ----------------
+module left_leaf() {
+    color("silver")
+    difference() {
+        union() {
+            leaf_plate(-1);
+            for (i = [0, 2, 4]) {
+                knuckle(y0 + i*seg, seg);
+                web(-1, y0 + i*seg, seg);
+            }
+        }
+        // keep the bore clear of the web material
+        rotate([-90, 0, 0])
+            translate([0, 0, -leaf_len])
+                cylinder(h = leaf_len * 3, d = knuckle_id);
+        leaf_holes(-1);
+    }
+}
+
+// ---------------- Right leaf (x > 0) : segments 1, 3 ----------------
+module right_leaf() {
+    color("silver")
+    difference() {
+        union() {
+            leaf_plate(1);
+            for (i = [1, 3]) {
+                knuckle(y0 + i*seg, seg);
+                web(1, y0 + i*seg, seg);
+            }
+        }
+        rotate([-90, 0, 0])
+            translate([0, 0, -leaf_len])
+                cylinder(h = leaf_len * 3, d = knuckle_id);
+        leaf_holes(1);
+    }
+}
+
+// ---------------- Pin ----------------
+module pin() {
+    color("dimgray")
+    rotate([-90, 0, 0])
+        translate([0, 0, -pin_len/2])
+            union() {
+                cylinder(h = pin_len, d = pin_dia);
+                // small head chamfers at both ends
+                translate([0, 0, pin_len - 0.4])
+                    cylinder(h = 0.4, d1 = pin_dia, d2 = pin_dia - 0.8);
+                translate([0, 0, 0])
+                    cylinder(h = 0.4, d1 = pin_dia - 0.8, d2 = pin_dia);
+            }
+}
+
+// ---------------- Assembly (180 degrees open) ----------------
+left_leaf();
+right_leaf();
+pin();
+```

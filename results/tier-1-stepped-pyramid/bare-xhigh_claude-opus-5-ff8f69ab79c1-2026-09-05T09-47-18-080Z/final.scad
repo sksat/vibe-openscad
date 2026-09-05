@@ -1,0 +1,12 @@
+// 3段の階段状ピラミッド
+// 各段は中心を揃えて積み上げる
+
+step(60, 10, 0);   // 1段目: 60 x 60 x 10
+step(40, 10, 10);  // 2段目: 40 x 40 x 10
+step(20, 10, 20);  // 3段目: 20 x 20 x 10
+
+module step(size, height, z) {
+    translate([0, 0, z])
+        linear_extrude(height = height)
+            square([size, size], center = true);
+}

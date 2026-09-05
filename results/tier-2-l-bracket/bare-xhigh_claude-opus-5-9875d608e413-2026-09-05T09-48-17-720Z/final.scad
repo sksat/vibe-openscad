@@ -1,0 +1,61 @@
+// ===============================================
+//  L 字金具 (L-Bracket) with countersunk holes
+//  内側コーナー = 原点
+//  水平面: +Y 方向 / 垂直面: +Z 方向
+// ===============================================
+
+// ---------- パラメータ ----------
+width     = 50;    // 幅 (X 方向)
+depth     = 40;    // 水平面の奥行き (+Y)
+height    = 40;    // 垂直面の高さ  (+Z)
+thickness = 3;     // 板厚
+
+hole_d    = 4.5;   // M4 貫通穴 Φ4.5
+csk_d     = 8;     // 皿座面 Φ8
+csk_depth = 2;     // 皿座面深さ 2mm
+
+edge_off  = 10;    // 面の左右の縁からの距離
+eps       = 0.01;
+
+$fn = 64;
+
+// ---------- 皿穴 (外面 z=0 から +Z 方向へ板厚 t を貫通) ----------
+module countersunk_hole(t = thickness) {
+    // 貫通穴
+    translate([0, 0, -1])
+        cylinder(h = t + 2, d = hole_d);
+    // 皿座面（テーパ部）
+    translate([0, 0, -eps])
+        cylinder(h = csk_depth + eps, d1 = csk_d, d2 = hole_d);
+    // 外側へ少し逃がす
+    translate([0, 0, -1])
+        cylinder(h = 1 + eps, d = csk_d);
+}
+
+// ---------- 本体 ----------
+module l_bracket() {
+    difference() {
+        union() {
+            // 水平フランジ（+Y 方向、外面は z = -thickness）
+            translate([-width/2, -thickness, -thickness])
+                cube([width, depth + thickness, thickness]);
+
+            // 垂直フランジ（+Z 方向、外面は y = -thickness）
+            translate([-width/2, -thickness, -thickness])
+                cube([width, thickness, height + thickness]);
+        }
+
+        for (s = [-1, 1]) {
+            // 水平面の皿穴（皿座面は下面＝外側）
+            translate([s * (width/2 - edge_off), depth/2, -thickness])
+                countersunk_hole();
+
+            // 垂直面の皿穴（皿座面は後面＝外側）
+            translate([s * (width/2 - edge_off), -thickness, height/2])
+                rotate([-90, 0, 0])
+                    countersunk_hole();
+        }
+    }
+}
+
+l_bracket();

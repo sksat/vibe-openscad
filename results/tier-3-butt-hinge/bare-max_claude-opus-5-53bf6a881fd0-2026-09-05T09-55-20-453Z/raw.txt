@@ -1,0 +1,131 @@
+```openscad
+// =====================================================================
+//   家具用 小型バット蝶番 (butt hinge)
+//   左板(leaf L) + 右板(leaf R) + ピン軸(pin) の 3 パーツ組立品
+//   180°(全開)状態で配置
+//
+//   座標系
+//     ・ピン軸の中心線 = Y 軸(ピンは +Y 方向、長さ 32mm)
+//     ・板の平らな面は Z 軸に直交(板厚中心 z=0 → 両板が同一平面)
+//     ・左板は x<0 側、右板は x>0 側へ 25mm 伸びる
+//     ・knuckle は X=0 中心、Y 方向に 6mm ピッチで 5 区画
+// =====================================================================
+
+$fn = 96;
+
+/* ---------------- 出力選択 ----------------
+   "assembly" : 組立状態(既定)
+   "left" / "right" / "pin" : 単品(STL 出力用)          */
+part       = "assembly";
+open_angle = 180;   // 180 = 全開。90 などにすると開き角を変えて確認できる
+
+/* ---------------- 板(leaf) ---------------- */
+leaf_len = 30;      // 縦(ヒンジ軸方向 = Y)
+leaf_wid = 25;      // 横(開く方向 = X)
+leaf_th  = 2;       // 板厚(Z)
+
+/* ---------------- ピン軸 ---------------- */
+pin_dia  = 4;       // φ4
+pin_len  = 32;      // 30(knuckle 全長)+ 両端 1mm ずつ突出
+pin_cham = 0.5;     // 端部の面取り
+
+/* ---------------- knuckle(筒部) ---------------- */
+kn_od     = 8;                      // 外径 φ8
+pin_clear = 0.3;                    // ピンとのクリアランス
+kn_id     = pin_dia + pin_clear;    // = φ4.6
+kn_num    = 5;                      // 縦 30 を 5 等分
+kn_seg    = leaf_len / kn_num;      // = 6mm
+kn_gap    = 0.2;                    // knuckle 同士の Y 隙間(0 で 6mm ぴったり)
+kn_relief = 0.2;                    // 相手 knuckle 逃がしの半径クリアランス
+left_kn   = [0, 2, 4];              // 左板:外側 2 個 + 中央 1 個
+right_kn  = [1, 3];                 // 右板:中間 2 個
+
+/* ---------------- M3 皿穴 ---------------- */
+screw_dia   = 3.2;  // 貫通穴 φ3.2
+cs_dia      = 6;    // 皿(テーパ)大径 φ6
+cs_depth    = 1;    // 皿深さ 1mm(+Z 面側から)
+screw_pitch = 8;    // Y 方向ピッチ
+screw_inset = 6;    // 板の外端から穴中心までの距離(→ x = ±19)
+
+eps = 0.01;
+
+/* ===================== 汎用モジュール ===================== */
+
+// Y 軸に沿った円柱(y0 から +Y へ長さ h)
+module ycyl(y0, h, d) {
+    translate([0, y0, 0]) rotate([-90, 0, 0]) cylinder(h = h, d = d);
+}
+
+// i 番目(0..4)の knuckle 本体
+module knuckle(i) {
+    ycyl(-leaf_len/2 + i*kn_seg + kn_gap/2, kn_seg - kn_gap, kn_od);
+}
+
+// i 番目区画の「相手 knuckle 逃がし」(板側を円弧状に削る)
+module knuckle_relief(i) {
+    ycyl(-leaf_len/2 + i*kn_seg - eps, kn_seg + 2*eps, kn_od + 2*kn_relief);
+}
+
+// ピン穴(全長貫通 φ4.6)
+module pin_bore() {
+    ycyl(-leaf_len/2 - 1, leaf_len + 2, kn_id);
+}
+
+// M3 皿穴(+Z 面から皿加工)
+module countersunk_hole() {
+    translate([0, 0, -leaf_th/2 - eps])
+        cylinder(h = leaf_th + 2*eps, d = screw_dia);          // 貫通穴
+    translate([0, 0, leaf_th/2 - cs_depth])
+        cylinder(h = cs_depth, d1 = screw_dia, d2 = cs_dia);   // テーパ
+    translate([0, 0, leaf_th/2 - eps])
+        cylinder(h = 2*eps, d = cs_dia);                       // 面の重なり対策
+}
+
+/* ===================== 板(leaf) ===================== */
+//  dir      : -1 = 左板(x<0) / +1 = 右板(x>0)
+//  own_kn   : 自分の knuckle 区画番号
+//  other_kn : 相手の knuckle 区画番号(逃がしを削る)
+module leaf(dir, own_kn, other_kn) {
+    union() {
+        // --- 板本体 ---
+        difference() {
+            translate([dir < 0 ? -leaf_wid : 0, -leaf_len/2, -leaf_th/2])
+                cube([leaf_wid, leaf_len, leaf_th]);
+
+            for (i = other_kn) knuckle_relief(i);              // 相手 knuckle 逃がし
+
+            for (k = [-1, 0, 1])                               // M3 皿穴 ×3
+                translate([dir * (leaf_wid - screw_inset), k * screw_pitch, 0])
+                    countersunk_hole();
+
+            pin_bore();                                        // ピン通り穴
+        }
+
+        // --- knuckle ---
+        difference() {
+            union() { for (i = own_kn) knuckle(i); }
+            pin_bore();
+        }
+    }
+}
+
+module left_leaf()  { leaf(-1, left_kn,  right_kn); }
+module right_leaf() { leaf(+1, right_kn, left_kn ); }
+
+/* ===================== ピン軸 ===================== */
+module pin() {
+    rotate([-90, 0, 0])
+    translate([0, 0, -pin_len/2])
+    union() {
+        cylinder(h = pin_cham, d1 = pin_dia - 2*pin_cham, d2 = pin_dia);
+        translate([0, 0, pin_cham])
+            cylinder(h = pin_len - 2*pin_cham, d = pin_dia);
+        translate([0, 0, pin_len - pin_cham])
+            cylinder(h = pin_cham, d1 = pin_dia, d2 = pin_dia - 2*pin_cham);
+    }
+}
+
+/* ===================== アセンブリ ===================== */
+module hinge() {
+    color("Silver")          left_leaf();
+    color("LightSteelBlue")  rotate([0, -(180
