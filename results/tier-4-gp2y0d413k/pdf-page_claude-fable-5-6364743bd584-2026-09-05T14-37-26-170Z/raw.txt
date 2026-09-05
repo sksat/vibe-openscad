@@ -1,0 +1,120 @@
+```openscad
+//------------------------------------------------------------
+// Sharp GP2Y0D413K0F 距離センサ 外形モデル
+// 単位: mm
+// 座標系: 本体(ケース)中心を原点
+//          +Z = レンズ面(検出方向), -Z = PWB / コネクタ(取付面)
+//------------------------------------------------------------
+$fn = 64;
+
+//---------------- 主要寸法 (データシートより) ----------------
+body_w      = 29.45;   // 本体幅
+body_h      = 13.05;   // 本体(ケース)高さ
+depth_total = 7.1;     // 全奥行 (レンズ面〜PWB背面)
+
+pwb_t       = 1.2;     // PWB 厚
+lens_step   = 2.0;     // レンズケースの張り出し
+case_d      = depth_total - pwb_t - lens_step; // ケース本体奥行 = 3.9
+
+// Z 座標 (奥行を原点中心に配置)
+z_back       = -depth_total/2;          // -3.55 : PWB 背面
+z_pwb_front  =  z_back + pwb_t;         // ケース背面
+z_case_front =  z_pwb_front + case_d;   // レンズケース段差位置
+z_front      =  depth_total/2;          // +3.55 : レンズ面
+
+// レンズ位置
+lens_pitch = 19.7;                 // 発光-受光 レンズ中心間距離
+emit_x     = 4.5 - body_w/2;       // 発光レンズ中心 (左端から4.5)
+det_x      = emit_x + lens_pitch;  // 受光レンズ中心
+lens_y     = 7.2 - body_h/2;       // レンズ中心高さ (底面から7.2)
+hood_h     = 8.4;                  // レンズケース部高さ
+
+// PWB / コネクタ
+total_h   = 18.9;                  // ケース上端〜コネクタ下端
+pwb_below = total_h - body_h;      // ケース下へ突き出す量 = 5.85
+pwb_w     = 12.0;
+conn_w    = 10.1;
+conn_h    = 4.5;
+conn_d    = 3.3;                   // PWB 背面からの突出
+
+// 取付脚 (下面ボス)
+foot_w = 4.15;
+foot_h = 1.5;
+foot_d = 3.0;
+
+//---------------- モジュール ----------------
+module case_body() {
+    difference() {
+        union() {
+            // ケース本体
+            translate([-body_w/2, -body_h/2, z_pwb_front])
+                cube([body_w, body_h, case_d]);
+            // レンズケース (前方へ 2mm 張り出し)
+            translate([-body_w/2, lens_y - hood_h/2, z_pwb_front])
+                cube([body_w, hood_h, case_d + lens_step]);
+        }
+        // 発光側レンズ開口 (丸)
+        translate([emit_x, lens_y, z_front - 1])
+            cylinder(d = 7.0, h = 2);
+        // 受光側レンズ窓 (角穴)
+        translate([det_x - 6.0, lens_y - 3.6, z_front - 1])
+            cube([12.0, 7.2, 2]);
+    }
+}
+
+module lenses() {
+    // 発光レンズ (凸)
+    translate([emit_x, lens_y, z_front - 1.2])
+        cylinder(d = 6.4, h = 1.4);
+    translate([emit_x, lens_y, z_front + 0.2])
+        scale([1, 1, 0.35]) sphere(d = 6.4);
+    // 受光レンズ (角窓内の凸レンズ)
+    translate([det_x - 5.8, lens_y - 3.4, z_front - 1.2])
+        cube([11.6, 6.8, 1.0]);
+    translate([det_x, lens_y, z_front - 0.2])
+        scale([1, 1, 0.35]) sphere(d = 6.0);
+}
+
+module pwb() {
+    // ケース背面に取り付き、下方へ突き出す
+    translate([-pwb_w/2, -body_h/2 - pwb_below, z_back])
+        cube([pwb_w, body_h/2 + pwb_below + 4, pwb_t]);
+}
+
+module connector() {
+    // PWB 下部背面 (-Z 側) に実装、嵌合方向 -Z
+    translate([-conn_w/2, -body_h/2 - pwb_below, z_back - conn_d])
+        cube([conn_w, conn_h, conn_d]);
+    // 3ピン
+    for (i = [-1, 0, 1])
+        translate([i * 2.5 - 0.25,
+                   -body_h/2 - pwb_below + conn_h/2 - 0.25,
+                   z_back - conn_d - 0.8])
+            cube([0.5, 0.5, 0.8 + conn_d]);
+}
+
+module feet() {
+    // 底面の取付ボス x2 (下面図の位置関係を近似)
+    foot_x = [7.5 - body_w/2 + foot_w/2,          // 左脚
+              7.5 + foot_w - body_w/2 + 16.3 - foot_w/2]; // 右脚
+    for (x = foot_x)
+        translate([x - foot_w/2, -body_h/2 - foot_h, z_pwb_front + 0.4])
+            cube([foot_w, foot_h, foot_d]);
+}
+
+//---------------- 組み立て ----------------
+module gp2y0d413k0f() {
+    color("dimgray")   case_body();
+    color("dimgray")   feet();
+    color([0.2, 0.2, 0.25, 1]) lenses();
+    color("peru")      pwb();
+    color("whitesmoke") connector();
+}
+
+gp2y0d413k0f();
+```
+
+主なポイント:
+- 本体 29.45 × 13.05 × 奥行 7.1 mm(レンズケース 2 mm 段差 + ケース 3.9 mm + PWB 1.2 mm)
+- レンズ中心: 左端から 4.5 mm(発光)、ピッチ 19.7 mm(受光)、底面から 7.2 mm
+- PWB とコネクタは -Z 側に配置し、ケース下端から 5.85 mm(全高 18.9 mm)突き出し、コネクタ幅 10.1 mm・突出 3.3 mm、3 ピン付き

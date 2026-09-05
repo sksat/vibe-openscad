@@ -1,0 +1,48 @@
+{
+  "runId": "pdf-page_gemma-4-e4b-39e2548d920b-2026-09-05T15-15-06-487Z",
+  "taskId": "tier-4-gp2y0a21yk",
+  "matrixId": "pdf-page/gemma-4-e4b",
+  "signature": "39e2548d920b76944290e98a46a393e90523038d89b8cd8dd4a954aea84f1275",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "be8447efaad1d128f8fe25ada8d6776d55e66bc75ed71840c218201a51da8e80",
+    "harness": {
+      "kind": "pdf-page",
+      "provider": "openai-self-hosted",
+      "model": "google/gemma-4-e4b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "google/gemma-4-e4b",
+  "resolvedModel": "google/gemma-4-e4b",
+  "harness": {
+    "kind": "pdf-page",
+    "pdfUrl": "https://jp.sharp/products/device/doc/opto/gp2y0a21yk_e.pdf",
+    "pages": [
+      2
+    ],
+    "modelMetadata": {
+      "host": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "vramGb": 24,
+        "gpuPlatform": "Vulkan",
+        "cpu": "12th Gen Intel(R) Core(TM) i9-12900K",
+        "memGb": 32
+      }
+    }
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 49243,
+    "firstTokenMs": 12686,
+    "generationMs": 35536
+  },
+  "tokens": {
+    "input": 374,
+    "output": 1897
+  },
+  "createdAt": "2026-09-05T15:15:06.488Z",
+  "gitCommit": "b26b1bdf8cd1a2ce6d7babee1edaa301e2993d1e"
+}

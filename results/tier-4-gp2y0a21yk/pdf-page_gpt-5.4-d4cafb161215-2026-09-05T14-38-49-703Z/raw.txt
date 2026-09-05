@@ -1,0 +1,184 @@
+```openscad
+//
+// Sharp GP2Y0A21YK0F - simplified dimensional model
+// unit: mm
+// coordinate system:
+//   - origin = center of main body
+//   - mounting face (PWB / connector side) points to -Z
+//
+// This model is based on the attached outline drawing and is intended
+// as a practical mechanical approximation for layout / interference checks.
+//
+// Axes:
+//   X : left/right when viewing the front face
+//   Y : up/down on the front face
+//   Z : front/back, with connector/PWB side toward -Z
+//
+
+$fn = 64;
+
+// ===================== Parameters from drawing =====================
+
+// Main front body
+body_w = 29.5;
+body_h = 13.5;
+body_d = 18.9;   // overall front-body depth used as main case depth
+
+// Ears / mounting tabs
+ear_r = 3.75;    // R3.75
+hole_d = 3.2;    // phi 3.2
+total_w = 37.0;  // overall width incl. ears
+ear_cx = total_w/2 - ear_r;   // ear center X from body center = 14.75
+ear_cy = 0;
+
+// Front recess / bezel
+front_frame_w = 20.0;  // *20 ±0.1, lens center span region
+front_frame_h = 7.2;
+front_frame_depth = 2.0;
+
+// Lens openings
+lens_outer_d = 6.3;
+
+// Emitter / detector lens center positions
+lens_pitch = 20.0;
+lens_x = lens_pitch/2;    // +/- 10
+lens_y = 0;
+
+// Connector
+conn_w = 10.1;
+conn_h = 6.0;
+conn_d = 6.0;   // protrusion toward -Z from mounting face side
+
+// Small top stamp block seen in side/bottom figure
+top_block_w = body_w;
+top_block_h = 3.0;
+top_block_d = 2.0;
+
+// PWB plate
+pwb_w = 14.75;
+pwb_h = 5.5;
+pwb_t = 1.2;
+pwb_drop = 6.5;  // how far below body bottom it extends in front view
+
+// Pin geometry (approx.)
+pin_w = 0.8;
+pin_t = 0.5;
+pin_len = 3.0;
+pin_pitch = 2.5;
+
+// ===================== Helpers =====================
+
+module centered_cube(x,y,z){
+    cube([x,y,z], center=true);
+}
+
+module rounded_slot_face(w,h,d,rr=0.8){
+    linear_extrude(height=d, center=true)
+        offset(r=rr)
+            offset(delta=-rr)
+                square([w,h], center=true);
+}
+
+// ===================== Main geometry =====================
+
+module main_case() {
+    union() {
+        // Main rectangular body
+        centered_cube(body_w, body_h, body_d);
+
+        // Mounting ears (front view circles blended by union)
+        for (sx = [-1,1]) {
+            translate([sx*ear_cx, ear_cy, 0])
+                cylinder(h=body_d, r=ear_r, center=true);
+        }
+
+        // Small top block / stamp area
+        translate([0, body_h/2 - top_block_h/2 + 0.2, body_d/2 - top_block_d/2])
+            centered_cube(top_block_w, top_block_h, top_block_d);
+
+        // Connector housing on mounting face side (-Z)
+        translate([0, -(body_h/2 - conn_h/2 - 1.0), -body_d/2 - conn_d/2 + 0.2])
+            centered_cube(conn_w, conn_h, conn_d);
+
+        // PWB plate below connector, on mounting face side
+        translate([0, -(body_h/2 + pwb_drop/2 - 0.5), -body_d/2 - pwb_t/2 + 0.1])
+            centered_cube(pwb_w, pwb_drop, pwb_t);
+
+        // Slanted side supports approximated
+        for (sx = [-1,1]) {
+            hull() {
+                translate([sx*(body_w/2 - 1.0), -(body_h/2 - 1.2), -body_d/2 + 1.0])
+                    centered_cube(1.0, 1.0, 1.0);
+                translate([sx*(total_w/2 - 2.0), -(body_h/2 + pwb_drop - 0.8), -body_d/2 + pwb_t/2])
+                    centered_cube(2.0, 1.2, pwb_t);
+            }
+        }
+    }
+}
+
+module front_details_cut() {
+    union() {
+        // Front recessed frame
+        translate([0, 0, body_d/2 - front_frame_depth/2 + 0.01])
+            centered_cube(front_frame_w, front_frame_h, front_frame_depth + 0.02);
+
+        // Left and right lens openings
+        for (sx = [-1,1]) {
+            translate([sx*lens_x, lens_y, body_d/2 - (front_frame_depth+2)/2 + 0.01])
+                cylinder(h=front_frame_depth+2, d=lens_outer_d, center=true);
+        }
+
+        // Central window / recess
+        translate([0, 0, body_d/2 - (front_frame_depth+1.2)/2 + 0.01])
+            centered_cube(7.0, 5.2, front_frame_depth+1.2);
+    }
+}
+
+module ear_holes_cut() {
+    for (sx = [-1,1]) {
+        translate([sx*ear_cx, ear_cy, 0])
+            cylinder(h=body_d + 4, d=hole_d, center=true);
+    }
+}
+
+module lens_bulges() {
+    // Slightly protruding lens faces on the front
+    for (sx = [-1,1]) {
+        translate([sx*lens_x, lens_y, body_d/2 - 0.6])
+            difference() {
+                cylinder(h=1.2, d=6.8, center=true);
+                translate([0,0,-0.2]) cylinder(h=1.6, d=5.2, center=true);
+            }
+    }
+}
+
+module pins() {
+    z0 = -body_d/2 - conn_d + 0.8;
+    y0 = -(body_h/2 - 1.8);
+    for (i = [-1,0,1]) {
+        translate([i*pin_pitch, y0, z0 - pin_len/2])
+            centered_cube(pin_w, pin_t, pin_len);
+    }
+}
+
+module gp2y0a21yk0f() {
+    color([0.15,0.15,0.15])
+    difference() {
+        main_case();
+        front_details_cut();
+        ear_holes_cut();
+    }
+
+    color([0.22,0.22,0.22]) lens_bulges();
+
+    color([0.55,0.45,0.25])
+    translate([0, -(body_h/2 + pwb_drop/2 - 0.5), -body_d/2 - pwb_t/2 + 0.1])
+        centered_cube(pwb_w, pwb_drop, pwb_t);
+
+    color("silver") pins();
+}
+
+// ===================== Render =====================
+
+gp2y0a21yk0f();
+```

@@ -1,0 +1,109 @@
+// Sharp GP2Y0A21YK0F Distance Measuring Sensor
+// Units: mm
+// Origin: Center of main body
+// Orientation: +Z = Lens (Optical output), -Z = Mount / PWB / Connector
+
+$fn = 32;
+
+// Color Definitions
+case_color = [0.18, 0.18, 0.20];       // Black Carbonic ABS
+lens_color = [0.15, 0.12, 0.20, 0.85]; // Dark Tinted Acrylic Lens
+pwb_color  = [0.55, 0.35, 0.15];       // Brown Paper Phenol PWB
+conn_color = [0.90, 0.90, 0.85];       // Off-white Connector Plastic
+pin_color  = [0.85, 0.75, 0.30];       // Gold/Brass Pins
+
+module gp2y0a21yk0f() {
+    // Dimensions from datasheet
+    total_length   = 37.0;
+    hole_pitch     = 29.5;
+    hole_dia       = 3.2;
+    ear_radius     = 3.75;
+    ear_thick      = 1.5;
+    
+    body_width     = 13.0;
+    body_length    = 21.6;
+    case_depth     = 6.3;
+    
+    lens_pitch     = 20.0;
+    lens_bezel_h   = 8.4;
+    lens_bezel_th  = 2.0;
+    lens_dia       = 7.2;
+
+    pwb_thick      = 1.2;
+    conn_width     = 10.1;
+    
+    // --- 1. Main Black Carbonic ABS Case ---
+    color(case_color) {
+        difference() {
+            union() {
+                // Main body block
+                translate([0, 0, 4.3])
+                    cube([body_length, body_width, case_depth], center=true);
+
+                // Mounting ears (Flange)
+                translate([0, 0, 0.4])
+                    hull() {
+                        translate([-hole_pitch/2, 0, 0]) cylinder(r=ear_radius, h=ear_thick, center=true);
+                        translate([ hole_pitch/2, 0, 0]) cylinder(r=ear_radius, h=ear_thick, center=true);
+                        cube([body_length, body_width, ear_thick], center=true);
+                    }
+
+                // Front Lens Bezel (protrusion)
+                translate([0, 0, 8.45])
+                    hull() {
+                        translate([-lens_pitch/2, 0, 0]) cylinder(d=lens_bezel_h, h=lens_bezel_th, center=true);
+                        translate([ lens_pitch/2, 0, 0]) cylinder(d=lens_bezel_h, h=lens_bezel_th, center=true);
+                    }
+
+                // Rear Connector Housing Structure
+                translate([0, -1.2, -4.0])
+                    cube([14.75, 9.5, 7.3], center=true);
+            }
+
+            // Mounting Screw Holes
+            translate([-hole_pitch/2, 0, 0]) cylinder(d=hole_dia, h=10, center=true);
+            translate([ hole_pitch/2, 0, 0]) cylinder(d=hole_dia, h=10, center=true);
+
+            // Lens Recesses
+            translate([-lens_pitch/2, 0, 8.45]) cylinder(d=lens_dia, h=3, center=true);
+            translate([ lens_pitch/2, 0, 8.45]) cylinder(d=lens_dia, h=3, center=true);
+        }
+    }
+
+    // --- 2. Acrylic Lenses (Light Emitter & Detector) ---
+    color(lens_color) {
+        for (x = [-lens_pitch/2, lens_pitch/2]) {
+            translate([x, 0, 8.1])
+                intersection() {
+                    translate([0, 0, -2]) sphere(r=4.5);
+                    cylinder(d=lens_dia, h=2.0, center=true);
+                }
+        }
+    }
+
+    // --- 3. Paper Phenol PWB ---
+    color(pwb_color) {
+        translate([0, -1.0, -1.0])
+            cube([27.0, 11.0, pwb_thick], center=true);
+    }
+
+    // --- 4. 3-Pin Connector (JCTC 12001W90-3P-HF) ---
+    color(conn_color) {
+        translate([0, -3.2, -6.6])
+            difference() {
+                cube([conn_width, 5.8, 5.8], center=true);
+                translate([0, 0, -1.0]) cube([8.5, 4.2, 5.0], center=true);
+            }
+    }
+
+    // --- 5. Connector Pins ---
+    color(pin_color) {
+        for (x = [-2.5, 0, 2.5]) {
+            translate([x, -3.2, -6.5])
+                cube([0.5, 0.5, 4.5], center=true);
+        }
+    }
+}
+
+// Render Sensor Model
+gp2y0a21yk0f();

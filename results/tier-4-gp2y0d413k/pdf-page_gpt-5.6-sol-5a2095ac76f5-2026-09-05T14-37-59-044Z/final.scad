@@ -1,0 +1,334 @@
+/*
+  Sharp GP2Y0D413K0F 距離センサ外形モデル
+  単位: mm
+
+  座標系:
+    X : 本体長手方向
+    Y : 光軸方向（検出面が -Y）
+    Z : 高さ方向（PWB／コネクタ側が -Z）
+
+  原点:
+    コネクタを除く本体外形の中心
+*/
+
+$fn = 48;
+
+// データシート主要寸法
+body_width  = 29.45;
+body_depth  = 13.50;
+body_height = 13.05;
+
+front_depth = 6.30;
+rear_depth  = 7.20;
+front_height = 8.40;
+
+connector_width  = 10.10;
+connector_depth  = 6.20;
+connector_height = 5.85;
+
+pwb_thickness = 1.20;
+
+// レンズ中心位置
+emitter_x  = -body_width/2 + 4.50;
+detector_x = -body_width/2 + 19.70;
+
+
+// 寸法を維持した丸み付き直方体
+module rounded_box(size, radius=0.3, center=true)
+{
+    sx = size[0];
+    sy = size[1];
+    sz = size[2];
+
+    translate(center ? [0,0,0] : [sx/2,sy/2,sz/2])
+        minkowski() {
+            cube([
+                max(0.01, sx-2*radius),
+                max(0.01, sy-2*radius),
+                max(0.01, sz-2*radius)
+            ], center=true);
+
+            sphere(r=radius, $fn=20);
+        }
+}
+
+
+// Y軸に沿った円筒
+module y_cylinder(h, d)
+{
+    rotate([90,0,0])
+        cylinder(h=h, d=d, center=false);
+}
+
+
+// 前面レンズ
+module optical_lens(x, z, outer_d, clear_d, glass_color)
+{
+    // レンズ周囲のケース
+    color([0.055,0.055,0.060])
+        translate([x, -body_depth/2-0.35, z])
+            y_cylinder(0.75, outer_d);
+
+    // 前面リング
+    color([0.12,0.12,0.13])
+        translate([x, -body_depth/2-1.05, z])
+            rotate([90,0,0])
+                difference() {
+                    cylinder(h=0.38, d=outer_d+0.35);
+                    translate([0,0,-0.05])
+                        cylinder(h=0.48, d=clear_d);
+                }
+
+    // 透明レンズ
+    color(glass_color)
+        translate([x, -body_depth/2-1.40, z])
+            y_cylinder(0.22, clear_d);
+
+    // 内部の暗色部
+    color([0.03,0.035,0.04,0.80])
+        translate([x, -body_depth/2-1.58, z])
+            y_cylinder(0.08, clear_d*0.72);
+}
+
+
+// 3極コネクタ
+module connector()
+{
+    connector_z =
+        -body_height/2
+        - pwb_thickness
+        - connector_height/2
+        + 0.15;
+
+    connector_y = 1.55;
+
+    // コネクタ樹脂ハウジング
+    color([0.10,0.10,0.105])
+        difference() {
+            translate([0, connector_y, connector_z])
+                rounded_box(
+                    [connector_width, connector_depth, connector_height],
+                    0.25
+                );
+
+            // 後方に開いた差し込み口
+            translate([
+                0,
+                connector_y + connector_depth/2 - 1.65,
+                connector_z - 0.15
+            ])
+                cube([
+                    connector_width-1.55,
+                    3.40,
+                    connector_height-1.55
+                ], center=true);
+        }
+
+    // コネクタ上面の段差
+    color([0.075,0.075,0.08])
+        translate([
+            0,
+            connector_y-connector_depth/2+0.55,
+            connector_z+connector_height/2-0.55
+        ])
+            cube([
+                connector_width-1.25,
+                1.10,
+                1.10
+            ], center=true);
+
+    // 端子
+    for (x = [-2.0, 0, 2.0])
+        color([0.78,0.62,0.24])
+            translate([
+                x,
+                connector_y+1.30,
+                connector_z-0.15
+            ])
+                cube([0.48, 4.25, 0.48], center=true);
+}
+
+
+// 本体下面のPWB
+module pwb()
+{
+    color([0.20,0.30,0.16])
+        translate([
+            0,
+            0.25,
+            -body_height/2-pwb_thickness/2
+        ])
+            cube([
+                body_width-1.20,
+                body_depth-1.15,
+                pwb_thickness
+            ], center=true);
+
+    // PWB端面
+    color([0.62,0.48,0.25])
+        translate([
+            0,
+            -body_depth/2+0.30,
+            -body_height/2-pwb_thickness/2
+        ])
+            cube([
+                body_width-1.20,
+                0.16,
+                pwb_thickness
+            ], center=true);
+}
+
+
+// センサ本体
+module sensor_body()
+{
+    front_y0 = -body_depth/2;
+    front_y1 = front_y0 + front_depth;
+
+    // 後部レンズケース
+    color([0.075,0.075,0.08])
+        translate([
+            0,
+            (front_y1 + body_depth/2)/2,
+            0
+        ])
+            rounded_box([
+                body_width,
+                body_depth-front_depth,
+                body_height
+            ], 0.35);
+
+    // 前部の細い光学ケース
+    color([0.065,0.065,0.07])
+        translate([
+            0,
+            (front_y0+front_y1)/2,
+            0
+        ])
+            rounded_box([
+                body_width,
+                front_depth+0.25,
+                front_height
+            ], 0.25);
+
+    // 前面上下補強リブ
+    color([0.055,0.055,0.06]) {
+        translate([
+            0,
+            front_y0+0.42,
+            front_height/2-0.45
+        ])
+            cube([body_width-0.7, 0.85, 0.90], center=true);
+
+        translate([
+            0,
+            front_y0+0.42,
+            -front_height/2+0.45
+        ])
+            cube([body_width-0.7, 0.85, 0.90], center=true);
+    }
+
+    // 発光側角形ベゼル
+    color([0.055,0.055,0.06])
+        translate([
+            emitter_x,
+            front_y0-0.31,
+            0
+        ])
+            rounded_box([7.25, 0.68, 7.25], 0.18);
+
+    // 受光側角形ベゼル
+    color([0.055,0.055,0.06])
+        translate([
+            detector_x,
+            front_y0-0.31,
+            0
+        ])
+            rounded_box([12.35, 0.68, 7.25], 0.18);
+
+    // ベゼル内側パネル
+    color([0.15,0.15,0.155])
+        translate([
+            detector_x,
+            front_y0-0.70,
+            0
+        ])
+            cube([10.95, 0.18, 5.75], center=true);
+
+    // 発光レンズ
+    optical_lens(
+        emitter_x,
+        0,
+        6.35,
+        5.10,
+        [0.42,0.18,0.12,0.78]
+    );
+
+    // 受光レンズ
+    optical_lens(
+        detector_x,
+        0,
+        6.55,
+        5.35,
+        [0.18,0.24,0.29,0.72]
+    );
+
+    // 本体下面の段差
+    color([0.055,0.055,0.06])
+        translate([
+            0,
+            0.25,
+            -body_height/2+0.35
+        ])
+            cube([
+                body_width-0.75,
+                body_depth-0.80,
+                0.70
+            ], center=true);
+}
+
+
+// 上面刻印
+module top_marking()
+{
+    color([0.67,0.67,0.67])
+        translate([
+            0,
+            1.30,
+            body_height/2+0.015
+        ])
+            linear_extrude(height=0.055)
+                text(
+                    "SHARP",
+                    size=2.25,
+                    halign="center",
+                    valign="center",
+                    style="bold"
+                );
+
+    color([0.60,0.60,0.60])
+        translate([
+            0,
+            -1.10,
+            body_height/2+0.015
+        ])
+            linear_extrude(height=0.055)
+                text(
+                    "GP2Y0D413K",
+                    size=1.20,
+                    halign="center",
+                    valign="center"
+                );
+}
+
+
+// 完成モデル
+module GP2Y0D413K0F()
+{
+    sensor_body();
+    pwb();
+    connector();
+    top_marking();
+}
+
+GP2Y0D413K0F();

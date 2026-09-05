@@ -1,0 +1,173 @@
+// Sharp Distance Measuring Sensor GP2Y0D413K0F
+// Unit: mm
+// Origin: Center of main lens case
+// -Z axis: Mounting surface / PWB & Connector side
+
+$fn = 40;
+
+// Dimensions from datasheet
+W_CASE    = 29.45;  // Total width
+H_CASE    = 13.05;  // Main case height
+D_BASE    = 7.1;    // Case rear base depth
+D_FRONT   = 6.3;    // Front lens housing depth (total front protrusion)
+D_RIM     = 2.0;    // Front-most lens rim protrusion
+H_TOTAL   = 18.9;   // Total height including connector
+H_LENS_OUT= 8.4;    // Front housing height
+H_LENS_IN = 7.2;    // Lens aperture height
+
+// Center positions along X (Left edge is at X = -W_CASE/2)
+X_EMITTER  = -W_CASE/2 + 4.5;   // *4.5 mm from left
+X_DETECTOR = -W_CASE/2 + 19.7;  // *19.7 mm from left
+
+// Front/Back Y coordinates (Origin Y=0 is center of total depth = D_BASE + D_FRONT = 13.4mm)
+D_TOTAL   = D_BASE + D_FRONT;
+Y_BACK    = -D_TOTAL / 2;               // -6.7 mm
+Y_MID     = Y_BACK + D_BASE;            // +0.4 mm
+Y_FRONT_M = Y_MID + (D_FRONT - D_RIM);  // +4.7 mm
+Y_FRONT   = D_TOTAL / 2;                // +6.7 mm
+
+// Colors
+COLOR_CASE      = [0.15, 0.15, 0.15];   // Carbonic ABS (conductive black resin)
+COLOR_LENS      = [0.20, 0.05, 0.10];   // Visible light cut-off acrylic resin
+COLOR_PWB       = [0.60, 0.42, 0.20];   // Paper phenol (brown)
+COLOR_CONNECTOR = [0.90, 0.90, 0.86];   // Connector body (natural / white)
+COLOR_PIN       = [0.85, 0.75, 0.30];   // Brass / Gold plated pins
+
+// --- Main Assembly ---
+gp2y0d413k0f();
+
+module gp2y0d413k0f() {
+    main_case();
+    lenses();
+    pwb_and_connector();
+}
+
+// --- Main Case (Carbonic ABS) ---
+module main_case() {
+    color(COLOR_CASE) {
+        difference() {
+            union() {
+                // 1. Rear Base Body
+                translate([-W_CASE/2, Y_BACK, -H_CASE/2])
+                    cube([W_CASE, D_BASE, H_CASE]);
+
+                // 2. Middle Protrusion (Front housing base)
+                translate([-W_CASE/2 + 2.5, Y_MID - 0.01, -H_LENS_OUT/2])
+                    cube([W_CASE - 4.5, D_FRONT - D_RIM + 0.01, H_LENS_OUT]);
+
+                // 3. Emitter Barrel (Left)
+                hull() {
+                    translate([X_EMITTER, Y_MID, 0])
+                        rotate([-90, 0, 0])
+                        cylinder(d = H_LENS_OUT, h = D_FRONT);
+                }
+
+                // 4. Detector Housing (Right oval shape)
+                hull() {
+                    translate([X_DETECTOR - 2.0, Y_MID, 0])
+                        rotate([-90, 0, 0])
+                        cylinder(d = H_LENS_OUT, h = D_FRONT);
+                    translate([X_DETECTOR + 2.0, Y_MID, 0])
+                        rotate([-90, 0, 0])
+                        cylinder(d = H_LENS_OUT, h = D_FRONT);
+                }
+            }
+
+            // Lens Aperture Cutouts
+            // Emitter hole
+            translate([X_EMITTER, Y_FRONT - D_RIM - 0.1, 0])
+                rotate([-90, 0, 0])
+                cylinder(d = H_LENS_IN, h = D_RIM + 0.2);
+
+            // Detector hole (Oblong)
+            hull() {
+                translate([X_DETECTOR - 2.0, Y_FRONT - D_RIM - 0.1, 0])
+                    rotate([-90, 0, 0])
+                    cylinder(d = H_LENS_IN, h = D_RIM + 0.2);
+                translate([X_DETECTOR + 2.0, Y_FRONT - D_RIM - 0.1, 0])
+                    rotate([-90, 0, 0])
+                    cylinder(d = H_LENS_IN, h = D_RIM + 0.2);
+            }
+
+            // Top decorative notch / step
+            translate([-W_CASE/2 - 0.1, Y_BACK - 0.1, H_CASE/2 - 1.5])
+                cube([W_CASE + 0.2, 1.8, 1.6]);
+        }
+    }
+}
+
+// --- Optical Lenses ---
+module lenses() {
+    color(COLOR_LENS) {
+        // Emitter Lens (Spherical Convex)
+        intersection() {
+            translate([X_EMITTER, Y_FRONT - D_RIM + 0.5, 0])
+                rotate([-90, 0, 0])
+                cylinder(d = H_LENS_IN - 0.1, h = D_RIM);
+            
+            translate([X_EMITTER, Y_FRONT - 1.5, 0])
+                sphere(d = 8.5);
+        }
+
+        // Detector Lens (Cylindrical / Oblong Convex)
+        intersection() {
+            hull() {
+                translate([X_DETECTOR - 2.0, Y_FRONT - D_RIM + 0.5, 0])
+                    rotate([-90, 0, 0])
+                    cylinder(d = H_LENS_IN - 0.1, h = D_RIM);
+                translate([X_DETECTOR + 2.0, Y_FRONT - D_RIM + 0.5, 0])
+                    rotate([-90, 0, 0])
+                    cylinder(d = H_LENS_IN - 0.1, h = D_RIM);
+            }
+
+            hull() {
+                translate([X_DETECTOR - 2.0, Y_FRONT - 1.5, 0])
+                    sphere(d = 8.5);
+                translate([X_DETECTOR + 2.0, Y_FRONT - 1.5, 0])
+                    sphere(d = 8.5);
+            }
+        }
+    }
+}
+
+// --- PWB & Connector (-Z direction) ---
+module pwb_and_connector() {
+    pwb_thick = 1.2;
+    pwb_w     = 24.0;
+    pwb_h     = H_TOTAL - H_CASE; // 5.85 mm extension below case
+    conn_w    = 10.1;
+    conn_d    = 4.5;
+    conn_h    = 5.5;
+
+    // PWB
+    color(COLOR_PWB) {
+        translate([-pwb_w/2, Y_BACK + 2.2, -H_CASE/2 - pwb_h + 1.0])
+            cube([pwb_w, pwb_thick, pwb_h - 1.0]);
+    }
+
+    // Connector Housing (JCTC 12001W90-3P-HF compatible)
+    color(COLOR_CONNECTOR) {
+        difference() {
+            // Connector Body
+            translate([-conn_w/2, Y_BACK + 0.2, -H_CASE/2 - pwb_h])
+                cube([conn_w, conn_d, conn_h]);
+
+            // Inner Cavity (faces downward / -Z)
+            translate([-conn_w/2 + 0.8, Y_BACK + 0.8, -H_CASE/2 - pwb_h - 0.1])
+                cube([conn_w - 1.6, conn_d - 1.6, conn_h - 1.0]);
+
+            // Center Keyway notch
+            translate([-0.6, Y_BACK - 0.1, -H_CASE/2 - pwb_h - 0.1])
+                cube([1.2, 1.2, conn_h - 1.5]);
+        }
+    }
+
+    // Metal Pins (3-pin: Vo, GND, Vcc)
+    color(COLOR_PIN) {
+        pin_pitch = 1.5;
+        for (i = [-1:1]) {
+            translate([i * pin_pitch, Y_BACK + 2.0, -H_CASE/2 - pwb_h + 0.5])
+                cylinder(d = 0.5, h = conn_h - 1.2);
+        }
+    }
+}

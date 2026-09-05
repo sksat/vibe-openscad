@@ -1,0 +1,134 @@
+// ============================================================
+// Sharp GP2Y0A21YK0F 測距センサ 外形モデル
+// 単位: mm / 本体中心 = 原点 / 取付面(PWB・コネクタ側) = -Z
+// (データシート p.2 "Outline Dimensions" 準拠、
+//  図示のない寸法は推定値)
+// ============================================================
+$fn = 64;
+eps = 0.01;
+
+/* ---------------- 主要寸法 ---------------- */
+body_w      = 29.5;    // 本体幅
+body_h      = 13;      // 本体高さ
+depth_total = 13.5;    // レンズ前面 〜 PWB 裏面
+pwb_t       = 1.2;     // PWB 厚
+lens_prot   = 6.3;     // レンズケース(前面ブロック)突出量
+case_d      = depth_total - pwb_t - lens_prot;  // ケース本体奥行
+
+zf =  depth_total/2;   // 前面 (レンズ側, +Z)
+zb = -depth_total/2;   // 背面 (PWB 裏面, -Z)
+
+hole_pitch = 37;       // 取付穴ピッチ
+hole_d     = 3.2;      // φ3.2 取付穴
+tab_r      = 3.75;     // タブ先端 R3.75
+tab_t      = 3.0;      // タブ厚 (推定)
+
+emit_x = -body_w/2 + 4.5;   // 発光レンズ中心 X (= -10.25)
+det_x  = emit_x + 20;       // 受光レンズ中心 X (20±0.1 → +9.75)
+
+blk1_w  = 7.5;              // 前面ブロック(発光側)幅
+blk_gap = 4.15;             // ブロック間隔
+blk2_w  = 16.3;             // 前面ブロック(受光側)幅
+blk_h   = 10;               // 前面ブロック高さ (推定)
+
+conn_w  = 10.1;                          // コネクタ幅
+conn_cx = -body_w/2 + 3.75 + conn_w/2;   // コネクタ中心 X
+conn_h  = 4.5;                           // コネクタ高さ (推定)
+conn_d  = 18.9 - depth_total;            // PWB 裏面からの突出 (参考値(18.9)より)
+
+/* ---------------- 部品モジュール ---------------- */
+
+// 取付タブ (φ3.2 穴 / R3.75)
+module mount_tab(x) {
+    translate([0, 0, zb + pwb_t])
+        linear_extrude(tab_t)
+            hull() {
+                translate([x, 0]) circle(r = tab_r);
+                translate([x/2, 0]) square([abs(x), 2*tab_r], center = true);
+            }
+}
+
+// レンズケース(前面 2 ブロック)
+module lens_blocks() {
+    zc = zf - lens_prot/2;
+    // 発光側ブロック
+    translate([-body_w/2 + blk1_w/2, 0, zc])
+        cube([blk1_w, blk_h, lens_prot], center = true);
+    // 受光側ブロック
+    translate([-body_w/2 + blk1_w + blk_gap + blk2_w/2, 0, zc])
+        cube([blk2_w, blk_h, lens_prot], center = true);
+}
+
+// ケース本体 + タブ + レンズケース (穴・開口を差し引き)
+module case_assembly() {
+    difference() {
+        union() {
+            // ケース本体
+            translate([0, 0, zb + pwb_t + case_d/2])
+                cube([body_w, body_h, case_d], center = true);
+            // 取付タブ (左右)
+            mount_tab( hole_pitch/2);
+            mount_tab(-hole_pitch/2);
+            // レンズケース
+            lens_blocks();
+        }
+        // 取付穴 φ3.2 (貫通)
+        for (sx = [-1, 1])
+            translate([sx*hole_pitch/2, 0, zb - 1])
+                cylinder(h = depth_total + 2, d = hole_d);
+        // レンズ開口 (発光 / 受光)
+        translate([emit_x, 0, zf - 2]) cylinder(h = 3, r = 3.2);
+        translate([det_x,  0, zf - 2]) cylinder(h = 3, r = 4.2);
+        // 刻印エリア (上面の浅い凹み)
+        translate([0, body_h/2 + 0.2, zb + pwb_t + case_d/2])
+            cube([16, 1, case_d - 1.5], center = true);
+    }
+}
+
+// レンズ (円筒 + 半楕円球の凸レンズ)
+module lens(x, r) {
+    translate([x, 0, zf - 2]) cylinder(h = 1.6, r = r);
+    translate([x, 0, zf - 0.4]) scale([1, 1, 0.45]) sphere(r = r);
+}
+
+module lenses() {
+    lens(emit_x, 3.0);   // 発光側 (小)
+    lens(det_x,  4.0);   // 受光側 (大)
+}
+
+// PWB (紙フェノール基板)
+module pwb() {
+    translate([0, 0, zb + pwb_t/2])
+        cube([body_w, body_h, pwb_t], center = true);
+}
+
+// コネクタ (JCTC 12001W90-3P-HF 相当) : -Z へ突出
+module connector() {
+    cy = -body_h/2 + conn_h/2;   // 本体下寄り
+    difference() {
+        translate([conn_cx, cy, zb - conn_d/2])
+            cube([conn_w, conn_h, conn_d], center = true);
+        // 嵌合キャビティ
+        translate([conn_cx, cy, zb - conn_d/2 - 0.6])
+            cube([conn_w - 1.6, conn_h - 1.6, conn_d - 1.2], center = true);
+    }
+}
+
+// コネクタピン ×3 (① Vo ② GND ③ Vcc, ピッチ 2mm 想定)
+module pins() {
+    cy = -body_h/2 + conn_h/2;
+    for (i = [-1, 0, 1])
+        translate([conn_cx + i*2, cy, zb - conn_d/2 + 0.5])
+            cube([0.5, 0.5, conn_d - 1.5], center = true);
+}
+
+/* ---------------- 組み立て ---------------- */
+module GP2Y0A21YK0F() {
+    color([0.13, 0.13, 0.13])       case_assembly();   // 導電性ABSケース
+    color([0.55, 0.36, 0.20])       pwb();             // 紙フェノールPWB
+    color([0.92, 0.92, 0.86])       connector();       // コネクタ
+    color([0.85, 0.72, 0.35])       pins();            // 端子
+    color([0.25, 0.28, 0.42, 0.9])  lenses();          // 可視光カット樹脂レンズ
+}
+
+GP2Y0A21YK0F();

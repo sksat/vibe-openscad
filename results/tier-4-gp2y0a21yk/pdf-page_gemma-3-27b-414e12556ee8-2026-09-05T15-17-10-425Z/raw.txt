@@ -1,0 +1,30 @@
+```openscad
+// Sharp GP2Y0A21YK0F 測距センサ モデリング (単位: mm)
+
+module gp2y0a21yk0f() {
+  difference() {
+    union() {
+      // 本体
+      cube([7.5, 4.15, 16.3], center = true);
+
+      // コネクタ側突起
+      translate([0, -2.075, -8.15]) cube([12, 4.15, 3.3], center = true);
+
+      // レンズ側突起
+      translate([0, 2.075, -8.15]) cube([6.3, 4.15, 3.3], center = true);
+    }
+
+    // コネクタ穴 (データシート参照)
+    translate([0, -2.075, -8.15 + 3.3/2]) cube([12, 4.15, 3.3], center = true);
+
+    // PWB取付穴 (データシート参照)
+    translate([0, 0, -16.3/2]) cylinder(h=3.3, r=1.2, center=true);
+    translate([0, 0, -16.3/2]) cylinder(h=3.3, r=1.2, center=true);
+
+    // LED レンズ穴 (データシート参照)
+    translate([0, 2.075, -8.15 + 3.3/2]) cylinder(h=3.3, r=0.6, center = true);
+  }
+}
+
+gp2y0a21yk0f();
+```

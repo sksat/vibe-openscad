@@ -1,0 +1,127 @@
+// Sharp GP2Y0D413K0F Distance Measuring Sensor
+// Unit: mm
+
+$fn = 40;
+
+// Dimensions based on datasheet
+W_MAIN = 29.45;       // Main body width
+H_MAIN = 13.05;       // Main body height
+D_MAIN = 7.10;        // Main body depth
+
+// Lens / Optics offsets & dimensions
+LENS_EMITTER_OFFSET_X  = -W_MAIN/2 + 4.5;   // *4.5 mm from left edge
+LENS_DETECTOR_OFFSET_X = LENS_EMITTER_OFFSET_X + 19.7; // *19.7 mm pitch
+
+HOOD_BASE_D  = 4.3;   // 6.3 - 2.0 mm
+HOOD_BASE_H  = 8.4;
+HOOD_TIP_D   = 2.0;
+HOOD_TIP_H   = 7.2;
+
+EMITTER_W    = 7.5;
+DETECTOR_W   = 16.3;
+
+// Connector dimensions
+CONN_W       = 10.1;
+CONN_H       = 18.9 - H_MAIN; // 5.85 mm protrusion
+CONN_D       = 5.0;
+PWB_THICK    = 1.2;
+
+// Colors
+C_BODY       = [0.20, 0.20, 0.22]; // Carbonic ABS (Dark Grey/Black)
+C_LENS       = [0.12, 0.05, 0.18]; // Visible light cut-off resin (Dark Violet/Black)
+C_CONN       = [0.92, 0.90, 0.85]; // White/Natural resin
+C_PIN        = [0.85, 0.75, 0.35]; // Gold/Brass pins
+C_PWB        = [0.45, 0.30, 0.15]; // Paper phenol PCB
+
+module gp2y0d413k0f() {
+    // --- 1. Main Case Body ---
+    color(C_BODY) {
+        difference() {
+            // Main body block
+            translate([-W_MAIN/2, -D_MAIN/2, -H_MAIN/2])
+                cube([W_MAIN, D_MAIN, H_MAIN]);
+            
+            // Bottom cutout for connector area
+            translate([-CONN_W/2 - 0.5, -D_MAIN/2 - 0.1, -H_MAIN/2 - 0.1])
+                cube([CONN_W + 1.0, D_MAIN + 0.2, 2.0]);
+        }
+    }
+
+    // --- 2. Front Lens Hoods (Emitter & Detector) ---
+    color(C_BODY) {
+        // Emitter Hood (Left side)
+        translate([LENS_EMITTER_OFFSET_X - EMITTER_W/2, D_MAIN/2, -HOOD_BASE_H/2]) {
+            cube([EMITTER_W, HOOD_BASE_D, HOOD_BASE_H]);
+        }
+        translate([LENS_EMITTER_OFFSET_X - EMITTER_W/2, D_MAIN/2 + HOOD_BASE_D, -HOOD_TIP_H/2]) {
+            difference() {
+                cube([EMITTER_W, HOOD_TIP_D, HOOD_TIP_H]);
+                // Lens aperture
+                translate([EMITTER_W/2, -0.1, HOOD_TIP_H/2])
+                    rotate([-90, 0, 0])
+                    cylinder(r = 3.0, h = HOOD_TIP_D + 0.2);
+            }
+        }
+
+        // Detector Hood (Right side)
+        translate([LENS_DETECTOR_OFFSET_X - DETECTOR_W/2 + 2.0, D_MAIN/2, -HOOD_BASE_H/2]) {
+            cube([DETECTOR_W, HOOD_BASE_D, HOOD_BASE_H]);
+        }
+        translate([LENS_DETECTOR_OFFSET_X - DETECTOR_W/2 + 2.0, D_MAIN/2 + HOOD_BASE_D, -HOOD_TIP_H/2]) {
+            difference() {
+                cube([DETECTOR_W, HOOD_TIP_D, HOOD_TIP_H]);
+                // Lens aperture
+                translate([DETECTOR_W/2 - 2.0, -0.1, HOOD_TIP_H/2])
+                    rotate([-90, 0, 0])
+                    cylinder(r = 3.0, h = HOOD_TIP_D + 0.2);
+            }
+        }
+    }
+
+    // --- 3. Lenses ---
+    color(C_LENS) {
+        // Emitter Lens (Convex)
+        translate([LENS_EMITTER_OFFSET_X, D_MAIN/2 + HOOD_BASE_D + HOOD_TIP_D - 0.5, 0])
+            rotate([-90, 0, 0])
+            scale([1, 1, 0.6])
+            sphere(r = 3.2);
+
+        // Detector Lens (Convex)
+        translate([LENS_DETECTOR_OFFSET_X, D_MAIN/2 + HOOD_BASE_D + HOOD_TIP_D - 0.5, 0])
+            rotate([-90, 0, 0])
+            scale([1, 1, 0.6])
+            sphere(r = 3.2);
+    }
+
+    // --- 4. PCB (PWB) on the bottom ---
+    color(C_PWB) {
+        translate([-W_MAIN/2 + 1.0, -D_MAIN/2, -H_MAIN/2 - PWB_THICK])
+            cube([W_MAIN - 2.0, D_MAIN, PWB_THICK]);
+    }
+
+    // --- 5. Connector (JCTC 12001W90-3P-HF) ---
+    translate([0, 0, -H_MAIN/2]) {
+        // Connector Housing
+        color(C_CONN) {
+            difference() {
+                translate([-CONN_W/2, -D_MAIN/2 - 3.3 + 1.2, -CONN_H])
+                    cube([CONN_W, CONN_D, CONN_H]);
+                
+                // Connector cavity (mating port)
+                translate([-CONN_W/2 + 1.0, -D_MAIN/2 - 3.3 + 0.8, -CONN_H - 0.1])
+                    cube([CONN_W - 2.0, CONN_D - 1.5, CONN_H - 1.5]);
+            }
+        }
+
+        // Connector Pins (3-pin: Vo, GND, Vcc)
+        color(C_PIN) {
+            for (i = [-1, 0, 1]) {
+                translate([i * 1.5, -D_MAIN/2 - 1.5, -CONN_H + 1.0])
+                    cylinder(r = 0.25, h = CONN_H - 1.5);
+            }
+        }
+    }
+}
+
+// Render the sensor
+gp2y0d413k0f();

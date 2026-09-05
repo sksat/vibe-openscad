@@ -1,0 +1,39 @@
+{
+  "runId": "pdf-page_gpt-5.6-terra-b4c457e15796-2026-09-05T14-38-06-197Z",
+  "taskId": "tier-4-gp2y0a21yk",
+  "matrixId": "pdf-page/gpt-5.6-terra",
+  "signature": "b4c457e1579677d680729ce8a90a9563f275135ccf8e92de5f09a6bb3a1d60dd",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "be8447efaad1d128f8fe25ada8d6776d55e66bc75ed71840c218201a51da8e80",
+    "harness": {
+      "kind": "pdf-page",
+      "provider": "openai",
+      "model": "gpt-5.6-terra"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5.6-terra",
+  "resolvedModel": "gpt-5.6-terra",
+  "harness": {
+    "kind": "pdf-page",
+    "pdfUrl": "https://jp.sharp/products/device/doc/opto/gp2y0a21yk_e.pdf",
+    "pages": [
+      2
+    ]
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 22156
+  },
+  "tokens": {
+    "input": 2680,
+    "output": 2339,
+    "thinking": 516
+  },
+  "cost_usd": 0.033428,
+  "createdAt": "2026-09-05T14:38:06.197Z",
+  "gitCommit": "7ec961914ad4f027fd4081fd8169be21b59fbbb8"
+}

@@ -1,0 +1,177 @@
+// ============================================================
+//  SHARP GP2Y0A21YK0F   Distance Measuring Sensor Unit
+//  modelled from the "Outline Dimensions" (Sheet E4-A00201EN)
+//
+//  unit   : mm
+//  origin : center of the case body (29.5 x 13.5 x 13)
+//  -Z     : mounting side  (PWB / connector)
+//  +Y     : optical axis   (lens face)
+//  +X     : light emitter -> light detector direction
+// ============================================================
+
+$fa = 2;
+$fs = 0.3;
+
+show_stamp = true;     // 天面の刻印(SHARP 2Y0A21 F 4Z)
+
+/* ---------------- overall ---------------- */
+L_all    = 37.0;                 // 全長(取付タブ含む)
+L_body   = 29.5;                 // ケース長さ
+D_body   = 13.5;                 // ケース奥行 (Y)
+H_body   = 13.0;                 // ケース高さ (Z)
+
+/* ---------------- mounting tabs ---------- */
+R_tab    = 3.75;                 // R3.75
+T_tab    = 1.5;                  // 2-1.5
+D_hole   = 3.2;                  // phi 3.2 hole
+X_hole   = L_all/2 - R_tab;      // = 14.75
+
+/* ---------------- case profile ----------- */
+D_rear   = 6.3;                  // 後部(低い部分)の奥行
+H_rear   = 7.2;                  // 後部の高さ
+D_rib    = 2.0;                  // 後端リブの奥行
+H_rib    = 8.4;                  // 後端リブの高さ
+D_lens   = D_body - D_rear;      // = 7.2  レンズケース部の奥行
+
+Y_face   = D_body/2;             // = 6.75 レンズ面
+
+/* ---------------- optics ----------------- */
+X_emit   = -L_body/2 + 4.5;      // -10.25 (*4.5)   発光側レンズ中心
+X_det    = X_emit + 20.0;        //  +9.75 (*20+-0.1) 受光側レンズ中心
+D_emit   = 7.0;                  // 発光レンズ径
+D_det    = 8.0;                  // 受光レンズ径
+
+/* ---------------- PWB / connector -------- */
+T_pwb    = 1.2;                  // PWB 厚 (paper phenol)
+W_conn   = 10.1;                 // コネクタ幅
+D_conn   = 3.3;                  // コネクタ奥行 (3.3)
+H_conn   = 4.7;                  // 13 + 1.2 + 4.7 = (18.9)
+P_conn   = 2.54;                 // ピン間
+X_conn   = -W_conn/2;            // 右端が x=0 (左端面から 14.75)
+Y_conn   = -D_body/2 + D_conn/2 + 1.2;
+
+Z_bot    = -H_body/2;            // ケース底面 = PWB 上面
+Z_pwb    = Z_bot - T_pwb;        // PWB 底面
+Z_conn   = Z_pwb - H_conn;       // コネクタ下端 (= -18.9 + 6.5)
+
+/* ============================================================
+   modules
+   ============================================================ */
+
+// --- 取付タブ(片側) ------------------------------------
+module tab_2d(){
+    hull(){
+        translate([X_hole, 0]) circle(r = R_tab);
+        translate([L_body/2 - 3.0, 0])
+            square([0.01, 2*R_tab + 3], center = true);   // 台形の付け根
+    }
+}
+
+module tabs(){
+    for (s = [1, -1]) scale([s, 1, 1])
+        translate([0, 0, -T_tab/2])
+            linear_extrude(height = T_tab) tab_2d();
+}
+
+// --- ケース外形(削り取る前) ----------------------------
+module case_solid(){
+    union(){
+        // レンズケース部(前方・全高 13)
+        translate([-L_body/2, Y_face - D_lens, Z_bot])
+            cube([L_body, D_lens, H_body]);
+        // 後部(低い部分 7.2)
+        translate([-L_body/2, -D_body/2, Z_bot])
+            cube([L_body, D_rear, H_rear]);
+        // 後端リブ(2 x 8.4)
+        translate([-L_body/2, -D_body/2, Z_bot])
+            cube([L_body, D_rib, H_rib]);
+        // 取付タブ
+        tabs();
+    }
+}
+
+// --- レンズ用のザグリ(角穴 + 丸穴) --------------------
+module lens_pocket(x, w, h, d){
+    // 角形の浅いザグリ(深さ 0.8)
+    translate([x, Y_face - 0.8 + 1, 0])
+        cube([w, 2, h], center = true);
+    // 円形のレンズ穴(深さ 3.0)
+    translate([x, Y_face - 3.0, 0]) rotate([-90, 0, 0])
+        cylinder(d = d, h = 4);
+}
+
+// --- レンズ本体(可視光カット樹脂) --------------------
+module lens(x, d){
+    hb = 3.0 - 0.2*(d - 0.2) - 0.15;      // ドーム頂点が面より僅かに内側
+    color("#2a0d0d", 0.95)
+    translate([x, Y_face - 3.0, 0]) rotate([-90, 0, 0]){
+        cylinder(d = d - 0.2, h = hb);
+        translate([0, 0, hb]) scale([1, 1, 0.4]) sphere(d = d - 0.2);
+    }
+}
+
+// --- 天面刻印 ------------------------------------------
+module stamp(){
+    translate([0, Y_face - D_lens/2, H_body/2 - 0.2])
+        linear_extrude(height = 1)
+            union(){
+                translate([0,  1.7]) text("SHARP",
+                    size = 2.4, halign = "center", valign = "center");
+                translate([0, -1.7]) text("2Y0A21 F 4Z",
+                    size = 1.9, halign = "center", valign = "center");
+            }
+}
+
+// --- ケース(Carbonic ABS) -----------------------------
+module case(){
+    color("#2e2e30")
+    difference(){
+        case_solid();
+        // phi3.2 取付穴
+        for (s = [1, -1]) translate([s*X_hole, 0, 0])
+            cylinder(d = D_hole, h = T_tab + 4, center = true);
+        // レンズ開口
+        lens_pocket(X_emit, 8.6, 9.0, D_emit);
+        lens_pocket(X_det , 9.6, 9.0, D_det );
+        if (show_stamp) stamp();
+    }
+}
+
+// --- PWB (paper phenol) --------------------------------
+module pwb(){
+    color("#8a6a3a")
+    translate([-L_body/2 + 0.25, -D_body/2 + 0.25, Z_pwb])
+        cube([L_body - 0.5, D_body - 0.5, T_pwb]);
+}
+
+// --- コネクタ JCTC 12001W90-3P-HF ----------------------
+module connector(){
+    translate([X_conn, Y_conn, Z_conn]){
+        // ハウジング(下向き開口)
+        color("#ded9cc")
+        difference(){
+            translate([-W_conn/2, -D_conn/2, 0])
+                cube([W_conn, D_conn, H_conn]);
+            translate([-W_conn/2 + 0.7, -D_conn/2 + 0.55, -0.01])
+                cube([W_conn - 1.4, D_conn - 1.1, H_conn - 1.0]);
+        }
+        // 端子 (1)Vo (2)GND (3)Vcc
+        color("#c8a24a")
+        for (i = [-1, 0, 1])
+            translate([i*P_conn - 0.32, -0.32, 0.8])
+                cube([0.64, 0.64, H_conn - 1.8]);
+    }
+}
+
+/* ============================================================
+   assembly
+   ============================================================ */
+module GP2Y0A21YK0F(){
+    case();
+    lens(X_emit, D_emit);      // Light emitter (LED)
+    lens(X_det , D_det );      // Light detector (PSD)
+    pwb();
+    connector();
+}
+
+GP2Y0A21YK0F();

@@ -1,0 +1,85 @@
+// Sharp GP2Y0D413K0F Distance Sensor
+// Unit: mm
+// Coordinate System: 
+// - Origin: Center of main body
+// - Z-axis: Mounting surface (PWB / Connector side) faces -Z
+// - Y-axis: Lenses face +Y (Front)
+// - X-axis: Width direction
+
+$fn = 64;
+
+module gp2y0d413k0f() {
+    // --- Dimensions ---
+    
+    // 1. Main Body
+    mb_w = 29.45; // Width
+    mb_d = 7.1;   // Depth
+    mb_h = 13.05 - 1.2; // Height to PWB top surface (11.85)
+    
+    // 3. Lenses
+    lens_dia = 7.2;
+    lens_d = 2.0;
+    // X positions relative to the left edge of the main body
+    lens_left_x = -mb_w/2 + 4.5;
+    lens_right_x = -mb_w/2 + 19.7;
+    
+    // 2. Lens Case
+    lc_w = 23.6; // Width to enclose both lenses
+    lc_d = 6.3 - lens_d; // Front extension (4.3)
+    lc_h = 8.4;
+    lc_x_offset = (lens_left_x + lens_right_x) / 2;
+    
+    // 4. PWB (Printed Wiring Board)
+    pwb_th = 1.2;
+    pwb_indent_left = 3.75; // Indent from left edge
+    pwb_w = mb_w - pwb_indent_left;
+    pwb_x_offset = -mb_w/2 + pwb_indent_left + pwb_w/2;
+    pwb_back_extension = 3.3; // Extension beyond main body back
+    pwb_d = (mb_d/2) + pwb_back_extension; // Depth (6.85)
+    pwb_y_offset = -pwb_d/2; // Front edge aligns with main body center (Y=0)
+    
+    // 5. Connector
+    conn_w = 10.1;
+    conn_h = 18.9 - 13.05; // Extension below PWB (5.85)
+    conn_d = 3.5; // Assumed depth
+    conn_x_offset = pwb_x_offset; // Centered on PWB
+    conn_y_offset = pwb_y_offset; // Centered on PWB depth
+    
+    
+    // --- Assembly ---
+    
+    // Main Body
+    color("#333333")
+    cube([mb_w, mb_d, mb_h], center=true);
+    
+    // Lens Case
+    color("#222222")
+    translate([lc_x_offset, mb_d/2 + lc_d/2, mb_h/2 - lc_h/2])
+    cube([lc_w, lc_d, lc_h], center=true);
+    
+    // Lenses
+    color("#0a0a0a") {
+        // Emitter (Left)
+        translate([lens_left_x, mb_d/2 + lc_d, mb_h/2 - lc_h/2])
+        rotate([-90, 0, 0])
+        cylinder(h=lens_d, d=lens_dia);
+        
+        // Detector (Right)
+        translate([lens_right_x, mb_d/2 + lc_d, mb_h/2 - lc_h/2])
+        rotate([-90, 0, 0])
+        cylinder(h=lens_d, d=lens_dia);
+    }
+    
+    // PWB
+    color("#2E8B57") // SeaGreen
+    translate([pwb_x_offset, pwb_y_offset, -mb_h/2 - pwb_th/2])
+    cube([pwb_w, pwb_d, pwb_th], center=true);
+    
+    // Connector
+    color("#F5F5F5") // WhiteSmoke
+    translate([conn_x_offset, conn_y_offset, -mb_h/2 - pwb_th - conn_h/2])
+    cube([conn_w, conn_d, conn_h], center=true);
+}
+
+// Render the sensor
+gp2y0d413k0f();

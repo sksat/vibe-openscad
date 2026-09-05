@@ -1,0 +1,72 @@
+// Sharp GP2Y0D413K0F Distance Sensor Housing Model
+// Coordinate System: Origin at the center of the main body. Z-axis depth, X-axis length, Y-axis height/width.
+// PWB side is facing -Z direction.
+
+// --- Global Parameters ---
+unit = [1, 1, 1]; // Units are mm
+
+// --- Constants derived from datasheet dimensions (approximations) ---
+// Overall Length (X max): ~32 mm
+// Overall Width (Y max): ~18 mm
+// Overall Depth (Z total): The sensor housing spans about 18-20mm depth.
+
+module main_housing() {
+    difference() {
+        // 1. Base Block (The overall plastic shell)
+        // We define a slightly oversized block to accommodate all components.
+        translate([0, 0, -5]) // Shift Z slightly so the origin is roughly centered within the depth
+        cube([32 * unit, 18 * unit, 40 * unit]); // Large box: X=32, Y=18 (W), Z=40 (Depth)
+
+        // 2. Internal Cutouts and Shaping
+
+        // A. Main Sensor Body Core Shape
+        // This defines the main volume that is shaped differently from a simple box.
+        translate([0, -7.5, -15]) // Start position for the main body structure
+        cube([30 * unit, 14 * unit, 28 * unit]);
+
+        // B. Connector/PWB End Recess (Towards -Z)
+        // This area needs to be slightly recessed or shaped for the PCB connection.
+        translate([0, 0, -35]) // Far end of the sensor block
+        cube([15 * unit, 8 * unit, 5 * unit]);
+
+
+        // C. Sensor Window/Air Passage Cutout (Front face)
+        // The primary sensing window cutout area.
+        translate([0, 0, -32]) // Near the front-most point of the sensor block
+        cube([25 * unit, 10 * unit, 3 * unit]);
+
+    }
+}
+
+
+module details() {
+    // This module handles smaller protrusions or defining internal structures.
+
+    // D. LED Emitter Section (The visible part on the front)
+    translate([0, -4, -25]) // Positioned near the sensor window area
+    rotate([90, 0, 0]) {
+        // Simple representation of the emitter assembly box
+        cube([8 * unit, 16 * unit, 3 * unit]);
+    }
+
+     // E. Top/Bottom Mounting Slots (General shape approximation)
+    translate([0, -5, 0])
+    rotate([90, 0, 0]) {
+        // A small rectangular feature for mounting or alignment pins on the top surface
+        cube([30 * unit, 1 * unit, 2 * unit]);
+    }
+
+    // Note: Given that the datasheet only provides 2D projections (top and side views) 
+    // and not a detailed cross-sectional model of every curve, this structure 
+    // captures the primary bounding box and major cutouts.
+}
+
+
+// Final Assembly
+color([0.7, 0.7, 0.7]) { // Light gray plastic representation
+    main_housing();
+}
+
+color([0.2, 0.2, 0.2]) { // Darker color for detail/internal components
+    details();
+}

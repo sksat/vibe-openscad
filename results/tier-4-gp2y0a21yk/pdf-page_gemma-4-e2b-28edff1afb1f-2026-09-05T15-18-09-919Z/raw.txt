@@ -1,0 +1,48 @@
+ご提示いただいたデータシートに基づき、Sharp製測距センサ GP2Y0A21YK0FをOpenSCADでモデリングします。座標系と寸法（mm）の指定に従って作成します。
+
+本体の中心を原点とし、取付面を-Z方向とするようにモデル化しました。
+
+```openscad
+// Sharp GP2Y0A21YK0F Distance Sensor Model (OpenSCAD)
+// Coordinate System: Origin at center, Z points towards the mounting face (-Z is the mounting side)
+// Units: mm
+
+// --- Dimensions Reference ---
+// Based on Outline Dimensions provided in the datasheet
+// X-axis dimension (Length): 16.3 mm (from diagram)
+// Y-axis dimension (Width): 7.5 mm (from diagram, based on projection)
+// Thickness/Height: Varies depending on feature
+
+// Define overall dimensions for the main body block (based on the base view)
+module sensor_body() {
+    // The shape is defined by the outline dimensions shown in the bottom view.
+    // X dimension = 16.3 mm, Y dimension = 7.5 mm
+    cube([16.3, 7.5, 4.15], center = true); // Using 4.15 as a reference depth/thickness for the main body structure
+}
+
+module mounting_features() {
+    // Define mounting features based on the diagram (example placement relative to center)
+
+    // Note: These dimensions are relative placements derived from the datasheet's outline view.
+    
+    // Example of defining a connector area (simplified representation)
+    color("red")
+    translate([0, 0, -4.15]) // Positioned at the mounting face (-Z direction)
+    cube([16.3, 7.5, 2.0], center = true); // Represents the mounting plate/connector area
+
+    // Example of defining a sensor position mark (simplified representation)
+    color("blue")
+    translate([8.15, 0, -4.15]) // Position based on X=8.15
+    cube([2.0, 3.0, 1.0], center = true); // Represents a feature/mark at X=8.15
+}
+
+// --- Assembly ---
+
+sensor_body();
+mounting_features();
+
+// Optional: Visualization for checking the model
+// color("green")
+// translate([0, 0, -20])
+// cube([30, 30, 40], center = true); // Reference cube
+```
