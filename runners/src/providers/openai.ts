@@ -88,6 +88,13 @@ export interface OpenaiProviderDeps {
   apiKey?: string;
 }
 
+/**
+ * ストリーミング 1 回あたりの上限(30 分)。effort max の長い run でも数分で
+ * 収まる一方、SSE が停止したときは確実に失敗させる。Anthropic provider と
+ * 同じ値。
+ */
+const STREAM_TIMEOUT_MS = 30 * 60 * 1000;
+
 // reasoning effort=high の o-series / gpt-5 family はサンプリングだけでなく
 // 内部の reasoning tokens も output 上限に算入されるため、16k だと mug
 // 等の中等課題で incomplete:max_output_tokens に当たる。32k に上げて
@@ -114,12 +121,13 @@ export function createOpenaiProvider(
         client.responses as unknown as {
           stream: (
             p: ResponseCreateParamsNonStreaming,
+            opts: { timeout: number },
           ) => Promise<{
             [Symbol.asyncIterator](): AsyncIterator<unknown>;
             finalResponse(): Promise<Response>;
           }>;
         }
-      ).stream(params);
+      ).stream(params, { timeout: STREAM_TIMEOUT_MS });
       // Drain events to keep the connection alive until completion. Hook
       // here later if we want a progress callback (token counts etc).
       for await (const _evt of stream) {

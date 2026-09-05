@@ -1,3 +1,4 @@
+import type OpenAI from "openai";
 import { describe, expect, it, vi } from "vitest";
 import { createOpenaiProvider } from "./openai.js";
 
@@ -21,6 +22,30 @@ function fakeResp(overrides: FakeResponse = {}): FakeResponse {
 }
 
 describe("createOpenaiProvider", () => {
+  it("bounds the stream with a finite timeout", async () => {
+    // SSE が途中で無音になるとドレインループが終わらず finalResponse() も
+    // 返らない。bench-config の timeoutSec は provider 呼び出しに配線されて
+    // いないので、ここで上限を持たせないと 1 件の停止でベンチ全体が
+    // 終わらなくなる(Anthropic 側は #11 で同じ対応をしている)。
+    const finalResponse = vi.fn().mockResolvedValue(fakeResp());
+    const stream = vi.fn().mockResolvedValue({
+      [Symbol.asyncIterator]: () => ({
+        next: async () => ({ done: true, value: undefined }),
+      }),
+      finalResponse,
+    });
+    const provider = createOpenaiProvider({
+      client: { responses: { stream } } as unknown as OpenAI,
+    });
+
+    await provider.complete({ prompt: "p", model: "gpt-5.6-sol" });
+
+    const opts = stream.mock.calls[0]?.[1];
+    expect(typeof opts?.timeout).toBe("number");
+    expect(Number.isFinite(opts.timeout)).toBe(true);
+    expect(opts.timeout).toBeGreaterThan(0);
+  });
+
   it("name is 'openai'", () => {
     const provider = createOpenaiProvider({ create: vi.fn() });
     expect(provider.name).toBe("openai");
