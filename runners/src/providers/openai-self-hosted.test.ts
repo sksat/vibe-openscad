@@ -158,12 +158,79 @@ describe("ollama provider (OpenAI-compat /v1/chat/completions)", () => {
     vi.unstubAllGlobals();
   });
 
-  it("fails when the loaded context length differs from the declared one", async () => {
-    // 宣言と実態がずれたまま記録されると、8192 で走った run が 32768 の
-    // signature で残ってしまう。突き合わせて落とす。
+  it("loads the model at the declared context length when it differs", async () => {
+    // 宣言と実態がずれていたら、落とす前にその context でロードし直す。
+    // LM Studio の WS RPC (/llm の loadModel channel) が受け付ける。
     const { client } = makeMockClient({
       choices: [{ message: { content: "x" } }],
     });
+    let loadedCtx = 8192;
+    const loadModel = vi.fn(async (_m: string, ctx: number) => {
+      loadedCtx = ctx;
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(async () => ({
+        ok: true,
+        json: async () => ({
+          data: [
+            {
+              id: "qwen3-8b",
+              state: "loaded",
+              loaded_context_length: loadedCtx,
+            },
+          ],
+        }),
+      })),
+    );
+    const p = createOpenAISelfHostedProvider({ client, loadModel });
+
+    const res = await p.complete({
+      prompt: "p",
+      model: "qwen3-8b",
+      modelOptions: { context_length: 32768 },
+    });
+
+    expect(loadModel).toHaveBeenCalledWith("qwen3-8b", 32768);
+    expect(res.text).toBe("x");
+    vi.unstubAllGlobals();
+  });
+
+  it("does not reload when the context length already matches", async () => {
+    const { client } = makeMockClient({
+      choices: [{ message: { content: "x" } }],
+    });
+    const loadModel = vi.fn();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: [
+            { id: "qwen3-8b", state: "loaded", loaded_context_length: 32768 },
+          ],
+        }),
+      }),
+    );
+    const p = createOpenAISelfHostedProvider({ client, loadModel });
+
+    await p.complete({
+      prompt: "p",
+      model: "qwen3-8b",
+      modelOptions: { context_length: 32768 },
+    });
+
+    expect(loadModel).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it("fails when the reload did not take effect", async () => {
+    // ロードを試みても宣言どおりにならないなら、その条件では走らせない。
+    // 8192 で走った run が 32768 の signature で残るのを防ぐ。
+    const { client, create } = makeMockClient({
+      choices: [{ message: { content: "x" } }],
+    });
+    const loadModel = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
@@ -175,7 +242,7 @@ describe("ollama provider (OpenAI-compat /v1/chat/completions)", () => {
         }),
       }),
     );
-    const p = createOpenAISelfHostedProvider({ client });
+    const p = createOpenAISelfHostedProvider({ client, loadModel });
 
     await expect(
       p.complete({
@@ -184,6 +251,8 @@ describe("ollama provider (OpenAI-compat /v1/chat/completions)", () => {
         modelOptions: { context_length: 32768 },
       }),
     ).rejects.toThrow(/8192.*32768|32768.*8192/);
+    // 条件が揃っていないので生成そのものを行わない。
+    expect(create).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 

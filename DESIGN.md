@@ -136,11 +136,24 @@ tier-2 以降で思考の途中で `finish_reason: length` に達し、SCAD を�
 は fingerprint に載るので、8192 用のエントリと 32768 用のエントリが別 signature に
 なり、両方が別の結果として並ぶ。provider は `context_length` をリクエストへ転送
 せず(サーバのロード条件であってリクエストのパラメータではない)、代わりに
-`/api/v0/models` の `loaded_context_length` と突き合わせ、食い違えば run を落とす。
+`/api/v0/models` の `loaded_context_length` と突き合わせる。**ずれていれば宣言した
+context でロードし直してから走らせる。** ロードしても宣言どおりにならなければ落とす。
 宣言と実態がずれたまま記録されるのを防ぐ。
 
-probe はリクエストの **後** に行う。LM Studio は最初のリクエストで JIT ロードする
-ので、前に読むと `state: "not-loaded"` で `loaded_context_length` 自体が無い。
+突き合わせは **生成の前** に行う。後から確認しても、条件が違うと分かった時点で数分
+かけた生成が無駄になる。
+
+ロードは LM Studio の WebSocket RPC を使う。REST(`/api/v0`)側にロード用の endpoint
+は無い。`/llm` namespace の `loadModel` channel に、`apiOverride` レイヤとして
+`llm.load.contextLength` を渡す。**先に `unloadModel` が要る** — 既にロード済みの
+モデルに `loadModel` を送っても既存のインスタンスがそのまま返り、context 長は
+変わらない。LM Studio 以外の runtime(Ollama / vLLM / llama.cpp server)には無い
+機能なので、その場合はロードに失敗し「その条件では走らせない」として扱う。
+
+宣言する値は VRAM に収まる範囲にする。ベンチが自分でロードするので、重すぎる宣言は
+ホスト機ごと落としうる。実測: RTX 3090(24GB)+ RAM 32GB の機体で、qwen3-32b
+(本体 18.4 GiB)を 32768(KV 約 8 GiB)でロードしたところクラッシュした。qwen3-8b
+(本体 4.7 GiB + KV 約 4.5 GiB)は問題ない。
 
 宣言しないエントリは従来どおり突き合わせを行わない。過去の run は context を記録
 しないまま残っているが、宣言を後から足すとその時点で signature が変わり回し直しに
