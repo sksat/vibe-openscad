@@ -276,6 +276,35 @@ gpt-5.4    : { rate: 2/16 }
 テストが固定するのは **解決規則**(dated snapshot の継承、長い prefix が勝つ、
 provider を跨がない)と計算式。
 
+### モデルとスナップショット(`line` / `snapshot`)
+
+provider は 1 つのモデルを複数のスナップショットとして提供する。preview と GA、
+alias と dated snapshot がその例で、**provider 自身が製品として区別している**
+もの。提供条件(可用性の保証、価格、提供終了の予定)がスナップショットごとに
+違う。
+
+| provider | モデル | スナップショット |
+|---|---|---|
+| Google | gemini-3.1-flash-lite | `preview-03-2026` / `05-2026` |
+| Anthropic | claude-opus-4-5 | `20251101` |
+| OpenAI | gpt-5.4 | `2026-03-05` |
+
+これを **別々に記録しつつ、同じモデルとして辿れる**ようにする:
+
+- `line` — このエントリが属するモデル。短い prefix に置けば dated snapshot や
+  `-preview` へ継承される
+- `snapshot` — `line` の中でこのスナップショットを指す値。provider が名乗る値を
+  そのまま使う(Google の Models API `version`、Anthropic / OpenAI の dated
+  suffix)
+
+**スナップショットごとに別エントリ**にするのは、provider が別の製品として出して
+いるものをこちらも別物として記録するため。fingerprint はモデル id を含むので、
+id が違えば自動的に別条件になる。一方で「gemini-3.1-flash-lite というモデルの
+推移」を見たいという要求は別にあるので、`line` で束ねられるようにしてある。
+
+同じ `line` に複数エントリがあるなら全員が `snapshot` を宣言していること、
+`snapshot` が重複していないことは網羅テストが見る。
+
 ### `label` / `sort` を書くのはどういうときか
 
 web 側はモデル id の命名規則からラベルと並び順を導出する

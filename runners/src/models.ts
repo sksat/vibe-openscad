@@ -59,6 +59,22 @@ export const ModelSortSchema = z.object({
 export const ModelEntrySchema = z
   .object({
     provider: z.string().min(1),
+    /**
+     * このエントリが属するモデル。preview と GA、alias と dated snapshot の
+     * ように provider が製品として区別しているスナップショットを束ねる識別子。
+     *
+     * スナップショットごとに別エントリとして扱いつつ、`line` が同じものは
+     * 同一モデルとして辿れる。短い prefix に置けば長い prefix(dated snapshot
+     * や -preview)へ継承される。
+     */
+    line: z.string().min(1).optional(),
+    /**
+     * `line` の中でこのスナップショットを指す値。provider が名乗る値をそのまま
+     * 使う(Google の Models API `version`、Anthropic / OpenAI の dated
+     * suffix)。同じ line に複数エントリがあるなら、各自が自分の snapshot を
+     * 宣言する。
+     */
+    snapshot: z.string().min(1).optional(),
     rate: ModelRateSchema.optional(),
     vision: z.boolean().optional(),
     effort: EffortLevelSchema.nullable().optional(),

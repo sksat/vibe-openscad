@@ -85,6 +85,48 @@ describe("resolveModelIn", () => {
   });
 });
 
+describe("line / snapshot", () => {
+  it("treats snapshots of one model line as separate models", () => {
+    const reg = parseModelRegistry({
+      "gemini-x-lite": {
+        provider: "google",
+        rate: { in: 1, out: 2 },
+        line: "gemini-x-lite",
+        snapshot: "05-2026",
+      },
+      "gemini-x-lite-preview": {
+        provider: "google",
+        rate: { in: 3, out: 4 },
+        snapshot: "preview-03-2026",
+      },
+    });
+    const ga = resolveModelIn(reg, "gemini-x-lite");
+    const preview = resolveModelIn(reg, "gemini-x-lite-preview");
+    // 別モデルとして解決される
+    expect(ga?.rate).toEqual({ in: 1, out: 2 });
+    expect(preview?.rate).toEqual({ in: 3, out: 4 });
+    // line は短い prefix から継承されるので、両者が同じモデルだと分かる
+    expect(preview?.line).toBe("gemini-x-lite");
+    expect(ga?.line).toBe("gemini-x-lite");
+    // snapshot は各エントリが自分で名乗る
+    expect(ga?.snapshot).toBe("05-2026");
+    expect(preview?.snapshot).toBe("preview-03-2026");
+  });
+
+  it("lets a dated snapshot inherit its alias line", () => {
+    const reg = parseModelRegistry({
+      "claude-opus-9-9": {
+        provider: "anthropic",
+        rate: { in: 1, out: 2 },
+        line: "claude-opus-9-9",
+      },
+    });
+    expect(resolveModelIn(reg, "claude-opus-9-9-20260101")?.line).toBe(
+      "claude-opus-9-9",
+    );
+  });
+});
+
 describe("parseModelRegistry", () => {
   it("rejects an unknown effort level", () => {
     expect(() =>
@@ -134,6 +176,28 @@ describe("models.yml", () => {
 
     it("has at least one bare entry to check", () => {
       expect(pairs.size).toBeGreaterThan(0);
+    });
+
+    it("gives every entry in a shared line a distinct snapshot", () => {
+      const byLine = new Map<string, { id: string; snapshot?: string }[]>();
+      for (const [id, entry] of Object.entries(registry)) {
+        if (!entry.line) continue;
+        const list = byLine.get(entry.line) ?? [];
+        list.push({ id, ...(entry.snapshot ? { snapshot: entry.snapshot } : {}) });
+        byLine.set(entry.line, list);
+      }
+      for (const [line, members] of byLine) {
+        if (members.length < 2) continue;
+        const snapshots = members.map((m) => m.snapshot);
+        expect(
+          snapshots.every((v) => v !== undefined),
+          `line ${line}: 同じ line に複数あるなら全員 snapshot が要る`,
+        ).toBe(true);
+        expect(
+          new Set(snapshots).size,
+          `line ${line}: snapshot が重複している`,
+        ).toBe(members.length);
+      }
     });
 
     for (const [key, { provider, model }] of pairs) {
