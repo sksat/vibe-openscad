@@ -48,20 +48,27 @@ export interface AnthropicProviderDeps {
   client?: Anthropic;
 }
 
-// SCAD 出力は数百トークン程度。大きな値は古い Opus 系で
-// "Streaming is required for operations that may take longer than
-// 10 minutes" の SDK ガードに引っかかるため低めに。
+// SCAD 出力は数百トークン程度なので、明示しないモデルはこの値で足りる。
+// thinking が既定 on のモデル(Fable 5 / Opus 5 / Sonnet 5 等)は思考トークンも
+// この上限を消費するので、bench-config 側の modelOptions で個別に引き上げる。
 const DEFAULT_MAX_TOKENS = 4096;
 
 export function createAnthropicProvider(
   deps: AnthropicProviderDeps = {},
 ): Provider {
+  // 本番経路はストリーミング。非ストリーミングの messages.create は
+  // max_tokens > 16000 を SDK が "Streaming is required for operations that
+  // may take longer than 10 minutes" で送信前に弾くため、thinking が既定 on の
+  // モデルに十分な上限を与えられない(16k では思考の途中で切れて SCAD が
+  // 出ない)。OpenAI provider が同じ理由でストリーミングを使っているのと揃える。
+  // 結果と所要時間は非ストリーミングと同じで、テストは deps.create を注入して
+  // この経路を迂回する。
   const create: CreateMessage =
     deps.create ??
-    (((params) =>
-      (deps.client ?? new Anthropic()).messages.create(
-        params,
-      )) as CreateMessage);
+    (async (params) => {
+      const client = deps.client ?? new Anthropic();
+      return client.messages.stream(params).finalMessage();
+    });
 
   return {
     name: "anthropic",

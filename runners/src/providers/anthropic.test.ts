@@ -27,6 +27,30 @@ function fakeMessage(
 }
 
 describe("createAnthropicProvider", () => {
+  it("uses the streaming API on the default path", async () => {
+    // 非ストリーミングの messages.create は max_tokens > 16000 を
+    // "Streaming is required for operations that may take longer than
+    // 10 minutes" で SDK が弾く。thinking が既定 on のモデル(Sonnet 5 /
+    // Opus 5 等)は 16k を思考で使い切って SCAD 到達前に切れるため、
+    // 本番経路はストリーミングを使う。
+    const finalMessage = vi.fn().mockResolvedValue(fakeMessage());
+    const stream = vi.fn().mockReturnValue({ finalMessage });
+    const create = vi.fn();
+    const client = { messages: { stream, create } } as unknown as Anthropic;
+    const provider = createAnthropicProvider({ client });
+
+    const res = await provider.complete({
+      prompt: "p",
+      model: "claude-sonnet-5",
+      maxTokens: 32000,
+    });
+
+    expect(stream).toHaveBeenCalledTimes(1);
+    expect(create).not.toHaveBeenCalled();
+    expect(stream.mock.calls[0]?.[0]).toMatchObject({ max_tokens: 32000 });
+    expect(res.text).toBe("hello");
+  });
+
   it("name is 'anthropic'", () => {
     const provider = createAnthropicProvider({ create: vi.fn() });
     expect(provider.name).toBe("anthropic");
