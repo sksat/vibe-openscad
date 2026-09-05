@@ -1,0 +1,84 @@
+```openscad
+$fn = 192;
+
+outer_diameter = 80;
+inner_diameter = 70;
+mug_height = 90;
+bottom_thickness = 6;
+
+handle_inner_width = 25;
+handle_inner_height = 30;
+handle_depth = 10;
+handle_back_thickness = 5;
+handle_tip_thickness = 5;
+handle_overlap = 3;
+
+outer_radius = outer_diameter / 2;
+handle_attach_x = outer_radius - handle_overlap;
+handle_center_z = mug_height / 2;
+handle_outer_radius =
+    handle_back_thickness
+    + handle_inner_width
+    + handle_tip_thickness;
+
+epsilon = 0.05;
+
+// 左辺が直線、右辺が半楕円の閉じた2D形状。
+// width == height / 2 の場合、右辺は正確な半円。
+module half_ellipse_2d(width, height) {
+    intersection() {
+        scale([width, height / 2])
+            circle(r = 1);
+
+        translate([0, -height / 2])
+            square([width + epsilon, height]);
+    }
+}
+
+module mug_body() {
+    difference() {
+        cylinder(d = outer_diameter, h = mug_height);
+
+        translate([0, 0, bottom_thickness])
+            cylinder(
+                d = inner_diameter,
+                h = mug_height - bottom_thickness + epsilon
+            );
+    }
+}
+
+module handle_profile_2d() {
+    difference() {
+        // 外周：本体側が直線、外側が半円のD字。
+        half_ellipse_2d(
+            handle_outer_radius,
+            2 * handle_outer_radius
+        );
+
+        // 開口部：幅25mm、高さ30mm。
+        translate([handle_back_thickness, 0])
+            half_ellipse_2d(
+                handle_inner_width,
+                handle_inner_height
+            );
+    }
+}
+
+module mug_handle() {
+    // 2Dの横方向を+X、縦方向をZ、押出方向をYに配置。
+    // 本体外壁へ3mm食い込ませ、体積を共有して接続する。
+    translate([handle_attach_x, 0, handle_center_z])
+        rotate([90, 0, 0])
+            linear_extrude(
+                height = handle_depth,
+                center = true,
+                convexity = 10
+            )
+                handle_profile_2d();
+}
+
+union() {
+    mug_body();
+    mug_handle();
+}
+```

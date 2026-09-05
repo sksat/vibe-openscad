@@ -1,0 +1,38 @@
+{
+  "runId": "bare-max_gpt-6-astra-3402f3a08122-2026-09-05T10-15-08-281Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "bare-max/gpt-6-astra",
+  "signature": "3402f3a081229b341749df7da68b398eea3952c4cc275422c770c832e2f6c345",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-6-astra",
+      "modelOptions": {
+        "reasoning": {
+          "effort": "max"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-6-astra",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 124090
+  },
+  "tokens": {
+    "input": 273,
+    "output": 6273
+  },
+  "cost_usd": 0.31638,
+  "createdAt": "2026-09-05T10:15:08.281Z",
+  "gitCommit": "d69c2b8ad7096565c04e35c594251b6b21e60c3b"
+}

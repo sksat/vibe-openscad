@@ -1,0 +1,63 @@
+```openscad
+// 単位: mm
+// 内側コーナー: Y=0, Z=0。幅方向 X は原点に対して左右対称。
+$fn = 96;
+
+width = 50;
+depth = 40;
+height = 40;
+thickness = 3;
+
+edge_offset = 10;
+hole_d = 4.5;
+countersink_d = 8;
+countersink_depth = 2;
+
+eps = 0.01;
+hole_x = [-width / 2 + edge_offset, width / 2 - edge_offset];
+
+// ローカル Z=0 が外側面、+Z が板の内部方向。
+module countersunk_hole() {
+    union() {
+        translate([0, 0, -eps])
+            cylinder(h = thickness + 2 * eps, d = hole_d);
+
+        // 外側面で正確に Φ8、深さ2mmで Φ4.5 となる円錐台。
+        translate([0, 0, -eps])
+            cylinder(
+                h = countersink_depth + eps,
+                d1 = countersink_d
+                     + (countersink_d - hole_d)
+                     * eps / countersink_depth,
+                d2 = hole_d
+            );
+    }
+}
+
+difference() {
+    union() {
+        // 水平フランジ: 内側面は Y=0～40、Z=0。
+        translate([-width / 2, 0, -thickness])
+            cube([width, depth, thickness]);
+
+        // 垂直フランジ: 内側面は Y=0、Z=0～40。
+        translate([-width / 2, -thickness, 0])
+            cube([width, thickness, height]);
+
+        // 外側コーナーを埋め、両フランジを一体化。
+        translate([-width / 2, -thickness, -thickness])
+            cube([width, thickness, thickness]);
+    }
+
+    for (x = hole_x) {
+        // 水平面: 奥行き中央。皿座面は外側の -Z 向き。
+        translate([x, depth / 2, -thickness])
+            countersunk_hole();
+
+        // 垂直面: 高さ中央。皿座面は外側の -Y 向き。
+        translate([x, -thickness, height / 2])
+            rotate([-90, 0, 0])
+                countersunk_hole();
+    }
+}
+```

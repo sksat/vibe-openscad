@@ -1,0 +1,153 @@
+// 単位: mm
+$fn = 96;
+
+// ---------- 基本寸法 ----------
+leaf_length    = 30;
+leaf_width     = 25;
+leaf_thickness = 2;
+
+pin_diameter   = 4;
+pin_overhang   = 1;
+pin_length     = leaf_length + 2 * pin_overhang;
+
+knuckle_count    = 5;
+knuckle_pitch    = leaf_length / knuckle_count; // 6 mm
+knuckle_diameter = 8;
+knuckle_radius   = knuckle_diameter / 2;
+
+radial_clearance = 0.3;
+bore_diameter   = pin_diameter + 2 * radial_clearance; // 4.6 mm
+
+// 6 mm区画の境界に可動用隙間を設ける。
+// 筒部全体の外端はY=0とY=30を維持する。
+axial_gap = 0.10;
+
+// 平板部は25×30×2。筒部との接続部を各担当区画に追加する。
+leaf_inner_x = knuckle_radius + 0.15;
+leaf_bottom_z = -knuckle_radius;
+leaf_top_z    = leaf_bottom_z + leaf_thickness;
+
+// ---------- M3皿穴 ----------
+hole_diameter         = 3.2;
+countersink_diameter  = 6;
+countersink_depth     = 1;
+hole_pitch            = 8;
+hole_outer_edge_margin = 5;
+hole_first_y          = (leaf_length - 2 * hole_pitch) / 2;
+
+// 180°で左右の板が同一平面。0°へ変更すると右板が閉じる。
+opening_angle = 180;
+
+eps = 0.01;
+
+function knuckle_start(i) =
+    i * knuckle_pitch + (i == 0 ? 0 : axial_gap / 2);
+
+function knuckle_end(i) =
+    (i + 1) * knuckle_pitch
+    - (i == knuckle_count - 1 ? 0 : axial_gap / 2);
+
+function owns_knuckle(side, i) =
+    side < 0 ? (i % 2 == 0) : (i % 2 == 1);
+
+// +Y方向の円柱。中心線はX=Z=0。
+module cylinder_y(diameter, length, start_y = 0) {
+    translate([0, start_y, 0])
+        rotate([-90, 0, 0])
+            cylinder(d = diameter, h = length);
+}
+
+module screw_hole(x, y) {
+    // 直径3.2 mmの貫通穴
+    translate([x, y, leaf_bottom_z - eps])
+        cylinder(
+            d = hole_diameter,
+            h = leaf_thickness + 2 * eps
+        );
+
+    // +Z側表面で直径6 mm、深さ1 mmのテーパ
+    // 表面より上へ延長しても、表面位置の直径は正確に6 mm。
+    translate([x, y, leaf_top_z - countersink_depth])
+        cylinder(
+            h = countersink_depth + eps,
+            d1 = hole_diameter,
+            d2 = countersink_diameter
+                 + (countersink_diameter - hole_diameter)
+                   * eps / countersink_depth
+        );
+}
+
+// side=-1: 左板、side=+1: 右板
+module hinge_leaf(side) {
+    difference() {
+        union() {
+            // 25×30×2 mmの平板
+            translate([
+                side < 0
+                    ? -leaf_inner_x - leaf_width
+                    : leaf_inner_x,
+                0,
+                leaf_bottom_z
+            ])
+                cube([leaf_width, leaf_length, leaf_thickness]);
+
+            // 左: 0,2,4区画 ／ 右: 1,3区画
+            for (i = [0 : knuckle_count - 1]) {
+                if (owns_knuckle(side, i)) {
+                    let(
+                        y0 = knuckle_start(i),
+                        h  = knuckle_end(i) - knuckle_start(i)
+                    ) {
+                        cylinder_y(knuckle_diameter, h, y0);
+
+                        // 筒部と平板を確実に一体化する接続部
+                        translate([
+                            side < 0 ? -leaf_inner_x - eps : 0,
+                            y0,
+                            leaf_bottom_z
+                        ])
+                            cube([
+                                leaf_inner_x + eps,
+                                h,
+                                leaf_thickness
+                            ]);
+                    }
+                }
+            }
+        }
+
+        // 接続部も含めて軸穴を貫通させる
+        cylinder_y(
+            bore_diameter,
+            leaf_length + 2 * eps,
+            -eps
+        );
+
+        for (j = [0 : 2])
+            screw_hole(
+                side * (
+                    leaf_inner_x
+                    + leaf_width
+                    - hole_outer_edge_margin
+                ),
+                hole_first_y + j * hole_pitch
+            );
+    }
+}
+
+module hinge_pin() {
+    // Y=-1～31：筒部の両端から各1 mm突出
+    cylinder_y(pin_diameter, pin_length, -pin_overhang);
+}
+
+// ---------- 完成アセンブリ：独立した3パーツ ----------
+// 開いた状態では両板の表面がZ=-2、裏面がZ=-4。
+color([0.66, 0.68, 0.71])
+    hinge_leaf(-1);
+
+color([0.72, 0.74, 0.77])
+    rotate([0, opening_angle - 180, 0])
+        hinge_leaf(1);
+
+color([0.43, 0.45, 0.48])
+    hinge_pin();

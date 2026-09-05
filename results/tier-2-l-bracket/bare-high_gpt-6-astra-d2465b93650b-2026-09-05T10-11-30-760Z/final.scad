@@ -1,0 +1,73 @@
+// 寸法単位: mm
+// 内側コーナー: Y=0, Z=0
+// 幅方向の中心: X=0
+// 水平フランジは +Y、垂直フランジは +Z に伸びる。
+
+$fn = 96;
+
+width     = 50;
+depth     = 40;
+height    = 40;
+thickness = 3;
+
+hole_diameter        = 4.5;
+countersink_diameter = 8;
+countersink_depth    = 2;
+edge_offset          = 10;
+
+eps = 0.01;
+
+// 外側表面をローカル Z=0 とし、+Z 方向に切削する。
+module countersunk_hole() {
+    union() {
+        translate([0, 0, -eps])
+            cylinder(
+                h = thickness + 2 * eps,
+                d = hole_diameter
+            );
+
+        // 表面での直径を正確に保ちながら、外側へ微小延長する。
+        translate([0, 0, -eps])
+            cylinder(
+                h  = countersink_depth + eps,
+                d1 = countersink_diameter
+                     + (countersink_diameter - hole_diameter)
+                       * eps / countersink_depth,
+                d2 = hole_diameter
+            );
+    }
+}
+
+module bracket_body() {
+    union() {
+        // 水平フランジ: 50 × 40 × 3
+        translate([-width / 2, 0, -thickness])
+            cube([width, depth, thickness]);
+
+        // 垂直フランジ: 50 × 3 × 40
+        translate([-width / 2, -thickness, 0])
+            cube([width, thickness, height]);
+
+        // コーナーの板厚部分を埋め、両フランジを一体化する。
+        translate([-width / 2, -thickness, -thickness])
+            cube([width, thickness, thickness]);
+    }
+}
+
+difference() {
+    bracket_body();
+
+    for (x = [
+        -width / 2 + edge_offset,
+         width / 2 - edge_offset
+    ]) {
+        // 水平面: 奥行き中心線上。皿座面は -Z 側。
+        translate([x, depth / 2, -thickness])
+            countersunk_hole();
+
+        // 垂直面: 高さ中心線上。皿座面は -Y 側。
+        translate([x, -thickness, height / 2])
+            rotate([-90, 0, 0])
+                countersunk_hole();
+    }
+}

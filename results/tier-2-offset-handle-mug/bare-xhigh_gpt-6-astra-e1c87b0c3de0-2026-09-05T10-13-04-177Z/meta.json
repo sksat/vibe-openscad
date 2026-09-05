@@ -1,0 +1,38 @@
+{
+  "runId": "bare-xhigh_gpt-6-astra-e1c87b0c3de0-2026-09-05T10-13-04-177Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "bare-xhigh/gpt-6-astra",
+  "signature": "e1c87b0c3de0b645a62549ab1c3687a0ba725e50ce9b900b7cbd0dbb3540aa82",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-6-astra",
+      "modelOptions": {
+        "reasoning": {
+          "effort": "xhigh"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-6-astra",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 82514
+  },
+  "tokens": {
+    "input": 273,
+    "output": 3985
+  },
+  "cost_usd": 0.20198,
+  "createdAt": "2026-09-05T10:13:04.177Z",
+  "gitCommit": "d69c2b8ad7096565c04e35c594251b6b21e60c3b"
+}

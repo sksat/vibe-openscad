@@ -1,0 +1,54 @@
+```openscad
+$fn = 160;
+
+// 寸法（mm）
+cup_outer_diameter = 80;
+cup_height = 100;
+wall_thickness = 4;
+bottom_thickness = 6;
+
+// 取手：外半径12mm、指穴直径20mm
+handle_outer_radius = 12;
+handle_inner_radius = 10;
+handle_depth = 6;
+handle_overlap = 1.5;
+
+epsilon = 0.01;
+cup_outer_radius = cup_outer_diameter / 2;
+cup_inner_radius = cup_outer_radius - wall_thickness;
+
+union() {
+    // カップ本体：底を6mm残し、上面までくり抜く
+    difference() {
+        cylinder(r = cup_outer_radius, h = cup_height);
+
+        translate([0, 0, bottom_thickness])
+            cylinder(
+                r = cup_inner_radius,
+                h = cup_height - bottom_thickness + epsilon
+            );
+    }
+
+    // XZ平面上のリング状取手
+    // 本体と重ねて接合し、指穴はカップ外周の外側に配置
+    translate([
+        cup_outer_radius + handle_outer_radius - handle_overlap,
+        0,
+        cup_height / 2
+    ])
+        rotate([90, 0, 0])
+            difference() {
+                cylinder(
+                    r = handle_outer_radius,
+                    h = handle_depth,
+                    center = true
+                );
+
+                cylinder(
+                    r = handle_inner_radius,
+                    h = handle_depth + 2 * epsilon,
+                    center = true
+                );
+            }
+}
+```
