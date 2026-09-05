@@ -33,8 +33,9 @@ interface Props {
     | "qwen"
     | "huggingface";
   size?: number;
+  colored?: boolean;
 }
-const { vendor, size = 12 } = Astro.props;
+const { vendor, size = 12, colored = false } = Astro.props;
 
 const SI_LOOKUP = {
   claude: siClaude,
@@ -51,6 +52,7 @@ const icon =
     ? {
         path: SI_LOOKUP[vendor as SiKey].path,
         label: SI_LOOKUP[vendor as SiKey].title,
+        color: `#${SI_LOOKUP[vendor as SiKey].hex}`,
       }
     : null;
 ---
@@ -58,6 +60,8 @@ const icon =
 {icon && (
   <svg
     class="vendor-icon"
+    data-vendor={vendor}
+    style={colored ? { color: vendor === "anthropic" ? "#ffffff" : icon.color } : undefined}
     viewBox="0 0 24 24"
     width={size}
     height={size}
@@ -77,6 +81,8 @@ const icon =
   -->
   <svg
     class="vendor-icon"
+    data-vendor={vendor}
+    style={colored ? { color: "#ffffff" } : undefined}
     viewBox="0 0 24 24"
     width={size}
     height={size}
