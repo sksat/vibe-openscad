@@ -1,0 +1,67 @@
+{
+  "runId": "bare_qwen3-8b-ad0be1f6a0fe-2026-09-05T15-39-17-459Z",
+  "taskId": "tier-3-butt-hinge",
+  "matrixId": "bare/qwen3-8b",
+  "signature": "ad0be1f6a0fe8b868f8c0327d7515856f97bd673927dc0cb2a9523984014a45f",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dd7199030a8827a181914869189fc45a2e5637023f0c8c59532d442557036e7c",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "qwen3-8b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "qwen3-8b",
+  "resolvedModel": "qwen3-8b",
+  "harness": {
+    "kind": "bare",
+    "modelMetadata": {
+      "raw": {
+        "id": "qwen3-8b",
+        "object": "model",
+        "type": "llm",
+        "publisher": "lmstudio-community",
+        "arch": "qwen3",
+        "compatibility_type": "gguf",
+        "quantization": "Q4_K_M",
+        "state": "not-loaded",
+        "max_context_length": 32768,
+        "capabilities": [
+          "tool_use"
+        ]
+      },
+      "publisher": "lmstudio-community",
+      "type": "llm",
+      "arch": "qwen3",
+      "quantization": "Q4_K_M",
+      "maxContextLength": 32768,
+      "capabilities": [
+        "tool_use"
+      ],
+      "host": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "vramGb": 24,
+        "gpuPlatform": "Vulkan",
+        "cpu": "12th Gen Intel(R) Core(TM) i9-12900K",
+        "memGb": 32
+      }
+    }
+  },
+  "status": "no_code",
+  "timing": {
+    "totalMs": 76462,
+    "firstTokenMs": 252,
+    "generationMs": 76009
+  },
+  "tokens": {
+    "input": 623,
+    "output": 7569
+  },
+  "createdAt": "2026-09-05T15:39:17.459Z",
+  "gitCommit": "5e076a86d89b214c9603ffeb4608ed8983a4f523",
+  "error": "no SCAD code block in response (stopReason=length)"
+}

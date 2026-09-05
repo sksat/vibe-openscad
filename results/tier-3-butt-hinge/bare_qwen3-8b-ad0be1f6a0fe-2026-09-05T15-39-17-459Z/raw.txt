@@ -1,0 +1,18 @@
+```openscad
+$fn = 24;
+
+// Dimensions
+pin_diameter = 4;
+pin_length = 32;
+knuckle_outer_dia = 8;
+knuckle_inner_dia = 4.6;
+leaf_len_y = 30;
+leaf_width_x = 25;
+leaf_thickness_z = 2;
+counterbore_taper_dia = 6;
+counterbore_depth = 1;
+counterbore_hole_dia = 3.2;
+knuckle_pitch = 6;
+
+// Knuckle positions
+left_knuckle_y = [-18, -6, 6]; // Left leaf's knuckles at Y=-18, -6
