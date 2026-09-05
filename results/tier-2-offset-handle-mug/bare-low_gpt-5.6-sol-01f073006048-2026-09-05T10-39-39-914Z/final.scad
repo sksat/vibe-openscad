@@ -1,0 +1,80 @@
+$fn = 128;
+
+// Mug dimensions
+outer_diameter = 80;
+inner_diameter = 70;
+mug_height     = 90;
+bottom_thickness = 6;
+
+// Handle dimensions
+handle_depth = 12;
+handle_center_z = mug_height / 2;
+
+// Inner D-shaped opening: 25 mm wide × 30 mm high
+inner_radius = 15;
+inner_straight_length = 10;
+inner_base_x = 43;
+inner_center_x = inner_base_x + inner_straight_length;
+
+// Handle wall thickness
+handle_wall = 6;
+outer_radius = inner_radius + handle_wall;
+outer_base_x = 37;
+outer_center_x = inner_center_x;
+
+arc_steps = 64;
+
+function d_shape_points(base_x, center_x, center_z, radius) =
+    concat(
+        [[base_x, center_z + radius]],
+        [
+            for (i = [0 : arc_steps])
+                let(a = 90 - 180 * i / arc_steps)
+                [
+                    center_x + radius * cos(a),
+                    center_z + radius * sin(a)
+                ]
+        ],
+        [[base_x, center_z - radius]]
+    );
+
+module mug_body() {
+    difference() {
+        cylinder(d = outer_diameter, h = mug_height);
+
+        translate([0, 0, bottom_thickness])
+            cylinder(
+                d = inner_diameter,
+                h = mug_height - bottom_thickness + 1
+            );
+    }
+}
+
+module handle() {
+    rotate([90, 0, 0])
+        linear_extrude(height = handle_depth, center = true, convexity = 10)
+            difference() {
+                polygon(
+                    points = d_shape_points(
+                        outer_base_x,
+                        outer_center_x,
+                        handle_center_z,
+                        outer_radius
+                    )
+                );
+
+                polygon(
+                    points = d_shape_points(
+                        inner_base_x,
+                        inner_center_x,
+                        handle_center_z,
+                        inner_radius
+                    )
+                );
+            }
+}
+
+union() {
+    mug_body();
+    handle();
+}

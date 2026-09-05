@@ -1,0 +1,137 @@
+$fn = 96;
+
+leaf_length       = 30;
+leaf_width        = 25;
+leaf_thickness    = 2;
+
+knuckle_length    = 6;
+knuckle_outer_d   = 8;
+knuckle_inner_d   = 4.6;
+knuckle_radius    = knuckle_outer_d / 2;
+
+pin_diameter      = 4;
+pin_length        = 32;
+
+leaf_clearance    = 0.2;
+web_overlap       = 0.1;
+
+through_hole_d    = 3.2;
+countersink_d     = 6;
+countersink_depth = 1;
+
+hole_y_positions  = [7, 15, 23];
+hole_x_offset     = knuckle_radius + leaf_clearance + 18;
+
+eps = 0.02;
+
+module y_cylinder(d, h, y0 = 0) {
+    translate([0, y0, 0])
+        rotate([-90, 0, 0])
+            cylinder(d = d, h = h);
+}
+
+module countersunk_hole(x, y) {
+    translate([x, y, -leaf_thickness / 2 - eps])
+        cylinder(
+            d = through_hole_d,
+            h = leaf_thickness + 2 * eps
+        );
+
+    translate([x, y, leaf_thickness / 2 - countersink_depth])
+        cylinder(
+            h  = countersink_depth + eps,
+            d1 = through_hole_d,
+            d2 = countersink_d
+        );
+}
+
+module leaf(side = 1, segments = []) {
+    inner_edge = knuckle_radius + leaf_clearance;
+    plate_x = side < 0
+        ? -(inner_edge + leaf_width)
+        : inner_edge;
+
+    web_inner = knuckle_inner_d / 2 - web_overlap;
+    web_outer = inner_edge + web_overlap;
+
+    difference() {
+        union() {
+            translate([plate_x, 0, -leaf_thickness / 2])
+                cube([leaf_width, leaf_length, leaf_thickness]);
+
+            for (segment = segments) {
+                y0 = segment * knuckle_length;
+
+                y_cylinder(
+                    d  = knuckle_outer_d,
+                    h  = knuckle_length,
+                    y0 = y0
+                );
+
+                if (side < 0) {
+                    translate([
+                        -web_outer,
+                        y0,
+                        -leaf_thickness / 2
+                    ])
+                        cube([
+                            web_outer - web_inner,
+                            knuckle_length,
+                            leaf_thickness
+                        ]);
+                } else {
+                    translate([
+                        web_inner,
+                        y0,
+                        -leaf_thickness / 2
+                    ])
+                        cube([
+                            web_outer - web_inner,
+                            knuckle_length,
+                            leaf_thickness
+                        ]);
+                }
+            }
+        }
+
+        for (segment = segments) {
+            y_cylinder(
+                d  = knuckle_inner_d,
+                h  = knuckle_length + 2 * eps,
+                y0 = segment * knuckle_length - eps
+            );
+        }
+
+        for (hole_y = hole_y_positions) {
+            countersunk_hole(
+                side * hole_x_offset,
+                hole_y
+            );
+        }
+    }
+}
+
+module left_leaf() {
+    leaf(side = -1, segments = [0, 2, 4]);
+}
+
+module right_leaf() {
+    leaf(side = 1, segments = [1, 3]);
+}
+
+module hinge_pin() {
+    y_cylinder(
+        d  = pin_diameter,
+        h  = pin_length,
+        y0 = -1
+    );
+}
+
+color([0.68, 0.72, 0.76])
+    left_leaf();
+
+color([0.78, 0.81, 0.84])
+    right_leaf();
+
+color([0.35, 0.38, 0.42])
+    hinge_pin();

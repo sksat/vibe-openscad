@@ -1,0 +1,17 @@
+```openscad
+$fn = 64;
+
+across_flats = 13;
+head_height  = 5.3;
+shank_diameter = 8;
+shank_length = 30;
+
+hex_circumdiameter = across_flats / cos(30);
+
+union() {
+    cylinder(h = head_height, d = hex_circumdiameter, $fn = 6);
+
+    translate([0, 0, -shank_length])
+        cylinder(h = shank_length, d = shank_diameter);
+}
+```

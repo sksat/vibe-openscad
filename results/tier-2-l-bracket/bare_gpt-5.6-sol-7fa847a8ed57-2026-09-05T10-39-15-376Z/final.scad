@@ -1,0 +1,77 @@
+$fn = 64;
+
+width      = 50;
+flange_len = 40;
+thickness  = 3;
+
+hole_d     = 4.5;
+csink_d    = 8;
+csink_depth = 2;
+
+hole_x = width / 2 - 10;
+horizontal_y = flange_len / 2;
+vertical_z   = flange_len / 2;
+
+eps = 0.01;
+
+module bracket() {
+    union() {
+        // Horizontal flange
+        translate([-width / 2, 0, -thickness])
+            cube([width, flange_len, thickness]);
+
+        // Vertical flange
+        translate([-width / 2, -thickness, 0])
+            cube([width, thickness, flange_len]);
+
+        // Outer corner connection
+        translate([-width / 2, -thickness, -thickness])
+            cube([width, thickness, thickness]);
+    }
+}
+
+module horizontal_countersunk_hole(x, y) {
+    // Through-hole
+    translate([x, y, -thickness - eps])
+        cylinder(
+            h = thickness + 2 * eps,
+            d = hole_d
+        );
+
+    // Countersink from the outer/bottom surface
+    translate([x, y, -thickness - eps])
+        cylinder(
+            h = csink_depth + eps,
+            d1 = csink_d,
+            d2 = hole_d
+        );
+}
+
+module vertical_countersunk_hole(x, z) {
+    // Through-hole
+    translate([x, -thickness - eps, z])
+        rotate([-90, 0, 0])
+            cylinder(
+                h = thickness + 2 * eps,
+                d = hole_d
+            );
+
+    // Countersink from the outer/back surface
+    translate([x, -thickness - eps, z])
+        rotate([-90, 0, 0])
+            cylinder(
+                h = csink_depth + eps,
+                d1 = csink_d,
+                d2 = hole_d
+            );
+}
+
+difference() {
+    bracket();
+
+    for (x = [-hole_x, hole_x])
+        horizontal_countersunk_hole(x, horizontal_y);
+
+    for (x = [-hole_x, hole_x])
+        vertical_countersunk_hole(x, vertical_z);
+}

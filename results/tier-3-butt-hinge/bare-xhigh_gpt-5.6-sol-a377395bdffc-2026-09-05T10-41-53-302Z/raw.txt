@@ -1,0 +1,165 @@
+```openscad
+$fn = 96;
+
+leaf_length   = 30;
+leaf_width    = 25;
+leaf_thickness = 2;
+
+knuckle_count  = 5;
+knuckle_length = leaf_length / knuckle_count;
+knuckle_od     = 8;
+knuckle_id     = 4.6;
+
+pin_diameter = 4;
+pin_length   = 32;
+
+screw_hole_d = 3.2;
+countersink_d = 6;
+countersink_depth = 1;
+screw_x = 18;
+screw_y_positions = [7, 15, 23];
+
+eps = 0.02;
+
+
+// Y軸方向の円柱
+module y_cylinder(y_start, length, diameter) {
+    translate([0, y_start, 0])
+        rotate([-90, 0, 0])
+            cylinder(h = length, d = diameter);
+}
+
+
+// M3皿穴
+module countersunk_hole(x_pos, y_pos) {
+    translate([
+        x_pos,
+        y_pos,
+        -leaf_thickness / 2 - eps
+    ])
+        cylinder(
+            h = leaf_thickness + 2 * eps,
+            d = screw_hole_d
+        );
+
+    translate([x_pos, y_pos, 0])
+        cylinder(
+            h = countersink_depth + eps,
+            d1 = screw_hole_d,
+            d2 = countersink_d
+               + (countersink_d - screw_hole_d)
+               * eps / countersink_depth
+        );
+}
+
+
+// 左板
+module left_leaf() {
+    difference() {
+        union() {
+            translate([
+                -leaf_width,
+                0,
+                -leaf_thickness / 2
+            ])
+                cube([
+                    leaf_width,
+                    leaf_length,
+                    leaf_thickness
+                ]);
+
+            for (i = [0, 2, 4])
+                y_cylinder(
+                    i * knuckle_length,
+                    knuckle_length,
+                    knuckle_od
+                );
+        }
+
+        // ピン軸用の穴
+        y_cylinder(
+            -eps,
+            leaf_length + 2 * eps,
+            knuckle_id
+        );
+
+        // 右板側knuckleとの干渉を除去
+        for (i = [1, 3])
+            y_cylinder(
+                i * knuckle_length,
+                knuckle_length,
+                knuckle_od
+            );
+
+        // 皿穴
+        for (y_pos = screw_y_positions)
+            countersunk_hole(-screw_x, y_pos);
+    }
+}
+
+
+// 右板
+module right_leaf() {
+    difference() {
+        union() {
+            translate([
+                0,
+                0,
+                -leaf_thickness / 2
+            ])
+                cube([
+                    leaf_width,
+                    leaf_length,
+                    leaf_thickness
+                ]);
+
+            for (i = [1, 3])
+                y_cylinder(
+                    i * knuckle_length,
+                    knuckle_length,
+                    knuckle_od
+                );
+        }
+
+        // ピン軸用の穴
+        y_cylinder(
+            -eps,
+            leaf_length + 2 * eps,
+            knuckle_id
+        );
+
+        // 左板側knuckleとの干渉を除去
+        for (i = [0, 2, 4])
+            y_cylinder(
+                i * knuckle_length,
+                knuckle_length,
+                knuckle_od
+            );
+
+        // 皿穴
+        for (y_pos = screw_y_positions)
+            countersunk_hole(screw_x, y_pos);
+    }
+}
+
+
+// ピン軸
+module hinge_pin() {
+    y_cylinder(
+        -1,
+        pin_length,
+        pin_diameter
+    );
+}
+
+
+// 180°開いた完成状態
+color([0.68, 0.72, 0.78])
+    left_leaf();
+
+color([0.78, 0.81, 0.86])
+    right_leaf();
+
+color([0.32, 0.34, 0.38])
+    hinge_pin();
+```

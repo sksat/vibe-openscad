@@ -277,6 +277,15 @@ gpt-5.6-terra:
   label: gpt 5.6 terra
   sort: { family: 0, version: 5006, size: 1 }
 
+# GPT-5.6 Sol(3 ティアの最上位)。sort.size=0 で terra / luna より前に並ぶ。
+gpt-5.6-sol:
+  provider: openai
+  rate: { in: 5, out: 30 }
+  vision: true
+  effort: medium
+  label: gpt 5.6 sol
+  sort: { family: 0, version: 5006, size: 0 }
+
 # gpt-5 系はすべて vision 対応・reasoning effort の既定 medium。個別世代の
 # エントリは rate だけ上書きする。
 gpt-5:
