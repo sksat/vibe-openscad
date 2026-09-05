@@ -1,0 +1,71 @@
+{
+  "runId": "bare-ctx32k_qwen3-8b-8fa46288b2ce-2026-09-05T17-53-37-412Z",
+  "taskId": "tier-2-l-bracket",
+  "matrixId": "bare-ctx32k/qwen3-8b",
+  "signature": "8fa46288b2ce8feafb4603152ff262cdfbb11613b2b95fa0f33c5092b29776b4",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "b20dcf3dd07e532496944d76485b954e0ab614f3cda1919fee5dc406f59b3ea5",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "qwen3-8b",
+      "modelOptions": {
+        "context_length": 32768
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "qwen3-8b",
+  "resolvedModel": "qwen3-8b",
+  "harness": {
+    "kind": "bare",
+    "modelMetadata": {
+      "raw": {
+        "id": "qwen3-8b",
+        "object": "model",
+        "type": "llm",
+        "publisher": "lmstudio-community",
+        "arch": "qwen3",
+        "compatibility_type": "gguf",
+        "quantization": "Q4_K_M",
+        "state": "loaded",
+        "max_context_length": 32768,
+        "loaded_context_length": 32768,
+        "capabilities": [
+          "tool_use"
+        ]
+      },
+      "publisher": "lmstudio-community",
+      "type": "llm",
+      "arch": "qwen3",
+      "quantization": "Q4_K_M",
+      "maxContextLength": 32768,
+      "capabilities": [
+        "tool_use"
+      ],
+      "host": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "vramGb": 24,
+        "gpuPlatform": "Vulkan",
+        "cpu": "12th Gen Intel(R) Core(TM) i9-12900K",
+        "memGb": 32
+      }
+    }
+  },
+  "status": "render_error",
+  "timing": {
+    "totalMs": 162577,
+    "firstTokenMs": 134,
+    "generationMs": 162094
+  },
+  "tokens": {
+    "input": 302,
+    "output": 14536
+  },
+  "createdAt": "2026-09-05T17:53:37.412Z",
+  "gitCommit": "39080c1672b0a65f721f61b7a3e78821fe1824d6",
+  "error": "openscad stl render failed (exit 1): ERROR: Parser error: syntax error in file ../../../../../tmp/render-wzdgQe/input.scad, line 5\nCan't parse file '/tmp/render-wzdgQe/input.scad'!\n\n"
+}

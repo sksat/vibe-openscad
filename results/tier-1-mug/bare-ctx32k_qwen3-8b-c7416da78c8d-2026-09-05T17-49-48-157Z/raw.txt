@@ -1,0 +1,27 @@
+```openscad
+$fn = 30;
+
+// Base of the mug (thickness: 6mm)
+base = cylinder(r=40, h=6);
+
+// Main body of the mug: outer radius 40mm, inner radius 36mm, height 94mm
+main_body = translate([0, 0, 3]) 
+    difference() {
+        cylinder(r=40, h=94);
+        cylinder(r=36, h=94);
+    };
+
+// Handle: ring-shaped protrusion at the center height (z=50)
+handle = rotate_extrude()
+    translate([0, 0, 50])
+        square([12, 8]);
+
+translate([40, 0, 0]) handle;
+
+// Final mug
+union() {
+    base;
+    main_body;
+    handle;
+}
+```

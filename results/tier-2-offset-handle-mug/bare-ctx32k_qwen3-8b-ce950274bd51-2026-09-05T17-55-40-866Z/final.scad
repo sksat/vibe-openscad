@@ -1,0 +1,21 @@
+$fn = 50;
+
+// Main body
+difference() {
+    cylinder(r=40, h=84, center=true); // Outer cylinder (height: 84mm)
+    cylinder(r=35, h=84, center=true); // Inner hollow part (diameter 70mm)
+}
+
+translate([0, 0, -42 -6]) // Position base at z = -48
+cylinder(r=40, h=6, $fn=$fn, center=false); // Base thickness 6mm
+
+// Handle on +X side
+union() {
+    // Inner space of handle: 30mm height × 25mm width (fingers area)
+    translate([40, -12.5, -15]) 
+    cube([25, 30, 1], center=true); 
+
+    // Semicircular protrusion (outer side of D-shape)
+    translate([40 + 12.5, 0, 0])
+    cylinder(r=12.5, h=30, $fn=$fn, center=false);
+}
