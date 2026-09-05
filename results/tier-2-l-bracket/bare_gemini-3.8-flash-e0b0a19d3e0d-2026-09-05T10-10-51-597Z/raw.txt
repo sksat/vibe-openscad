@@ -1,0 +1,55 @@
+```openscad
+$fn = 64;
+
+// 寸法パラメータ
+width = 50;        // 幅 (X)
+length_h = 40;     // 水平面の奥行き (Y)
+length_v = 40;     // 垂直面の高さ (Z)
+thickness = 3;     // 板厚
+
+// 皿穴パラメータ (M4用)
+d_hole = 4.5;      // 貫通穴径
+d_cs = 8.0;        // 皿座面径
+h_cs = 2.0;        // 皿座面深さ
+
+// 穴の位置
+hole_x = [10, width - 10]; // 左右の縁から 10mm 内側
+pos_y = length_h / 2;      // 水平面の中心線 (Y=20)
+pos_z = length_v / 2;      // 垂直面の中心線 (Z=20)
+
+// 皿穴モジュール (原点は外側表面、+Z 方向に部材がある状態)
+module countersunk_hole(t) {
+    eps = 0.01;
+    // 貫通穴
+    translate([0, 0, -eps])
+        cylinder(d = d_hole, h = t + 2 * eps);
+    // 皿モミ形状
+    translate([0, 0, -eps])
+        cylinder(d1 = d_cs, d2 = d_hole, h = h_cs + eps);
+}
+
+difference() {
+    // L字金具本体 (内側コーナーが Y=0, Z=0)
+    union() {
+        // 水平面 (+Y方向へ伸びる、厚みは -Z方向)
+        translate([0, -thickness, -thickness])
+            cube([width, length_h + thickness, thickness]);
+        // 垂直面 (+Z方向へ伸びる、厚みは -Y方向)
+        translate([0, -thickness, -thickness])
+            cube([width, thickness, length_v + thickness]);
+    }
+
+    // 水平面の皿穴 (外側 -Z から +Z へ貫通)
+    for (x = hole_x) {
+        translate([x, pos_y, -thickness])
+            countersunk_hole(thickness);
+    }
+
+    // 垂直面の皿穴 (外側 -Y から +Y へ貫通)
+    for (x = hole_x) {
+        translate([x, -thickness, pos_z])
+            rotate([-90, 0, 0])
+                countersunk_hole(thickness);
+    }
+}
+```

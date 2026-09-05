@@ -158,6 +158,13 @@ gemini-:
   vision: true
   effort: null # Gemini は effort ではなく thinkingConfig 側の軸を持つ
 
+# 3.8 世代(2026-09-02)。導入価格で 2026-12-31 まで 0.75/3.75、
+# 2027-01-01 から 1.50/7.50 に上がる。
+gemini-3.8-flash:
+  provider: google
+  rate: { in: 0.75, out: 3.75 }
+  thinking: dynamic
+
 # 3.5 世代(GA、2026-05-19 I/O)
 gemini-3.5-flash:
   provider: google

@@ -1,0 +1,69 @@
+$fn = 100;
+
+// マグ本体パラメータ
+outer_r = 80 / 2; // 外半径 40mm
+inner_r = 70 / 2; // 内半径 35mm
+height = 90;      // 高さ 90mm
+bottom_t = 6;     // 底の厚み 6mm
+
+// 取手パラメータ
+handle_w = 25;    // 取手内側空間の幅 (X方向)
+handle_h = 30;    // 取手内側空間の高さ (Z方向)
+handle_t = 8;     // 取手の断面太さ (肉厚)
+
+module mug_body() {
+    difference() {
+        cylinder(r = outer_r, h = height);
+        translate([0, 0, bottom_t])
+            cylinder(r = inner_r, h = height - bottom_t + 1);
+    }
+}
+
+module handle() {
+    // 高さ方向の中央に配置 (Z = height / 2)
+    translate([0, 0, height / 2]) {
+        // 取手断面をY軸まわりに回転させて押し出すため、XZ平面上で作図
+        rotate([90, 0, 0]) {
+            linear_extrude(height = handle_t, center = true) {
+                difference() {
+                    // 外形: 本体内部にめり込ませて接続を確実にするため、本体中心側(X=outer_r-2)から開始
+                    hull() {
+                        // 本体接続部 (直線側)
+                        translate([outer_r - 2, -(handle_h / 2 + handle_t)])
+                            square([1, handle_h + handle_t * 2]);
+                        
+                        // 外側の半円部
+                        translate([outer_r + handle_w, -(handle_h - handle_w) / 2])
+                            circle(r = handle_w / 2 + handle_t);
+                        translate([outer_r + handle_w, (handle_h - handle_w) / 2])
+                            circle(r = handle_w / 2 + handle_t);
+                    }
+                    
+                    // 内側の空間: 高さ 30mm × 幅 25mm
+                    hull() {
+                        // 本体側エッジ
+                        translate([outer_r, -handle_h / 2])
+                            square([0.1, handle_h]);
+                        
+                        // 外側丸み
+                        translate([outer_r + handle_w - handle_w / 2, -(handle_h - handle_w) / 2])
+                            circle(r = handle_w / 2);
+                        translate([outer_r + handle_w - handle_w / 2, (handle_h - handle_w) / 2])
+                            circle(r = handle_w / 2);
+                    }
+                }
+            }
+        }
+    }
+}
+
+// 結合
+union() {
+    mug_body();
+    // 取手の内側がマグの内腔に貫通しないように本体内側を再差分
+    difference() {
+        handle();
+        translate([0, 0, bottom_t])
+            cylinder(r = inner_r, h = height - bottom_t + 1);
+    }
+}
