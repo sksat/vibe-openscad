@@ -491,6 +491,7 @@ async function executeBareRun(
     fingerprint: item.fingerprint,
     provider: provEntry.provider,
     model: provEntry.model,
+    ...(result.modelId ? { resolvedModel: result.modelId } : {}),
     harness: harnessLog,
     status: result.status,
     timing: {

@@ -79,6 +79,26 @@ API 課金が嵩むので「変更があった組み合わせだけ流す」こ�
 
 将来課題: 固定プロンプトを定期的に流して出力ハッシュの drift を検出する仕組み(全プロバイダに同じ機構で適用できる)。
 
+### API が名乗ったモデル id を残す(`resolvedModel`)
+
+alias で送ったとき、provider 側で dated snapshot に解決されることがある。その
+実体を `meta.resolvedModel` に記録する。fingerprint に乗るのは設定値の `model`
+だけで、`resolvedModel` は記録専用(乗せると provider 都合の変化で全 run が
+stale になる)。
+
+2026-09 時点で実際に何が返るかは provider ごとに違う:
+
+| provider | 応答が名乗る値 |
+|---|---|
+| Anthropic | alias のまま(`claude-opus-5` → `claude-opus-5`) |
+| OpenAI | alias のまま(`gpt-6-astra` → `gpt-6-astra`) |
+| Google | `modelVersion` を返す |
+
+つまり現状では alias から dated への解決は応答から見えない。それでも記録する
+のは、**provider が将来 dated を返すようになったとき、あるいは alias の指す先が
+差し替わったときに気付ける唯一の経路**だから。カタログの `snapshot` が手で書いた
+宣言なのに対し、こちらは実行時に観測した値になる。
+
 ### サンプルとしてカウントする status
 
 `results/` に書き出すのも plan の「up-to-date 判定」にカウントするのも、**モデルの実際の挙動を観測できた run のみ**:
