@@ -146,6 +146,19 @@ matrix:
   # Gemini 3.5 は 2026-05-19 (I/O) で flash が GA。3.5 系は thinkingBudget が
   # deprecated になっており、代わりに thinkingConfig.thinkingLevel
   # ('minimal' | 'low' | 'medium' | 'high', default medium) を使う。
+  - id: bare/gemini-3.8-flash
+    harness: { kind: bare }
+    provider: google
+    model: gemini-3.8-flash
+  # 3.8 は thinkingLevel の 'minimal' が廃止され(指定すると 400)、'low' が
+  # 下限。実タスクでは low / medium / high のうち low が thinking token 0 に
+  # なるので、think-off variant は low を使う。
+  - id: bare-think-off/gemini-3.8-flash
+    harness: { kind: bare }
+    provider: google
+    model: gemini-3.8-flash
+    modelOptions:
+      config: { thinkingConfig: { thinkingLevel: low } }
   - id: bare/gemini-3.5-flash
     harness: { kind: bare }
     provider: google
@@ -414,6 +427,10 @@ matrix:
     harness: { kind: pdf-page }
     provider: openai
     model: gpt-5.4-2026-03-05
+  - id: pdf-page/gemini-3.8-flash
+    harness: { kind: pdf-page }
+    provider: google
+    model: gemini-3.8-flash
   - id: pdf-page/gemini-3.5-flash
     harness: { kind: pdf-page }
     provider: google
