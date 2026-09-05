@@ -1,0 +1,95 @@
+```openscad
+// Sharp GP2Y0D413K0F Distance Sensor Model
+$fn = 32;
+
+// Main Body Dimensions
+body_w = 29.45;
+body_d = 7.1;
+body_h = 13.5;
+
+// Lens Case Protrusion Dimensions
+lens_case_w = 26.0;
+lens_case_d = 2.0;   // Front protrusion (7.1mm body depth + 2.0mm lens protrusion)
+lens_case_h = 8.4;
+
+// Lens Positions (referenced from left edge X = -body_w/2)
+emitter_x  = -body_w/2 + 4.5;   // *4.5 mm from left
+detector_x = -body_w/2 + 19.7;  // *19.7 mm from left
+
+// Lens Window Dimensions
+emitter_r  = 3.3;   // Light emitter circular lens radius
+detector_w = 7.5;   // Light detector rectangular window width
+detector_h = 7.2;   // Light detector rectangular window height
+
+// PWB Dimensions (Bottom)
+pwb_w = 29.45;
+pwb_d = 7.1;
+pwb_h = 1.2;
+
+// Connector Dimensions (JCTC 12001W90-3P-HF)
+conn_w = 10.1;
+conn_d = 5.0;
+conn_h = 4.2;
+conn_x = -body_w/2 + 3.75 + conn_w/2; // 3.75mm offset from left
+
+module sharp_gp2y0d413k0f() {
+    // Material Colors
+    color_case = [0.15, 0.15, 0.15];   // Carbonic ABS (Dark Grey/Black)
+    color_lens = [0.20, 0.05, 0.10, 0.85]; // Dark Red Translucent Optical Lens
+    color_pwb  = [0.65, 0.45, 0.20];   // Paper Phenol PWB (Brownish)
+    color_conn = [0.90, 0.90, 0.85];   // Connector Body (Off-white)
+    color_pin  = [0.85, 0.80, 0.20];   // Metallic Pins
+
+    // 1. Main Body Case (Carbonic ABS)
+    color(color_case) {
+        cube([body_w, body_d, body_h], center=true);
+        
+        // Front Lens Case Housing
+        translate([0, body_d/2 + lens_case_d/2, 0])
+            cube([lens_case_w, lens_case_d, lens_case_h], center=true);
+    }
+
+    // 2. Lenses (+Y direction / Front)
+    color(color_lens) {
+        // Left Window: Light Emitter (Circular Lens)
+        translate([emitter_x, body_d/2 + lens_case_d - 0.2, 0])
+            rotate([-90, 0, 0])
+            cylinder(r=emitter_r, h=0.5, center=false);
+
+        // Right Window: Light Detector (Rectangular Lens)
+        translate([detector_x, body_d/2 + lens_case_d - 0.2, 0])
+            rotate([90, 0, 0])
+            linear_extrude(height=0.5)
+            square([detector_w, detector_h], center=true);
+    }
+
+    // 3. PWB (Printed Wiring Board at bottom)
+    color(color_pwb) {
+        translate([0, 0, -body_h/2 - pwb_h/2])
+            cube([pwb_w, pwb_d, pwb_h], center=true);
+    }
+
+    // 4. 3-Pin Connector (JCTC 12001W90-3P-HF)
+    translate([conn_x, 0, -body_h/2 - pwb_h - conn_h/2]) {
+        color(color_conn) {
+            difference() {
+                cube([conn_w, conn_d, conn_h], center=true);
+                // Inner cavity for connector plug
+                translate([0, 0, -0.6])
+                    cube([conn_w - 1.2, conn_d - 1.2, conn_h], center=true);
+            }
+        }
+        
+        // 3 Pins inside connector
+        color(color_pin) {
+            for (i = [-1:1]) {
+                translate([i * 2.5, 0, 0])
+                    cube([0.6, 0.6, conn_h - 0.5], center=true);
+            }
+        }
+    }
+}
+
+// Render complete sensor
+sharp_gp2y0d413k0f();
+```

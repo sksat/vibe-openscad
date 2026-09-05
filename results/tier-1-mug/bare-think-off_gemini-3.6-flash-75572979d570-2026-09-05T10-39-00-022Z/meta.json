@@ -1,0 +1,40 @@
+{
+  "runId": "bare-think-off_gemini-3.6-flash-75572979d570-2026-09-05T10-39-00-022Z",
+  "taskId": "tier-1-mug",
+  "matrixId": "bare-think-off/gemini-3.6-flash",
+  "signature": "75572979d5705c744e39705b214524ced56194f92523631d40fc7ebe282c4453",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "883b512feb40f76c3fdcb332c7c513c491c27c8511f65b90fecbad6b6c197cd5",
+    "harness": {
+      "kind": "bare",
+      "provider": "google",
+      "model": "gemini-3.6-flash",
+      "modelOptions": {
+        "config": {
+          "thinkingConfig": {
+            "thinkingLevel": "minimal"
+          }
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "google",
+  "model": "gemini-3.6-flash",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 2768
+  },
+  "tokens": {
+    "input": 142,
+    "output": 294
+  },
+  "cost_usd": 0.001209,
+  "createdAt": "2026-09-05T10:39:00.022Z",
+  "gitCommit": "6126da97a0143fe2b15123b33c5aca211fbb111e"
+}

@@ -1,0 +1,33 @@
+{
+  "runId": "bare_gemini-3.6-flash-3fe75111e4d4-2026-09-05T10-39-13-490Z",
+  "taskId": "tier-3-butt-hinge",
+  "matrixId": "bare/gemini-3.6-flash",
+  "signature": "3fe75111e4d44415ec3cc7441237d73363afbf1073b3a922e960bd999960037e",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dd7199030a8827a181914869189fc45a2e5637023f0c8c59532d442557036e7c",
+    "harness": {
+      "kind": "bare",
+      "provider": "google",
+      "model": "gemini-3.6-flash"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "google",
+  "model": "gemini-3.6-flash",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 32942
+  },
+  "tokens": {
+    "input": 515,
+    "output": 953
+  },
+  "cost_usd": 0.00396,
+  "createdAt": "2026-09-05T10:39:13.490Z",
+  "gitCommit": "6126da97a0143fe2b15123b33c5aca211fbb111e"
+}
