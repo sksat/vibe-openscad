@@ -339,6 +339,33 @@ matrix:
     model: o4-mini-2025-04-16
     modelOptions: { reasoning: { effort: high } }
 
+  # --- GPT-6 Astra (2026-09-03、現行最上位) ---
+  # effort は low / medium(既定) / high / xhigh / max。Opus 5 と同じ 5 点を張る。
+  - id: bare/gpt-6-astra
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-6-astra
+  - id: bare-low/gpt-6-astra
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-6-astra
+    modelOptions: { reasoning: { effort: low } }
+  - id: bare-high/gpt-6-astra
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-6-astra
+    modelOptions: { reasoning: { effort: high } }
+  - id: bare-xhigh/gpt-6-astra
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-6-astra
+    modelOptions: { reasoning: { effort: xhigh } }
+  - id: bare-max/gpt-6-astra
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-6-astra
+    modelOptions: { reasoning: { effort: max } }
+
   # --- GPT-5.5 (current-gen general) ---
   - id: bare/gpt-5.5
     harness: { kind: bare }
@@ -406,6 +433,10 @@ matrix:
     harness: { kind: pdf-page }
     provider: anthropic
     model: claude-haiku-4-5-20251001
+  - id: pdf-page/gpt-6-astra
+    harness: { kind: pdf-page }
+    provider: openai
+    model: gpt-6-astra
   - id: pdf-page/gpt-5.5
     harness: { kind: pdf-page }
     provider: openai

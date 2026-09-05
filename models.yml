@@ -218,6 +218,17 @@ gemini-1.5-flash:
 # thinking 軸を持たない。
 # ---------------------------------------------------------------------------
 
+# GPT-6 Astra(2026-09-03)。id が gpt-<世代>-<コードネーム> で web 側の
+# パターンから外れるため label を宣言する(sort は ^gpt-6 が拾える)。
+# effort は low / medium / high / xhigh / max。既定は明記されていないが
+# gpt-5 系と同じ medium として扱う。
+gpt-6-astra:
+  provider: openai
+  rate: { in: 10, out: 50 }
+  vision: true
+  effort: medium
+  label: gpt 6 astra
+
 # gpt-5 系はすべて vision 対応・reasoning effort の既定 medium。個別世代の
 # エントリは rate だけ上書きする。
 gpt-5:
