@@ -1,0 +1,75 @@
+```openscad
+// ===== マグカップ（取手は +X 方向のみ） =====
+$fn = 128;
+
+// --- 本体パラメータ ---
+outer_d  = 80;   // 外径
+inner_d  = 70;   // 内径
+height   = 90;   // 高さ
+bottom_t = 6;    // 底面の厚み
+
+outer_r = outer_d / 2;
+inner_r = inner_d / 2;
+
+// --- 取手パラメータ ---
+handle_w = 10;        // 取手の幅（Y 方向）
+handle_t = 8;         // 取手（環）の肉厚
+open_h   = 30;        // 指を入れる空間の高さ
+open_w   = 25;        // 指を入れる空間の幅（本体表面から外側へ）
+handle_z = height / 2; // 取手の中心高さ（マグ中央）
+embed    = 2;         // 本体への食い込み量（確実に union するため）
+
+// --- 本体 ---
+module body() {
+    difference() {
+        cylinder(r = outer_r, h = height);
+        translate([0, 0, bottom_t])
+            cylinder(r = inner_r, h = height);
+    }
+}
+
+// --- 取手の 2D プロファイル（XZ 平面、D 字形状） ---
+module handle_profile_2d() {
+    ri = open_h / 2;                 // 内側半円の半径 = 15
+    ro = ri + handle_t;              // 外側半円の半径 = 23
+    cx = outer_r + (open_w - ri);    // 半円の中心 X = 50
+    x_in = outer_r - embed;          // 本体側の直線位置（本体に少し食い込む）
+
+    difference() {
+        // 外形 D：直線部（矩形）＋外側半円、本体側でクリップ
+        intersection() {
+            union() {
+                translate([x_in, -ro]) square([cx - x_in, 2 * ro]);
+                translate([cx, 0])      circle(r = ro);
+            }
+            translate([x_in, -ro - 1]) square([100, 2 * ro + 2]);
+        }
+        // 内側の空間 D：高さ 30 × 幅 25（本体表面から）
+        intersection() {
+            union() {
+                translate([outer_r, -ri]) square([cx - outer_r, 2 * ri]);
+                translate([cx, 0])         circle(r = ri);
+            }
+            translate([outer_r, -ri - 1]) square([100, 2 * ri + 2]);
+        }
+    }
+}
+
+// --- 取手（+X 側の側面のみ） ---
+module handle() {
+    translate([0, 0, handle_z])
+        rotate([90, 0, 0])              // XY 平面 → XZ 平面へ（Y 方向に押し出し）
+            linear_extrude(height = handle_w, center = true)
+                handle_profile_2d();
+}
+
+// --- 組み立て ---
+module mug() {
+    union() {
+        body();
+        handle();
+    }
+}
+
+mug();
+```

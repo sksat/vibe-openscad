@@ -1,0 +1,80 @@
+```openscad
+// =============================================
+//  L 字金具 (L-bracket)  M4 皿穴 ×4
+//  内側コーナーが原点
+//  水平フランジ : +Y 方向へ伸びる (Z: -t .. 0)
+//  垂直フランジ : +Z 方向へ伸びる (Y: -t .. 0)
+// =============================================
+
+$fn = 64;
+
+// ---- 寸法パラメータ ----
+width     = 50;   // 幅 (X 方向)
+depth     = 40;   // 水平フランジの奥行き (Y 方向、内側コーナーから)
+height    = 40;   // 垂直フランジの高さ   (Z 方向、内側コーナーから)
+thickness = 3;    // 板厚
+
+// ---- 皿穴パラメータ (M4) ----
+hole_d    = 4.5;  // 貫通穴径
+cs_d      = 8;    // 皿座面径
+cs_depth  = 2;    // 皿座面深さ
+edge_off  = 10;   // 面の左右の縁からの距離
+
+// 穴の X 位置 (左右対称)
+hole_x = [-(width/2 - edge_off), width/2 - edge_off];
+
+// ---------------------------------------------
+//  皿穴モジュール
+//  z = 0 が外側表面 (ボルト頭側)、材料は +z 側
+// ---------------------------------------------
+module countersunk_hole(t) {
+    // 貫通穴 (板厚を確実に貫くよう前後に余裕)
+    translate([0, 0, -1])
+        cylinder(h = t + 2, d = hole_d);
+
+    // 皿座面 (円錐) : 表面 Φcs_d → 深さ cs_depth で Φhole_d
+    translate([0, 0, -0.001])
+        cylinder(h = cs_depth + 0.001, d1 = cs_d, d2 = hole_d);
+
+    // 表面より外側の余裕 (面の欠けを防止)
+    translate([0, 0, -1])
+        cylinder(h = 1.001, d = cs_d);
+}
+
+// ---------------------------------------------
+//  金具本体
+// ---------------------------------------------
+module bracket_body() {
+    union() {
+        // 水平フランジ (Z: -t .. 0、コーナー部分を含めて Y: -t .. depth)
+        translate([-width/2, -thickness, -thickness])
+            cube([width, depth + thickness, thickness]);
+
+        // 垂直フランジ (Y: -t .. 0、コーナー部分を含めて Z: -t .. height)
+        translate([-width/2, -thickness, -thickness])
+            cube([width, thickness, height + thickness]);
+    }
+}
+
+// ---------------------------------------------
+//  完成形
+// ---------------------------------------------
+module l_bracket() {
+    difference() {
+        bracket_body();
+
+        // 水平フランジの皿穴 (皿座面は下面 = 外側)
+        for (x = hole_x)
+            translate([x, depth/2, -thickness])
+                countersunk_hole(thickness);
+
+        // 垂直フランジの皿穴 (皿座面は背面 = 外側)
+        for (x = hole_x)
+            translate([x, -thickness, height/2])
+                rotate([-90, 0, 0])
+                    countersunk_hole(thickness);
+    }
+}
+
+l_bracket();
+```

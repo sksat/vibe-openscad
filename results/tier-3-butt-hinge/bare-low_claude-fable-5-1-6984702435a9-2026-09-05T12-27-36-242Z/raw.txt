@@ -1,0 +1,87 @@
+```openscad
+// Small butt hinge for furniture — open 180°
+// Pin axis = Y axis (+Y), leaves lie in Z-normal plane
+
+$fn = 64;
+
+// ---------- parameters ----------
+leaf_len   = 30;   // along Y (hinge axis)
+leaf_w     = 25;   // along X (opening direction)
+leaf_t     = 2;    // thickness (Z)
+
+pin_d      = 4;
+pin_len    = 32;
+clearance  = 0.3;
+kn_od      = 8;
+kn_id      = pin_d + clearance;   // 4.6
+kn_seg     = leaf_len / 5;        // 6 mm
+
+hole_pitch = 8;
+hole_d     = 3.2;
+csk_d      = 6;
+csk_depth  = 1;
+hole_x     = 18;   // distance from pin axis to screw line
+
+// ---------- helpers ----------
+module knuckle(y0, y1) {
+    // cylinder along Y from y0 to y1, centered on X=0, Z=0
+    translate([0, y0, 0])
+        rotate([-90, 0, 0])
+            cylinder(d = kn_od, h = y1 - y0);
+}
+
+module pin_bore() {
+    translate([0, -1, 0])
+        rotate([-90, 0, 0])
+            cylinder(d = kn_id, h = leaf_len + 2);
+}
+
+module screw_hole() {
+    // through hole + countersink on top face (+Z)
+    union() {
+        translate([0, 0, -1])
+            cylinder(d = hole_d, h = leaf_t + 2);
+        translate([0, 0, leaf_t - csk_depth])
+            cylinder(d1 = hole_d, d2 = csk_d, h = csk_depth + 0.01);
+        translate([0, 0, leaf_t - 0.001])
+            cylinder(d = csk_d, h = 1);
+    }
+}
+
+// Generic leaf; sgn = -1 for left (x<0), +1 for right (x>0)
+// segs = list of knuckle segment indices (0..4)
+module leaf(sgn, segs) {
+    difference() {
+        union() {
+            // plate: from knuckle to outer edge, top face at Z=leaf_t/2
+            translate([sgn > 0 ? 0 : -leaf_w, 0, -leaf_t / 2])
+                cube([leaf_w, leaf_len, leaf_t]);
+            // knuckles
+            for (i = segs)
+                knuckle(i * kn_seg, (i + 1) * kn_seg);
+        }
+        // pin bore
+        pin_bore();
+        // gap cuts between knuckles (so adjacent segments don't touch)
+        for (i = [0 : 4])
+            if (len(search(i, segs)) == 0)
+                translate([-kn_od, i * kn_seg - 0.15, -kn_od])
+                    cube([2 * kn_od, kn_seg + 0.3, 2 * kn_od]);
+        // screw holes
+        for (j = [-1, 0, 1])
+            translate([sgn * hole_x, leaf_len / 2 + j * hole_pitch, -leaf_t / 2])
+                screw_hole();
+    }
+}
+
+module pin() {
+    translate([0, -1, 0])
+        rotate([-90, 0, 0])
+            cylinder(d = pin_d, h = pin_len);
+}
+
+// ---------- assembly (open 180°) ----------
+color("silver")     leaf(-1, [0, 2, 4]);  // left leaf: outer 2 + center
+color("lightgray")  leaf( 1, [1, 3]);     // right leaf: middle 2
+color("gold")       pin();
+```

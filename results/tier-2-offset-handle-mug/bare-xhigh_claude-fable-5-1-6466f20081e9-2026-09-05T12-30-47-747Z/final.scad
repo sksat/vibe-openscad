@@ -1,0 +1,63 @@
+// マグカップ(取手は +X 軸方向の側面のみ)
+$fn = 128;
+
+// ---- 本体パラメータ ----
+outer_d  = 80;            // 外径
+inner_d  = 70;            // 内径(肉厚 5mm)
+mug_h    = 90;            // 高さ
+bottom_t = 6;             // 底面の厚み
+outer_r  = outer_d / 2;
+inner_r  = inner_d / 2;
+
+// ---- 取手パラメータ ----
+grip_w       = 25;        // 取手内側の空間の幅 (X 方向)
+grip_h       = 30;        // 取手内側の空間の高さ (Z 方向)
+handle_bar   = 8;         // 取手の棒の太さ(D 断面方向)
+handle_depth = 12;        // 取手の奥行き(Y 方向の厚み)
+embed        = 4;         // 本体壁へ食い込ませる量(確実に union させる)
+handle_zc    = mug_h / 2; // 取手の中心高さ(高さ方向の中央)
+
+// D 字形の 2D 形状
+//   x0: 直線側(本体側)の X 位置, w: 全幅, h: 全高, zc: 中心高さ
+module d_shape(x0, w, h, zc) {
+    r  = h / 2;
+    cx = x0 + w - r;          // 外側半円の中心 X
+    intersection() {
+        union() {
+            translate([x0, zc - r]) square([w - r, h]);   // 直線部
+            translate([cx, zc]) circle(r = r);            // 半円部
+        }
+        // 直線側 (x < x0) にはみ出さないようにクリップ
+        translate([x0, zc - r - 1]) square([w + 2, h + 2]);
+    }
+}
+
+// マグ本体(中空)
+module body() {
+    difference() {
+        cylinder(h = mug_h, r = outer_r);
+        translate([0, 0, bottom_t])
+            cylinder(h = mug_h, r = inner_r);   // 底 6mm を残して上まで貫通
+    }
+}
+
+// 取手(+X 側のみ)
+module handle() {
+    // XY 平面で D 形状を作り、Y 方向に押し出して XZ 平面に立てる
+    rotate([90, 0, 0])
+        linear_extrude(height = handle_depth, center = true)
+            difference() {
+                // 外形: 本体壁に embed 分だけ食い込ませて確実に接続
+                d_shape(outer_r - embed,
+                        grip_w + handle_bar + embed,
+                        grip_h + 2 * handle_bar,
+                        handle_zc);
+                // 内側の空間(指 3 本分): 高さ 30 x 幅 25
+                d_shape(outer_r, grip_w, grip_h, handle_zc);
+            }
+}
+
+union() {
+    body();
+    handle();
+}
