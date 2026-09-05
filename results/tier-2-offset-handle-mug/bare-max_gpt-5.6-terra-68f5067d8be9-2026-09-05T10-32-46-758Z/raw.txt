@@ -1,0 +1,75 @@
+```openscad
+$fn = 128;
+
+body_outer_diameter = 80;
+body_inner_diameter = 70;
+body_height = 90;
+bottom_thickness = 6;
+
+body_outer_radius = body_outer_diameter / 2;
+
+handle_opening_height = 30;
+handle_opening_width = 25;
+handle_wall = 5;
+handle_depth = 12;
+handle_center_z = body_height / 2;
+handle_gap_from_body = 1;
+handle_arc_segments = 64;
+
+opening_radius = handle_opening_height / 2;
+opening_left_x = body_outer_radius + handle_gap_from_body;
+arc_center_x = opening_left_x + handle_opening_width - opening_radius;
+
+handle_outer_left_x = opening_left_x - handle_wall;
+handle_outer_radius = opening_radius + handle_wall;
+
+module d_profile(left_x, arc_center_x, center_z, radius) {
+    polygon(points = concat(
+        [
+            [left_x, center_z + radius],
+            [left_x, center_z - radius]
+        ],
+        [
+            for (i = [0 : handle_arc_segments])
+                [
+                    arc_center_x + radius * cos(-90 + 180 * i / handle_arc_segments),
+                    center_z + radius * sin(-90 + 180 * i / handle_arc_segments)
+                ]
+        ]
+    ));
+}
+
+module d_prism(left_x, arc_center_x, center_z, radius, depth) {
+    rotate([90, 0, 0])
+        linear_extrude(height = depth, center = true, convexity = 10)
+            d_profile(left_x, arc_center_x, center_z, radius);
+}
+
+difference() {
+    union() {
+        cylinder(d = body_outer_diameter, h = body_height);
+
+        d_prism(
+            handle_outer_left_x,
+            arc_center_x,
+            handle_center_z,
+            handle_outer_radius,
+            handle_depth
+        );
+    }
+
+    translate([0, 0, bottom_thickness])
+        cylinder(
+            d = body_inner_diameter,
+            h = body_height - bottom_thickness + 1
+        );
+
+    d_prism(
+        opening_left_x,
+        arc_center_x,
+        handle_center_z,
+        opening_radius,
+        handle_depth + 2
+    );
+}
+```

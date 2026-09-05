@@ -1,0 +1,60 @@
+```openscad
+$fn = 64;
+
+// 寸法
+width     = 50;
+flangeLen = 40;
+thickness = 3;
+
+// 穴寸法
+through_d = 4.5;
+csk_d     = 8;
+csk_depth = 2;
+
+// 穴位置
+hole_x = width / 2 - 10;
+hole_y = flangeLen / 2;
+hole_z = flangeLen / 2;
+
+module horizontal_hole(x, y) {
+    // 貫通穴
+    translate([x, y, -thickness - 1])
+        cylinder(h = thickness + 2, d = through_d);
+
+    // 外側（下面）からの皿穴
+    translate([x, y, -thickness])
+        cylinder(h = csk_depth, d1 = csk_d, d2 = through_d);
+}
+
+module vertical_hole(x, z) {
+    // 貫通穴
+    translate([x, 1, z])
+        rotate([90, 0, 0])
+            cylinder(h = thickness + 2, d = through_d);
+
+    // 外側（-Y側）からの皿穴
+    translate([x, -1, z])
+        rotate([90, 0, 0])
+            cylinder(h = csk_depth, d1 = through_d, d2 = csk_d);
+}
+
+difference() {
+    union() {
+        // 水平フランジ：内側面 Z=0、+Y方向へ伸長
+        translate([-width / 2, 0, -thickness])
+            cube([width, flangeLen, thickness]);
+
+        // 垂直フランジ：内側面 Y=0、+Z方向へ伸長
+        translate([-width / 2, -thickness, 0])
+            cube([width, thickness, flangeLen]);
+    }
+
+    // 水平面の穴
+    horizontal_hole(-hole_x, hole_y);
+    horizontal_hole( hole_x, hole_y);
+
+    // 垂直面の穴
+    vertical_hole(-hole_x, hole_z);
+    vertical_hole( hole_x, hole_z);
+}
+```

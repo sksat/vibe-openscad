@@ -1,0 +1,201 @@
+```openscad
+// Sharp GP2Y0D413K0F outline model
+// Units: mm
+// Coordinate system:
+//   Body center = origin
+//   +Z = up
+//   +Y = front / lens side
+
+$fn = 48;
+
+// ---------- Dimensions ----------
+body_x = 29.45;
+body_y = 13.50;
+body_z = 13.05;
+
+lens_case_z = 8.40;
+lens_opening_z = 7.20;
+
+front_bezel_y = 2.00;
+lens_projection_y = 6.30;
+
+pwb_x = 16.30;
+pwb_y = 13.50;
+pwb_t = 1.20;
+
+connector_x = 10.10;
+connector_y = 5.20;
+connector_z = 5.80;
+
+// Lens center positions measured from left body edge
+emitter_center_x  = -body_x/2 + 4.50;
+detector_center_x = -body_x/2 + 19.70;
+
+// ---------- Colors ----------
+case_color      = [0.12, 0.12, 0.12];
+bezel_color     = [0.08, 0.08, 0.08];
+lens_color      = [0.18, 0.22, 0.26];
+pwb_color       = [0.20, 0.34, 0.16];
+connector_color = [0.86, 0.86, 0.82];
+pin_color       = [0.72, 0.72, 0.68];
+
+// ---------- Helpers ----------
+module centered_cube(size_xyz) {
+    cube(size_xyz, center = true);
+}
+
+module rounded_box(size_xyz, r = 0.4) {
+    x = size_xyz[0];
+    y = size_xyz[1];
+    z = size_xyz[2];
+
+    hull() {
+        for (ix = [-1, 1])
+            for (iy = [-1, 1])
+                for (iz = [-1, 1])
+                    translate([
+                        ix * (x/2-r),
+                        iy * (y/2-r),
+                        iz * (z/2-r)
+                    ])
+                    sphere(r);
+    }
+}
+
+// ---------- Main Case ----------
+module sensor_case() {
+    color(case_color)
+    rounded_box([body_x, body_y, body_z], 0.45);
+
+    // Slight lower molding step visible around lower front area
+    color(case_color)
+    translate([0, body_y/2 - 1.0, -body_z/2 + 1.0])
+        centered_cube([body_x - 0.6, 1.2, 2.0]);
+}
+
+// ---------- Front Lens Case ----------
+module front_lens_case() {
+    bezel_front_y = body_y/2 + front_bezel_y/2;
+    housing_front_y = body_y/2 + front_bezel_y + lens_projection_y/2;
+
+    // Full-width front bezel
+    color(bezel_color)
+    translate([0, bezel_front_y, 1.1])
+        centered_cube([body_x - 0.5, front_bezel_y, lens_case_z]);
+
+    // Left emitter housing
+    color(case_color)
+    translate([emitter_center_x, housing_front_y, 1.1])
+        rounded_box([7.00, lens_projection_y, lens_case_z], 0.25);
+
+    // Right detector housing
+    color(case_color)
+    translate([detector_center_x + 1.3, housing_front_y, 1.1])
+        rounded_box([13.80, lens_projection_y, lens_case_z], 0.25);
+
+    // Emitter lens circular window
+    color(lens_color)
+    translate([
+        emitter_center_x,
+        body_y/2 + front_bezel_y + lens_projection_y + 0.03,
+        1.1
+    ])
+    rotate([90, 0, 0])
+        cylinder(h = 0.35, d = 5.20, center = false);
+
+    // Emitter inner ring
+    color([0.03, 0.03, 0.03])
+    translate([
+        emitter_center_x,
+        body_y/2 + front_bezel_y + lens_projection_y + 0.39,
+        1.1
+    ])
+    rotate([90, 0, 0])
+        cylinder(h = 0.12, d = 3.90, center = false);
+
+    // Detector rectangular lens window
+    color(lens_color)
+    translate([
+        detector_center_x + 1.3,
+        body_y/2 + front_bezel_y + lens_projection_y + 0.03,
+        1.1
+    ])
+    centered_cube([9.30, 0.35, 5.40]);
+
+    // Detector inner dark optical region
+    color([0.04, 0.04, 0.04])
+    translate([
+        detector_center_x + 1.3,
+        body_y/2 + front_bezel_y + lens_projection_y + 0.23,
+        1.1
+    ])
+    centered_cube([7.80, 0.16, 3.80]);
+}
+
+// ---------- PWB ----------
+module pwb() {
+    // PWB is mounted below the sensor case.
+    color(pwb_color)
+    translate([2.1, 0.4, -body_z/2 - pwb_t/2])
+        centered_cube([pwb_x, pwb_y, pwb_t]);
+
+    // Small exposed board edge at front
+    color(pwb_color)
+    translate([2.1, body_y/2 + 0.35, -body_z/2 - pwb_t/2])
+        centered_cube([pwb_x, 0.8, pwb_t]);
+}
+
+// ---------- Bottom Connector ----------
+module connector() {
+    connector_center_x = -4.0;
+    connector_center_y = 1.3;
+    connector_center_z = -body_z/2 - pwb_t - connector_z/2 + 0.8;
+
+    // Connector housing
+    color(connector_color)
+    translate([
+        connector_center_x,
+        connector_center_y,
+        connector_center_z
+    ])
+    rounded_box([connector_x, connector_y, connector_z], 0.25);
+
+    // Recess / front opening
+    color([0.12, 0.12, 0.12])
+    translate([
+        connector_center_x,
+        connector_center_y + connector_y/2 + 0.02,
+        connector_center_z + 0.7
+    ])
+    centered_cube([7.4, 0.18, 2.8]);
+
+    // Three connector terminals
+    for (i = [-1, 0, 1]) {
+        color(pin_color)
+        translate([
+            connector_center_x + i * 2.25,
+            connector_center_y,
+            connector_center_z - connector_z/2 - 1.8
+        ])
+        centered_cube([0.75, 0.65, 3.6]);
+    }
+
+    // Terminal identification marks
+    for (i = [-1, 0, 1]) {
+        color([0.18, 0.18, 0.18])
+        translate([
+            connector_center_x + i * 2.25,
+            connector_center_y + connector_y/2 + 0.12,
+            connector_center_z + 0.7
+        ])
+        rotate([90, 0, 0])
+            cylinder(h = 0.12, d = 0.85, center = false);
+    }
+}
+
+// ---------- Assembly ----------
+sensor_case();
+front_lens_case();
+pwb();
+connector();
+```

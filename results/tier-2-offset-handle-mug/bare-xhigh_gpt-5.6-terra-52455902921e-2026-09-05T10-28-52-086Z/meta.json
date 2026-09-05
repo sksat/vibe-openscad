@@ -1,0 +1,38 @@
+{
+  "runId": "bare-xhigh_gpt-5.6-terra-52455902921e-2026-09-05T10-28-52-086Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "bare-xhigh/gpt-5.6-terra",
+  "signature": "52455902921e848f813f3e3a97eba9c06b48467ec2ae1e0d6165ed0405e06a20",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5.6-terra",
+      "modelOptions": {
+        "reasoning": {
+          "effort": "xhigh"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5.6-terra",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 83212
+  },
+  "tokens": {
+    "input": 273,
+    "output": 6680
+  },
+  "cost_usd": 0.08070600000000001,
+  "createdAt": "2026-09-05T10:28:52.086Z",
+  "gitCommit": "6126da97a0143fe2b15123b33c5aca211fbb111e"
+}

@@ -1,0 +1,65 @@
+$fn = 64;
+
+// 寸法
+width          = 50;
+flange_length  = 40;
+thickness      = 3;
+
+hole_diameter  = 4.5;
+cs_diameter    = 8;
+cs_depth       = 2;
+
+edge_offset    = 10;
+hole_x         = width / 2 - edge_offset;
+
+// 水平面の穴（外側: -Z 側）
+module horizontal_hole(x, y) {
+    // 貫通穴
+    translate([x, y, -thickness - 0.1])
+        cylinder(h = thickness + 0.2, d = hole_diameter);
+
+    // 皿穴
+    translate([x, y, -thickness - 0.1])
+        cylinder(
+            h  = cs_depth + 0.1,
+            d1 = cs_diameter,
+            d2 = hole_diameter
+        );
+}
+
+// 垂直面の穴（外側: -Y 側）
+module vertical_hole(x, z) {
+    // 貫通穴
+    translate([x, -thickness - 0.1, z])
+        rotate([-90, 0, 0])
+            cylinder(h = thickness + 0.2, d = hole_diameter);
+
+    // 皿穴
+    translate([x, -thickness - 0.1, z])
+        rotate([-90, 0, 0])
+            cylinder(
+                h  = cs_depth + 0.1,
+                d1 = cs_diameter,
+                d2 = hole_diameter
+            );
+}
+
+difference() {
+    union() {
+        // 水平フランジ：+Y 方向へ伸びる
+        translate([-width / 2, 0, -thickness])
+            cube([width, flange_length, thickness]);
+
+        // 垂直フランジ：+Z 方向へ伸びる
+        translate([-width / 2, -thickness, 0])
+            cube([width, thickness, flange_length]);
+    }
+
+    // 水平面の穴
+    horizontal_hole(-hole_x, flange_length / 2);
+    horizontal_hole( hole_x, flange_length / 2);
+
+    // 垂直面の穴
+    vertical_hole(-hole_x, flange_length / 2);
+    vertical_hole( hole_x, flange_length / 2);
+}

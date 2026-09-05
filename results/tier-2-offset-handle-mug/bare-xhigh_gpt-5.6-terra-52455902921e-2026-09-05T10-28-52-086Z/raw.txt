@@ -1,0 +1,90 @@
+```openscad
+$fn = 128;
+
+cup_outer_diameter = 80;
+cup_inner_diameter = 70;
+cup_height = 90;
+bottom_thickness = 6;
+
+cup_outer_radius = cup_outer_diameter / 2;
+cup_inner_radius = cup_inner_diameter / 2;
+
+handle_opening_height = 30;
+handle_opening_width = 25;
+handle_wall_thickness = 5;
+handle_thickness = 12;
+
+handle_center_z = cup_height / 2;
+
+handle_inner_radius = handle_opening_height / 2;
+handle_inner_left_x = cup_outer_radius;
+handle_center_x = handle_inner_left_x + (handle_opening_width - handle_inner_radius);
+
+handle_outer_radius = handle_inner_radius + handle_wall_thickness;
+handle_outer_left_x = handle_inner_left_x - handle_wall_thickness;
+
+
+module right_half_disk(cx, cz, r) {
+    intersection() {
+        translate([cx, cz])
+            circle(r = r);
+
+        translate([cx, cz - r])
+            square([r, 2 * r]);
+    }
+}
+
+
+module d_profile(left_x, center_x, center_z, radius) {
+    union() {
+        translate([left_x, center_z - radius])
+            square([center_x - left_x, 2 * radius]);
+
+        right_half_disk(center_x, center_z, radius);
+    }
+}
+
+
+module mug_body() {
+    difference() {
+        cylinder(r = cup_outer_radius, h = cup_height);
+
+        translate([0, 0, bottom_thickness])
+            cylinder(
+                r = cup_inner_radius,
+                h = cup_height - bottom_thickness + 0.01
+            );
+    }
+}
+
+
+module handle() {
+    rotate([90, 0, 0])
+        linear_extrude(
+            height = handle_thickness,
+            center = true,
+            convexity = 10
+        )
+        difference() {
+            d_profile(
+                handle_outer_left_x,
+                handle_center_x,
+                handle_center_z,
+                handle_outer_radius
+            );
+
+            d_profile(
+                handle_inner_left_x,
+                handle_center_x,
+                handle_center_z,
+                handle_inner_radius
+            );
+        }
+}
+
+
+union() {
+    mug_body();
+    handle();
+}
+```

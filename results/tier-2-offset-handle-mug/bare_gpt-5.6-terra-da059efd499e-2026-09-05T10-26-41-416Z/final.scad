@@ -1,0 +1,90 @@
+$fn = 128;
+
+// マグ本体寸法
+outer_r = 40;     // 外径 80mm
+inner_r = 35;     // 内径 70mm
+cup_h   = 90;
+bottom_t = 6;
+
+// 取手寸法・配置
+handle_y_thickness = 12;
+handle_center_z    = cup_h / 2;
+
+attach_x      = 37;   // 本体外周へ十分に食い込ませる
+outer_center_x = 47;
+outer_r_handle = 24;
+
+inner_left_x   = 41;
+inner_center_x = 51;
+inner_r_handle = 15;  // 内側高さ 30mm
+                         // 内側幅: 41mm ～ 66mm = 25mm
+
+module right_semicircle(cx, cz, r) {
+    intersection() {
+        translate([cx, cz])
+            circle(r = r);
+
+        translate([cx, cz - r])
+            square([r, 2 * r]);
+    }
+}
+
+module handle_profile_2d() {
+    difference() {
+        union() {
+            // 本体側の直線部分
+            translate([attach_x, handle_center_z - outer_r_handle])
+                square([
+                    outer_center_x - attach_x,
+                    2 * outer_r_handle
+                ]);
+
+            // 外側半円部分
+            right_semicircle(
+                outer_center_x,
+                handle_center_z,
+                outer_r_handle
+            );
+        }
+
+        union() {
+            // 内側開口部の直線部分
+            translate([inner_left_x, handle_center_z - inner_r_handle])
+                square([
+                    inner_center_x - inner_left_x,
+                    2 * inner_r_handle
+                ]);
+
+            // 内側開口部の半円部分
+            right_semicircle(
+                inner_center_x,
+                handle_center_z,
+                inner_r_handle
+            );
+        }
+    }
+}
+
+module handle() {
+    rotate([90, 0, 0])
+        linear_extrude(
+            height = handle_y_thickness,
+            center = true,
+            convexity = 10
+        )
+            handle_profile_2d();
+}
+
+union() {
+    // 中空マグ本体
+    difference() {
+        cylinder(h = cup_h, r = outer_r);
+
+        // 底厚 6mm を残す内部空間
+        translate([0, 0, bottom_t])
+            cylinder(h = cup_h - bottom_t + 0.1, r = inner_r);
+    }
+
+    // +X 軸方向のみに付く取手
+    handle();
+}

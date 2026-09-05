@@ -1,0 +1,71 @@
+```openscad
+$fn = 96;
+
+// マグ本体寸法
+outer_diameter = 80;
+inner_diameter = 70;
+mug_height     = 90;
+bottom_thick   = 6;
+
+// 取手寸法
+handle_depth      = 12;   // Y方向の厚み
+handle_center_z   = 45;   // 高さ方向中央
+handle_outer_r    = 30;   // 外側半円半径
+handle_flat_x     = 35;   // 本体に食い込ませる直線側X座標
+
+// 内側開口: 幅25mm × 高さ30mm
+handle_inner_x    = 38;
+handle_inner_rx   = 25;
+handle_inner_ry   = 15;
+
+// D字取手の2D断面
+module handle_profile_2d() {
+    difference() {
+        // 外側: 本体側が直線、外側が半円のD字
+        polygon(points =
+            concat(
+                [
+                    for (a = [-90 : 5 : 85])
+                        [
+                            handle_flat_x + handle_outer_r * cos(a),
+                            handle_center_z + handle_outer_r * sin(a)
+                        ]
+                ],
+                [[handle_flat_x, handle_center_z + handle_outer_r]]
+            )
+        );
+
+        // 指を入れる内側空間: 幅25mm、高さ30mm
+        polygon(points =
+            concat(
+                [
+                    for (a = [-90 : 5 : 85])
+                        [
+                            handle_inner_x + handle_inner_rx * cos(a),
+                            handle_center_z + handle_inner_ry * sin(a)
+                        ]
+                ],
+                [[handle_inner_x, handle_center_z + handle_inner_ry]]
+            )
+        );
+    }
+}
+
+union() {
+    // 中空マグ本体
+    difference() {
+        cylinder(d = outer_diameter, h = mug_height);
+
+        // 底厚6mmを残して上面を開放
+        translate([0, 0, bottom_thick])
+            cylinder(d = inner_diameter, h = mug_height - bottom_thick + 1);
+    }
+
+    // +X方向側面にのみ接続する取手
+    // 本体外周へ十分に食い込ませてunionする
+    translate([0, handle_depth / 2, 0])
+        rotate([90, 0, 0])
+            linear_extrude(height = handle_depth)
+                handle_profile_2d();
+}
+```

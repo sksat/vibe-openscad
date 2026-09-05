@@ -1,0 +1,34 @@
+{
+  "runId": "bare-max_gpt-5.6-terra-9979bc6dcd6c-2026-09-05T10-35-01-315Z",
+  "taskId": "tier-3-butt-hinge",
+  "matrixId": "bare-max/gpt-5.6-terra",
+  "signature": "9979bc6dcd6c9bd1379988b1d5c4214ff256aae44f2d670e9e3495f76df966da",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dd7199030a8827a181914869189fc45a2e5637023f0c8c59532d442557036e7c",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5.6-terra",
+      "modelOptions": {
+        "reasoning": {
+          "effort": "max"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5.6-terra",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "no_code",
+  "timing": {
+    "totalMs": 356761
+  },
+  "createdAt": "2026-09-05T10:35:01.315Z",
+  "gitCommit": "6126da97a0143fe2b15123b33c5aca211fbb111e",
+  "error": "model returned empty response (stopReason=in_progress)"
+}

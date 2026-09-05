@@ -1,0 +1,63 @@
+$fn = 64;
+
+width = 50;
+depth = 40;
+vertical_height = 40;
+thickness = 3;
+
+through_diameter = 4.5;
+countersink_diameter = 8;
+countersink_depth = 2;
+
+edge_inset = 10;
+eps = 0.01;
+
+module bracket_body() {
+    union() {
+        translate([-width / 2, 0, -thickness])
+            cube([width, depth, thickness]);
+
+        translate([-width / 2, -thickness, 0])
+            cube([width, thickness, vertical_height]);
+
+        translate([-width / 2, -thickness, -thickness])
+            cube([width, thickness, thickness]);
+    }
+}
+
+module horizontal_countersunk_hole(px, py) {
+    translate([px, py, -thickness - eps])
+        cylinder(h = thickness + 2 * eps, d = through_diameter);
+
+    translate([px, py, -thickness])
+        cylinder(
+            h = countersink_depth,
+            d1 = countersink_diameter,
+            d2 = through_diameter
+        );
+}
+
+module vertical_countersunk_hole(px, pz) {
+    translate([px, -thickness - eps, pz])
+        rotate([-90, 0, 0])
+            cylinder(h = thickness + 2 * eps, d = through_diameter);
+
+    translate([px, -thickness, pz])
+        rotate([-90, 0, 0])
+            cylinder(
+                h = countersink_depth,
+                d1 = countersink_diameter,
+                d2 = through_diameter
+            );
+}
+
+hole_x = width / 2 - edge_inset;
+
+difference() {
+    bracket_body();
+
+    for (x = [-hole_x, hole_x]) {
+        horizontal_countersunk_hole(x, depth / 2);
+        vertical_countersunk_hole(x, vertical_height / 2);
+    }
+}

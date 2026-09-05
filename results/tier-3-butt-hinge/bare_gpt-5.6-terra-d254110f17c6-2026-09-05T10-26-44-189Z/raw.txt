@@ -1,0 +1,113 @@
+```openscad
+// 小型家具用バット蝶番（180°開状態）
+// 単位: mm
+
+$fn = 64;
+
+// 基本寸法
+leaf_length     = 30;
+leaf_width      = 25;
+leaf_thickness  = 2;
+
+pin_diameter    = 4;
+pin_length      = 32;
+
+knuckle_od      = 8;
+knuckle_id      = 4.6;
+knuckle_length  = 6;
+
+screw_diameter  = 3.2;
+csk_diameter    = 6;
+csk_depth       = 1;
+
+// Y方向の皿穴位置（8mmピッチ）
+screw_y = [7, 15, 23];
+
+
+// Y軸方向の筒状 knuckle
+module knuckle(y0) {
+    difference() {
+        translate([0, y0, 0])
+            rotate([-90, 0, 0])
+                cylinder(d = knuckle_od, h = knuckle_length);
+
+        translate([0, y0 - 0.1, 0])
+            rotate([-90, 0, 0])
+                cylinder(d = knuckle_id, h = knuckle_length + 0.2);
+    }
+}
+
+
+// 上面（+Z側）からのM3皿穴
+module countersunk_hole(x, y) {
+    // 貫通穴
+    translate([x, y, -leaf_thickness / 2 - 0.1])
+        cylinder(d = screw_diameter, h = leaf_thickness + 0.2);
+
+    // 皿穴テーパ: Z=0 ～ Z=+1
+    translate([x, y, 0])
+        cylinder(
+            d1 = screw_diameter,
+            d2 = csk_diameter,
+            h  = csk_depth
+        );
+}
+
+
+// 左板: Y=0-6, 12-18, 24-30 に knuckle
+module left_leaf() {
+    difference() {
+        union() {
+            // 左板: X=-29 ～ -4, Y=0 ～ 30
+            translate([-29, 0, -leaf_thickness / 2])
+                cube([leaf_width, leaf_length, leaf_thickness]);
+
+            knuckle(0);
+            knuckle(12);
+            knuckle(24);
+        }
+
+        // 左板の皿穴
+        for (y = screw_y)
+            countersunk_hole(-24, y);
+    }
+}
+
+
+// 右板: Y=6-12, 18-24 に knuckle
+module right_leaf() {
+    difference() {
+        union() {
+            // 右板: X=4 ～ 29, Y=0 ～ 30
+            translate([4, 0, -leaf_thickness / 2])
+                cube([leaf_width, leaf_length, leaf_thickness]);
+
+            knuckle(6);
+            knuckle(18);
+        }
+
+        // 右板の皿穴
+        for (y = screw_y)
+            countersunk_hole(24, y);
+    }
+}
+
+
+// ピン軸: Y=-1 ～ 31
+module hinge_pin() {
+    translate([0, -1, 0])
+        rotate([-90, 0, 0])
+            cylinder(d = pin_diameter, h = pin_length);
+}
+
+
+// 完成組立状態
+color([0.25, 0.28, 0.32])
+    left_leaf();
+
+color([0.30, 0.33, 0.38])
+    right_leaf();
+
+color([0.72, 0.62, 0.32])
+    hinge_pin();
+```
