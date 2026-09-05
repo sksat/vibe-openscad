@@ -117,6 +117,23 @@ message 側を優先する。
 コストにも集計にも影響しないが、thinking がどれだけ占めたかが results から分から
 なくなる。
 
+### provider 呼び出しには明示的な上限を持たせる
+
+`bench-config.yml` の `defaults.timeoutSec` は provider 呼び出しに配線されていない。
+上限が無いと、1 件の停止でベンチ全体が終わらなくなる。provider ごとに定数で持つ:
+
+| provider | 定数 | 値 | 既定のままだと |
+|---|---|---|---|
+| Anthropic(ストリーミング) | `STREAM_TIMEOUT_MS` | 30 分 | SSE が無音になっても `finalMessage()` は待ち続ける |
+| セルフホスト | `REQUEST_TIMEOUT_MS` | 10 分 + リトライ 0 | openai-node の既定は 10 分 + リトライ 2 回 = 最悪 30 分 |
+
+セルフホストでリトライを 0 にするのは、相手が自分のローカル endpoint だから。10 分
+返ってこない時点でサーバかコネクションが詰まっており、同じ長い生成をもう一度投げても
+待ち時間が伸びるだけになる。落として `api_error` にし、次の候補へ進めたほうがよい。
+
+実測では成功する run は 5 分以内(qwen3-32b の tier-2 で 290s)に終わる一方、
+固まった run は 15 分ずつ溶かしていた。
+
 ### API が名乗ったモデル id を残す(`resolvedModel`)
 
 alias で送ったとき、provider 側で dated snapshot に解決されることがある。その
@@ -434,15 +451,31 @@ Claude Code / Cursor / 自作 SDK エージェント等を **MCP 経由で** 動
 
 ## 3D 表示
 
+### 比較画面の導線と絞り込み
+
+トップページは全課題・全モデルの一覧を維持し、各課題から比較画面へ進める。
+比較画面(`/compare`)はモデルを列、実行条件を行に置く比較表とする。課題を切り替えても
+選択したモデルと列順を維持し、未実行のセルで列が詰まらないようにする。
+単発を先頭に、iter・effort・thinking を条件別に展開できるようにする。
+同一モデル内のバリアントもモデル間と同じ画像サイズで比較する。
+PDF 課題の `pdf-page` 既定実行も比較表の主行として常時表示する。
+これは比較画面の表示分類であり、リーダーボードの bare 限定集計は変更しない。
+選択モデル・課題・展開した条件は URL に保持して共有と戻る操作を可能にする。
+`/explore` はトップページへ転送する。集計の成功は
+レンダリング成功であり、形状の正しさの評価ではないことを明記する。
+フィルタは選択状態を支援技術にも伝え、該当カードのないグループを隠す。
+該当結果がない場合は解除導線を表示し、空の画面で操作が行き詰まらないようにする。
+モバイルではナビゲーションを独立した行に配置し、カードは画面幅内に収める。
+
 - 一覧: PNG サムネイル(OpenSCAD で固定アングルからレンダリング)
 - 詳細: three.js + STLLoader を vanilla web component として埋め込む island。React-Three-Fiber 等は使わない(オーバーキル)
 - `<model-viewer>` は STL 非対応のため不採用
 - **パラメトリック 3D ビューア**: SCAD の top-level 変数(数値・bool)をスライダーで動かすと openscad-wasm で再レンダして即時反映。openscad-wasm の `callMain` が同期 blocking で UI を凍らせるため Web Worker に分離。`console.error.bind(console)` で stderr が固定参照になる Emscripten ラッパーの仕様に合わせて、worker 起動時に console を差し替えて bind 経由で実エラーメッセージをキャプチャする(さもないと exit code の数値だけが見える)
-- **ダッシュボード階層表示**: `(harness × provider × model)` を二段ネスト表示し、`harness > provider > model` ↔ `provider > harness > model` を localStorage に保存して全 task row 共有。両方を SSR してハードコード CSS の `[hidden]` で切り替える(client 側で DOM を組み直さない)
+- **全実行結果(`/`)の階層表示**: `(harness × provider × model)` を二段ネスト表示し、`harness > provider > model` ↔ `provider > harness > model` を localStorage に保存して全 task row 共有。両方を SSR してハードコード CSS の `[hidden]` で切り替える(client 側で DOM を組み直さない)
 
 ## モデル比較(`/models` leaderboard)
 
-ダッシュボード(`/`)は **タスク先頭**で、1 タスクを行に、その中のモデルを
+全実行結果(`/`)は **タスク先頭**で、1 タスクを行に、その中のモデルを
 harness × provider で 2 段ネストして並べる。これは「あるタスクを全モデルでどう
 解いたか」を見るのに向くが、**モデル同士の横断比較**には向かない(同じタスク内
 でも provider が違うとサブボックスが分かれて opus と gpt-5 が隣り合わない)。

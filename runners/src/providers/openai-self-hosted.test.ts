@@ -109,6 +109,24 @@ describe("ollama provider (OpenAI-compat /v1/chat/completions)", () => {
     expect(params.temperature).toBe(0.2);
   });
 
+  it("bounds the request with a finite timeout and no retries", async () => {
+    // openai-node の既定は 1 リクエスト 10 分 + リトライ 2 回。ローカル
+    // endpoint が応答を返さないまま固まると 30 分待つ。実測では成功する run
+    // は 5 分以内に終わる一方、固まった run は 15 分ずつ溶かした。
+    const { client, create } = makeMockClient({
+      choices: [{ message: { content: "x" } }],
+    });
+    const p = createOpenAISelfHostedProvider({ client });
+
+    await p.complete({ prompt: "p", model: "qwen3-32b" });
+
+    const opts = create.mock.calls[0]?.[1];
+    expect(typeof opts?.timeout).toBe("number");
+    expect(Number.isFinite(opts.timeout)).toBe(true);
+    expect(opts.timeout).toBeGreaterThan(0);
+    expect(opts.maxRetries).toBe(0);
+  });
+
   it("propagates SDK errors as-is(host が落ちている等の判別を上位に任せる)", async () => {
     const create = vi.fn().mockRejectedValue(new Error("ECONNREFUSED"));
     const p = createOpenAISelfHostedProvider({

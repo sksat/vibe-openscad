@@ -223,6 +223,19 @@ export interface OpenAISelfHostedProviderDeps {
   apiKey?: string;
 }
 
+/**
+ * 1 リクエストの上限(10 分)。
+ *
+ * openai-node の既定は 1 リクエスト 10 分 + リトライ 2 回で、ローカル endpoint
+ * が応答を返さないまま固まると最悪 30 分待つ。実測では成功する run は 5 分以内
+ * (qwen3-32b の tier-2 で 290s)に終わる一方、固まった run は 15 分ずつ溶かした。
+ *
+ * リトライは 0 にする。固まる相手は自分のローカル endpoint なので、10 分返って
+ * こない時点でサーバかコネクションが詰まっており、同じ長い生成をもう一度投げても
+ * 待ち時間が伸びるだけになる。落として api_error として記録し、次の候補へ進める。
+ */
+const REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
+
 export function createOpenAISelfHostedProvider(
   deps: OpenAISelfHostedProviderDeps = {},
 ): Provider {
@@ -282,7 +295,10 @@ export function createOpenAISelfHostedProvider(
         ...(req.modelOptions ?? {}),
       };
       const client = await getClient();
-      const res = await client.chat.completions.create(params);
+      const res = await client.chat.completions.create(params, {
+        timeout: REQUEST_TIMEOUT_MS,
+        maxRetries: 0,
+      });
       const choice = res.choices[0];
       const out: CompletionResponse = {
         text: choice?.message?.content ?? "",
