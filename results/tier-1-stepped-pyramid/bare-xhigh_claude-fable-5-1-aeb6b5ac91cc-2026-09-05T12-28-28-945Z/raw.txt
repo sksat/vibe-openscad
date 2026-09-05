@@ -1,0 +1,18 @@
+```openscad
+// 3段の階段状ピラミッド（中心揃え）
+
+step_height = 10;
+sizes = [60, 40, 20];
+
+module stepped_pyramid() {
+    union() {
+        for (i = [0 : len(sizes) - 1]) {
+            translate([0, 0, i * step_height])
+                linear_extrude(height = step_height)
+                    square(sizes[i], center = true);
+        }
+    }
+}
+
+stepped_pyramid();
+```

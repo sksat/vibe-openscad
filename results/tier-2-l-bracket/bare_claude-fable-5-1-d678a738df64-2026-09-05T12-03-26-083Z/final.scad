@@ -1,0 +1,58 @@
+// L-bracket with countersunk holes (M4)
+// 内側コーナーが原点。水平面は +Y、垂直面は +Z 方向に伸びる。
+
+$fn = 64;
+
+// ---- パラメータ ----
+width      = 50;   // 幅 (X 方向)
+h_depth    = 40;   // 水平面の奥行き (Y 方向)
+v_height   = 40;   // 垂直面の高さ (Z 方向)
+thickness  = 3;    // 板厚
+
+hole_d     = 4.5;  // 貫通穴径 (M4 用)
+cs_d       = 8;    // 皿座面径
+cs_depth   = 2;    // 皿座面深さ
+edge_off   = 10;   // 縁からの穴オフセット
+
+eps = 0.01;
+
+// 皿穴: 原点が外側表面、-Z 方向に貫通穴、+Z 側(外側)に皿座面
+// 使用時は外側表面に原点を合わせ、板の内側方向が -Z になる向きで配置する
+module countersunk_hole(t) {
+    // 貫通穴
+    translate([0, 0, -t - eps])
+        cylinder(d = hole_d, h = t + 2 * eps);
+    // 皿座面(円錐)
+    translate([0, 0, -cs_depth])
+        cylinder(d1 = hole_d, d2 = cs_d, h = cs_depth + eps);
+    // 表面より上への余裕
+    translate([0, 0, -eps])
+        cylinder(d = cs_d, h = eps + 1);
+}
+
+module l_bracket() {
+    difference() {
+        union() {
+            // 水平面: z = -t ~ 0, y = -t ~ h_depth
+            translate([-width / 2, -thickness, -thickness])
+                cube([width, h_depth + thickness, thickness]);
+            // 垂直面: y = -t ~ 0, z = -t ~ v_height
+            translate([-width / 2, -thickness, -thickness])
+                cube([width, thickness, v_height + thickness]);
+        }
+
+        // 水平面の皿穴(外側 = 下面 z = -t、皿座面は下向き)
+        for (x = [-(width / 2 - edge_off), (width / 2 - edge_off)])
+            translate([x, h_depth / 2, -thickness])
+                rotate([180, 0, 0])
+                    countersunk_hole(thickness);
+
+        // 垂直面の皿穴(外側 = 背面 y = -t、皿座面は -Y 向き)
+        for (x = [-(width / 2 - edge_off), (width / 2 - edge_off)])
+            translate([x, -thickness, v_height / 2])
+                rotate([90, 0, 0])
+                    countersunk_hole(thickness);
+    }
+}
+
+l_bracket();

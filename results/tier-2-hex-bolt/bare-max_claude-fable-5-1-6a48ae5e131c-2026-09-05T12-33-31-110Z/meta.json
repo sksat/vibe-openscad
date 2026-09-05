@@ -1,0 +1,40 @@
+{
+  "runId": "bare-max_claude-fable-5-1-6a48ae5e131c-2026-09-05T12-33-31-110Z",
+  "taskId": "tier-2-hex-bolt",
+  "matrixId": "bare-max/claude-fable-5-1",
+  "signature": "6a48ae5e131c78c6804aefa77b533c8124a49edbf22bd7fa98539f59f804363d",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "0fee46bf3152dd6738d6d2af93e06dad04bb6bddd3b2b528c57138298ec0b5d0",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-fable-5-1",
+      "modelOptions": {
+        "output_config": {
+          "effort": "max"
+        },
+        "max_tokens": 64000
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-fable-5-1",
+  "resolvedModel": "claude-fable-5-1",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 22409
+  },
+  "tokens": {
+    "input": 264,
+    "output": 1497
+  },
+  "cost_usd": 0.07749,
+  "createdAt": "2026-09-05T12:33:31.110Z",
+  "gitCommit": "69ade465488810ed67790d0ecd58cbc68bbd26ab"
+}

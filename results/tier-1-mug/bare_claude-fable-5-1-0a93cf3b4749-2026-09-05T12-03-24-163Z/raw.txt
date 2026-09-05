@@ -1,0 +1,39 @@
+```openscad
+// ===== マグカップ =====
+$fn = 96;
+
+// --- カップ本体パラメータ ---
+outer_d  = 80;    // 外径
+height   = 100;   // 高さ
+wall_t   = 4;     // 側面の肉厚
+bottom_t = 6;     // 底面の厚み
+
+// --- 取手パラメータ ---
+handle_r    = 12;            // リング状取手の半径(リング中心線の半径)
+handle_tube = 4;             // リング断面(パイプ)の半径
+handle_z    = height / 2;    // 取手の取り付け高さ(カップ中心高さ)
+handle_x    = outer_d/2 + handle_r;  // リング中心のX座標(外周からリング半径分外側)
+
+// カップ本体:外筒から内側をくり抜く
+module cup_body() {
+    difference() {
+        cylinder(d = outer_d, h = height);
+        translate([0, 0, bottom_t])
+            cylinder(d = outer_d - 2 * wall_t, h = height);
+    }
+}
+
+// リング状の取手(トーラス)を側面に取り付け
+module handle() {
+    translate([handle_x, 0, handle_z])
+        rotate([90, 0, 0])            // リングを縦(XZ平面)に立てる
+            rotate_extrude()
+                translate([handle_r, 0])
+                    circle(r = handle_tube);
+}
+
+union() {
+    cup_body();
+    handle();
+}
+```

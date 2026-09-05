@@ -1,0 +1,36 @@
+```openscad
+// M8 六角ボルト（ねじ山省略）
+// 頭部底面が z=0、頭部は +Z 側、シャンクは -Z 側へ伸びる
+
+// --- 寸法パラメータ (ISO 4014 / 4017 相当) ---
+across_flats = 13;    // 頭部対辺距離 [mm]
+head_height  = 5.3;   // 頭部高さ [mm]
+shank_d      = 8;     // シャンク直径 [mm]
+shank_len    = 30;    // シャンク長さ [mm]
+
+// 対辺距離 -> 外接円直径（対角距離）
+across_corners = across_flats / cos(30);
+
+$fn = 96;
+
+module hex_head() {
+    // 六角柱: 円柱を6角形で近似し、辺が X 軸に平行になるよう 30° 回転
+    rotate([0, 0, 30])
+        cylinder(h = head_height, d = across_corners, $fn = 6);
+}
+
+module shank() {
+    // 頭部底面(z=0)から -Z 方向へ伸びる円柱
+    translate([0, 0, -shank_len])
+        cylinder(h = shank_len, d = shank_d);
+}
+
+module m8_hex_bolt() {
+    union() {
+        hex_head();
+        shank();
+    }
+}
+
+m8_hex_bolt();
+```

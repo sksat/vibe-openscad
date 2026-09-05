@@ -1,0 +1,123 @@
+```openscad
+// Sharp GP2Y0D413K0F 距離センサ 外形モデル
+// 単位: mm, 本体中心が原点, +Z 上, +Y 前面(レンズ側), コネクタは下
+$fn = 64;
+
+// ---------------- 寸法 ----------------
+body_w = 29.45;   // X 幅
+body_d = 11.5;    // Y 奥行(レンズケース除く) 全体奥行 13.5 - 2
+body_h = 13.05;   // Z 高さ
+
+lens_case_d  = 2.0;   // 前面への飛び出し
+lens_case_h  = 8.4;   // レンズケース高さ
+lens_win_h   = 7.2;   // 窓の高さ
+case_margin  = (body_w - (7.5 + 4.15 + 16.3)) / 2;  // = 0.75 左右余白
+
+emit_case_w  = 7.5;   // 発光側レンズケース幅
+gap_w        = 4.15;  // 中間部
+det_case_w   = 16.3;  // 受光側レンズケース幅
+
+emit_cx = -body_w/2 + 4.5;          // *4.5  発光レンズ中心
+det_cx  = -body_w/2 + 4.5 + 19.7;   // *19.7 受光レンズ中心
+
+pwb_t   = 1.2;    // PWB 厚
+pwb_w   = 27.0;
+pwb_d   = 9.5;
+
+total_h = 18.9;                                   // 上面～コネクタ底
+conn_w  = 10.1;
+conn_d  = 3.3;                                    // (3.3)
+conn_h  = total_h - body_h - pwb_t;               // = 4.65
+conn_cx = 0.9;                                    // 図より僅かに右寄り
+conn_cy = -1.8;                                   // 後方寄り
+pin_pitch = 1.5;                                  // JCTC 12001W90-3P-HF
+
+eps = 0.01;
+
+// ---------------- 部品 ----------------
+module body() {
+    color([0.15, 0.15, 0.15])
+        cube([body_w, body_d, body_h], center = true);
+}
+
+// レンズケース突起 (前面 +Y)
+module lens_case_block(x0, w) {
+    translate([x0, body_d/2 - eps, -lens_case_h/2])
+        cube([w, lens_case_d + eps, lens_case_h]);
+}
+
+module lens_case() {
+    color([0.15, 0.15, 0.15]) {
+        emit_x0 = -body_w/2 + case_margin;
+        det_x0  = emit_x0 + emit_case_w + gap_w;
+        difference() {
+            union() {
+                lens_case_block(emit_x0, emit_case_w);
+                lens_case_block(det_x0,  det_case_w);
+            }
+            // 発光部窓(円形)
+            translate([emit_cx, body_d/2 + lens_case_d - 0.8, 0])
+                rotate([-90, 0, 0])
+                    cylinder(d = 6.4, h = 2);
+            // 受光部窓(矩形)
+            det_win_w = det_case_w - 1.8;
+            translate([det_x0 + 0.9, body_d/2 + lens_case_d - 0.8, -lens_win_h/2])
+                cube([det_win_w, 2, lens_win_h]);
+        }
+    }
+}
+
+// レンズ(アクリル, 可視光カット)
+module lenses() {
+    color([0.35, 0.15, 0.15, 0.85]) {
+        // 発光部レンズ
+        translate([emit_cx, body_d/2 + lens_case_d - 1.0, 0])
+            rotate([-90, 0, 0])
+                cylinder(d = 6.2, h = 0.6);
+        translate([emit_cx, body_d/2 + lens_case_d - 0.4, 0])
+            scale([1, 0.35, 1]) sphere(d = 6.2);
+        // 受光部レンズ (矩形窓の中に円形レンズ)
+        det_x0 = -body_w/2 + case_margin + emit_case_w + gap_w;
+        translate([det_x0 + 0.9, body_d/2 + lens_case_d - 1.0, -lens_win_h/2 + 0.1])
+            cube([det_case_w - 1.8, 0.6, lens_win_h - 0.2]);
+        translate([det_cx, body_d/2 + lens_case_d - 0.4, 0])
+            scale([1, 0.35, 1]) sphere(d = 6.2);
+    }
+}
+
+// PWB (紙フェノール基板)
+module pwb() {
+    color([0.75, 0.6, 0.3])
+        translate([-pwb_w/2, body_d/2 - pwb_d, -body_h/2 - pwb_t])
+            cube([pwb_w, pwb_d, pwb_t]);
+}
+
+// コネクタ (簡易表現)
+module connector() {
+    z_top = -body_h/2 - pwb_t;
+    color([0.9, 0.9, 0.85])
+        difference() {
+            translate([conn_cx - conn_w/2, conn_cy - conn_d/2, z_top - conn_h])
+                cube([conn_w, conn_d, conn_h]);
+            // 嵌合開口
+            translate([conn_cx - (conn_w - 2)/2, conn_cy - (conn_d - 1.2)/2, z_top - conn_h - eps])
+                cube([conn_w - 2, conn_d - 1.2, conn_h - 1.0]);
+        }
+    // 3 ピン
+    color([0.8, 0.8, 0.8])
+        for (i = [-1, 0, 1])
+            translate([conn_cx + i * pin_pitch, conn_cy, z_top - conn_h + 0.8])
+                cylinder(d = 0.5, h = conn_h - 0.8 + eps, $fn = 16);
+}
+
+// ---------------- 組み立て ----------------
+module gp2y0d413k0f() {
+    body();
+    lens_case();
+    lenses();
+    pwb();
+    connector();
+}
+
+gp2y0d413k0f();
+```

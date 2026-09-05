@@ -1,0 +1,117 @@
+```openscad
+// ============================================================
+//  家具用 小型バット蝶番(butt hinge)  開いた状態(180°)
+//  構成: 左板(leaf_L) / 右板(leaf_R) / ピン軸(pin)
+//  座標系: ピン軸中心線 = Y軸(+Y方向)、板の面は Z に直交
+//          左板: x<0 側、右板: x>0 側
+// ============================================================
+
+$fn = 64;
+
+// ---------- 寸法パラメータ ----------
+leaf_w      = 25;          // 板の横幅(開く方向 = X、軸中心から先端まで)
+leaf_h      = 30;          // 板の縦(ヒンジ軸方向 = Y)
+leaf_t      = 2;           // 板厚
+
+pin_d       = 4;           // ピン軸直径
+pin_over    = 1;           // knuckle からの飛び出し(片側)
+pin_len     = leaf_h + 2 * pin_over;   // = 32
+
+knuckle_od  = 8;           // knuckle 外径
+clearance   = 0.3;         // ピンとの径クリアランス
+knuckle_id  = pin_d + clearance;       // = 4.6
+seg_n       = 5;           // knuckle 分割数
+seg_len     = leaf_h / seg_n;          // = 6
+knuckle_gap = 0.2;         // 隣接 knuckle 同士の Y 方向すきま
+
+left_segs   = [0, 2, 4];   // 左板の knuckle(外側2 + 中央1)
+right_segs  = [1, 3];      // 右板の knuckle(中間2)
+
+screw_d     = 3.2;         // M3 貫通穴
+cs_d        = 6;           // 皿穴 表面径
+cs_depth    = 1;           // 皿穴 深さ
+screw_pitch = 8;           // 穴ピッチ(Y方向)
+screw_x     = 16;          // 軸中心から穴中心までの距離(X方向)
+
+open_angle  = 180;         // 開き角度(180 = 完全に開いた平面状態)
+
+// ---------- ユーティリティ ----------
+// i 番目セグメントの Y 範囲(内側の境目のみ gap を空ける)
+function seg_y0(i) = i * seg_len       + (i > 0         ? knuckle_gap / 2 : 0);
+function seg_y1(i) = (i + 1) * seg_len - (i < seg_n - 1 ? knuckle_gap / 2 : 0);
+
+// Y 軸方向の円柱
+module cyl_y(d, y0, y1) {
+    translate([0, y0, 0])
+        rotate([-90, 0, 0])
+            cylinder(d = d, h = y1 - y0);
+}
+
+// ---------- knuckle(筒部) ----------
+module knuckle(i) {
+    cyl_y(knuckle_od, seg_y0(i), seg_y1(i));
+}
+
+// ---------- 皿穴付きネジ穴(+Z 面が表面) ----------
+module screw_hole(x, y) {
+    translate([x, y, 0]) {
+        // 貫通穴
+        cylinder(d = screw_d, h = leaf_t + 2, center = true);
+        // 皿(テーパ)
+        translate([0, 0, leaf_t / 2 - cs_depth])
+            cylinder(d1 = screw_d, d2 = cs_d, h = cs_depth + 0.01);
+    }
+}
+
+// ---------- 板(leaf) ----------
+// side = -1 : 左板(x<0)、side = +1 : 右板(x>0)
+module leaf(side, segs) {
+    plate_len = leaf_w - knuckle_od / 2;   // knuckle 外周から先端までの長さ
+    difference() {
+        union() {
+            // 板本体(knuckle 外周から外側へ)
+            translate([side > 0 ? knuckle_od / 2 : -leaf_w, 0, -leaf_t / 2])
+                cube([plate_len, leaf_h, leaf_t]);
+
+            for (i = segs) {
+                // 筒部
+                knuckle(i);
+                // 筒部と板をつなぐ部分
+                translate([side > 0 ? 0 : -knuckle_od / 2, seg_y0(i), -leaf_t / 2])
+                    cube([knuckle_od / 2, seg_y1(i) - seg_y0(i), leaf_t]);
+            }
+        }
+        // ピン穴(クリアランス込み)
+        cyl_y(knuckle_id, -1, leaf_h + 1);
+
+        // M3 皿穴 ×3(板の縦方向に 8mm ピッチ、中央寄せ)
+        for (k = [-1, 0, 1])
+            screw_hole(side * screw_x, leaf_h / 2 + k * screw_pitch);
+    }
+}
+
+// ---------- ピン軸 ----------
+module pin() {
+    cyl_y(pin_d, -pin_over, leaf_h + pin_over);   // 長さ 32mm、両端 1mm 飛び出し
+}
+
+// ============================================================
+//  組み立て(開いた状態 180°)
+// ============================================================
+module hinge_assembly() {
+    // 左板(x<0)
+    color("SteelBlue")
+        leaf(-1, left_segs);
+
+    // 右板(x>0) — open_angle を変えると Y 軸まわりに回転
+    color("LightSteelBlue")
+        rotate([0, 180 - open_angle, 0])
+            leaf(+1, right_segs);
+
+    // ピン軸
+    color("Silver")
+        pin();
+}
+
+hinge_assembly();
+```
