@@ -63,6 +63,38 @@ function inputs(overrides: Partial<PlanInputs>): PlanInputs {
   };
 }
 
+describe("提供終了がアナウンスされたモデル", () => {
+  const at = (shutdownAt?: string) =>
+    inputs({
+      lookupModel: () => (shutdownAt ? { shutdownAt } : {}),
+      now: new Date("2026-09-05T00:00:00Z"),
+    });
+
+  it("終了日を過ぎていたら blocked にする", () => {
+    expect(planRuns(at("2026-07-23"))[0]?.status).toBe("blocked");
+  });
+
+  it("終了日がまだ先なら通常どおり", () => {
+    expect(planRuns(at("2026-12-11"))[0]?.status).toBe("missing");
+  });
+
+  it("アナウンスが無ければ通常どおり", () => {
+    expect(planRuns(at(undefined))[0]?.status).toBe("missing");
+  });
+
+  it("下限(retirementNotBefore)だけなら blocked にしない", () => {
+    // Anthropic の "Not sooner than" は終了予定日ではなく下限。過ぎていても
+    // まだ使えるので、判定には使わない。
+    const item = planRuns(
+      inputs({
+        lookupModel: () => ({ retirementNotBefore: "2026-01-01" }),
+        now: new Date("2026-09-05T00:00:00Z"),
+      }),
+    )[0];
+    expect(item?.status).toBe("missing");
+  });
+});
+
 describe("planRuns", () => {
   it("classifies a candidate with no existing run as missing", () => {
     const plan = planRuns(inputs({}));

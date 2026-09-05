@@ -1,4 +1,5 @@
 import type { Candidate } from "./matrix.js";
+import { type ResolvedModel, resolveModel } from "./models.js";
 import type { ResultsIndex } from "./results.js";
 import type {
   BenchConfig,
@@ -50,6 +51,13 @@ export interface PlanInputs {
   existing: ResultsIndex;
   computeFingerprint: (c: Candidate) => Fingerprint;
   computeSignature: (fp: Fingerprint) => string;
+  /** モデルカタログの参照。既定は models.yml。テストで差し替える。 */
+  lookupModel?: (
+    model: string,
+    provider: string,
+  ) => Pick<ResolvedModel, "shutdownAt" | "retirementNotBefore"> | null;
+  /** 提供終了日の判定基準。既定は現在時刻。 */
+  now?: Date;
 }
 
 /**
@@ -96,9 +104,33 @@ function isChainBlocked(
   return false;
 }
 
+/**
+ * provider が提供終了をアナウンスしていて、その日を過ぎているか。
+ * 終了済みのモデルを実行しても api_error になるだけなので、plan の段階で
+ * 候補から外す(既存の run は results に残る)。
+ */
+function isRetired(
+  entry: MatrixEntry,
+  lookupModel: NonNullable<PlanInputs["lookupModel"]>,
+  now: Date,
+): boolean {
+  if (!("model" in entry)) return false;
+  const shutdownAt = lookupModel(entry.model, entry.provider)?.shutdownAt;
+  if (!shutdownAt) return false;
+  const at = Date.parse(`${shutdownAt}T00:00:00Z`);
+  return Number.isFinite(at) && at <= now.getTime();
+}
+
 export function planRuns(inputs: PlanInputs): PlanItem[] {
-  const { cfg, candidates, existing, computeFingerprint, computeSignature } =
-    inputs;
+  const {
+    cfg,
+    candidates,
+    existing,
+    computeFingerprint,
+    computeSignature,
+    lookupModel = (model, provider) => resolveModel(model, provider),
+    now = new Date(),
+  } = inputs;
   const required = cfg.defaults.samples;
   const items: PlanItem[] = [];
 
@@ -122,6 +154,10 @@ export function planRuns(inputs: PlanInputs): PlanItem[] {
     let status: PlanStatus;
     if (matchingSamples.length >= required) {
       status = "up-to-date";
+    } else if (isRetired(candidate.entry, lookupModel, now)) {
+      // provider がアナウンスした提供終了日を過ぎている。実行しても
+      // api_error になるだけなので候補から外す。既存 run は残る。
+      status = "blocked";
     } else if (isChainBlocked(candidate, byMatrixId, existing)) {
       // An upstream parent's only run is unusable — running this would
       // chain-break at runtime. Skip in plan output.

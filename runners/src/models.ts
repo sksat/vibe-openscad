@@ -75,6 +75,30 @@ export const ModelEntrySchema = z
      * 宣言する。
      */
     snapshot: z.string().min(1).optional(),
+    /**
+     * provider がアナウンスした提供終了日(`YYYY-MM-DD`)。この日を過ぎた
+     * モデルは `bench plan` で blocked になり、実行対象から外れる。
+     *
+     * OpenAI は Models API の `shutdown_date` で公開しているので突き合わせ
+     * られる。Anthropic と Google は API に該当フィールドが無く、ドキュメントの
+     * アナウンスを見て手で書く。
+     */
+    shutdownAt: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD で書く")
+      .optional(),
+    /**
+     * 「この日より前には終了しない」という下限(`YYYY-MM-DD`)。Anthropic の
+     * deprecation ページが Active なモデルに出している "Tentative retirement
+     * date / Not sooner than" がこれにあたる。
+     *
+     * **終了予定日ではない**ので plan の判定には使わない。いつ頃まで使えるかの
+     * 目安として記録し、この日を過ぎたら確定日が出ていないか確認する。
+     */
+    retirementNotBefore: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD で書く")
+      .optional(),
     rate: ModelRateSchema.optional(),
     vision: z.boolean().optional(),
     effort: EffortLevelSchema.nullable().optional(),

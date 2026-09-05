@@ -276,6 +276,37 @@ gpt-5.4    : { rate: 2/16 }
 `output_config.effort` を拒否する)、OpenAI は thinking を effort に内包するので
 `thinking` を宣言しない、という違いをそのまま表現できる。
 
+### 提供終了(`shutdownAt`)
+
+provider がアナウンスした提供終了日をカタログに書く。この日を過ぎたモデルは
+`bench plan` で `blocked` になり、実行対象から外れる。呼んでも 404 になるだけ
+なので API を無駄に叩かない。**既存の run は results に残る**ので、過去の記録が
+消えるわけではない。
+
+判定は `up-to-date` の後に行う。既に必要なサンプルが揃っているエントリは
+そのまま up-to-date で、再実行が必要になったもの(missing / stale)だけが
+blocked に落ちる。
+
+provider によって情報の出し方が違う:
+
+| provider | 提供終了の情報 |
+|---|---|
+| OpenAI | Models API の `shutdown_date`。値を突き合わせられる |
+| Anthropic | API に該当フィールドが無い。deprecation ページの表を見て手で書く |
+| Google | 同上(リリースノートに記載) |
+
+### 確定日と下限を区別する(`shutdownAt` / `retirementNotBefore`)
+
+Anthropic は Active なモデルにも日付を出しているが、これは
+"Tentative retirement date / **Not sooner than**" で、**終了予定日ではなく
+下限**。「この日より前には終了しない」という意味しかない。
+
+- `shutdownAt` — 確定した提供終了日。plan が blocked にする
+- `retirementNotBefore` — 下限。**判定には使わない**。いつ頃まで使えるかの目安
+  として記録し、この日を過ぎたら確定日が出ていないか確認する
+
+両者を同じフィールドに入れると、まだ使えるモデルを誤って止めてしまう。
+
 ### 網羅テストで手書きテストを置き換える(不変条件)
 
 モデル追加時に **新しいテストを書かない** かわりに、データ駆動の網羅テストが

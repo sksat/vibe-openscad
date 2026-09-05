@@ -31,6 +31,7 @@
 # `{type: disabled}` は API が 400 を返す(= thinking off が存在しない)。
 claude-fable-5:
   provider: anthropic
+  retirementNotBefore: "2027-06-09"
   rate: { in: 10, out: 50 }
   vision: true
   effort: high
@@ -40,6 +41,7 @@ claude-fable-5:
 # 4.8 / 4.7 は省略 = 思考しない、だったので既定値が反転している。
 claude-opus-5:
   provider: anthropic
+  retirementNotBefore: "2027-07-24"
   rate: { in: 5, out: 25 }
   vision: true
   effort: high
@@ -47,6 +49,7 @@ claude-opus-5:
 
 claude-opus-4-8:
   provider: anthropic
+  retirementNotBefore: "2027-05-28"
   rate: { in: 5, out: 25 }
   vision: true
   effort: high
@@ -54,6 +57,7 @@ claude-opus-4-8:
 
 claude-opus-4-7:
   provider: anthropic
+  retirementNotBefore: "2027-04-16"
   rate: { in: 5, out: 25 }
   vision: true
   effort: high
@@ -68,6 +72,7 @@ claude-opus-4-6:
 
 claude-sonnet-4-6:
   provider: anthropic
+  retirementNotBefore: "2027-02-17"
   rate: { in: 3, out: 15 }
   vision: true
   effort: high
@@ -75,6 +80,7 @@ claude-sonnet-4-6:
 
 claude-haiku-4-5:
   provider: anthropic
+  retirementNotBefore: "2026-10-15"
   rate: { in: 1, out: 5 }
   vision: true
   effort: null # Haiku 4.5 は output_config.effort を受け付けない
@@ -85,42 +91,59 @@ claude-haiku-4-5:
 # effort は Opus 4.5 から(high が最高)。thinking は明示 opt-in なので既定 off。
 claude-opus-4-5:
   provider: anthropic
+  retirementNotBefore: "2026-11-24"
   rate: { in: 5, out: 25 }
   vision: true
   effort: high
   thinking: "off"
 
+# 2026-06-05 に deprecated、2026-08-05 に retired(公式 deprecation ページ)。
+# 呼ぶと 404 になる。過去 run は results に残る。
 claude-opus-4-1:
   provider: anthropic
+  shutdownAt: "2026-08-05"
   rate: { in: 15, out: 75 }
   vision: true
   effort: null
   thinking: "off"
 
+# 2026-04-14 に deprecated、2026-06-15 に retired。
 claude-opus-4-0:
   provider: anthropic
+  shutdownAt: "2026-06-15"
   rate: { in: 15, out: 75 }
   vision: true
   effort: null
   thinking: "off"
 
 # snapshot だけの id(claude-opus-4-20250514)を拾う catch-all。
+# snapshot だけの id を拾う catch-all。shutdownAt はここに置かない — 置くと
+# prefix 継承で現役の opus-4-5 / 4-6 / 4-7 / 4-8 まで止まる。
 claude-opus-4-:
   provider: anthropic
   rate: { in: 15, out: 75 }
+
+# 2026-04-14 に deprecated、2026-06-15 に retired。呼ぶと 404。
+claude-opus-4-20250514:
+  provider: anthropic
+  shutdownAt: "2026-06-15"
   vision: true
   effort: null
   thinking: "off"
 
+# Active。公式は「2026-09-29 より前には終了しない」とだけ出している。
 claude-sonnet-4-5:
   provider: anthropic
+  retirementNotBefore: "2026-09-29"
   rate: { in: 3, out: 15 }
   vision: true
   effort: null
   thinking: "off"
 
+# 2026-04-14 に deprecated、2026-06-15 に retired。
 claude-sonnet-4-0:
   provider: anthropic
+  shutdownAt: "2026-06-15"
   rate: { in: 3, out: 15 }
   vision: true
   effort: null
@@ -129,6 +152,11 @@ claude-sonnet-4-0:
 claude-sonnet-4-:
   provider: anthropic
   rate: { in: 3, out: 15 }
+
+# 2026-04-14 に deprecated、2026-06-15 に retired。
+claude-sonnet-4-20250514:
+  provider: anthropic
+  shutdownAt: "2026-06-15"
   vision: true
   effort: null
   thinking: "off"
@@ -199,8 +227,20 @@ gemini-3-pro:
 
 gemini-3.1-flash-lite:
   provider: google
+  line: gemini-3.1-flash-lite
+  snapshot: "05-2026"
   rate: { in: 0.1, out: 0.4 }
   thinking: dynamic
+
+# 2026-05-25 に shutdown 済み。ただし **404 にならず GA が返る** — 呼ぶと
+# modelVersion=gemini-3.1-flash-lite になる。そのまま走らせると preview の
+# ラベルで GA を測ることになるので、shutdownAt で実行対象から外す。
+# 過去に取得した run は results に残る。
+gemini-3.1-flash-lite-preview:
+  provider: google
+  line: gemini-3.1-flash-lite
+  snapshot: "preview-03-2026"
+  shutdownAt: "2026-05-25"
 
 gemini-3.1-flash:
   provider: google
@@ -298,6 +338,8 @@ gpt-5:
   rate: { in: 1.25, out: 10 }
   vision: true
   effort: medium
+  # 2026-12-11 に提供終了予定(Models API の shutdown_date)。
+  shutdownAt: "2026-12-11"
 
 gpt-5-pro:
   provider: openai
@@ -347,6 +389,24 @@ gpt-5.4-nano:
   provider: openai
   rate: { in: 0.075, out: 0.6 }
 
+# codex 系(コーディング特化)。gpt-5.3-codex 以外は 2026-07-23 に提供終了
+# 済みで、呼ぶと 404 になる(OpenAI の Models API の shutdown_date で確認)。
+# 過去 run は results に残るが、再実行の対象からは外れる。
+gpt-5-codex:
+  provider: openai
+  shutdownAt: "2026-07-23"
+
+gpt-5.1-codex:
+  provider: openai
+  shutdownAt: "2026-07-23"
+
+gpt-5.2-codex:
+  provider: openai
+  shutdownAt: "2026-07-23"
+
+gpt-5.3-codex:
+  provider: openai
+
 # gpt-4.1 系(reasoning 無し = effort ノブ無し)
 gpt-4.1:
   provider: openai
@@ -373,6 +433,8 @@ o3:
   rate: { in: 2, out: 8 }
   vision: true
   effort: medium
+  # 2026-12-11 に提供終了予定(Models API の shutdown_date)。
+  shutdownAt: "2026-12-11"
 
 o3-pro:
   provider: openai
