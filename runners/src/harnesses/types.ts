@@ -75,7 +75,7 @@ export interface HarnessResult {
   /** 純粋な生成時間(ms、ロード/プロンプト評価を除く)。LM Studio 等が
    *  返すときだけ。token/sec を wallclock と分けて見る用。 */
   generationMs?: number;
-  tokens?: { input: number; output: number };
+  tokens?: { input: number; output: number; thinking?: number };
   modelId?: string;
   harnessLog: HarnessLog;
   errorMessage?: string;

@@ -125,6 +125,12 @@ export function createAnthropicProvider(
       const message = await create(params);
       const durationMs = performance.now() - started;
 
+      const thinkingTokens = (
+        message.usage as unknown as {
+          output_tokens_details?: { thinking_tokens?: number };
+        }
+      ).output_tokens_details?.thinking_tokens;
+
       const text = message.content
         .filter((b): b is Anthropic.TextBlock => b.type === "text")
         .map((b) => b.text)
@@ -145,7 +151,10 @@ export function createAnthropicProvider(
         modelId: message.model,
         tokens: {
           input: message.usage.input_tokens,
+          // output_tokens は thinking を含んだ値。内訳は
+          // output_tokens_details.thinking_tokens として別に返る。
           output: message.usage.output_tokens,
+          ...(thinkingTokens != null ? { thinking: thinkingTokens } : {}),
         },
         durationMs,
         ...(message.stop_reason ? { stopReason: message.stop_reason } : {}),

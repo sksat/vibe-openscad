@@ -1,0 +1,38 @@
+{
+  "runId": "pdf-page_gemini-3.8-flash-a106d2e529dd-2026-09-05T13-25-54-994Z",
+  "taskId": "tier-4-gp2y0d413k",
+  "matrixId": "pdf-page/gemini-3.8-flash",
+  "signature": "a106d2e529ddf5053e085c4b4d4c77d3ba4231597a34d9a8219ed126f0bffb81",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dfedb7f4346513257f918e1c799e402ce9a2931cdf7174be78e70885f84f0618",
+    "harness": {
+      "kind": "pdf-page",
+      "provider": "google",
+      "model": "gemini-3.8-flash"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "google",
+  "model": "gemini-3.8-flash",
+  "resolvedModel": "gemini-3.8-flash",
+  "harness": {
+    "kind": "pdf-page",
+    "pdfUrl": "https://jp.sharp/products/device/doc/opto/gp2y0d413k_e.pdf",
+    "pages": [
+      2
+    ]
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 34855
+  },
+  "tokens": {
+    "input": 1165,
+    "output": 2735
+  },
+  "cost_usd": 0.01113,
+  "createdAt": "2026-09-05T13:25:54.994Z",
+  "gitCommit": "fcbb362bfe8359343b1bdacbb656201255f74e37"
+}

@@ -1,0 +1,39 @@
+{
+  "runId": "pdf-page_gemini-3.1-pro-13523959cd33-2026-09-05T13-28-12-409Z",
+  "taskId": "tier-4-gp2y0d413k",
+  "matrixId": "pdf-page/gemini-3.1-pro",
+  "signature": "13523959cd331ed2f4112a6821ab0b9fa90107ffd884ce2aba950c0b356380ff",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dfedb7f4346513257f918e1c799e402ce9a2931cdf7174be78e70885f84f0618",
+    "harness": {
+      "kind": "pdf-page",
+      "provider": "google",
+      "model": "gemini-3.1-pro-preview"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "google",
+  "model": "gemini-3.1-pro-preview",
+  "resolvedModel": "gemini-3.1-pro-preview",
+  "harness": {
+    "kind": "pdf-page",
+    "pdfUrl": "https://jp.sharp/products/device/doc/opto/gp2y0d413k_e.pdf",
+    "pages": [
+      2
+    ]
+  },
+  "status": "no_code",
+  "timing": {
+    "totalMs": 132712
+  },
+  "tokens": {
+    "input": 1165,
+    "output": 820
+  },
+  "cost_usd": 0.009656249999999998,
+  "createdAt": "2026-09-05T13:28:12.409Z",
+  "gitCommit": "fcbb362bfe8359343b1bdacbb656201255f74e37",
+  "error": "no SCAD code block in response (stopReason=MAX_TOKENS)"
+}

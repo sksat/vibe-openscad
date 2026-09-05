@@ -1,0 +1,107 @@
+// Sharp GP2Y0D413K0F 距離センサ 3Dモデル
+// 座標系: 単位 mm, 本体（メインケース）の中心を原点(0, 0, 0)とする。
+
+$fn = 40;
+
+// カラー定義
+color_case = [0.18, 0.18, 0.18]; // メインケース（カーボンABS・艶消し黒）
+color_lens = [0.1, 0.05, 0.15];   // レンズ（可視光カット樹脂・極暗紫）
+color_pwb  = [0.65, 0.5, 0.25];   // PWB基板（紙フェノール・茶黄土色）
+color_conn = [0.92, 0.92, 0.88];  // コネクタ（オフホワイト）
+color_pin  = [0.85, 0.65, 0.2];   // 金属ピン（真鍮・ゴールド）
+
+// メインモデルの呼び出し
+gp2y0d413k0f();
+
+module gp2y0d413k0f() {
+    
+    // --- 1. メインボディ (Lens Case) ---
+    // 幅(W): 29.45, 奥行(D): 7.1, 高さ(H): 13.05
+    difference() {
+        color(color_case)
+            cube([29.45, 7.1, 13.05], center=true);
+        
+        // 背面のPWB（基板）が収まる凹み
+        // 高さ方向は下端(Z=-6.525)から 7.65mm (Z=1.125) まで、深さ 1.2mm
+        translate([0, -7.1/2 + 1.2/2 - 0.05, -13.05/2 + 7.65/2 - 0.05])
+            cube([28.0, 1.2 + 0.1, 7.65 + 0.1], center=true);
+    }
+
+    // --- 2. 光発光部 / Emitter (左側レンズ) ---
+    // X位置: 左端(-14.725)から 4.5mm -> X = -10.225
+    // Y位置: フロント面(3.55)から前方に 2mm 突出
+    translate([-10.225, 7.1/2, 0]) {
+        // 四角い台座 (8.4 x 8.4 x 2)
+        color(color_case)
+            translate([0, 1.0, 0])
+                cube([8.4, 2.0, 8.4], center=true);
+        // レンズ（丸型）
+        color(color_lens)
+            translate([0, 2.0, 0])
+                rotate([90, 0, 0])
+                    cylinder(d=6.0, h=0.1, center=true);
+    }
+
+    // --- 3. 光受光部 / Detector (右側レンズ) ---
+    // X位置: 左のレンズから 19.7mm -> X = 9.475
+    translate([9.475, 7.1/2, 0]) {
+        // 横長の台座 (10.0 x 8.4 x 2)
+        color(color_case)
+            translate([0, 1.0, 0])
+                cube([10.0, 2.0, 8.4], center=true);
+        // レンズ
+        color(color_lens)
+            translate([0, 2.0, 0])
+                rotate([90, 0, 0])
+                    cylinder(d=5.5, h=0.1, center=true);
+    }
+
+    // --- 4. PWB (基板) ---
+    // 厚さ: 1.2mm, 背面の凹みに配置
+    // 背面図の3つのセクション（幅 7.5, 4.15, 16.3）を表現
+    pwb_y = -7.1/2 - 1.2/2;
+    pwb_bottom = -13.05/2 - 5.85; // コネクタ・PWBの下端 (Z = -12.375)
+    
+    color(color_pwb) {
+        // 左ブロック (幅 7.5, 高さ 11.0)
+        translate([-27.95/2 + 7.5/2, pwb_y, pwb_bottom + 11.0/2])
+            cube([7.5, 1.2, 11.0], center=true);
+            
+        // 中央ブロック (幅 4.15, 高さ 13.5)
+        translate([-27.95/2 + 7.5 + 4.15/2, pwb_y, pwb_bottom + 13.5/2])
+            cube([4.15, 1.2, 13.5], center=true);
+            
+        // 右ブロック (幅 16.3, 高さ 11.0)
+        translate([27.95/2 - 16.3/2, pwb_y, pwb_bottom + 11.0/2])
+            cube([16.3, 1.2, 11.0], center=true);
+    }
+
+    // --- 5. コネクタ ---
+    // 幅: 10.1, 左端から 3.75mm -> X中心 = -5.925 (非対称配置)
+    // 奥行(Y): メインボディ背面から後方に 3.3mm 突出
+    // 高さ(Z): 本体底面から下に 5.85mm 突出
+    conn_x = -14.725 + 3.75 + 10.1/2;
+    conn_y = -7.1/2 - 1.2 - 3.3/2;
+    conn_w = 10.1;
+    conn_d = 5.0; // ケース下部回り込みからPWB背面突起まで
+    conn_h = 7.5; // 少しケース内部に食い込ませる
+    
+    color(color_conn) {
+        translate([conn_x, conn_y + 0.8, pwb_bottom + conn_h/2]) {
+            difference() {
+                cube([conn_w, conn_d, conn_h], center=true);
+                // コネクタの差し込み口（中空部）
+                translate([0, -0.5, -conn_h/2 + 1.0])
+                    cube([conn_w - 1.6, conn_d - 1.2, 3.0], center=true);
+            }
+        }
+    }
+
+    // --- 6. 接続ピン (3ピン) ---
+    // ピッチ約 1.5mm で3本のピンを下方向に配置
+    for (i = [-1 : 1]) {
+        color(color_pin)
+            translate([conn_x + i * 1.5, conn_y + 0.5, pwb_bottom - 1.0])
+                cylinder(d=0.5, h=3.0, center=true);
+    }
+}

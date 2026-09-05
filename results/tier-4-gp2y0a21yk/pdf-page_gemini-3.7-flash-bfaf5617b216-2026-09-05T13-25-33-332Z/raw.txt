@@ -1,0 +1,173 @@
+Sharp 製測距センサ **GP2Y0A21YK0F** のデータシート寸法に基づく OpenSCAD モデルです。
+
+### 座標系の設定
+- **原点 (0,0,0)**: メインボディの中心
+- **X軸**: 左右幅方向（取付穴ピッチ: 37 mm）
+- **Y軸**: 測距光照射方向（前後厚み方向: 本体深さ 13.5 mm、前方が $+Y$）
+- **Z軸**: 上下高さ方向（本体高さ: 13 mm、レンズ中心が $Z=0$）
+
+```openscad
+// ====================================================================
+// Sharp GP2Y0A21YK0F Distance Measuring Sensor
+// Units: mm
+// Origin: Center of main body
+// ====================================================================
+
+$fn = 40;
+
+// Colors
+C_CASE      = [0.18, 0.18, 0.18]; // Conductive ABS (Black)
+C_LENS      = [0.25, 0.05, 0.12, 0.85]; // Visible light cut-off resin (Dark red)
+C_CONNECTOR = [0.92, 0.92, 0.88]; // Connector housing (White/Ivory)
+C_PWB       = [0.45, 0.30, 0.15]; // Paper phenol PCB (Brown)
+C_PIN       = [0.85, 0.75, 0.30]; // Connector pins (Gold/Brass)
+
+// Dimensions (from datasheet)
+body_w = 29.5;
+body_h = 13.0;
+body_d = 13.5;
+
+hole_pitch = 37.0;
+hole_r     = 3.2 / 2;
+flange_r   = 3.75;
+flange_t   = 1.5;
+
+lens_pitch = 20.0; // Distance between emitter and detector centers
+lens_case_h = 8.4;
+lens_rim_h  = 2.0;
+
+module gp2y0a21yk0f() {
+    // -------------------------------------------------------------
+    // 1. Main Case & Mounting Flanges (Dark ABS)
+    // -------------------------------------------------------------
+    color(C_CASE) {
+        // Main Body
+        difference() {
+            cube([body_w, body_d, body_h], center=true);
+            
+            // Optical opening cutouts on front
+            translate([-lens_pitch/2, body_d/2 - 1, 0])
+                rotate([-90, 0, 0])
+                cylinder(r=3.2, h=3, center=true);
+            
+            translate([lens_pitch/2, body_d/2 - 1, 0])
+                hull() {
+                    translate([-3.2, 0, 0]) rotate([-90, 0, 0]) cylinder(r=2.5, h=3, center=true);
+                    translate([ 3.2, 0, 0]) rotate([-90, 0, 0]) cylinder(r=2.5, h=3, center=true);
+                }
+        }
+
+        // Front Lens Case (Middle stepped part)
+        translate([0, body_d/2 + (6.3 - 2.0)/2, 0])
+            difference() {
+                cube([body_w, 6.3 - 2.0, lens_case_h], center=true);
+                // Windows for lenses
+                translate([-lens_pitch/2, 0, 0])
+                    rotate([-90, 0, 0])
+                    cylinder(r=3.3, h=10, center=true);
+                
+                translate([lens_pitch/2, 0, 0])
+                    hull() {
+                        translate([-3.2, 0, 0]) rotate([-90, 0, 0]) cylinder(r=2.6, h=10, center=true);
+                        translate([ 3.2, 0, 0]) rotate([-90, 0, 0]) cylinder(r=2.6, h=10, center=true);
+                    }
+            }
+
+        // Lens Barrels (Front protrusions: 2.0mm)
+        // Emitter side (Left)
+        translate([-lens_pitch/2, body_d/2 + 4.3, 0])
+            rotate([-90, 0, 0])
+            difference() {
+                cylinder(r=4.1, h=lens_rim_h);
+                cylinder(r=3.3, h=lens_rim_h + 0.1);
+            }
+
+        // Detector side (Right)
+        translate([lens_pitch/2, body_d/2 + 4.3, 0])
+            rotate([-90, 0, 0])
+            difference() {
+                hull() {
+                    translate([-3.2, 0, 0]) cylinder(r=3.6, h=lens_rim_h);
+                    translate([ 3.2, 0, 0]) cylinder(r=3.6, h=lens_rim_h);
+                }
+                hull() {
+                    translate([-3.2, 0, -0.05]) cylinder(r=2.8, h=lens_rim_h + 0.1);
+                    translate([ 3.2, 0, -0.05]) cylinder(r=2.8, h=lens_rim_h + 0.1);
+                }
+            }
+
+        // Mounting Flanges (Left & Right)
+        for (side = [-1, 1]) {
+            translate([side * hole_pitch / 2, -body_d/2 + flange_t/2, 0]) {
+                difference() {
+                    hull() {
+                        // Flange ear
+                        rotate([90, 0, 0])
+                            cylinder(r=flange_r, h=flange_t, center=true);
+                        // Connect to main body
+                        translate([-side * (hole_pitch/2 - body_w/2)/2, 0, 0])
+                            cube([hole_pitch/2 - body_w/2, flange_t, lens_case_h], center=true);
+                    }
+                    // Mounting Hole (dia 3.2mm)
+                    rotate([90, 0, 0])
+                        cylinder(r=hole_r, h=flange_t + 1, center=true);
+                }
+            }
+        }
+    }
+
+    // -------------------------------------------------------------
+    // 2. Optical Lenses (Dark Red / Acrylic resin)
+    // -------------------------------------------------------------
+    color(C_LENS) {
+        // Emitter Lens (Spherical dome)
+        translate([-lens_pitch/2, body_d/2 + 4.3, 0])
+            rotate([-90, 0, 0])
+            intersection() {
+                sphere(r=3.8);
+                translate([0, 0, 1]) cylinder(r=3.8, h=2, center=true);
+            }
+
+        // Detector Lens (Elliptical/Aspherical dome)
+        translate([lens_pitch/2, body_d/2 + 4.3, 0])
+            rotate([-90, 0, 0])
+            hull() {
+                translate([-3.0, 0, 0]) sphere(r=3.0);
+                translate([ 3.0, 0, 0]) sphere(r=3.0);
+            }
+    }
+
+    // -------------------------------------------------------------
+    // 3. PWB (Printed Wiring Board)
+    // -------------------------------------------------------------
+    color(C_PWB) {
+        translate([0, -body_d/2 + 1.2/2, -(body_h/2 + (18.9 - 13.0)/2 - 1.2)])
+            cube([body_w - 4, 1.2, 18.9 - 13.0], center=true);
+    }
+
+    // -------------------------------------------------------------
+    // 4. Connector Housing & Pins (3-Pin JST/JCTC style)
+    // -------------------------------------------------------------
+    // Connector Housing
+    color(C_CONNECTOR) {
+        translate([0, -body_d/2 + 3.3/2, -body_h/2 - (18.9 - 13.0)/2])
+            difference() {
+                cube([10.1, 3.3, 18.9 - 13.0], center=true);
+                // Connector cavity
+                translate([0, 0.4, -(18.9 - 13.0)/4])
+                    cube([8.5, 2.8, (18.9 - 13.0)/2 + 0.5], center=true);
+            }
+    }
+
+    // Connector Pins (1: Vo, 2: GND, 3: Vcc) - 1.5mm pitch
+    color(C_PIN) {
+        for (i = [-1, 0, 1]) {
+            translate([i * 1.5, -body_d/2 + 3.3/2, -body_h/2 - (18.9 - 13.0)/2 - 1])
+                cube([0.5, 0.5, 3.5], center=true);
+        }
+    }
+}
+
+// Render model
+gp2y0a21yk0f();
+```

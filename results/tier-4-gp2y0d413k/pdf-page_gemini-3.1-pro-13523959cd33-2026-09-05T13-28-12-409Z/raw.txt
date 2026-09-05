@@ -1,0 +1,52 @@
+添付されたデータシートの寸法図を解析し、OpenSCAD用の3Dモデルを作成しました。
+本体の主要部分（Lens case）の中心を原点 `(0, 0, 0)` とし、各部品をそこからの相対座標で配置しています。
+
+以下のコードをコピーして OpenSCAD で実行してください。
+
+```openscad
+// Sharp GP2Y0D413K0F Distance Sensor
+// Units: mm
+// Origin: Center of the main body (Lens case)
+
+$fn = 64;
+
+module gp2y0d413k0f() {
+    // 1. Main Body (Lens case)
+    // Dimensions: W=29.45, H=13.05, D=7.1
+    color("#1a1a1a")
+    cube([29.45, 13.05, 7.1], center=true);
+
+    // 2. Printed Wiring Board (PWB)
+    // Dimensions: W=27.95, H=13.5, D=1.2
+    // Aligned to the left and top edge of the main body back face.
+    color("darkgreen")
+    difference() {
+        // Base PWB board
+        // Center X = -14.725 + (27.95 / 2) = -0.75
+        // Center Y = 6.525 - (13.5 / 2) = -0.225
+        // Center Z = -3.55 - (1.2 / 2) = -4.15
+        translate([-0.75, -0.225, -4.15])
+            cube([27.95, 13.5, 1.2], center=true);
+
+        // Notch at the bottom edge (Width: 4.15)
+        // Positioned 7.5mm from the left edge (-14.725 + 7.5 = -7.225 to -3.075)
+        // Center X = -5.15
+        translate([-5.15, -6.975, -4.15])
+            cube([4.15, 3.0, 2.0], center=true);
+    }
+
+    // 3. Connector (12001W90-3P-HF)
+    // Width: 10.1, Depth: 3.3
+    // Total height from top (Y=6.525) to connector bottom is 18.9 -> Bottom Y = -12.375
+    // Top of connector touches bottom of PWB (Y = -6.975) -> Height = 5.4
+    color("ivory")
+    translate([-2.175, -9.675, -6.4])
+        cube([10.1, 5.4, 3.3], center=true);
+
+    // 4. Connector Pins (1, 2, 3)
+    color("silver")
+    translate([0, 0, 0]) { // Dummy translation to group local variables
+        pin_y = -12.375 - 0.5;
+        pin_z = -6.4;
+        translate([-4.725, pin_y, pin_z]) cube([0.6, 1.0, 0.6], center=true); // Pin 1 (Vo)
+        translate([-2.225, pin_y, pin_

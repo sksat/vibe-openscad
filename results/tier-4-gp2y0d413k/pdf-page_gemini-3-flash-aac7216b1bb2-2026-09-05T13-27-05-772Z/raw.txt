@@ -1,0 +1,94 @@
+シャープ製の距離センサ「GP2Y0D413K0F」のデータシートに基づき、OpenSCADでモデリングしました。
+外形寸法図（Outline Dimensions）の数値を反映し、本体の中心（レンズケースのセンター）を原点としています。
+
+```openscad
+/*
+ * Sharp Distance Sensor GP2Y0D413K0F
+ * Units: mm
+ */
+
+// 分解能の設定
+$fn = 32;
+
+// 寸法定義
+CASE_W = 29.45;
+CASE_H = 13.05;
+CASE_D = 7.1;
+
+LENS_PROTRUSION = 2.0;
+LENS_H = 8.4;
+LENS_W = 7.2; // 図中のレンズ部分の幅推定
+
+EMITTER_X_OFFSET = 4.5; // 左端からエミッター中心まで
+LENS_PITCH = 19.7;      // エミッター中心からレシーバー中心まで
+
+PWB_W = 29.45;
+PWB_H = 18.9;
+PWB_T = 1.2;
+
+CONN_W = 10.1;
+CONN_D = 3.3;  // PWB背面からの厚み
+CONN_X_OFFSET = 7.5; // 左端からコネクタ外壁まで
+
+module gp2y0d413k0f() {
+    color("DimGray") {
+        // メインのレンズケース本体
+        cube([CASE_W, CASE_D, CASE_H], center = true);
+        
+        // レンズ部分 (Emitter & Detector)
+        // エミッター（左側）
+        translate([-CASE_W/2 + EMITTER_X_OFFSET, CASE_D/2 + LENS_PROTRUSION/2, 0])
+            cube([LENS_W, LENS_PROTRUSION, LENS_H], center = true);
+            
+        // デテクター（右側）
+        translate([-CASE_W/2 + EMITTER_X_OFFSET + LENS_PITCH, CASE_D/2 + LENS_PROTRUSION/2, 0])
+            cube([10, LENS_PROTRUSION, LENS_H], center = true); // 受光部は少し幅広
+    }
+
+    // PWB (基板部分)
+    color("Sienna") {
+        // PWBはケースの背面に配置。上端をケースの上端に合わせる
+        translate([0, -(CASE_D/2 + PWB_T/2), (CASE_H/2) - (PWB_H/2)])
+            cube([PWB_W, PWB_T, PWB_H], center = true);
+    }
+
+    // コネクタ部分
+    color("White") {
+        // コネクタのX位置計算 (左端から7.5mmの位置)
+        conn_x = -CASE_W/2 + CONN_X_OFFSET + CONN_W/2;
+        // PWBの下部から突き出している形状
+        translate([conn_x, -(CASE_D/2 + PWB_T + CONN_D/2), -CASE_H/2 - 2])
+            cube([CONN_W, CONN_D, 6], center = true);
+    }
+    
+    // レンズ面の詳細（円筒状の表現を追加）
+    color("Black") {
+        // Emitter hole
+        translate([-CASE_W/2 + EMITTER_X_OFFSET, CASE_D/2 + LENS_PROTRUSION, 0])
+            rotate([-90, 0, 0])
+                cylinder(d=5, h=0.5);
+        
+        // Detector hole
+        translate([-CASE_W/2 + EMITTER_X_OFFSET + LENS_PITCH, CASE_D/2 + LENS_PROTRUSION, 0])
+            rotate([-90, 0, 0])
+                scale([1.2, 1, 1]) cylinder(d=6, h=0.5);
+    }
+}
+
+// 実行
+gp2y0d413k0f();
+
+/*
+座標系の説明:
+- 原点(0,0,0)は、メインのレンズケース（29.45 x 13.05 x 7.1）の中心です。
+- X軸: 幅方向
+- Y軸: 奥行き方向（プラスがレンズ側、マイナスが基板側）
+- Z軸: 高さ方向
+*/
+```
+
+### モデルの特徴
+1.  **レンズケース**: 本体の中心を `(0,0,0)` とし、データシートの `29.45mm x 13.05mm` をベースにしています。
+2.  **レンズ配置**: 左端から `4.5mm` の位置にエミッター、そこから `19.7mm` のピッチでデテクターを配置しています。
+3.  **PWB（基板）**: 厚さ `1.2mm` で、全体の高さ `18.9mm` に合わせて下方向に伸びる形状を再現しました。
+4.  **コネクタ**: 底面の図にある `7.5mm` のオフセットと `10.1mm` の幅に基づき、少し左に寄った位置に配置しています。

@@ -5,6 +5,7 @@ interface FakeResponse {
   text?: string;
   modelVersion?: string;
   usageMetadata?: {
+    thoughtsTokenCount?: number;
     promptTokenCount?: number;
     candidatesTokenCount?: number;
   };
@@ -22,6 +23,39 @@ function fakeResp(overrides: FakeResponse = {}): FakeResponse {
 }
 
 describe("createGoogleProvider", () => {
+  it("counts thinking tokens as output (Gemini reports them separately)", async () => {
+    // Gemini は thoughtsTokenCount を candidatesTokenCount と分けて返すが、
+    // 課金は出力扱いで、maxOutputTokens もこの合計に対して効く。
+    // Anthropic / OpenAI は最初から出力に含めて返すので、揃える。
+    const generate = vi.fn().mockResolvedValue(
+      fakeResp({
+        usageMetadata: {
+          promptTokenCount: 100,
+          candidatesTokenCount: 200,
+          thoughtsTokenCount: 1500,
+        },
+      }),
+    );
+    const provider = createGoogleProvider({ generate, apiKey: "k" });
+
+    const res = await provider.complete({ prompt: "p", model: "gemini-3.1-pro" });
+
+    expect(res.tokens).toEqual({ input: 100, output: 1700, thinking: 1500 });
+  });
+
+  it("omits thinking when the provider does not report it", async () => {
+    const generate = vi.fn().mockResolvedValue(
+      fakeResp({
+        usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5 },
+      }),
+    );
+    const provider = createGoogleProvider({ generate, apiKey: "k" });
+
+    const res = await provider.complete({ prompt: "p", model: "gemini-2.5-flash" });
+
+    expect(res.tokens).toEqual({ input: 10, output: 5 });
+  });
+
   it("name is 'google'", () => {
     const provider = createGoogleProvider({ generate: vi.fn() });
     expect(provider.name).toBe("google");

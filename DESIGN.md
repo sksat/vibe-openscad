@@ -79,6 +79,23 @@ API 課金が嵩むので「変更があった組み合わせだけ流す」こ�
 
 将来課題: 固定プロンプトを定期的に流して出力ハッシュの drift を検出する仕組み(全プロバイダに同じ機構で適用できる)。
 
+### thinking トークンの計上
+
+`tokens.output` は **thinking / reasoning を含んだ値**にする。provider の課金単位に
+揃えるため。内訳は `tokens.thinking` に残す。
+
+provider によって報告の仕方が違うので、合わせる場所が違う:
+
+| provider | 応答 | 対応 |
+|---|---|---|
+| Anthropic | `output_tokens` が thinking 込み。内訳は `output_tokens_details.thinking_tokens` | そのまま + 内訳を記録 |
+| OpenAI | `output_tokens` が reasoning 込み。内訳は `output_tokens_details.reasoning_tokens` | 同上 |
+| Google | `candidatesTokenCount` は thinking を**含まない**。`thoughtsTokenCount` が別 | **合算**して output にする |
+
+Gemini だけ分離されているため、合算しないと出力トークンもコストも過小になる。
+`maxOutputTokens` は合計に対して効くので、`candidatesTokenCount` だけ見ていると
+「出力が少ないのに MAX_TOKENS で止まる」という辻褄の合わない記録になる。
+
 ### API が名乗ったモデル id を残す(`resolvedModel`)
 
 alias で送ったとき、provider 側で dated snapshot に解決されることがある。その

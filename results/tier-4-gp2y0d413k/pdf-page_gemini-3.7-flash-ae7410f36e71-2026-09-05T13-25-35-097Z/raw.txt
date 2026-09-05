@@ -1,0 +1,148 @@
+SHARP製 測距・距離センサ **GP2Y0D413K0F** の OpenSCAD 3Dモデルです。
+データシートの寸法に基づき、本体中心（メインケース中心）を原点 `(0, 0, 0)` としてモデリングしています。
+
+```openscad
+// ====================================================================
+// Sharp GP2Y0D413K0F Distance Measuring Sensor
+// Units: mm
+// Origin: Center of main lens case body (X=0, Y=0, Z=0)
+// ====================================================================
+
+$fn = 40;
+
+// --- Main Dimensions ---
+body_w = 29.45;       // Width (X)
+body_d = 7.1;         // Main case depth (Y)
+body_h = 13.05;       // Main case height (Z)
+total_h = 18.9;       // Total height including connector
+
+// Front snout (Lens holder)
+snout_h = 8.4;
+snout_d = 4.3;        // 6.3 - 2.0
+lens_protrusion = 2.0;
+
+// Emitter & Detector positions (from left edge: X = -body_w/2)
+emitter_offset_x = 4.5;
+detector_offset_x = emitter_offset_x + 19.7; // 24.2mm from left
+
+emitter_x = -body_w/2 + emitter_offset_x;    // -10.225
+detector_x = -body_w/2 + detector_offset_x;  // +9.475
+
+// Colors
+col_case = [0.15, 0.15, 0.15];      // Carbonic ABS (Black)
+col_lens = [0.25, 0.05, 0.12, 0.9]; // Dark red/purple IR acrylic
+col_pwb  = [0.55, 0.35, 0.15];      // Paper phenol PCB (Brown)
+col_conn = [0.92, 0.92, 0.88];      // White connector housing
+col_pin  = [0.85, 0.75, 0.3];       // Metal pins
+
+module gp2y0d413k0f() {
+    // -------------------------------------------------------------
+    // 1. Main Case Body (Carbonic ABS)
+    // -------------------------------------------------------------
+    color(col_case) {
+        difference() {
+            union() {
+                // Main rectangular box
+                translate([0, 0, 0])
+                    cube([body_w, body_d, body_h], center=true);
+
+                // Front snout: Left block (Emitter side)
+                // Width: 7.5mm, Left-aligned with body
+                translate([-body_w/2 + 7.5/2, body_d/2 + snout_d/2, 0])
+                    cube([7.5, snout_d, snout_h], center=true);
+
+                // Front snout: Right block (Detector side)
+                // Width: 16.3mm, Gap of 4.15mm from left block
+                translate([-body_w/2 + 7.5 + 4.15 + 16.3/2, body_d/2 + snout_d/2, 0])
+                    cube([16.3, snout_d, snout_h], center=true);
+            }
+
+            // Lens cavities (cutouts for lenses)
+            // Left (Emitter cavity)
+            translate([emitter_x, body_d/2 + snout_d, 0])
+                rotate([-90, 0, 0])
+                cylinder(r=3.2, h=3, center=true);
+
+            // Right (Detector cavity)
+            translate([detector_x, body_d/2 + snout_d, 0])
+                cube([8.5, 3, 5.8], center=true);
+
+            // Bottom cutout for PCB and connector
+            translate([0, 0, -body_h/2])
+                cube([12.5, body_d + 1, 4], center=true);
+        }
+    }
+
+    // -------------------------------------------------------------
+    // 2. Lenses (IR Acrylic)
+    // -------------------------------------------------------------
+    color(col_lens) {
+        // Emitter Lens (Circular convex dome)
+        translate([emitter_x, body_d/2 + snout_d + 0.5, 0]) {
+            rotate([-90, 0, 0]) {
+                cylinder(r=3.0, h=1.0, center=true);
+                translate([0, 0, 0.5])
+                    scale([1, 1, 0.5])
+                    sphere(r=3.0);
+            }
+        }
+
+        // Detector Lens (Elliptical / Rounded-rect convex dome)
+        translate([detector_x, body_d/2 + snout_d + 0.5, 0]) {
+            rotate([-90, 0, 0]) {
+                hull() {
+                    translate([-2.5, 0, 0]) cylinder(r=2.6, h=1.0, center=true);
+                    translate([ 2.5, 0, 0]) cylinder(r=2.6, h=1.0, center=true);
+                }
+                hull() {
+                    translate([-2.5, 0, 0.5]) scale([1, 1, 0.5]) sphere(r=2.6);
+                    translate([ 2.5, 0, 0.5]) scale([1, 1, 0.5]) sphere(r=2.6);
+                }
+            }
+        }
+    }
+
+    // -------------------------------------------------------------
+    // 3. PWB (Printed Wiring Board)
+    // -------------------------------------------------------------
+    color(col_pwb) {
+        // PCB extends from inside body to connector base
+        translate([0, -0.5, -body_h/2 - (total_h - body_h - 2.5)/2])
+            cube([11.5, 1.2, total_h - body_h - 1.5], center=true);
+    }
+
+    // -------------------------------------------------------------
+    // 4. Connector (JCTC 12001W90-3P-HF 3-pin)
+    // -------------------------------------------------------------
+    conn_w = 10.1;
+    conn_h = total_h - body_h; // 5.85mm
+    conn_z = -body_h/2 - conn_h/2;
+
+    color(col_conn) {
+        difference() {
+            // Main connector housing
+            translate([0, -0.5, conn_z])
+                cube([conn_w, 4.5, conn_h], center=true);
+
+            // Connector inner slot/cavity
+            translate([0, 0.5, conn_z - 0.5])
+                cube([conn_w - 1.6, 3.5, conn_h - 1], center=true);
+        }
+
+        // Rear latch / hook protrusion (3.3mm rear extension reference)
+        translate([0, -body_d/2 - 0.5, conn_z + 0.5])
+            cube([6.0, 1.8, 3.0], center=true);
+    }
+
+    // Connector Metal Pins (3 pins: Vo, GND, Vcc)
+    color(col_pin) {
+        for (i = [-1:1]) {
+            translate([i * 2.0, 0, conn_z - 0.5])
+                cube([0.5, 0.5, 3.5], center=true);
+        }
+    }
+}
+
+// Render the sensor
+gp2y0d413k0f();
+```
