@@ -1,0 +1,37 @@
+```openscad
+$fn = 128;
+
+outer_diameter = 80;
+cup_height     = 100;
+wall_thickness = 4;
+bottom_thickness = 6;
+
+handle_outer_radius = 12;
+handle_inner_radius = 8;
+handle_depth = 8;
+handle_overlap = 2;
+
+difference() {
+    union() {
+        cylinder(d = outer_diameter, h = cup_height);
+
+        translate([
+            outer_diameter / 2 + handle_outer_radius - handle_overlap,
+            0,
+            cup_height / 2
+        ])
+        rotate([90, 0, 0])
+        linear_extrude(height = handle_depth, center = true)
+        difference() {
+            circle(r = handle_outer_radius);
+            circle(r = handle_inner_radius);
+        }
+    }
+
+    translate([0, 0, bottom_thickness])
+    cylinder(
+        d = outer_diameter - 2 * wall_thickness,
+        h = cup_height - bottom_thickness + 1
+    );
+}
+```

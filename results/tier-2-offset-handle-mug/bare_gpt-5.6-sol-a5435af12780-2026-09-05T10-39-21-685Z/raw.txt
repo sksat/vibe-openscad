@@ -1,0 +1,43 @@
+```openscad
+$fn = 128;
+
+outer_radius = 40;
+inner_radius = 35;
+mug_height   = 90;
+bottom_thickness = 6;
+
+handle_thickness = 14;
+handle_wall = 7;
+
+module mug_body() {
+    difference() {
+        cylinder(h = mug_height, r = outer_radius);
+        translate([0, 0, bottom_thickness])
+            cylinder(h = mug_height - bottom_thickness + 1, r = inner_radius);
+    }
+}
+
+module handle_opening_2d() {
+    polygon(points = concat(
+        [[44, 30]],
+        [for (a = [-90 : 3 : 90])
+            [54 + 15 * cos(a), 45 + 15 * sin(a)]],
+        [[44, 60]]
+    ));
+}
+
+module handle() {
+    rotate([90, 0, 0])
+        linear_extrude(height = handle_thickness, center = true, convexity = 10)
+            difference() {
+                offset(delta = handle_wall)
+                    handle_opening_2d();
+                handle_opening_2d();
+            }
+}
+
+union() {
+    mug_body();
+    handle();
+}
+```

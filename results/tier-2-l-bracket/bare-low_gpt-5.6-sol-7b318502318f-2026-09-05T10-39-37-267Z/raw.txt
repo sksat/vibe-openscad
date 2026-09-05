@@ -1,0 +1,59 @@
+```openscad
+$fn = 64;
+
+width = 50;
+flange_depth = 40;
+flange_height = 40;
+thickness = 3;
+
+through_d = 4.5;
+countersink_d = 8;
+countersink_depth = 2;
+
+hole_x = width / 2 - 10;
+eps = 0.1;
+
+difference() {
+    union() {
+        // Horizontal flange: +Y, thickness toward -Z
+        translate([-width / 2, 0, -thickness])
+            cube([width, flange_depth, thickness]);
+
+        // Vertical flange: +Z, thickness toward -Y
+        translate([-width / 2, -thickness, 0])
+            cube([width, thickness, flange_height]);
+
+        // Sharp outside corner joining both flanges
+        translate([-width / 2, -thickness, -thickness])
+            cube([width, thickness, thickness]);
+    }
+
+    // Horizontal flange holes; countersinks face downward/outward
+    for (x = [-hole_x, hole_x]) {
+        translate([x, flange_depth / 2, -thickness - eps])
+            cylinder(h = thickness + 2 * eps, d = through_d);
+
+        translate([x, flange_depth / 2, -thickness - eps])
+            cylinder(
+                h = countersink_depth + eps,
+                d1 = countersink_d,
+                d2 = through_d
+            );
+    }
+
+    // Vertical flange holes; countersinks face backward/outward
+    for (x = [-hole_x, hole_x]) {
+        translate([x, -thickness - eps, flange_height / 2])
+            rotate([-90, 0, 0])
+                cylinder(h = thickness + 2 * eps, d = through_d);
+
+        translate([x, -thickness - eps, flange_height / 2])
+            rotate([-90, 0, 0])
+                cylinder(
+                    h = countersink_depth + eps,
+                    d1 = countersink_d,
+                    d2 = through_d
+                );
+    }
+}
+```

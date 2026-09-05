@@ -1,0 +1,96 @@
+```openscad
+$fn = 96;
+
+leaf_length      = 30;
+leaf_width       = 25;
+leaf_thickness   = 2;
+
+knuckle_length   = 6;
+knuckle_od       = 8;
+knuckle_id       = 4.6;
+
+pin_diameter     = 4;
+pin_length       = 32;
+
+through_diameter = 3.2;
+countersink_dia  = 6;
+countersink_depth = 1;
+
+eps = 0.02;
+
+module y_cylinder(h, d) {
+    rotate([-90, 0, 0])
+        cylinder(h = h, d = d);
+}
+
+module knuckle(y_pos) {
+    difference() {
+        translate([0, y_pos, 0])
+            y_cylinder(knuckle_length, knuckle_od);
+
+        translate([0, y_pos - eps, 0])
+            y_cylinder(knuckle_length + 2 * eps, knuckle_id);
+    }
+}
+
+module countersunk_hole(x_pos, y_pos) {
+    // M3 clearance through-hole
+    translate([x_pos, y_pos, -leaf_thickness / 2 - eps])
+        cylinder(
+            h = leaf_thickness + 2 * eps,
+            d = through_diameter
+        );
+
+    // Countersink from the upper surface
+    translate([x_pos, y_pos, 0])
+        cylinder(
+            h = countersink_depth + eps,
+            d1 = through_diameter,
+            d2 = countersink_dia
+        );
+}
+
+module left_leaf() {
+    difference() {
+        union() {
+            translate([-leaf_width, 0, -leaf_thickness / 2])
+                cube([leaf_width, leaf_length, leaf_thickness]);
+
+            for (y_pos = [0, 12, 24])
+                knuckle(y_pos);
+        }
+
+        for (y_pos = [7, 15, 23])
+            countersunk_hole(-18, y_pos);
+    }
+}
+
+module right_leaf() {
+    difference() {
+        union() {
+            translate([0, 0, -leaf_thickness / 2])
+                cube([leaf_width, leaf_length, leaf_thickness]);
+
+            for (y_pos = [6, 18])
+                knuckle(y_pos);
+        }
+
+        for (y_pos = [7, 15, 23])
+            countersunk_hole(18, y_pos);
+    }
+}
+
+module hinge_pin() {
+    translate([0, -1, 0])
+        y_cylinder(pin_length, pin_diameter);
+}
+
+color("steelblue")
+    left_leaf();
+
+color("lightsteelblue")
+    right_leaf();
+
+color("silver")
+    hinge_pin();
+```

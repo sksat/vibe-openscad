@@ -1,0 +1,38 @@
+{
+  "runId": "bare-xhigh_gpt-5.6-sol-dd6358fefab5-2026-09-05T10-40-01-834Z",
+  "taskId": "tier-1-stepped-pyramid",
+  "matrixId": "bare-xhigh/gpt-5.6-sol",
+  "signature": "dd6358fefab57821438f593cb04b96bea6402e9c68393a3f82c0bb11d8dddd62",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "f33c33343b97cdee4ab2a95d84c7f4be5791294d1e997d9c55a752a15c9a2446",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5.6-sol",
+      "modelOptions": {
+        "reasoning": {
+          "effort": "xhigh"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 1681
+  },
+  "tokens": {
+    "input": 151,
+    "output": 73
+  },
+  "cost_usd": 0.002945,
+  "createdAt": "2026-09-05T10:40:01.835Z",
+  "gitCommit": "6126da97a0143fe2b15123b33c5aca211fbb111e"
+}

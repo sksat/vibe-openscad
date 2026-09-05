@@ -1,0 +1,210 @@
+```openscad
+$fn = 64;
+
+// GP2Y0A21YK0F external model
+// Units: mm
+// Origin: center of the lens-case footprint
+// +Z: optical/lens direction, +Y: forward
+
+case_x            = 29.5;
+case_y            = 13.0;
+case_h            = 6.3;
+
+mount_pitch       = 37.0;
+mount_lobe_r      = 3.75;
+mount_hole_d      = 3.2;
+mount_plate_h     = 1.2;
+
+bar_w             = 10.1;
+overall_y         = 18.9;
+bar_rear_y        = -(overall_y - case_y / 2);
+
+cable_notch_w     = 5.4;
+cable_notch_depth = 3.2;
+
+emitter_x         = -case_x / 2 + 4.5;
+detector_x        = emitter_x + 20.0;
+
+lens_outer_d      = 8.4;
+lens_clear_d      = 7.2;
+lens_projection   = 2.0;
+
+module rounded_rect_2d(size = [10, 10], r = 1) {
+    hull() {
+        for (x = [-size[0] / 2 + r, size[0] / 2 - r])
+            for (y = [-size[1] / 2 + r, size[1] / 2 - r])
+                translate([x, y])
+                    circle(r = r);
+    }
+}
+
+module rounded_box(size = [10, 10, 10], r = 1) {
+    linear_extrude(height = size[2])
+        rounded_rect_2d([size[0], size[1]], r);
+}
+
+module mounting_bar_2d() {
+    difference() {
+        union() {
+            // Plate below the main lens case
+            square([case_x, case_y], center = true);
+
+            // Tapered links to the mounting-hole lobes
+            polygon([
+                [-case_x / 2, -3.1],
+                [-mount_pitch / 2, -mount_lobe_r],
+                [-mount_pitch / 2,  mount_lobe_r],
+                [-case_x / 2,  3.1]
+            ]);
+
+            polygon([
+                [ case_x / 2, -3.1],
+                [ mount_pitch / 2, -mount_lobe_r],
+                [ mount_pitch / 2,  mount_lobe_r],
+                [ case_x / 2,  3.1]
+            ]);
+
+            // Two mounting-hole lobes
+            translate([-mount_pitch / 2, 0])
+                circle(r = mount_lobe_r);
+
+            translate([mount_pitch / 2, 0])
+                circle(r = mount_lobe_r);
+
+            // Downward connecting bar / cable outlet
+            polygon([
+                [-6.2, -case_y / 2],
+                [ 6.2, -case_y / 2],
+                [ bar_w / 2, bar_rear_y],
+                [-bar_w / 2, bar_rear_y]
+            ]);
+        }
+
+        // Mounting holes, diameter 3.2
+        translate([-mount_pitch / 2, 0])
+            circle(d = mount_hole_d);
+
+        translate([mount_pitch / 2, 0])
+            circle(d = mount_hole_d);
+
+        // U-shaped cable outlet notch
+        translate([
+            -cable_notch_w / 2,
+            bar_rear_y - 0.1
+        ])
+            square([
+                cable_notch_w,
+                cable_notch_depth + 0.1
+            ]);
+    }
+}
+
+module mounting_bar() {
+    color([0.10, 0.10, 0.11])
+        linear_extrude(height = mount_plate_h)
+            mounting_bar_2d();
+}
+
+module lens_case() {
+    color([0.12, 0.12, 0.13])
+        difference() {
+            translate([0, 0, mount_plate_h - 0.02])
+                rounded_box(
+                    [case_x, case_y, case_h - mount_plate_h + 0.02],
+                    0.7
+                );
+
+            // Shallow recess around circular emitter window
+            translate([emitter_x, 0, case_h - 0.35])
+                cylinder(d = lens_outer_d + 0.7, h = 0.5);
+
+            // Shallow recess around rectangular detector window
+            translate([detector_x, 0, case_h - 0.35])
+                linear_extrude(height = 0.5)
+                    rounded_rect_2d([9.0, 8.4], 0.8);
+        }
+
+    // Raised rim around emitter
+    color([0.06, 0.06, 0.065])
+        translate([emitter_x, 0, case_h - 0.05])
+            difference() {
+                cylinder(d = lens_outer_d, h = 0.65);
+                translate([0, 0, -0.1])
+                    cylinder(d = lens_clear_d, h = 0.9);
+            }
+
+    // Raised rim around detector
+    color([0.06, 0.06, 0.065])
+        translate([detector_x, 0, case_h - 0.05])
+            linear_extrude(height = 0.65)
+                difference() {
+                    rounded_rect_2d([9.0, 8.4], 0.8);
+                    rounded_rect_2d([7.4, 6.8], 0.65);
+                }
+}
+
+module lenses() {
+    // Light emitter: circular acrylic lens
+    color([0.60, 0.72, 0.74, 0.82])
+        translate([emitter_x, 0, case_h])
+            union() {
+                cylinder(
+                    d1 = lens_clear_d,
+                    d2 = lens_clear_d - 0.8,
+                    h = lens_projection * 0.65
+                );
+
+                translate([0, 0, lens_projection * 0.65])
+                    scale([1, 1, 0.35])
+                        sphere(d = lens_clear_d - 0.8);
+            }
+
+    // Light detector: rectangular optical window
+    color([0.27, 0.34, 0.36, 0.88])
+        translate([detector_x, 0, case_h])
+            union() {
+                linear_extrude(height = lens_projection * 0.70)
+                    rounded_rect_2d([7.4, 6.8], 0.65);
+
+                translate([0, 0, lens_projection * 0.70])
+                    scale([1, 0.85, 0.28])
+                        sphere(d = 6.6);
+            }
+}
+
+module cables() {
+    cable_start_y = bar_rear_y + cable_notch_depth;
+    cable_length  = 25;
+    cable_d       = 1.1;
+
+    cable_colors = [
+        [0.72, 0.12, 0.10],
+        [0.08, 0.08, 0.08],
+        [0.92, 0.92, 0.90]
+    ];
+
+    for (i = [-1 : 1]) {
+        color(cable_colors[i + 1])
+            translate([
+                i * 1.45,
+                cable_start_y,
+                mount_plate_h / 2
+            ])
+                rotate([90, 0, 0])
+                    cylinder(d = cable_d, h = cable_length);
+    }
+
+    // Simple strain-relief section
+    color([0.16, 0.16, 0.17])
+        translate([0, cable_start_y - 1.6, mount_plate_h / 2])
+            rotate([90, 0, 0])
+                cylinder(d = 4.8, h = 4.0);
+}
+
+union() {
+    mounting_bar();
+    lens_case();
+    lenses();
+    cables();
+}
+```

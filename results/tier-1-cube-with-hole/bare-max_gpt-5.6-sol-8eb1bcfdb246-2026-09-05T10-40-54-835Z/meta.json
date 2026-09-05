@@ -1,0 +1,38 @@
+{
+  "runId": "bare-max_gpt-5.6-sol-8eb1bcfdb246-2026-09-05T10-40-54-835Z",
+  "taskId": "tier-1-cube-with-hole",
+  "matrixId": "bare-max/gpt-5.6-sol",
+  "signature": "8eb1bcfdb246a6817e3b031d6a221ec9757f9f2331c5ef9ff1fdc39882718b7a",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "8ff7e36af4bc202429ec68b7eb9cc3f195b6a3c68668be31239bcea23345a048",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5.6-sol",
+      "modelOptions": {
+        "reasoning": {
+          "effort": "max"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5.6-sol",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 2367
+  },
+  "tokens": {
+    "input": 82,
+    "output": 163
+  },
+  "cost_usd": 0.0053,
+  "createdAt": "2026-09-05T10:40:54.835Z",
+  "gitCommit": "6126da97a0143fe2b15123b33c5aca211fbb111e"
+}
