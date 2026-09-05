@@ -31,6 +31,7 @@
 # `{type: disabled}` は API が 400 を返す(= thinking off が存在しない)。
 claude-fable-5:
   provider: anthropic
+  retirementNotBefore: "2027-06-09"
   rate: { in: 10, out: 50 }
   vision: true
   effort: high
@@ -40,6 +41,7 @@ claude-fable-5:
 # 4.8 / 4.7 は省略 = 思考しない、だったので既定値が反転している。
 claude-opus-5:
   provider: anthropic
+  retirementNotBefore: "2027-07-24"
   rate: { in: 5, out: 25 }
   vision: true
   effort: high
@@ -47,6 +49,7 @@ claude-opus-5:
 
 claude-opus-4-8:
   provider: anthropic
+  retirementNotBefore: "2027-05-28"
   rate: { in: 5, out: 25 }
   vision: true
   effort: high
@@ -54,6 +57,7 @@ claude-opus-4-8:
 
 claude-opus-4-7:
   provider: anthropic
+  retirementNotBefore: "2027-04-16"
   rate: { in: 5, out: 25 }
   vision: true
   effort: high
@@ -68,6 +72,7 @@ claude-opus-4-6:
 
 claude-sonnet-4-6:
   provider: anthropic
+  retirementNotBefore: "2027-02-17"
   rate: { in: 3, out: 15 }
   vision: true
   effort: high
@@ -75,6 +80,7 @@ claude-sonnet-4-6:
 
 claude-haiku-4-5:
   provider: anthropic
+  retirementNotBefore: "2026-10-15"
   rate: { in: 1, out: 5 }
   vision: true
   effort: null # Haiku 4.5 は output_config.effort を受け付けない
@@ -85,42 +91,55 @@ claude-haiku-4-5:
 # effort は Opus 4.5 から(high が最高)。thinking は明示 opt-in なので既定 off。
 claude-opus-4-5:
   provider: anthropic
+  retirementNotBefore: "2026-11-24"
   rate: { in: 5, out: 25 }
   vision: true
   effort: high
   thinking: "off"
 
+# 2026-06-05 に deprecated、2026-08-05 に retired(公式 deprecation ページ)。
+# 呼ぶと 404 になる。過去 run は results に残る。
 claude-opus-4-1:
   provider: anthropic
+  shutdownAt: "2026-08-05"
   rate: { in: 15, out: 75 }
   vision: true
   effort: null
   thinking: "off"
 
+# 2026-04-14 に deprecated、2026-06-15 に retired。
 claude-opus-4-0:
   provider: anthropic
+  shutdownAt: "2026-06-15"
   rate: { in: 15, out: 75 }
   vision: true
   effort: null
   thinking: "off"
 
 # snapshot だけの id(claude-opus-4-20250514)を拾う catch-all。
+# snapshot だけの id(claude-opus-4-20250514)を拾う catch-all。この世代は
+# 2026-06-15 に retired。
 claude-opus-4-:
   provider: anthropic
+  shutdownAt: "2026-06-15"
   rate: { in: 15, out: 75 }
   vision: true
   effort: null
   thinking: "off"
 
+# Active。公式は「2026-09-29 より前には終了しない」とだけ出している。
 claude-sonnet-4-5:
   provider: anthropic
+  retirementNotBefore: "2026-09-29"
   rate: { in: 3, out: 15 }
   vision: true
   effort: null
   thinking: "off"
 
+# 2026-04-14 に deprecated、2026-06-15 に retired。
 claude-sonnet-4-0:
   provider: anthropic
+  shutdownAt: "2026-06-15"
   rate: { in: 3, out: 15 }
   vision: true
   effort: null
@@ -128,6 +147,7 @@ claude-sonnet-4-0:
 
 claude-sonnet-4-:
   provider: anthropic
+  shutdownAt: "2026-06-15"
   rate: { in: 3, out: 15 }
   vision: true
   effort: null

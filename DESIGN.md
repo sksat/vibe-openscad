@@ -292,8 +292,20 @@ provider によって情報の出し方が違う:
 | provider | 提供終了の情報 |
 |---|---|
 | OpenAI | Models API の `shutdown_date`。値を突き合わせられる |
-| Anthropic | API に該当フィールドが無い。ドキュメントのアナウンスを見て手で書く |
-| Google | 同上 |
+| Anthropic | API に該当フィールドが無い。deprecation ページの表を見て手で書く |
+| Google | 同上(リリースノートに記載) |
+
+### 確定日と下限を区別する(`shutdownAt` / `retirementNotBefore`)
+
+Anthropic は Active なモデルにも日付を出しているが、これは
+"Tentative retirement date / **Not sooner than**" で、**終了予定日ではなく
+下限**。「この日より前には終了しない」という意味しかない。
+
+- `shutdownAt` — 確定した提供終了日。plan が blocked にする
+- `retirementNotBefore` — 下限。**判定には使わない**。いつ頃まで使えるかの目安
+  として記録し、この日を過ぎたら確定日が出ていないか確認する
+
+両者を同じフィールドに入れると、まだ使えるモデルを誤って止めてしまう。
 
 ### 網羅テストで手書きテストを置き換える(不変条件)
 

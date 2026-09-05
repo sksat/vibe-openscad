@@ -86,6 +86,18 @@ export const ModelEntrySchema = z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD で書く")
       .optional(),
+    /**
+     * 「この日より前には終了しない」という下限(`YYYY-MM-DD`)。Anthropic の
+     * deprecation ページが Active なモデルに出している "Tentative retirement
+     * date / Not sooner than" がこれにあたる。
+     *
+     * **終了予定日ではない**ので plan の判定には使わない。いつ頃まで使えるかの
+     * 目安として記録し、この日を過ぎたら確定日が出ていないか確認する。
+     */
+    retirementNotBefore: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD で書く")
+      .optional(),
     rate: ModelRateSchema.optional(),
     vision: z.boolean().optional(),
     effort: EffortLevelSchema.nullable().optional(),
