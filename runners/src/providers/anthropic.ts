@@ -73,6 +73,54 @@ const MAX_NONSTREAMING_TOKENS = 21333;
 // もこの上限を消費するので、bench-config 側の modelOptions で引き上げる。
 const DEFAULT_MAX_TOKENS = 4096;
 
+/** `message_delta` イベントの usage。SDK の型には output_tokens_details が無い。 */
+interface DeltaUsage {
+  output_tokens_details?: { thinking_tokens?: number };
+}
+
+/** 最小限のイベント購読口。テストの fake stream もこれだけ満たせばよい。 */
+interface StreamEvents {
+  on?: (event: string, cb: (e: unknown) => void) => unknown;
+}
+
+/**
+ * ストリーミング経路で thinking トークンの内訳を拾う。
+ *
+ * SDK 0.91.1 の `finalMessage()` は `message_delta` の usage を積算するときに
+ * `output_tokens_details` を落とす。同じモデル・同じパラメータでも非ストリー
+ * ミングなら内訳が返るのに、ストリーミングだと消える。生イベントには乗って
+ * いるので、ここで購読して保持しておく。
+ *
+ * 拾わないと `max_tokens > MAX_NONSTREAMING_TOKENS` の run(Opus 5 / Sonnet 5
+ * 等)だけ内訳が欠ける。`output_tokens` 自体は正しいのでコスト計算には影響
+ * しないが、thinking がどれだけ占めたかが results から分からなくなる。
+ */
+function captureThinkingTokens(stream: StreamEvents): { value?: number } {
+  const captured: { value?: number } = {};
+  stream.on?.("streamEvent", (event: unknown) => {
+    const e = event as { type?: string; usage?: DeltaUsage };
+    if (e.type !== "message_delta") return;
+    const thinking = e.usage?.output_tokens_details?.thinking_tokens;
+    if (thinking != null) captured.value = thinking;
+  });
+  return captured;
+}
+
+/**
+ * finalMessage() が内訳を持っていなければ、購読で拾った値を差し込む。
+ * SDK が積算するようになったら message 側が優先される。
+ */
+function withThinkingTokens(
+  message: Anthropic.Message,
+  captured: { value?: number },
+): Anthropic.Message {
+  const usage = message.usage as unknown as DeltaUsage;
+  if (usage.output_tokens_details?.thinking_tokens != null) return message;
+  if (captured.value == null) return message;
+  usage.output_tokens_details = { thinking_tokens: captured.value };
+  return message;
+}
+
 export function createAnthropicProvider(
   deps: AnthropicProviderDeps = {},
 ): Provider {
@@ -95,9 +143,14 @@ export function createAnthropicProvider(
       // 待ち続ける。bench-config の defaults.timeoutSec は provider 呼び出しに
       // 配線されていないので、ここで明示的に上限を持たせないと 1 件の停止で
       // ベンチ全体が終わらなくなる。
-      return client.messages
-        .stream(params, { timeout: STREAM_TIMEOUT_MS })
-        .finalMessage();
+      const stream = client.messages.stream(params, {
+        timeout: STREAM_TIMEOUT_MS,
+      });
+      // SDK の on() は keyof MessageStreamEvents で型付けされており、
+      // 構造的に緩い StreamEvents とは代入互換にならないので明示的に渡す。
+      const captured = captureThinkingTokens(stream as unknown as StreamEvents);
+      const message = await stream.finalMessage();
+      return withThinkingTokens(message, captured);
     });
 
   return {

@@ -105,6 +105,72 @@ describe("createAnthropicProvider", () => {
     expect(res.tokens).toEqual({ input: 10, output: 900, thinking: 700 });
   });
 
+  it("records thinking tokens on the streaming path too", async () => {
+    // SDK 0.91.1 の finalMessage() は message_delta の usage を積算するとき
+    // output_tokens_details を落とす。生イベントには乗っているので、
+    // streamEvent を購読して拾い直す。拾わないと max_tokens > 21333 の run
+    // (Opus 5 / Sonnet 5 等)だけ内訳が欠ける。
+    const finalMessage = vi.fn().mockResolvedValue(
+      fakeMessage({
+        usage: { input_tokens: 10, output_tokens: 900 },
+      } as never),
+    );
+    const listeners: Record<string, (e: unknown) => void> = {};
+    const on = vi.fn((event: string, cb: (e: unknown) => void) => {
+      listeners[event] = cb;
+    });
+    const stream = vi.fn().mockImplementation(() => {
+      // SDK は購読後にイベントを流す。finalMessage() の解決前に
+      // message_delta が届く順序を再現する。
+      queueMicrotask(() =>
+        listeners["streamEvent"]?.({
+          type: "message_delta",
+          usage: {
+            input_tokens: 10,
+            output_tokens: 900,
+            output_tokens_details: { thinking_tokens: 700 },
+          },
+        }),
+      );
+      return { on, finalMessage };
+    });
+    const client = { messages: { stream } } as unknown as Anthropic;
+    const provider = createAnthropicProvider({ client });
+
+    const res = await provider.complete({
+      prompt: "p",
+      model: "claude-opus-5",
+      maxTokens: 64000,
+    });
+
+    expect(res.tokens).toEqual({ input: 10, output: 900, thinking: 700 });
+  });
+
+  it("prefers the final message's own thinking count when present", async () => {
+    // 将来 SDK が積算するようになったら、そちらを正とする。
+    const finalMessage = vi.fn().mockResolvedValue(
+      fakeMessage({
+        usage: {
+          input_tokens: 10,
+          output_tokens: 900,
+          output_tokens_details: { thinking_tokens: 700 },
+        },
+      } as never),
+    );
+    const on = vi.fn();
+    const stream = vi.fn().mockReturnValue({ on, finalMessage });
+    const client = { messages: { stream } } as unknown as Anthropic;
+    const provider = createAnthropicProvider({ client });
+
+    const res = await provider.complete({
+      prompt: "p",
+      model: "claude-opus-5",
+      maxTokens: 64000,
+    });
+
+    expect(res.tokens).toEqual({ input: 10, output: 900, thinking: 700 });
+  });
+
   it("name is 'anthropic'", () => {
     const provider = createAnthropicProvider({ create: vi.fn() });
     expect(provider.name).toBe("anthropic");
