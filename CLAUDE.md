@@ -27,6 +27,25 @@ bench-config を走査して登録漏れを検出する。落ちたらテスト�
 例外は「そのモデルで API の作法自体が変わる」場合(新しい thinking パラメータ等)。
 これは provider 実装の変更なので通常どおり TDD で進める。
 
+#### 追加前に dated snapshot の有無を調べる
+
+alias(`claude-opus-5`、`gemini-3.5-flash`)は provider の都合で別のスナップ
+ショットを指すように差し替わりうるが、fingerprint は alias 文字列しか見ないので
+差し替えを検出できない。**dated snapshot や具体バージョン ID が公開されている
+なら、そちらを bench-config に書く**(理由は DESIGN.md「モデル指定の方針」)。
+
+追加作業を始める前に、その provider で何が公開されているか確認する:
+
+| provider | 調べ方 | 備考 |
+|---|---|---|
+| OpenAI | `pnpm --filter runners run list-openai-models` | dated id がそのまま並ぶ(`gpt-5.4-2026-03-05`) |
+| Anthropic | Models API の `client.models.list()` | dated id が並ぶ(`claude-haiku-4-5-20251001`)。**応答の `model` は alias のまま返る**ので、実行結果からは分からない |
+| Google | Models API の `models.get()` が返す `version` | id は alias でも `version` が実体を指す(`gemini-3.1-pro-preview` → `3.1-pro-preview-01-2026`) |
+
+dated が無く alias しか手段が無いモデルもある(Anthropic の現行世代など)。その
+場合は alias のままでよいが、**カタログの `snapshot` に provider が名乗る値を
+書いておく**と、後から差し替えに気付ける。
+
 ### 3. 設計判断は DESIGN.md に書く
 
 プロジェクト固有の意思決定は **DESIGN.md に書く**。コード中のコメント、個人 memory、PR 説明だけに残さない。
