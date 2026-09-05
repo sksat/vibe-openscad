@@ -342,30 +342,38 @@ function slashedPublisherVendor(
   }
 }
 
-/** Parse one model id string into vendor + model badges (or fall through). */
+/**
+ * Parse one model id string into vendor + model badges.
+ *
+ * カタログに `label:` の宣言があれば **モデルバッジの文字だけ** 差し替える。
+ * vendor 判定はパターン側の結果を尊重する: provider は API プロトコル
+ * (`openai-self-hosted`)でしかなく、`google/gemma-*` や `qwen3-8b` の
+ * vendor は id 側にしか書かれていないため、宣言を理由に vendor 判定を
+ * 飛ばすと OpenAI のロゴが付いてしまう。
+ */
 export function parseModelLabel(modelStr: string): MatrixSegment[] {
-  // カタログに表示名の宣言があればそれを使う(vendor バッジは provider から
-  // 引く)。下のパターン群は「素直な id」を賄うためのもので、外れる id を
-  // 誤って拾わないよう宣言を先に見る。
   const declared = resolveModel(modelStr);
-  if (declared?.label) {
-    // `google/gemma-4-e2b` のようなセルフホスト id では provider
-    // (`openai-self-hosted` = API プロトコル)ではなく **publisher** が
-    // vendor。provider から引くと Google のモデルが OpenAI ロゴになる。
-    const vendor =
-      slashedPublisherVendor(modelStr) ?? providerVendor(declared.provider);
-    if (vendor) {
-      // バッジの文字は publisher(`google`)、アイコンキーは vendor
-      // (`gemini`)。両者は一致しないので使い分ける。
-      const publisher = modelStr.match(/^([a-z][\w-]*)\//i)?.[1]?.toLowerCase();
-      return [
-        { kind: "vendor", label: publisher ?? vendor, vendor },
-        { kind: "model", label: declared.label, title: modelStr, vendor },
-      ];
-    }
-    return [{ kind: "model", label: declared.label, title: modelStr }];
+  const badges = parseModelLabelByPattern(modelStr);
+  if (!declared?.label) return badges;
+  if (badges.some((b) => b.kind === "model")) {
+    return badges.map((b) =>
+      b.kind === "model" ? { ...b, label: declared.label! } : b,
+    );
   }
+  // パターンが何も拾えなかった id(命名規則から外れる新種)だけ、
+  // provider から vendor を引いて組み立てる。
+  const vendor = providerVendor(declared.provider);
+  if (vendor) {
+    return [
+      { kind: "vendor", label: vendor, vendor },
+      { kind: "model", label: declared.label, title: modelStr, vendor },
+    ];
+  }
+  return [{ kind: "model", label: declared.label, title: modelStr }];
+}
 
+/** Pattern-derived badges (no catalog lookup). */
+function parseModelLabelByPattern(modelStr: string): MatrixSegment[] {
   // Anthropic model: claude-(fable|opus|sonnet|haiku)-MAJOR[-MINOR][-YYYYMMDD]
   // Minor is constrained to 1-3 digits to disambiguate from an 8-digit date
   // (e.g. claude-opus-4-20250514 has no minor, just major + date).
