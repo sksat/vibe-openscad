@@ -1,0 +1,303 @@
+//
+// Sharp GP2Y0D413K0F distance sensor
+// Units: mm
+//
+// Coordinate system:
+//   X : left / right when viewed from lens side
+//   Y : front / rear
+//   Z : up / down
+//
+// Body center is at [0,0,0].
+// Lens/front side faces -Y.
+// PWB / connector side faces -Z.
+//
+
+$fn = 48;
+
+
+// ------------------------------------------------------------
+// Parameters
+// ------------------------------------------------------------
+
+body_w          = 29.45;      // X
+body_d          = 18.90;      // Y
+body_h          = 13.50;      // Z
+
+body_corner_r   = 0.55;
+
+front_y         = -body_d/2;
+rear_y          =  body_d/2;
+bottom_z        = -body_h/2;
+top_z           =  body_h/2;
+
+// Optical center positions from drawing:
+// Light emitter: *4.5 mm from left side
+// Light detector: *19.7 mm from left side
+emitter_x       = -body_w/2 + 4.5;
+detector_x      = -body_w/2 + 19.7;
+
+lens_z          = 0.0;
+
+
+// ------------------------------------------------------------
+// Utility modules
+// ------------------------------------------------------------
+
+// Rounded rectangle prism, centered on X/Y/Z.
+module rounded_box_xy(size=[10,10,10], r=0.5)
+{
+    x = size[0];
+    y = size[1];
+    z = size[2];
+
+    hull()
+    {
+        for (px = [-x/2+r, x/2-r])
+            for (py = [-y/2+r, y/2-r])
+                translate([px, py, -z/2])
+                    cylinder(h=z, r=r);
+    }
+}
+
+
+// Cylinder whose axis is aligned with Y.
+module cyl_y(d=1, h=1, center=true)
+{
+    rotate([90,0,0])
+        cylinder(d=d, h=h, center=center);
+}
+
+
+// Rectangular lens/window on front face.
+module front_window(pos=[0,0,0], size=[5,1,5], col=[0.15,0.15,0.15])
+{
+    color(col)
+        translate(pos)
+            cube(size, center=true);
+}
+
+
+// ------------------------------------------------------------
+// Main enclosure
+// ------------------------------------------------------------
+
+module sensor_body()
+{
+    // Main black ABS enclosure.
+    color([0.055, 0.055, 0.055])
+        rounded_box_xy([body_w, body_d, body_h], body_corner_r);
+
+    // Slight lower front flange visible around optical face.
+    color([0.045, 0.045, 0.045])
+        translate([0, front_y - 0.18, bottom_z + 1.30])
+            cube([body_w - 0.7, 0.50, 1.15], center=true);
+
+    // Upper rear molded ridge.
+    color([0.075, 0.075, 0.075])
+        translate([0, rear_y - 1.15, top_z - 0.45])
+            cube([body_w - 1.4, 2.10, 0.75], center=true);
+
+    // Top date/model stamp recessed-looking plate.
+    color([0.025, 0.025, 0.025])
+        translate([0, 0.7, top_z + 0.012])
+            cube([12.8, 6.0, 0.05], center=true);
+
+    // Stamp text.
+    color([0.34, 0.34, 0.34])
+        translate([-5.7, -0.9, top_z + 0.04])
+            linear_extrude(height=0.06)
+                text("SHARP", size=1.55, font="Liberation Sans:style=Bold");
+
+    color([0.34, 0.34, 0.34])
+        translate([-5.7, -2.65, top_z + 0.04])
+            linear_extrude(height=0.06)
+                text("0D413KF", size=1.25, font="Liberation Sans:style=Bold");
+
+    color([0.34, 0.34, 0.34])
+        translate([3.9, -2.65, top_z + 0.04])
+            linear_extrude(height=0.06)
+                text("44", size=1.20, font="Liberation Sans:style=Bold");
+}
+
+
+// ------------------------------------------------------------
+// Front optical assembly
+// ------------------------------------------------------------
+
+module optical_face()
+{
+    // Front raised optical bezel.
+    color([0.025, 0.025, 0.025])
+        translate([-1.9, front_y - 0.26, lens_z])
+            cube([24.8, 0.52, 7.25], center=true);
+
+    // --------------------------------------------------------
+    // Light emitter housing
+    // --------------------------------------------------------
+
+    // Square emitter bezel.
+    color([0.010, 0.010, 0.010])
+        translate([emitter_x, front_y - 0.54, lens_z])
+            cube([6.95, 0.46, 6.95], center=true);
+
+    // Gray reflector ring.
+    color([0.38, 0.38, 0.38])
+        translate([emitter_x, front_y - 0.80, lens_z])
+            cyl_y(d=5.75, h=0.25);
+
+    // Dark annular ring.
+    color([0.035, 0.035, 0.035])
+        translate([emitter_x, front_y - 0.95, lens_z])
+            cyl_y(d=4.85, h=0.18);
+
+    // Translucent IR emitter lens.
+    color([0.28, 0.25, 0.20, 0.82])
+        translate([emitter_x, front_y - 1.05, lens_z])
+            cyl_y(d=3.95, h=0.28);
+
+    // Emitter center.
+    color([0.06, 0.025, 0.018])
+        translate([emitter_x, front_y - 1.22, lens_z])
+            cyl_y(d=2.05, h=0.12);
+
+    // --------------------------------------------------------
+    // Light detector housing
+    // --------------------------------------------------------
+
+    // Detector rectangular bezel.
+    color([0.010, 0.010, 0.010])
+        translate([detector_x - 1.6, front_y - 0.54, lens_z])
+            cube([11.15, 0.46, 6.70], center=true);
+
+    // Dark acrylic detector window.
+    color([0.12, 0.12, 0.115, 0.88])
+        translate([detector_x - 1.6, front_y - 0.82, lens_z])
+            cube([9.85, 0.25, 5.35], center=true);
+
+    // Slight internal divider / reflector detail.
+    color([0.24, 0.24, 0.24])
+        translate([detector_x - 4.0, front_y - 0.98, lens_z])
+            cube([0.35, 0.12, 4.85], center=true);
+
+    // Circular detector lens located at specified detector center.
+    color([0.045, 0.045, 0.045])
+        translate([detector_x, front_y - 1.01, lens_z])
+            cyl_y(d=5.55, h=0.22);
+
+    color([0.20, 0.21, 0.20, 0.82])
+        translate([detector_x, front_y - 1.15, lens_z])
+            cyl_y(d=4.65, h=0.25);
+
+    // Detector center dark region.
+    color([0.02, 0.025, 0.022])
+        translate([detector_x, front_y - 1.30, lens_z])
+            cyl_y(d=3.35, h=0.10);
+}
+
+
+// ------------------------------------------------------------
+// Connector and terminals
+// ------------------------------------------------------------
+
+module connector()
+{
+    connector_w = 10.10;
+    connector_d = 5.10;
+    connector_h = 5.45;
+
+    connector_y = 1.70;
+    connector_z = bottom_z - connector_h/2 + 0.15;
+
+    // Connector neck joining enclosure to plug housing.
+    color([0.06, 0.06, 0.06])
+        translate([0, connector_y, bottom_z - 0.35])
+            cube([8.5, 4.25, 1.00], center=true);
+
+    // White/off-white connector housing.
+    color([0.82, 0.80, 0.72])
+        translate([0, connector_y, connector_z])
+            cube([connector_w, connector_d, connector_h], center=true);
+
+    // Front latch / opening recess.
+    color([0.08, 0.08, 0.08])
+        translate([0, connector_y - connector_d/2 - 0.03, connector_z + 0.65])
+            cube([7.30, 0.12, 2.00], center=true);
+
+    // Terminal cavity.
+    color([0.025, 0.025, 0.025])
+        translate([0, connector_y - connector_d/2 - 0.10, connector_z - 0.90])
+            cube([7.70, 0.18, 1.25], center=true);
+
+    // Three connector terminals:
+    // 1 = Vo, 2 = GND, 3 = Vcc
+    for (i = [-1, 0, 1])
+    {
+        // Metal contact visible at connector opening.
+        color([0.68, 0.66, 0.57])
+            translate([i * 2.30, connector_y - connector_d/2 - 0.18, connector_z - 0.92])
+                cube([0.80, 0.10, 1.00], center=true);
+
+        // Pins extending toward PWB / -Z.
+        color([0.75, 0.72, 0.60])
+            translate([i * 2.30, connector_y, bottom_z - connector_h - 1.35])
+                cube([0.65, 0.70, 2.75], center=true);
+    }
+
+    // Small molded latch shoulders.
+    color([0.74, 0.72, 0.65])
+    {
+        translate([-connector_w/2 + 0.55, connector_y, connector_z + 1.55])
+            cube([1.10, connector_d + 0.10, 1.10], center=true);
+
+        translate([ connector_w/2 - 0.55, connector_y, connector_z + 1.55])
+            cube([1.10, connector_d + 0.10, 1.10], center=true);
+    }
+}
+
+
+// ------------------------------------------------------------
+// Small enclosure details
+// ------------------------------------------------------------
+
+module case_details()
+{
+    // Bottom corner feet / molded steps visible near both sides.
+    color([0.045, 0.045, 0.045])
+    {
+        translate([-10.5, 2.1, bottom_z - 0.34])
+            cube([6.2, 5.0, 0.70], center=true);
+
+        translate([10.5, 2.1, bottom_z - 0.34])
+            cube([6.2, 5.0, 0.70], center=true);
+    }
+
+    // Front lower seam.
+    color([0.18, 0.18, 0.18])
+        translate([0, front_y - 0.30, bottom_z + 0.52])
+            cube([body_w - 1.0, 0.05, 0.18], center=true);
+
+    // Left and right front seam lines.
+    color([0.16, 0.16, 0.16])
+    {
+        translate([-body_w/2 + 0.58, front_y - 0.30, 0])
+            cube([0.07, 0.05, body_h - 1.2], center=true);
+
+        translate([ body_w/2 - 0.58, front_y - 0.30, 0])
+            cube([0.07, 0.05, body_h - 1.2], center=true);
+    }
+}
+
+
+// ------------------------------------------------------------
+// Complete model
+// ------------------------------------------------------------
+
+module GP2Y0D413K0F()
+{
+    sensor_body();
+    case_details();
+    optical_face();
+    connector();
+}
+
+GP2Y0D413K0F();

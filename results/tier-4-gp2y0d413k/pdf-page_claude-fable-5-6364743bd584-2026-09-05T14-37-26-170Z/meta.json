@@ -1,0 +1,42 @@
+{
+  "runId": "pdf-page_claude-fable-5-6364743bd584-2026-09-05T14-37-26-170Z",
+  "taskId": "tier-4-gp2y0d413k",
+  "matrixId": "pdf-page/claude-fable-5",
+  "signature": "6364743bd584c9d116f4661e00400115967c1949944d73760d587ba3fe3580de",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "8b7a5431f4cfca3c35d8146fcd061fcd5780603812e70e08416222d75b3025e4",
+    "harness": {
+      "kind": "pdf-page",
+      "provider": "anthropic",
+      "model": "claude-fable-5",
+      "modelOptions": {
+        "max_tokens": 16000
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-fable-5",
+  "resolvedModel": "claude-fable-5",
+  "harness": {
+    "kind": "pdf-page",
+    "pdfUrl": "https://jp.sharp/products/device/doc/opto/gp2y0d413k_e.pdf",
+    "pages": [
+      2
+    ]
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 65886
+  },
+  "tokens": {
+    "input": 2978,
+    "output": 5123,
+    "thinking": 2960
+  },
+  "cost_usd": 0.28593,
+  "createdAt": "2026-09-05T14:37:26.170Z",
+  "gitCommit": "7ec961914ad4f027fd4081fd8169be21b59fbbb8"
+}

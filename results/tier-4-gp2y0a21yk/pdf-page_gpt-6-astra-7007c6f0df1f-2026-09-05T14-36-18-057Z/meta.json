@@ -1,0 +1,39 @@
+{
+  "runId": "pdf-page_gpt-6-astra-7007c6f0df1f-2026-09-05T14-36-18-057Z",
+  "taskId": "tier-4-gp2y0a21yk",
+  "matrixId": "pdf-page/gpt-6-astra",
+  "signature": "7007c6f0df1fe8522d4382c2d8365d7419690df379fa5a8b2a140f09ba948c4c",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "be8447efaad1d128f8fe25ada8d6776d55e66bc75ed71840c218201a51da8e80",
+    "harness": {
+      "kind": "pdf-page",
+      "provider": "openai",
+      "model": "gpt-6-astra"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-6-astra",
+  "resolvedModel": "gpt-6-astra",
+  "harness": {
+    "kind": "pdf-page",
+    "pdfUrl": "https://jp.sharp/products/device/doc/opto/gp2y0a21yk_e.pdf",
+    "pages": [
+      2
+    ]
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 80910
+  },
+  "tokens": {
+    "input": 2680,
+    "output": 4677,
+    "thinking": 2070
+  },
+  "cost_usd": 0.26065,
+  "createdAt": "2026-09-05T14:36:18.057Z",
+  "gitCommit": "7ec961914ad4f027fd4081fd8169be21b59fbbb8"
+}

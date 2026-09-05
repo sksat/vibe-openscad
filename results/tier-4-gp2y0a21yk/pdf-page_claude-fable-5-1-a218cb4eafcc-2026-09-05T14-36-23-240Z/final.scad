@@ -1,0 +1,128 @@
+// Sharp GP2Y0A21YK0F 測距センサ 外形モデル
+// 単位: mm、本体中心を原点、取付面(PWB/コネクタ側)を -Z
+$fn = 48;
+
+// ---- 主要寸法 (データシート Outline Dimensions より) ----
+body_w      = 29.5;   // X: 本体幅
+lens_case_d = 13.0;   // Y: レンズケース厚
+body_d      = 8.4;    // Y: 下部本体厚
+h_total     = 13.5;   // Z: 本体全高 (PWB下面〜レンズ面)
+lens_case_h = 6.3;    // Z: レンズケース高さ
+body_h      = 7.2;    // Z: 下部本体高さ (6.3 + 7.2 = 13.5)
+pwb_t       = 1.2;    // PWB 厚
+tab_t       = 1.5;    // 取付フランジ厚 (2-1.5)
+tab_r       = 3.75;   // フランジ端 R3.75
+hole_d      = 3.2;    // φ3.2 hole
+hole_pitch  = 37.0;   // 取付穴ピッチ
+conn_w      = 10.1;   // コネクタ幅 (X)
+conn_d      = 5.9;    // コネクタ奥行 (Y) : 18.9 - 13
+conn_h      = 3.3;    // コネクタ突出 (Z)
+lens_pitch  = 20.0;   // レンズ中心間距離
+emit_x      = -body_w/2 + 4.5;      // 発光側レンズ中心 X
+det_x       = emit_x + lens_pitch;  // 受光側レンズ中心 X
+
+z_bot = -h_total/2;            // -6.75 取付面
+z_top =  h_total/2;            //  6.75 レンズ面
+z_step = z_bot + body_h;       // 下部本体とレンズケースの境界
+
+// ---- 部品 ----
+module lower_body() {
+    difference() {
+        translate([-body_w/2, -body_d/2, z_bot])
+            cube([body_w, body_d, body_h]);
+        // 背面側の段差 (2.0 の切欠き)
+        translate([-body_w/2 - 1, body_d/2 - 2, z_bot - 1])
+            cube([body_w + 2, 3, 2 + pwb_t]);
+    }
+}
+
+module pwb() {
+    color("SaddleBrown")
+        translate([-body_w/2 + 0.3, -body_d/2 + 0.3, z_bot])
+            cube([body_w - 0.6, body_d - 2.3, pwb_t]);
+}
+
+module lens_case() {
+    difference() {
+        translate([-body_w/2, -lens_case_d/2, z_step])
+            cube([body_w, lens_case_d, lens_case_h]);
+
+        // 発光側 レンズ窓 (角形凹み + 円形レンズ)
+        translate([emit_x - 3.4, -3.4, z_top - 1.0])
+            cube([6.8, 6.8, 2]);
+        // 受光側 レンズ窓 (横長の角形凹み)
+        translate([det_x - 8.5, -3.6, z_top - 1.0])
+            cube([12.5, 7.2, 2]);
+    }
+    // レンズ (アクリル)
+    color([0.15, 0.15, 0.2, 0.9]) {
+        // 発光側
+        translate([emit_x, 0, z_top - 1.0])
+            cylinder(d = 5.6, h = 0.8);
+        translate([emit_x, 0, z_top - 0.2])
+            scale([1, 1, 0.25]) sphere(d = 5.6);
+        // 受光側
+        translate([det_x, 0, z_top - 1.0])
+            cylinder(d = 7.0, h = 0.8);
+        translate([det_x, 0, z_top - 0.2])
+            scale([1, 1, 0.25]) sphere(d = 7.0);
+    }
+}
+
+module mounting_tabs() {
+    for (s = [-1, 1])
+        difference() {
+            hull() {
+                translate([s * body_w/2 * 0.9, -tab_r, z_bot])
+                    cube([0.1, 2 * tab_r, tab_t]);
+                translate([s * hole_pitch/2, 0, z_bot])
+                    cylinder(r = tab_r, h = tab_t);
+            }
+            translate([s * hole_pitch/2, 0, z_bot - 1])
+                cylinder(d = hole_d, h = tab_t + 2);
+        }
+}
+
+module connector() {
+    // コネクタ右端が本体中心 (14.75) → X: -10.1 〜 0
+    color("Ivory")
+    difference() {
+        translate([-conn_w, -body_d/2, z_bot - conn_h])
+            cube([conn_w, conn_d, conn_h]);
+        // 3ピン端子穴 (2.0mm ピッチ)
+        for (i = [-1 : 1])
+            translate([-conn_w/2 + i * 2.0, -body_d/2 - 1, z_bot - conn_h/2])
+                rotate([-90, 0, 0])
+                    cylinder(d = 1.0, h = conn_d - 1);
+    }
+    // ピン
+    color("Silver")
+    for (i = [-1 : 1])
+        translate([-conn_w/2 + i * 2.0 - 0.25, -body_d/2 + 1.5, z_bot - conn_h + 0.3])
+            cube([0.5, 3.5, conn_h]);
+}
+
+module stamp() {
+    // 背面刻印 (SHARP / 2Y0A21 F 4Z)
+    color("White")
+    translate([-2, body_d/2 - 2 + 0.01, z_bot + 3.5])
+        rotate([90, 0, 180])
+            linear_extrude(0.1) {
+                translate([0, 1.2]) text("SHARP", size = 1.6, halign = "center", valign = "center");
+                translate([0, -1.0]) text("2Y0A21 F 4Z", size = 1.3, halign = "center", valign = "center");
+            }
+}
+
+// ---- 組立 ----
+module gp2y0a21yk0f() {
+    color([0.12, 0.12, 0.12]) {
+        lower_body();
+        mounting_tabs();
+    }
+    color([0.15, 0.15, 0.15]) lens_case();
+    pwb();
+    connector();
+    stamp();
+}
+
+gp2y0a21yk0f();
