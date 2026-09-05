@@ -1,0 +1,99 @@
+```openscad
+// マグカップのパラメータ
+outer_dia = 80;
+inner_dia = 70;
+height = 90;
+bottom_thickness = 6;
+
+outer_r = outer_dia / 2;
+inner_r = inner_dia / 2;
+inner_height = height - bottom_thickness;
+
+// 取手のパラメータ
+handle_inner_h = 30; // 指が入る高さ
+handle_inner_w = 25; // マグ本体から外側への突き出し幅（内側空間）
+handle_thickness = 10; // 取手の太さ（断面の直径・幅）
+
+// 全体のスムージング設定
+$fn = 100;
+
+module mug_body() {
+    difference() {
+        // 外側のシリンダー
+        cylinder(h = height, r = outer_r);
+        
+        // 内側のくり抜き（底面6mmを残す）
+        translate([0, 0, bottom_thickness])
+        cylinder(h = inner_height + 1, r = inner_r);
+    }
+}
+
+module handle() {
+    // 取手の中心高さはマグ本体の高さの中央に合わせる
+    // Z座標: (height - handle_inner_h) / 2 を基準にするが、上下の厚みも含めて計算
+    
+    total_handle_h = handle_inner_h + handle_thickness * 2;
+    z_offset = (height - total_handle_h) / 2;
+    
+    // +X軸方向に取り付けるため、回転と平行移動を行う
+    translate([outer_r - handle_thickness/2, 0, z_offset])
+    rotate([0, 0, 0])
+    union() {
+        // D字形状の取手を作成
+        // 本体側（直線部分）と外側（半円部分）をロフトまたは形状結合する
+        
+        // 外側の半円部分と上下のアームを一体のD字型として2次元形状を押し出す
+        rotate([90, 0, 90])
+        linear_extrude(height = handle_thickness, center = true)
+        d_shape_2d();
+    }
+}
+
+module d_shape_2d() {
+    // 2DでのD字形状を描画し、linear_extrudeで立体にする
+    // 基準位置調整のため、形状を定義
+    
+    inner_w = handle_inner_w;
+    inner_h = handle_inner_h;
+    th = handle_thickness;
+    
+    r_outer = (inner_h / 2) + th;
+    
+    difference() {
+        // 外側全体のプロファイル
+        union() {
+            // 上下のバーと外側の半円を包含する外形
+            translate([0, -inner_h/2 - th])
+            square([inner_w + th, inner_h + th*2]);
+            
+            // 外側の丸み
+            translate([inner_w, 0, 0])
+            circle(r = r_outer);
+        }
+        
+        // 内側の抜き穴（D字の中空部分）
+        union() {
+            translate([0, -inner_h/2])
+            square([inner_w, inner_h]);
+            
+            // 内側の半円部分
+            translate([inner_w, 0])
+            circle(r = inner_h / 2);
+        }
+        
+        // 本体食い込み防止および確実に結合するための調整用カット（必要に応じて）
+        // ここでは綺麗に結合するようにマイナス座標側を削る
+        translate([-th, -r_outer - th])
+        square([th, (r_outer + th)*2]);
+    }
+}
+
+// メイン形状の結合
+union() {
+    mug_body();
+    
+    // 取手を+X軸方向（X方向が正の向き）に配置
+    // 取手の中心がX軸上にくるように調整
+    handle();
+}
+```

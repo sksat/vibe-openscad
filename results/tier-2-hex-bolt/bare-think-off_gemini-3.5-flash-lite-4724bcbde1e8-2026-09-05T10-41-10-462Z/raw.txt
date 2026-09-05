@@ -1,0 +1,31 @@
+```openscad
+// M8 六角ボルト (JIS規格ベース、ねじ山省略)
+// `$fn = 100;` で円や六角形の解像度を上げています。
+
+module m8_bolt() {
+    // 頭部 (対辺距離 13mm の六角柱、高さ 5.3mm)
+    // OpenSCad の cylinder(r/d, h) で $fn=6 を指定すると六角柱になります。
+    // 対辺距離(S)から外接円の半径を計算: R = S / sqrt(3) 
+    // 13 / 1.7320508... ≒ 7.5055mm (直径では約 15.01mm)
+    // ※あるいは circum(r) を使う簡易的な方法として d = 13 / cos(30) = 15.011 も可
+    // ここでは正確に対辺距離 13mm になるよう三角関数を使用します。
+    
+    af = 13; // 対辺距離
+    outer_d = af / cos(30); // 外接円の直径
+    head_height = 5.3;
+    
+    shank_d = 8;
+    shank_length = 30;
+
+    // 1. 頭部 (底面が z = 0、Z軸正方向へ高さ 5.3mm)
+    color("Silver")
+    cylinder(h = head_height, d = outer_d, $fn = 6);
+
+    // 2. シャンク / 軸部 (直径 8mm、長さ 30mm、Z軸負方向へ伸ばす)
+    color("Silver")
+    translate([0, 0, -shank_length])
+    cylinder(h = shank_length, d = shank_d, $fn = 100);
+}
+
+m8_bolt();
+```
