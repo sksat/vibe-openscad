@@ -1,0 +1,30 @@
+```openscad
+$fn = 100;
+
+difference() {
+    union() {
+        // 本体外形 (外径 80mm, 高さ 90mm)
+        cylinder(r=40, h=90);
+        
+        // 取手 (+X方向に配置、高さ中央 Z=45mm)
+        translate([0, 0, 45])
+        rotate([90, 0, 0])
+        linear_extrude(height=12, center=true, convexity=4)
+        difference() {
+            // 取手外形 (D字形状)
+            hull() {
+                translate([30, -22]) square([20, 44]);
+                translate([50, 0]) circle(r=22);
+            }
+            // 取手内側空間 (高さ 30mm × 幅 25mm: X=40〜65, Z=-15〜15)
+            hull() {
+                translate([40, -15]) square([10, 30]);
+                translate([50, 0]) circle(r=15);
+            }
+        }
+    }
+    // 内側中空部 (内径 70mm, 底面厚み 6mm)
+    translate([0, 0, 6])
+        cylinder(r=35, h=90 - 6 + 1);
+}
+```

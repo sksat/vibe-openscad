@@ -1,0 +1,57 @@
+```openscad
+$fn = 64;
+
+// 寸法パラメータ
+width = 50;        // 幅 (X)
+length_y = 40;     // 水平面奥行き (Y)
+height_z = 40;     // 垂直面高さ (Z)
+thickness = 3;     // 板厚
+
+// 皿穴パラメータ
+d_through = 4.5;   // 貫通穴径
+d_cs = 8.0;        // 皿頭最大径
+depth_cs = 2.0;    // 皿座面深さ
+margin_x = 10;     // 左右端からの距離
+
+// 皿穴モジュール (+Z方向へ向かってボルトが貫通)
+module countersunk_hole() {
+    union() {
+        // 貫通穴
+        translate([0, 0, -1])
+            cylinder(d = d_through, h = thickness + 2);
+        // 皿座面 (外側から内側に向けて縮径)
+        translate([0, 0, -0.01])
+            cylinder(d1 = d_cs, d2 = d_through, h = depth_cs + 0.01);
+    }
+}
+
+difference() {
+    // L字金具本体 (内側コーナーが [X, 0, 0])
+    union() {
+        // 水平面 (+Y方向, Zは -thickness 〜 0)
+        translate([0, 0, -thickness])
+            cube([width, length_y, thickness]);
+
+        // 垂直面 (+Z方向, Yは -thickness 〜 0)
+        translate([0, -thickness, 0])
+            cube([width, thickness, height_z]);
+
+        // コーナー結合部
+        translate([0, -thickness, -thickness])
+            cube([width, thickness, thickness]);
+    }
+
+    // 水平面の皿穴 (外側の面 Z = -thickness から +Z 方向へ)
+    for (x_pos = [margin_x, width - margin_x]) {
+        translate([x_pos, length_y / 2, -thickness])
+            countersunk_hole();
+    }
+
+    // 垂直面の皿穴 (外側の面 Y = -thickness から +Y 方向へ)
+    for (x_pos = [margin_x, width - margin_x]) {
+        translate([x_pos, -thickness, height_z / 2])
+            rotate([-90, 0, 0])
+                countersunk_hole();
+    }
+}
+```

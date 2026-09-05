@@ -1,0 +1,105 @@
+```openscad
+$fn = 60;
+
+// 寸法パラメータ
+leaf_length = 30;       // 縦 (ヒンジ軸方向)
+leaf_width  = 25;       // 横 (開き方向)
+leaf_thick  = 2;        // 板厚
+
+pin_dia     = 4.0;      // ピン直径
+pin_len     = 32.0;     // ピン長さ
+knuckle_od  = 8.0;      // ナックル外径
+knuckle_id  = 4.6;      // ナックル内径 (クリアランス込)
+knuckle_cnt = 5;        // ナックル分割数
+seg_len     = leaf_length / knuckle_cnt; // 1区画 6mm
+
+hole_pitch  = 8.0;      // 皿穴ピッチ
+hole_dist_x = 17.0;     // 軸中心からの皿穴位置
+hole_y_list = [
+    leaf_length / 2 - hole_pitch,
+    leaf_length / 2,
+    leaf_length / 2 + hole_pitch
+];
+
+// M3 皿穴モジュール (表面 Z = -knuckle_od/2 + leaf_thick から裏面 Z = -knuckle_od/2 へ貫通)
+module countersunk_hole() {
+    z_top = -knuckle_od / 2 + leaf_thick;
+    z_bot = -knuckle_od / 2;
+
+    // 貫通穴 (3.2mm)
+    translate([0, 0, z_bot - 0.5])
+        cylinder(d = 3.2, h = leaf_thick + 1.0);
+
+    // 皿テーパ (深さ 1mm, 表面径 6mm -> 穴径 3.2mm)
+    translate([0, 0, z_top - 1.0])
+        cylinder(d1 = 3.2, d2 = 6.0, h = 1.01);
+}
+
+// 左板 (x < 0, ナックル: 0, 2, 4番目)
+module left_leaf() {
+    difference() {
+        union() {
+            // 板本体
+            translate([-leaf_width, 0, -knuckle_od / 2])
+                cube([leaf_width, leaf_length, leaf_thick]);
+
+            // ナックル部
+            for (i = [0, 2, 4]) {
+                translate([0, i * seg_len, 0])
+                    rotate([-90, 0, 0])
+                        cylinder(d = knuckle_od, h = seg_len);
+            }
+        }
+        // ピン穴
+        translate([0, -1, 0])
+            rotate([-90, 0, 0])
+                cylinder(d = knuckle_id, h = leaf_length + 2);
+
+        // 皿穴
+        for (y = hole_y_list) {
+            translate([-hole_dist_x, y, 0])
+                countersunk_hole();
+        }
+    }
+}
+
+// 右板 (x > 0, ナックル: 1, 3番目)
+module right_leaf() {
+    difference() {
+        union() {
+            // 板本体
+            translate([0, 0, -knuckle_od / 2])
+                cube([leaf_width, leaf_length, leaf_thick]);
+
+            // ナックル部
+            for (i = [1, 3]) {
+                translate([0, i * seg_len, 0])
+                    rotate([-90, 0, 0])
+                        cylinder(d = knuckle_od, h = seg_len);
+            }
+        }
+        // ピン穴
+        translate([0, -1, 0])
+            rotate([-90, 0, 0])
+                cylinder(d = knuckle_id, h = leaf_length + 2);
+
+        // 皿穴
+        for (y = hole_y_list) {
+            translate([hole_dist_x, y, 0])
+                countersunk_hole();
+        }
+    }
+}
+
+// ピン軸 (Y軸沿い、両端1mm飛び出し)
+module pin() {
+    translate([0, -1, 0])
+        rotate([-90, 0, 0])
+            cylinder(d = pin_dia, h = pin_len);
+}
+
+// 全体アセンブリ
+color("Silver")         pin();
+color("LightSlateGray") left_leaf();
+color("SlateGray")      right_leaf();
+```

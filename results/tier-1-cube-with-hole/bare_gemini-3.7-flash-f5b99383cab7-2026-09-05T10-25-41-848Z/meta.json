@@ -1,0 +1,33 @@
+{
+  "runId": "bare_gemini-3.7-flash-f5b99383cab7-2026-09-05T10-25-41-848Z",
+  "taskId": "tier-1-cube-with-hole",
+  "matrixId": "bare/gemini-3.7-flash",
+  "signature": "f5b99383cab7ca51f2918a80f27b3b13acda0200974e5c7cb57e0d421b224911",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "8ff7e36af4bc202429ec68b7eb9cc3f195b6a3c68668be31239bcea23345a048",
+    "harness": {
+      "kind": "bare",
+      "provider": "google",
+      "model": "gemini-3.7-flash"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "google",
+  "model": "gemini-3.7-flash",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 2195
+  },
+  "tokens": {
+    "input": 68,
+    "output": 51
+  },
+  "cost_usd": 0.00024224999999999998,
+  "createdAt": "2026-09-05T10:25:41.849Z",
+  "gitCommit": "c3c9301f89b13949b4c4b185046d792c43f62cb4"
+}
