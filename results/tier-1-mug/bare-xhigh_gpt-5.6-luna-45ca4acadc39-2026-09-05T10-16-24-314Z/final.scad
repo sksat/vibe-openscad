@@ -1,0 +1,33 @@
+$fn = 128;
+
+outer_radius = 40;
+inner_radius = 36;
+cup_height = 100;
+bottom_thickness = 6;
+
+handle_outer_radius = 12;
+handle_tube_radius = 2;
+handle_centerline_radius = handle_outer_radius - handle_tube_radius;
+handle_inner_radius = handle_centerline_radius - handle_tube_radius;
+handle_center_x = outer_radius + handle_inner_radius;
+
+module ring_handle() {
+    translate([handle_center_x, 0, cup_height / 2])
+        rotate([90, 0, 0])
+            rotate_extrude(convexity = 10)
+                translate([handle_centerline_radius, 0, 0])
+                    circle(r = handle_tube_radius);
+}
+
+difference() {
+    union() {
+        cylinder(r = outer_radius, h = cup_height);
+        ring_handle();
+    }
+
+    translate([0, 0, bottom_thickness])
+        cylinder(
+            r = inner_radius,
+            h = cup_height - bottom_thickness + 2
+        );
+}

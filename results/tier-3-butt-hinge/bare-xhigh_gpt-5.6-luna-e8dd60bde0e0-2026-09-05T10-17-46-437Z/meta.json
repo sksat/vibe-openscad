@@ -1,0 +1,38 @@
+{
+  "runId": "bare-xhigh_gpt-5.6-luna-e8dd60bde0e0-2026-09-05T10-17-46-437Z",
+  "taskId": "tier-3-butt-hinge",
+  "matrixId": "bare-xhigh/gpt-5.6-luna",
+  "signature": "e8dd60bde0e01d78754ea66cdf5bfebe0ec30a0620de30a038657bc371c07a1d",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dd7199030a8827a181914869189fc45a2e5637023f0c8c59532d442557036e7c",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5.6-luna",
+      "modelOptions": {
+        "reasoning": {
+          "effort": "xhigh"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 82979
+  },
+  "tokens": {
+    "input": 592,
+    "output": 11160
+  },
+  "cost_usd": 0.013510399999999999,
+  "createdAt": "2026-09-05T10:17:46.437Z",
+  "gitCommit": "d69c2b8ad7096565c04e35c594251b6b21e60c3b"
+}

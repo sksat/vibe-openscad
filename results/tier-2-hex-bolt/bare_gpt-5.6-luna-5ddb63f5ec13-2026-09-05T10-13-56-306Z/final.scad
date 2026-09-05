@@ -1,0 +1,24 @@
+$fn = 64;
+
+across_flats = 13;
+head_height = 5.3;
+shank_diameter = 8;
+shank_length = 30;
+
+union() {
+    // 六角ボルト頭部
+    cylinder(
+        h = head_height,
+        r = across_flats / sqrt(3),
+        $fn = 6,
+        center = false
+    );
+
+    // シャンク
+    translate([0, 0, -shank_length])
+        cylinder(
+            h = shank_length,
+            d = shank_diameter,
+            center = false
+        );
+}

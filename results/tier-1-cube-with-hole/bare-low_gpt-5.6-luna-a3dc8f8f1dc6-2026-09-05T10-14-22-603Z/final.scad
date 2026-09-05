@@ -1,0 +1,5 @@
+difference() {
+    cube([50, 50, 50]);
+    translate([25, 25, -5])
+        cylinder(h = 60, d = 20, $fn = 64);
+}

@@ -1,0 +1,34 @@
+{
+  "runId": "bare_gpt-5.6-luna-1d017ed35360-2026-09-05T10-14-20-279Z",
+  "taskId": "tier-1-mug",
+  "matrixId": "bare/gpt-5.6-luna",
+  "signature": "1d017ed35360ff5a024676e3a1059f540d8dbd526f08103e0b8b43d21a13e792",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "883b512feb40f76c3fdcb332c7c513c491c27c8511f65b90fecbad6b6c197cd5",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5.6-luna"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "render_error",
+  "timing": {
+    "totalMs": 27789
+  },
+  "tokens": {
+    "input": 168,
+    "output": 2160
+  },
+  "cost_usd": 0.0026256,
+  "createdAt": "2026-09-05T10:14:20.279Z",
+  "gitCommit": "d69c2b8ad7096565c04e35c594251b6b21e60c3b",
+  "error": "openscad stl render failed (exit 1): ERROR: Parser error: syntax error in file ../../../../../tmp/render-5uTfVI/input.scad, line 18\nCan't parse file '/tmp/render-5uTfVI/input.scad'!\n\n"
+}

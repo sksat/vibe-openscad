@@ -1,0 +1,33 @@
+{
+  "runId": "bare_gpt-5.6-luna-32781ba8eccc-2026-09-05T10-13-54-618Z",
+  "taskId": "tier-1-cube-with-hole",
+  "matrixId": "bare/gpt-5.6-luna",
+  "signature": "32781ba8eccc9c39ad73315122e97e87821f91ed6ff40f9f4dd50d9eb83bf064",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "8ff7e36af4bc202429ec68b7eb9cc3f195b6a3c68668be31239bcea23345a048",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5.6-luna"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 2130
+  },
+  "tokens": {
+    "input": 82,
+    "output": 102
+  },
+  "cost_usd": 0.00013879999999999999,
+  "createdAt": "2026-09-05T10:13:54.619Z",
+  "gitCommit": "d69c2b8ad7096565c04e35c594251b6b21e60c3b"
+}

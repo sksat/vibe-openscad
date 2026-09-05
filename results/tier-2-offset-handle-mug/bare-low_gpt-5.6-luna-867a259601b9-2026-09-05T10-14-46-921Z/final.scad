@@ -1,0 +1,42 @@
+$fn = 128;
+
+outer_diameter = 80;
+inner_diameter = 70;
+height = 90;
+bottom_thickness = 6;
+
+module mug_body() {
+    difference() {
+        cylinder(
+            d = outer_diameter,
+            h = height
+        );
+
+        translate([0, 0, bottom_thickness])
+            cylinder(
+                d = inner_diameter,
+                h = height - bottom_thickness + 1
+            );
+    }
+}
+
+module d_handle() {
+    difference() {
+        linear_extrude(height = 10, center = true)
+            union() {
+                translate([35, 20])
+                    square([25, 50]);
+
+                translate([60, 45])
+                    circle(r = 25);
+            }
+
+        translate([40, -11, 30])
+            cube([25, 22, 30]);
+    }
+}
+
+union() {
+    mug_body();
+    d_handle();
+}

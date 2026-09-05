@@ -1,0 +1,37 @@
+{
+  "runId": "pdf-page_gpt-5.6-luna-e8c20bedcb09-2026-09-05T10-18-35-795Z",
+  "taskId": "tier-4-gp2y0d413k",
+  "matrixId": "pdf-page/gpt-5.6-luna",
+  "signature": "e8c20bedcb09e3e66097969cbd4f75b95a7a6835818b16a8494a4f750b7965ce",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "7e6fa16f202f13fec95f52e82a3fdae7e470b031753647eea0c4491422ab78ab",
+    "harness": {
+      "kind": "pdf-page",
+      "provider": "openai",
+      "model": "gpt-5.6-luna"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "harness": {
+    "kind": "pdf-page",
+    "pdfUrl": "https://jp.sharp/products/device/doc/opto/gp2y0d413k_e.pdf",
+    "pages": [
+      2
+    ]
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 26542
+  },
+  "tokens": {
+    "input": 2966,
+    "output": 2703
+  },
+  "cost_usd": 0.0038368,
+  "createdAt": "2026-09-05T10:18:35.795Z",
+  "gitCommit": "d69c2b8ad7096565c04e35c594251b6b21e60c3b"
+}
