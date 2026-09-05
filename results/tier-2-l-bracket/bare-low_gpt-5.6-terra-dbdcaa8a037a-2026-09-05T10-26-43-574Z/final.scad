@@ -1,0 +1,58 @@
+// L-bracket dimensions
+width     = 50;
+flangeLen = 40;
+thickness = 3;
+
+// Hole dimensions
+hole_d     = 4.5;
+csk_d      = 8;
+csk_depth  = 2;
+
+// Hole positions
+hole_x = [-15, 15];
+hole_y = 20;
+hole_z = 20;
+
+$fn = 64;
+
+module horizontal_countersunk_hole(x, y) {
+    // Through hole
+    translate([x, y, -thickness - 0.01])
+        cylinder(h = thickness + 0.02, d = hole_d);
+
+    // Countersink from the outer bottom face
+    translate([x, y, -thickness])
+        cylinder(h = csk_depth, d1 = csk_d, d2 = hole_d);
+}
+
+module vertical_countersunk_hole(x, z) {
+    // Through hole
+    translate([x, -thickness - 0.01, z])
+        rotate([90, 0, 0])
+            cylinder(h = thickness + 0.02, d = hole_d);
+
+    // Countersink from the outer rear face
+    translate([x, -thickness, z])
+        rotate([90, 0, 0])
+            cylinder(h = csk_depth, d1 = csk_d, d2 = hole_d);
+}
+
+difference() {
+    union() {
+        // Horizontal flange: +Y direction
+        translate([-width / 2, 0, -thickness])
+            cube([width, flangeLen, thickness]);
+
+        // Vertical flange: +Z direction
+        translate([-width / 2, -thickness, 0])
+            cube([width, thickness, flangeLen]);
+    }
+
+    // Horizontal flange holes
+    for (x = hole_x)
+        horizontal_countersunk_hole(x, hole_y);
+
+    // Vertical flange holes
+    for (x = hole_x)
+        vertical_countersunk_hole(x, hole_z);
+}

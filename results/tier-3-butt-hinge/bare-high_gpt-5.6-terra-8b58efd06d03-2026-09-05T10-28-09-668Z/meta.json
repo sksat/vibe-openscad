@@ -1,0 +1,38 @@
+{
+  "runId": "bare-high_gpt-5.6-terra-8b58efd06d03-2026-09-05T10-28-09-668Z",
+  "taskId": "tier-3-butt-hinge",
+  "matrixId": "bare-high/gpt-5.6-terra",
+  "signature": "8b58efd06d037f03486151bc3319b03923a7cf55507c07581eea7ce232f22a67",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dd7199030a8827a181914869189fc45a2e5637023f0c8c59532d442557036e7c",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-5.6-terra",
+      "modelOptions": {
+        "reasoning": {
+          "effort": "high"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-5.6-terra",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 65428
+  },
+  "tokens": {
+    "input": 592,
+    "output": 5586
+  },
+  "cost_usd": 0.068216,
+  "createdAt": "2026-09-05T10:28:09.668Z",
+  "gitCommit": "6126da97a0143fe2b15123b33c5aca211fbb111e"
+}

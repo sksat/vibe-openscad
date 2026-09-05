@@ -1,0 +1,9 @@
+```openscad
+cube_size = 50;
+hole_diameter = 20;
+
+difference() {
+    cube([cube_size, cube_size, cube_size], center = true);
+    cylinder(h = cube_size + 2, d = hole_diameter, center = true);
+}
+```

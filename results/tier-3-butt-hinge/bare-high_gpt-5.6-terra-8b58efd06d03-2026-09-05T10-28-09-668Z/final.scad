@@ -1,0 +1,87 @@
+// 小型バット蝶番（180°開いた状態）
+// 単位: mm
+
+$fn = 64;
+
+// 基本寸法
+leaf_length     = 30;
+leaf_width      = 25;
+leaf_thickness  = 2;
+
+pin_diameter    = 4;
+pin_length      = 32;
+
+knuckle_od      = 8;
+knuckle_id      = 4.6;
+knuckle_length  = 6;
+
+hole_diameter   = 3.2;
+csk_diameter    = 6;
+csk_depth       = 1;
+
+// Y軸方向の円柱
+module y_cylinder(y_start, length, diameter) {
+    translate([0, y_start, 0])
+        rotate([-90, 0, 0])
+            cylinder(d = diameter, h = length);
+}
+
+// 中空 knuckle
+module knuckle(y_start) {
+    difference() {
+        y_cylinder(y_start, knuckle_length, knuckle_od);
+
+        translate([0, y_start - 0.02, 0])
+            rotate([-90, 0, 0])
+                cylinder(d = knuckle_id, h = knuckle_length + 0.04);
+    }
+}
+
+// M3貫通穴 + 表面側皿穴
+module countersunk_hole(x_pos, y_pos) {
+    translate([x_pos, y_pos, -leaf_thickness / 2 - 0.05])
+        cylinder(d = hole_diameter, h = leaf_thickness + 0.1);
+
+    translate([x_pos, y_pos, 0])
+        cylinder(
+            h = csk_depth,
+            d1 = hole_diameter,
+            d2 = csk_diameter
+        );
+}
+
+// 左右の板と knuckle
+module hinge_leaf(side, knuckle_positions) {
+    difference() {
+        union() {
+            // 左板: X=-29 ～ -4
+            // 右板: X=  4 ～ 29
+            translate([
+                side < 0 ? -29 : 4,
+                -leaf_length / 2,
+                -leaf_thickness / 2
+            ])
+                cube([leaf_width, leaf_length, leaf_thickness]);
+
+            // knuckle
+            for (y_pos = knuckle_positions)
+                knuckle(y_pos);
+        }
+
+        // knuckle から離れた外側寄りの M3皿穴 3個
+        for (y_pos = [-8, 0, 8])
+            countersunk_hole(side * 24, y_pos);
+    }
+}
+
+// 左板: 外側2個 + 中央1個
+color([0.32, 0.34, 0.36])
+    hinge_leaf(-1, [-15, -3, 9]);
+
+// 右板: 中間2個
+color([0.38, 0.40, 0.42])
+    hinge_leaf(1, [-9, 3]);
+
+// ピン軸: knuckle 全長30mmに対して両端1mmずつ突出
+color([0.15, 0.15, 0.16])
+    y_cylinder(-16, pin_length, pin_diameter);
