@@ -1,0 +1,61 @@
+```openscad
+// パラメータ設定
+width = 50;       // フランジの幅
+depth = 40;       // 水平面の奥行き
+height = 40;      // 垂直面の高さ
+thickness = 3;    // 板厚
+
+// M4皿穴のパラメータ
+hole_d = 4.5;     // 貫通穴の直径
+cs_d = 8.0;       // 皿座面の直径
+cs_depth = 2.0;   // 皿座面の深さ
+edge_dist = 10;   // 縁からの距離
+hole_y = width / 2; // 中心線 (幅方向の中央)
+
+module l_bracket() {
+    difference() {
+        // L字のベース形状 (原点が内側コーナー)
+        union() {
+            // 水平面 (X: 0~50, Y: 0~40, Z: -3~0) -> 内側コーナーが原点になるよう配置
+            // 仕様通り「水平面は +Y 方向、垂直面は +Z 方向」に伸びるように調整
+            // 板厚分を考慮し、水平面はZ=-3〜0、垂直面はZ=0〜40とする
+            cube([width, depth, thickness]);
+            // 垂直面 (X: 0~50, Y: 0~3, Z: 0~40)
+            cube([width, thickness, height]);
+        }
+        
+        // --- 水平面の皿穴 (2個) ---
+        // 外側(下面 Z = -3)から皿座面を彫り込む
+        // X座標: 縁から10mm (10 と width - 10)
+        // Y座標: 奥行きの中心 (depth / 2)
+        for (x = [edge_dist, width - edge_dist]) {
+            translate([x, depth / 2, -1]) { // わずかに突き抜けてきれいにくり抜く
+                // 貫通穴
+                cylinder(d = hole_d, h = thickness + 2, $fn = 30);
+                // 皿座面 (下面側 Z=0 から上向きに彫る)
+                translate([0, 0, -cs_depth + 1])
+                    cylinder(d = cs_d, h = cs_depth + 1, $fn = 30);
+            }
+        }
+        
+        // --- 垂直面の皿穴 (2個) ---
+        // 外側(背面 Y = 3)から皿座面を彫り込む
+        // X座標: 縁から10mm (10 と width - 10)
+        // Z座標: 高さの中心 (height / 2)
+        for (x = [edge_dist, width - edge_dist]) {
+            translate([x, -1, height / 2]) {
+                rotate([-90, 0, 0]) {
+                    // 貫通穴
+                    cylinder(d = hole_d, h = thickness + 2, $fn = 30);
+                    // 皿座面 (背面側 Y=0 から前向きに彫る)
+                    translate([0, 0, -cs_depth + 1])
+                        cylinder(d = cs_d, h = cs_depth + 1, $fn = 30);
+                }
+            }
+        }
+    }
+}
+
+// 描画実行
+l_bracket();
+```

@@ -1,0 +1,42 @@
+// マグカップのパラメータ
+outer_diameter = 80;
+height = 100;
+wall_thickness = 4;
+bottom_thickness = 6;
+
+handle_radius = 12;      // 取手のパイプの太さの半径
+handle_offset_r = 14;    // カップの外周から取手中心までの突き出し距離
+handle_z_offset = 0;     // カップ中心からの高さのオフセット
+
+module mug() {
+    // 精度設定
+    $fn = 100;
+    
+    outer_radius = outer_diameter / 2;
+    inner_radius = outer_radius - wall_thickness;
+    inner_height = height - bottom_thickness;
+    
+    // 本体と取手を結合
+    union() {
+        // メインのカップ形状 (外側を引く)
+        difference() {
+            // 外側ボディ
+            cylinder(h = height, r = outer_radius);
+            
+            // 内側をくり抜く
+            translate([0, 0, bottom_thickness])
+                cylinder(h = inner_height + 1, r = inner_radius);
+        }
+        
+        // 取手 (リング状)
+        // カップの中心高さ (height / 2 + handle_z_offset) に配置
+        translate([outer_radius + handle_offset_r, 0, height / 2 + handle_z_offset])
+            rotate([0, 90, 0])
+                // トーラス (リング)
+                rotate_extrude()
+                    translate([handle_radius + wall_thickness*0.8, 0, 0])
+                        circle(r = handle_radius);
+    }
+}
+
+mug();

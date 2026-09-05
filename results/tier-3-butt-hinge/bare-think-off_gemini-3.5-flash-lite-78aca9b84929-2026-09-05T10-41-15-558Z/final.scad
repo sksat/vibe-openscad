@@ -1,0 +1,155 @@
+// ==========================================
+// 家具用小型バット蝶番 (Butt Hinge)
+// 180°開いた状態
+// ==========================================
+
+// 高解像度設定
+$fn = 60;
+
+// --- パラメータ定義 ---
+// 全体・ピン
+hinge_length = 30.0;  // 縦方向の長さ
+pin_d = 4.0;          // ピン軸の直径
+pin_clearance = 0.3;  // ピン穴のクリアランス
+hole_d = pin_d + pin_clearance; // 4.3mm
+pin_len = 32.0;       // ピン軸の全長 (両端1mm飛び出し)
+knuckle_od = 8.0;     // 筒の外径
+knuckle_len = hinge_length / 5.0; // 6.0mm (5等分)
+
+// 板 (Leaf)
+leaf_w = 25.0;        // 横方向の幅
+leaf_t = 2.0;         // 板の厚さ
+
+// 皿穴 (M3用)
+cs_d = 6.0;           // 皿穴の表面直径
+cs_depth = 1.0;       // 皿穴の深さ
+thru_d = 3.2;         // 貫通穴の直径
+hole_pitch = 8.0;     // 縦方向の穴ピッチ
+
+// 描画実行
+hinge_assembly();
+
+// ==========================================
+// アセンブリ (全体結合)
+// ==========================================
+module hinge_assembly() {
+    // 左板 (-X方向)
+    color("Silver")
+    left_leaf_full();
+
+    // 右板 (+X方向)
+    color("LightGray")
+    right_leaf_full();
+
+    // ピン軸 (Y軸方向)
+    color("DarkGray")
+    translate([0, hinge_length/2, 0])
+    rotate([-90, 0, 0])
+    cylinder(d=pin_d, h=pin_len, center=true);
+}
+
+// ==========================================
+// 左板パーツ (外側2個 + 中央1個のナックル)
+// ==========================================
+module left_leaf_full() {
+    difference() {
+        union() {
+            // ベースの板 (-X側に伸びる)
+            translate([-(leaf_w), -hinge_length/2, -leaf_t/2])
+            cube([leaf_w, hinge_length, leaf_t]);
+
+            // ナックル (インデックス 0, 2, 4)
+            // 0: Y = -15 to -9
+            translate([0, -15.0, 0]) knuckle_element();
+            // 2: Y = -3 to +3
+            translate([0,  -3.0, 0]) knuckle_element();
+            // 4: Y = +9 to +15
+            translate([0,   9.0, 0]) knuckle_element();
+        }
+
+        // ピン貫通穴 (クリアランス付き)
+        translate([0, -pin_len/2 - 2, 0])
+        rotate([-90, 0, 0])
+        cylinder(d=hole_d, h=pin_len + 4);
+
+        // M3皿穴 (左板用: 3箇所)
+        left_screw_holes();
+    }
+}
+
+// ==========================================
+// 右板パーツ (中間2個のナックル)
+// ==========================================
+module right_leaf_full() {
+    difference() {
+        union() {
+            // ベースの板 (+X側に伸びる)
+            translate([0, -hinge_length/2, -leaf_t/2])
+            cube([leaf_w, hinge_length, leaf_t]);
+
+            // ナックル (インデックス 1, 3)
+            // 1: Y = -9 to -3
+            translate([0,  -9.0, 0]) knuckle_element();
+            // 3: Y = +3 to +9
+            translate([0,   3.0, 0]) knuckle_element();
+        }
+
+        // ピン貫通穴 (クリアランス付き)
+        translate([0, -pin_len/2 - 2, 0])
+        rotate([-90, 0, 0])
+        cylinder(d=hole_d, h=pin_len + 4);
+
+        // M3皿穴 (右板用: 3箇所)
+        right_screw_holes();
+    }
+}
+
+// ==========================================
+// ナックル単体パーツ (長さ 6mm)
+// ==========================================
+module knuckle_element() {
+    // Y=0 から +Y方向へ knuckle_len の長さで作成
+    rotate([-90, 0, 0])
+    cylinder(d=knuckle_od, h=knuckle_len);
+}
+
+// ==========================================
+// 左板の皿穴群
+// ==========================================
+module left_screw_holes() {
+    // 穴の中心X座標 (板の中央付近: X = -12.5)
+    hx = -leaf_w / 2;
+    
+    // Y方向の配置 (ピッチ8mmで3箇所、Y=0中心)
+    for (hy = [-hole_pitch, 0, hole_pitch]) {
+        translate([hx, hy, 0])
+        screw_hole_set();
+    }
+}
+
+// ==========================================
+// 右板の皿穴群
+// ==========================================
+module right_screw_holes() {
+    // 穴の中心X座標 (板の中央付近: X = +12.5)
+    hx = leaf_w / 2;
+    
+    // Y方向の配置 (ピッチ8mmで3箇所、Y=0中心)
+    for (hy = [-hole_pitch, 0, hole_pitch]) {
+        translate([hx, hy, 0])
+        screw_hole_set();
+    }
+}
+
+// ==========================================
+// 皿穴 1セット (上面からのテーパ + 貫通穴)
+// ==========================================
+module screw_hole_set() {
+    // 上面からの皿モミ (Z = +leaf_t/2 から下向き)
+    translate([0, 0, leaf_t/2 - cs_depth])
+    cylinder(d1=cs_d, d2=thru_d, h=cs_depth + 0.01);
+
+    // 貫通穴 (板を貫通)
+    translate([0, 0, -leaf_t/2 - 1])
+    cylinder(d=thru_d, h=leaf_t + 2);
+}

@@ -1,0 +1,29 @@
+```openscad
+// M8 六角ボルト (JIS規格ベース、ねじ山省略)
+// 対辺距離: 13mm, 頭部高さ: 5.3mm, 軸径: 8mm, 軸長: 30mm
+
+$fn = 60; // 円の滑らかさ
+
+// 寸法定義
+af = 13;              // 対辺距離 (Across Flats)
+head_height = 5.3;    // 頭部の高さ
+shank_dia = 8;        // シャンク(軸)の直径
+shank_length = 30;    // シャンクの長さ
+
+// 六角形の外接円の直径 (R = 対辺距離 / √3)
+// OpenSCADのcylinder(r=..., $fn=6) は外接円半径を指定するため、
+// 対辺距離(af)から外接円半径を計算する: r = (af / 2) / cos(30°) = af / √3
+corner_dia = af / cos(30);
+
+module m8_bolt() {
+    // 1. 六角頭部 (Z軸正方向へ構築: z = 0 から +5.3 まで)
+    cylinder(h = head_height, r = corner_dia / 2, $fn = 6);
+
+    // 2. シャンク(軸部) (Z軸負方向へ構築: z = -30 から 0 まで)
+    translate([0, 0, -shank_length])
+        cylinder(h = shank_length, r = shank_dia / 2);
+}
+
+// 実行
+m8_bolt();
+```

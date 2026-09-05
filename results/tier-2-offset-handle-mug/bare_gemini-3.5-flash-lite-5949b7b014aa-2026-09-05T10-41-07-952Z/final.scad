@@ -1,0 +1,60 @@
+// マグカップのパラメータ
+outer_dia = 80;
+inner_dia = 70;
+height = 90;
+bottom_thick = 6;
+wall_thick = (outer_dia - inner_dia) / 2; // 5mm
+
+// 取手のパラメータ
+handle_inner_w = 25; // X方向の幅 (本体からの突き出し量)
+handle_inner_h = 30; // Z方向の高さ
+handle_thick = 12;   // 取手の太さ (Y方向の厚み)
+handle_bar_d = 12;   // D字の太さ
+
+// 円滑な描画のための設定
+$fn = 120;
+
+module mug() {
+    // メインボディと取手を一体化
+    union() {
+        // 1. マグカップ本体 (中空の円筒)
+        difference() {
+            // 外側の円筒
+            cylinder(h = height, d = outer_dia);
+            
+            // 内側のくり抜き (底面を6mm残す)
+            translate([0, 0, bottom_thick])
+                cylinder(h = height - bottom_thick + 1, d = inner_dia);
+        }
+
+        // 2. 指定方向(+X軸方向)の取手
+        // マグの高さ方向の中央に配置
+        z_pos = (height - handle_inner_h) / 2;
+        
+        // 本体との確実に結合するための埋め込み幅
+        embed = 3; 
+        
+        translate([outer_dia / 2 - embed, 0, z_pos]) {
+            // D字型の取手を作成
+            // Y軸中心に対象にするため、全体をY方向にオフセット
+            translate([0, -handle_thick / 2, 0]) {
+                hull() {
+                    // 取手の上部固定部
+                    translate([0, handle_thick / 2, 0])
+                        cube([embed + handle_inner_w - handle_thick/2, handle_thick, handle_bar_d]);
+                    
+                    // 取手の下部固定部
+                    translate([0, handle_thick / 2, handle_inner_h - handle_bar_d])
+                        cube([embed + handle_inner_w - handle_thick/2, handle_thick, handle_bar_d]);
+                    
+                    // 取手の外側アール部分 (半円)
+                    translate([handle_inner_w - handle_bar_d/2, handle_thick / 2, handle_bar_d/2])
+                        cylinder(h = handle_inner_h - handle_bar_d, d = handle_bar_d);
+                }
+            }
+        }
+    }
+}
+
+// 実行
+mug();

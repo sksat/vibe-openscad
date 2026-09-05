@@ -181,6 +181,11 @@ gemini-3.5-flash:
   rate: { in: 1.5, out: 9 }
   thinking: dynamic
 
+gemini-3.5-flash-lite:
+  provider: google
+  rate: { in: 0.3, out: 2.5 }
+  thinking: dynamic
+
 # 3 世代(preview、暫定価格)
 gemini-3.1-pro:
   provider: google
