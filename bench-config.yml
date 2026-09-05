@@ -777,6 +777,20 @@ matrix:
     harness: { kind: bare }
     provider: openai-self-hosted
     model: qwen3-32b
+  # コンテキストを上限(32768)まで広げてロードした場合の比較用。
+  # context_length はサーバのロード条件であってリクエストのパラメータでは
+  # ないが、実行条件として fingerprint に載せるため modelOptions に書く。
+  # provider が実際のロード値と突き合わせ、食い違えば run を落とす。
+  - id: bare-ctx32k/qwen3-8b
+    harness: { kind: bare }
+    provider: openai-self-hosted
+    model: qwen3-8b
+    modelOptions: { context_length: 32768 }
+  - id: bare-ctx32k/qwen3-32b
+    harness: { kind: bare }
+    provider: openai-self-hosted
+    model: qwen3-32b
+    modelOptions: { context_length: 32768 }
 
   # --- iteration chain (PNG feedback) ---
   # 各 iteration step は独立した benchmark run。iter-png-1 は bare の出力を

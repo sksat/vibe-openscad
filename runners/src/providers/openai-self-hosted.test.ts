@@ -127,6 +127,82 @@ describe("ollama provider (OpenAI-compat /v1/chat/completions)", () => {
     expect(opts.maxRetries).toBe(0);
   });
 
+  it("does not forward modelOptions.context_length to the SDK call", async () => {
+    // context_length はサーバのロード条件であってリクエストのパラメータでは
+    // ない。fingerprint に載せるために modelOptions に書くが、そのまま
+    // /chat/completions へ送っても意味が無いので抜いてから渡す。
+    const { client, create } = makeMockClient({
+      choices: [{ message: { content: "x" } }],
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: [
+            { id: "qwen3-8b", state: "loaded", loaded_context_length: 32768 },
+          ],
+        }),
+      }),
+    );
+    const p = createOpenAISelfHostedProvider({ client });
+
+    await p.complete({
+      prompt: "p",
+      model: "qwen3-8b",
+      modelOptions: { context_length: 32768, temperature: 0.2 },
+    });
+
+    expect(create.mock.calls[0]?.[0]).not.toHaveProperty("context_length");
+    expect(create.mock.calls[0]?.[0]).toMatchObject({ temperature: 0.2 });
+    vi.unstubAllGlobals();
+  });
+
+  it("fails when the loaded context length differs from the declared one", async () => {
+    // 宣言と実態がずれたまま記録されると、8192 で走った run が 32768 の
+    // signature で残ってしまう。突き合わせて落とす。
+    const { client } = makeMockClient({
+      choices: [{ message: { content: "x" } }],
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: [
+            { id: "qwen3-8b", state: "loaded", loaded_context_length: 8192 },
+          ],
+        }),
+      }),
+    );
+    const p = createOpenAISelfHostedProvider({ client });
+
+    await expect(
+      p.complete({
+        prompt: "p",
+        model: "qwen3-8b",
+        modelOptions: { context_length: 32768 },
+      }),
+    ).rejects.toThrow(/8192.*32768|32768.*8192/);
+    vi.unstubAllGlobals();
+  });
+
+  it("skips the context check when context_length is not declared", async () => {
+    // 宣言していないエントリは従来どおり。probe も行わない。
+    const { client } = makeMockClient({
+      choices: [{ message: { content: "x" } }],
+    });
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const p = createOpenAISelfHostedProvider({ client });
+
+    const res = await p.complete({ prompt: "p", model: "qwen3-8b" });
+
+    expect(res.text).toBe("x");
+    expect(fetchMock).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
   it("propagates SDK errors as-is(host が落ちている等の判別を上位に任せる)", async () => {
     const create = vi.fn().mockRejectedValue(new Error("ECONNREFUSED"));
     const p = createOpenAISelfHostedProvider({
