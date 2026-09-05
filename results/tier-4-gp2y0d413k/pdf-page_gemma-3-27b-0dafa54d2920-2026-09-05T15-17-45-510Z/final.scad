@@ -1,0 +1,29 @@
+// Sharp GP2Y0D413K0F 距離センサ モデリング (単位: mm)
+
+module gp2y0d413k0f() {
+  difference() {
+    union() {
+      // 本体ケース
+      cube([29.6, 13, 15], center = true);
+
+      // コネクタ側PWB (厚みは仮)
+      translate([-6.5, -6.5, -7.5]) cube([13, 13, 1.5], center = true);
+
+      // レンズケース
+      translate([0, 4.8, 7.5]) cube([7.1, 3, 2.5], center = true);
+    }
+
+    // ホール (取付穴)
+    translate([-14.8, -6.5, -7.5]) cylinder(h=15, r=1.2, center=true);
+    translate([14.8, -6.5, -7.5]) cylinder(h=15, r=1.2, center=true);
+    translate([-14.8, 6.5, -7.5]) cylinder(h=15, r=1.2, center=true);
+    translate([14.8, 6.5, -7.5]) cylinder(h=15, r=1.2, center=true);
+
+    // LED穴 (仮)
+    translate([-3.75, 0, 7.5]) cylinder(h=2, r=1.5, center = true);
+    translate([3.75, 0, 7.5]) cylinder(h=2, r=1.5, center = true);
+
+  }
+}
+
+gp2y0d413k0f();
