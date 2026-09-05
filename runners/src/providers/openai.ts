@@ -183,9 +183,16 @@ export function createOpenaiProvider(
           : response.status;
 
       const usage = response.usage;
+      // output_tokens は reasoning を含んだ値。内訳は
+      // output_tokens_details.reasoning_tokens として別に返る。
+      const reasoning = usage?.output_tokens_details?.reasoning_tokens;
       const tokens =
         usage && usage.input_tokens != null && usage.output_tokens != null
-          ? { input: usage.input_tokens, output: usage.output_tokens }
+          ? {
+              input: usage.input_tokens,
+              output: usage.output_tokens,
+              ...(reasoning != null ? { thinking: reasoning } : {}),
+            }
           : undefined;
 
       return {

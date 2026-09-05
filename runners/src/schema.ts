@@ -320,7 +320,10 @@ const SubagentLogSchema = z.object({
   tokens: z
     .object({
       input: z.number().int().nonnegative(),
+      /** thinking / reasoning の分も含む(provider の課金単位に揃える)。 */
       output: z.number().int().nonnegative(),
+      /** output のうち thinking / reasoning が占める分。provider が報告するときだけ。 */
+      thinking: z.number().int().nonnegative().optional(),
     })
     .optional(),
   cost_usd: z.number().nonnegative().optional(),
@@ -427,7 +430,10 @@ export const RunMetaSchema = z.object({
   tokens: z
     .object({
       input: z.number().int().nonnegative(),
+      /** thinking / reasoning の分も含む(provider の課金単位に揃える)。 */
       output: z.number().int().nonnegative(),
+      /** output のうち thinking / reasoning が占める分。provider が報告するときだけ。 */
+      thinking: z.number().int().nonnegative().optional(),
     })
     .optional(),
   cost_usd: z.number().nonnegative().optional(),

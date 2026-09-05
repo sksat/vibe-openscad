@@ -1,0 +1,76 @@
+// Sharp GP2Y0D413K0F 距離センサ 3Dモデル
+// 単位: mm, 本体中心を原点 (0,0,0) とする
+
+$fn = 60;
+
+// 全体寸法
+width = 29.45;
+thickness = 7.1;  // 基盤・ケースの厚み（レンズ突起含まず）
+height = 13.5;
+
+// モジュール全体のオフセット計算（中心原点合わせ）
+// X: 中央 (width / 2)
+// Y: 前後中央 (厚み方向: thickness は背面から前面まで、レンズは約2mm突起)
+// Z: 上下中央 (height / 2)
+
+module gp2y0d413k0f() {
+    // スムーズなレンダリング用の解像度
+    $fn = 50;
+
+    translate([-width/2, -thickness/2, -height/2]) {
+        
+        // 1. メインの黒いケース本体
+        color("dimgray")
+        box_with_rounded_corners(width, thickness, height, 0.5);
+
+        // 2. 前面レンズ部（突起）
+        // 図面より、レンズケース部分は厚み方向へ約2mm突起
+        color("black")
+        translate([ (width - 24) / 2, -2, (height - 8.4) / 2 ])
+            cube([24, 2, 8.4]);
+
+        // 3. 2つの光学レンズ（発光部・受光部）
+        // センサ中心から左右対称に配置
+        // 左側: Light emitter (LED), 右側: Light detector (PSD)
+        // 中心からのオフセットは約 19.7mm 間隔
+        lens_diameter = 4.0;
+        lens_depth = 0.5;
+        
+        // LED (左)
+        color("darkred")
+        translate([ width/2 - 4.5, -2.2, height/2 ])
+        rotate([90, 0, 0])
+            cylinder(d=lens_diameter, h=lens_depth);
+
+        // PSD (右)
+        color("darkred")
+        translate([ width/2 - 4.5 - 19.7, -2.2, height/2 ])
+        rotate([90, 0, 0])
+            cylinder(d=lens_diameter, h=lens_depth);
+
+        // 4. 背面コネクタ部（下部中央から背面へ突出）
+        // 幅: 10.1mm, 突出量: 約 3.3mm (PWBからの突き出し含む), 高さ: 下部に付随
+        color("ivory")
+        translate([(width - 10.1)/2, thickness, 0])
+            cube([10.1, 3.3, 8.5]);
+            
+        // コネクタピン (3本)
+        color("gold")
+        for (i = [0, 1, 2]) {
+            translate([width/2 - 2.0 + i*2.0, thickness + 1.5, 2])
+                cube([0.6, 2.0, 4.0]);
+        }
+    }
+}
+
+// 角を少し丸めたボックスを作るヘルパーモジュール
+module box_with_rounded_corners(w, d, h, r) {
+    minkowski() {
+        translate([r, r, r])
+            cube([w - 2*r, d - 2*r, h - 2*r]);
+        sphere(r=r);
+    }
+}
+
+// モジュールを描画
+gp2y0d413k0f();

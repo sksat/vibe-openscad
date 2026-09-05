@@ -35,7 +35,7 @@ export interface CompletionResponse {
   /** Model ID echoed back by the API (may differ from requested for aliases). */
   modelId: string;
   /** Token usage. */
-  tokens?: { input: number; output: number };
+  tokens?: { input: number; output: number; thinking?: number };
   /** Wall-clock duration in ms. */
   durationMs: number;
   /** Stop reason from the API, if available. */

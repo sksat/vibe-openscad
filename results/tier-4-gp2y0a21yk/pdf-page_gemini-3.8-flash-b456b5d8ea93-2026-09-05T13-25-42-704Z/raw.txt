@@ -1,0 +1,181 @@
+Sharp 製測距センサ **GP2Y0A21YK0F** のデータシート寸法に基づく OpenSCAD モデルです。
+
+本体メインブロックの中心を原点 `(0, 0, 0)` とし、+Y方向を照射方向（前面）、+Z方向を上面としてモデリングしています。
+
+```openscad
+// ====================================================================
+// Sharp Distance Measuring Sensor GP2Y0A21YK0F
+// Units: mm
+// Origin: Center of the main body (X: 0, Y: 0, Z: 0)
+// ====================================================================
+
+$fn = 40;
+
+// --- Main Dimensions ---
+body_w = 29.5;          // Main case width (X)
+body_d = 13.5;          // Main case depth (Y)
+body_h = 13.0;          // Main case height (Z)
+
+tab_pitch = 37.0;       // Mounting hole pitch
+tab_r = 3.75;           // Mounting tab outer radius
+hole_d = 3.2;           // Mounting hole diameter
+tab_t = 1.5;            // Mounting tab thickness
+
+lens_case_h = 8.4;      // Lens block height
+lens_case_d = 6.3;      // Lens block protrusion from body front
+lens_step_d = 2.0;      // Front barrel step depth
+emitter_w = 7.5;        // Emitter barrel width
+gap_w = 4.15;           // Gap between barrels
+detector_w = 16.3;      // Detector barrel width
+lens_pitch = 20.0;      // Distance between lens optical centers
+emitter_offset_x = 4.5; // Emitter lens center from left edge (29.5/2 - 4.5 = 10.25)
+
+conn_w = 10.1;          // Connector width
+conn_h = 5.9;           // Connector extension downward (18.9 - 13.0)
+conn_d = 5.5;           // Connector depth
+pwb_t = 1.2;            // PWB thickness
+
+// --- Colors ---
+c_case  = [0.15, 0.15, 0.15];       // Carbonic ABS (Dark gray/black)
+c_lens  = [0.20, 0.05, 0.15, 0.85]; // Filter acrylic (Dark reddish purple)
+c_pwb   = [0.40, 0.28, 0.18];       // Phenolic PWB (Brown)
+c_conn  = [0.90, 0.90, 0.85];       // Connector housing (Off-white)
+c_pin   = [0.85, 0.75, 0.30];       // Metal pins (Brass/Gold)
+
+// --- Main Assembly ---
+module gp2y0a21yk0f() {
+    main_case();
+    mounting_tabs();
+    lens_assembly();
+    pwb_and_connector();
+}
+
+// --- Main Housing Case ---
+module main_case() {
+    color(c_case) {
+        difference() {
+            // Main rectangular block
+            cube([body_w, body_d, body_h], center = true);
+
+            // Chamfer / bevel on back bottom edge for connector
+            translate([0, -body_d/2, -body_h/2])
+                rotate([45, 0, 0])
+                cube([body_w + 1, 3, 3], center = true);
+        }
+    }
+}
+
+// --- Mounting Tabs (Ears) ---
+module mounting_tabs() {
+    color(c_case) {
+        // Tabs are positioned at the front-facing flange level
+        tab_y = body_d/2 - tab_t;
+        tab_z = body_h/2 - lens_case_h/2; // aligned with lens center height
+
+        for (side = [-1, 1]) {
+            difference() {
+                hull() {
+                    // Attachment to main body side
+                    translate([side * (body_w/2 - 0.1), tab_y, tab_z - tab_r])
+                        cube([0.1, tab_t, tab_r * 2]);
+                    
+                    // Rounded tab tip
+                    translate([side * (tab_pitch / 2), tab_y + tab_t/2, tab_z])
+                        rotate([90, 0, 0])
+                        cylinder(r = tab_r, h = tab_t, center = true);
+                }
+                // Screw hole
+                translate([side * (tab_pitch / 2), tab_y + tab_t/2, tab_z])
+                    rotate([90, 0, 0])
+                    cylinder(d = hole_d, h = tab_t * 3, center = true);
+            }
+        }
+    }
+}
+
+// --- Lens Holder and Lenses ---
+module lens_assembly() {
+    lens_z = body_h/2 - lens_case_h/2;
+    front_y = body_d/2;
+
+    // Lens Case Body
+    color(c_case) {
+        difference() {
+            union() {
+                // Base lens frame (depth: lens_case_d - lens_step_d)
+                translate([0, front_y + (lens_case_d - lens_step_d)/2, lens_z])
+                    cube([body_w, lens_case_d - lens_step_d, lens_case_h], center = true);
+
+                // Front protruding barrels (depth: lens_step_d)
+                // 1. Emitter barrel (Left)
+                translate([-body_w/2 + emitter_w/2, front_y + lens_case_d - lens_step_d/2, lens_z])
+                    cube([emitter_w, lens_step_d, lens_case_h], center = true);
+
+                // 2. Detector barrel (Right)
+                translate([body_w/2 - detector_w/2, front_y + lens_case_d - lens_step_d/2, lens_z])
+                    cube([detector_w, lens_step_d, lens_case_h], center = true);
+            }
+
+            // Cutouts for optical windows
+            // Emitter window (circular)
+            translate([-body_w/2 + emitter_offset_x, front_y + lens_case_d/2, lens_z])
+                rotate([-90, 0, 0])
+                cylinder(d = 5.5, h = lens_case_d + 1, center = true);
+
+            // Detector window (oval / slot)
+            translate([-body_w/2 + emitter_offset_x + lens_pitch, front_y + lens_case_d/2, lens_z])
+                hull() {
+                    translate([-3.5, 0, 0]) rotate([-90, 0, 0]) cylinder(d = 5.2, h = lens_case_d + 1, center = true);
+                    translate([ 3.5, 0, 0]) rotate([-90, 0, 0]) cylinder(d = 5.2, h = lens_case_d + 1, center = true);
+                }
+        }
+    }
+
+    // Optical Lenses (Visible-light cut-off acrylic)
+    color(c_lens) {
+        // Emitter Lens (Spherical bulb)
+        translate([-body_w/2 + emitter_offset_x, front_y + lens_case_d - 0.8, lens_z])
+            scale([1, 0.6, 1])
+            sphere(d = 5.4);
+
+        // Detector Lens (Cylindrical / aspherical broad lens)
+        translate([-body_w/2 + emitter_offset_x + lens_pitch, front_y + lens_case_d - 0.8, lens_z])
+            scale([1, 0.6, 1])
+            hull() {
+                translate([-3.5, 0, 0]) sphere(d = 5.0);
+                translate([ 3.5, 0, 0]) sphere(d = 5.0);
+            }
+    }
+}
+
+// --- PWB & Connector ---
+module pwb_and_connector() {
+    // Phenolic PWB on rear face
+    color(c_pwb) {
+        translate([0, -body_d/2 + pwb_t/2, 0])
+            cube([body_w - 1.0, pwb_t, body_h - 0.5], center = true);
+    }
+
+    // Connector Housing (3-pin JCTC 12001W90-3P-HF)
+    color(c_conn) {
+        translate([0, -body_d/2 + conn_d/2, -body_h/2 - conn_h/2])
+            difference() {
+                cube([conn_w, conn_d, conn_h], center = true);
+                // Connector cavity
+                translate([0, 0.5, -1])
+                    cube([conn_w - 1.6, conn_d - 1.2, conn_h], center = true);
+            }
+    }
+
+    // Metal Pins (3 pins, 1.5mm pitch)
+    color(c_pin) {
+        for (i = [-1:1]) {
+            translate([i * 1.5, -body_d/2 + conn_d/2, -body_h/2 - conn_h + 1.5])
+                cube([0.4, 0.4, 3.5], center = true);
+        }
+    }
+}
+
+// Render the complete sensor
+gp2y0a21yk0f();
+```

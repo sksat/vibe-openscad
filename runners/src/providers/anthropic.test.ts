@@ -86,6 +86,25 @@ describe("createAnthropicProvider", () => {
     expect(Number.isFinite(opts.timeout)).toBe(true);
   });
 
+  it("records the thinking portion of the output tokens", async () => {
+    // Anthropic の output_tokens は thinking を含んだ値。内訳は
+    // output_tokens_details.thinking_tokens として別に返る。
+    const create = vi.fn().mockResolvedValue(
+      fakeMessage({
+        usage: {
+          input_tokens: 10,
+          output_tokens: 900,
+          output_tokens_details: { thinking_tokens: 700 },
+        },
+      } as never),
+    );
+    const provider = createAnthropicProvider({ create });
+
+    const res = await provider.complete({ prompt: "p", model: "claude-opus-5" });
+
+    expect(res.tokens).toEqual({ input: 10, output: 900, thinking: 700 });
+  });
+
   it("name is 'anthropic'", () => {
     const provider = createAnthropicProvider({ create: vi.fn() });
     expect(provider.name).toBe("anthropic");

@@ -124,11 +124,17 @@ export function createGoogleProvider(
       }
 
       const usage = response.usageMetadata;
+      // Gemini は thinking を thoughtsTokenCount として candidatesTokenCount と
+      // 分けて返すが、課金は出力扱いで maxOutputTokens もこの合計に効く。
+      // Anthropic の output_tokens も OpenAI の output_tokens も reasoning を
+      // 含んでいるので、output に合算して揃える(thinking 単体も残す)。
+      const thinking = usage?.thoughtsTokenCount;
       const tokens =
         usage?.promptTokenCount != null && usage?.candidatesTokenCount != null
           ? {
               input: usage.promptTokenCount,
-              output: usage.candidatesTokenCount,
+              output: usage.candidatesTokenCount + (thinking ?? 0),
+              ...(thinking != null ? { thinking } : {}),
             }
           : undefined;
       return {
