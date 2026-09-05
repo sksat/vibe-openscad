@@ -51,6 +51,23 @@ describe("createAnthropicProvider", () => {
     expect(res.text).toBe("hello");
   });
 
+  it("bounds the stream with a finite timeout", async () => {
+    // SSE が途中で無音になると finalMessage() は待ち続ける。bench-config の
+    // timeoutSec は provider 呼び出しに配線されていないので、ここで上限を
+    // 持たせないと 1 件の停止でベンチ全体が終わらなくなる。
+    const finalMessage = vi.fn().mockResolvedValue(fakeMessage());
+    const stream = vi.fn().mockReturnValue({ finalMessage });
+    const client = { messages: { stream } } as unknown as Anthropic;
+    const provider = createAnthropicProvider({ client });
+
+    await provider.complete({ prompt: "p", model: "claude-sonnet-5" });
+
+    const opts = stream.mock.calls[0]?.[1];
+    expect(typeof opts?.timeout).toBe("number");
+    expect(opts.timeout).toBeGreaterThan(0);
+    expect(Number.isFinite(opts.timeout)).toBe(true);
+  });
+
   it("name is 'anthropic'", () => {
     const provider = createAnthropicProvider({ create: vi.fn() });
     expect(provider.name).toBe("anthropic");

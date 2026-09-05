@@ -48,6 +48,12 @@ export interface AnthropicProviderDeps {
   client?: Anthropic;
 }
 
+/**
+ * ストリーミング 1 回あたりの上限(30 分)。effort max + max_tokens 64000 の
+ * run でも数分で収まる一方、SSE が停止したときは確実に失敗させる。
+ */
+const STREAM_TIMEOUT_MS = 30 * 60 * 1000;
+
 // SCAD 出力は数百トークン程度なので、明示しないモデルはこの値で足りる。
 // thinking が既定 on のモデル(Fable 5 / Opus 5 / Sonnet 5 等)は思考トークンも
 // この上限を消費するので、bench-config 側の modelOptions で個別に引き上げる。
@@ -67,7 +73,14 @@ export function createAnthropicProvider(
     deps.create ??
     (async (params) => {
       const client = deps.client ?? new Anthropic();
-      return client.messages.stream(params).finalMessage();
+      // SSE が途中で無音になった場合、finalMessage() には打ち切る手段が無く
+      // 待ち続ける。bench-config の defaults.timeoutSec は provider 呼び出しに
+      // 配線されていないので、ここで明示的に上限を持たせないと 1 件の停止で
+      // ベンチ全体が終わらなくなる。effort max + 64k の正当な長時間 run を
+      // 切らない値にする。
+      return client.messages
+        .stream(params, { timeout: STREAM_TIMEOUT_MS })
+        .finalMessage();
     });
 
   return {
