@@ -202,6 +202,26 @@ describe("RunMetaSchema", () => {
     expect(RunMetaSchema.parse(meta)).toBeTruthy();
   });
 
+  it("records the model id the API reported, separately from the configured one", () => {
+    // alias で送っても provider が dated snapshot を返すことがある。設定値
+    // (model)と実際に応答した id(resolvedModel)は別物として残す。
+    const meta = {
+      runId: "r",
+      taskId: "t",
+      matrixId: "bare/m",
+      signature: "c".repeat(64),
+      fingerprint: baseFingerprint,
+      provider: "openai",
+      model: "gpt-5.4",
+      resolvedModel: "gpt-5.4-2026-03-05",
+      harness: { kind: "bare" },
+      status: "success",
+      timing: { totalMs: 1 },
+      createdAt: "2026-04-27T00:00:00Z",
+    };
+    expect(RunMetaSchema.parse(meta).resolvedModel).toBe("gpt-5.4-2026-03-05");
+  });
+
   it("rejects unknown status", () => {
     expect(() =>
       RunMetaSchema.parse({

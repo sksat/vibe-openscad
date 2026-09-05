@@ -400,7 +400,17 @@ export const RunMetaSchema = z.object({
   signature: sha256Hex,
   fingerprint: FingerprintSchema,
   provider: z.string().nullable(),
+  /** bench-config に書いた model 指定。fingerprint に乗るのはこちら。 */
   model: z.string().nullable(),
+  /**
+   * API が応答で名乗ったモデル id。alias を送っても provider 側で dated
+   * snapshot に解決されることがあり、その実体を残すためのもの。
+   *
+   * fingerprint には乗らない(乗せると provider 都合の変化で全 run が stale に
+   * なる)。alias のまま差し替えられていないかを後から確認するための記録。
+   * provider が名乗らない場合は設定値と同じ値になる。
+   */
+  resolvedModel: z.string().optional(),
   harness: RunHarnessLogSchema,
   status: RunStatusSchema,
   timing: z.object({
