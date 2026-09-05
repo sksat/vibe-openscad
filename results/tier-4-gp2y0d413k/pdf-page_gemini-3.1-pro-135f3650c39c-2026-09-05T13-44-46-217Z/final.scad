@@ -1,0 +1,96 @@
+// Sharp GP2Y0D413K0F Distance Sensor
+// All dimensions in mm
+// Center of the main case is at origin (0,0,0)
+// +Z is up, +Y is front (lens side)
+
+$fn = 64;
+
+// --- Parameters ---
+// 1. Main Case
+case_w = 29.45;
+case_h = 13.05;
+case_d = 7.1;
+
+// 2. PWB (Printed Wiring Board)
+pwb_w = 29.45;
+pwb_h = 1.2;
+pwb_d = 7.1;
+
+// 3. Connector
+conn_w = 10.1;
+conn_h = 4.65; // Total height 18.9 - 13.05(case) - 1.2(PWB) = 4.65
+conn_d = 3.3;
+// Connector position: based on bottom view, the center of the 4.15 opening 
+// is 7.5 + 4.15/2 = 9.575 from the left edge.
+conn_x = -case_w/2 + 9.575; 
+// Aligned to the back (-Y) of the main case
+conn_y = -case_d/2 + conn_d/2; 
+conn_z = -case_h/2 - pwb_h - conn_h/2;
+
+// 4. Lens Case (Protrusion)
+// Width calculated to enclose both 7.2mm lens tubes
+lens_case_w = 27.0; 
+lens_case_h = 8.4;
+lens_case_d = 6.3;
+
+// Lens Tubes (Front-most 2mm protrusions)
+lens_tube_w = 7.2;
+lens_tube_h = 7.2;
+lens_tube_d = 2.0;
+
+// Lens Centers
+lens1_x = -case_w/2 + 4.5;       // Left: Light emitter
+lens2_x = lens1_x + 19.7;        // Right: Light detector
+lens_case_x = (lens1_x + lens2_x) / 2;
+
+
+// --- Modules ---
+
+// 1. Main Case (Carbonic ABS)
+color("#2c2c2c")
+cube([case_w, case_d, case_h], center=true);
+
+// 2. PWB
+color("#2e472d")
+translate([0, 0, -case_h/2 - pwb_h/2])
+cube([pwb_w, pwb_d, pwb_h], center=true);
+
+// 3. Connector
+color("#e0e0e0")
+translate([conn_x, conn_y, conn_z])
+cube([conn_w, conn_d, conn_h], center=true);
+
+// 3.1 Connector Pins (Simplified representation of JCTC 12001W90-3P-HF)
+color("#a0a0a0")
+for(i=[-1, 0, 1]) {
+    translate([conn_x + i*1.25, conn_y, conn_z - conn_h/2 - 0.5])
+    cylinder(h=1.0, r=0.25, center=true);
+}
+
+// 4. Lens Case Base
+color("#2c2c2c")
+translate([lens_case_x, case_d/2 + lens_case_d/2, 0])
+cube([lens_case_w, lens_case_d, lens_case_h], center=true);
+
+// 5. Light Emitter (Left)
+// Tube
+color("#2c2c2c")
+translate([lens1_x, case_d/2 + lens_case_d + lens_tube_d/2, 0])
+cube([lens_tube_w, lens_tube_d, lens_tube_h], center=true);
+
+// Lens (Circular Window)
+color("#1a1a2e")
+translate([lens1_x, case_d/2 + lens_case_d + lens_tube_d, 0])
+rotate([90, 0, 0])
+cylinder(h=0.4, r=2.5, center=true);
+
+// 6. Light Detector (Right)
+// Tube
+color("#2c2c2c")
+translate([lens2_x, case_d/2 + lens_case_d + lens_tube_d/2, 0])
+cube([lens_tube_w, lens_tube_d, lens_tube_h], center=true);
+
+// Lens (Rectangular Window)
+color("#1a1a2e")
+translate([lens2_x, case_d/2 + lens_case_d + lens_tube_d - 0.2, 0])
+cube([5.0, 0.4, 5.0], center=true);
