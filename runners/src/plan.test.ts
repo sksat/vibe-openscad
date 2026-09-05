@@ -63,6 +63,26 @@ function inputs(overrides: Partial<PlanInputs>): PlanInputs {
   };
 }
 
+describe("提供終了がアナウンスされたモデル", () => {
+  const at = (shutdownAt?: string) =>
+    inputs({
+      lookupModel: () => (shutdownAt ? { shutdownAt } : {}),
+      now: new Date("2026-09-05T00:00:00Z"),
+    });
+
+  it("終了日を過ぎていたら blocked にする", () => {
+    expect(planRuns(at("2026-07-23"))[0]?.status).toBe("blocked");
+  });
+
+  it("終了日がまだ先なら通常どおり", () => {
+    expect(planRuns(at("2026-12-11"))[0]?.status).toBe("missing");
+  });
+
+  it("アナウンスが無ければ通常どおり", () => {
+    expect(planRuns(at(undefined))[0]?.status).toBe("missing");
+  });
+});
+
 describe("planRuns", () => {
   it("classifies a candidate with no existing run as missing", () => {
     const plan = planRuns(inputs({}));

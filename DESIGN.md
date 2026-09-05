@@ -276,6 +276,25 @@ gpt-5.4    : { rate: 2/16 }
 `output_config.effort` を拒否する)、OpenAI は thinking を effort に内包するので
 `thinking` を宣言しない、という違いをそのまま表現できる。
 
+### 提供終了(`shutdownAt`)
+
+provider がアナウンスした提供終了日をカタログに書く。この日を過ぎたモデルは
+`bench plan` で `blocked` になり、実行対象から外れる。呼んでも 404 になるだけ
+なので API を無駄に叩かない。**既存の run は results に残る**ので、過去の記録が
+消えるわけではない。
+
+判定は `up-to-date` の後に行う。既に必要なサンプルが揃っているエントリは
+そのまま up-to-date で、再実行が必要になったもの(missing / stale)だけが
+blocked に落ちる。
+
+provider によって情報の出し方が違う:
+
+| provider | 提供終了の情報 |
+|---|---|
+| OpenAI | Models API の `shutdown_date`。値を突き合わせられる |
+| Anthropic | API に該当フィールドが無い。ドキュメントのアナウンスを見て手で書く |
+| Google | 同上 |
+
 ### 網羅テストで手書きテストを置き換える(不変条件)
 
 モデル追加時に **新しいテストを書かない** かわりに、データ駆動の網羅テストが

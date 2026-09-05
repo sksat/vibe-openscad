@@ -298,6 +298,8 @@ gpt-5:
   rate: { in: 1.25, out: 10 }
   vision: true
   effort: medium
+  # 2026-12-11 に提供終了予定(Models API の shutdown_date)。
+  shutdownAt: "2026-12-11"
 
 gpt-5-pro:
   provider: openai
@@ -347,6 +349,24 @@ gpt-5.4-nano:
   provider: openai
   rate: { in: 0.075, out: 0.6 }
 
+# codex 系(コーディング特化)。gpt-5.3-codex 以外は 2026-07-23 に提供終了
+# 済みで、呼ぶと 404 になる(OpenAI の Models API の shutdown_date で確認)。
+# 過去 run は results に残るが、再実行の対象からは外れる。
+gpt-5-codex:
+  provider: openai
+  shutdownAt: "2026-07-23"
+
+gpt-5.1-codex:
+  provider: openai
+  shutdownAt: "2026-07-23"
+
+gpt-5.2-codex:
+  provider: openai
+  shutdownAt: "2026-07-23"
+
+gpt-5.3-codex:
+  provider: openai
+
 # gpt-4.1 系(reasoning 無し = effort ノブ無し)
 gpt-4.1:
   provider: openai
@@ -373,6 +393,8 @@ o3:
   rate: { in: 2, out: 8 }
   vision: true
   effort: medium
+  # 2026-12-11 に提供終了予定(Models API の shutdown_date)。
+  shutdownAt: "2026-12-11"
 
 o3-pro:
   provider: openai
