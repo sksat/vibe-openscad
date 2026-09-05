@@ -259,7 +259,7 @@ gpt-5.4    : { rate: 2/16 }
 ### 網羅テストで手書きテストを置き換える(不変条件)
 
 モデル追加時に **新しいテストを書かない** かわりに、データ駆動の網羅テストが
-`bench-config.yml` の matrix を走査して穴を検出する:
+`bench-config.yml` の matrix を走査して、カタログへの登録漏れを検出する:
 
 - `runners/src/models.test.ts` — matrix の全 (provider, model) がカタログで
   解決でき、`vision` が宣言され、クラウド provider なら `rate` を持ち、
