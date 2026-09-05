@@ -1,0 +1,44 @@
+{
+  "runId": "pdf-page_gemini-3.1-pro-cfdd97365fd1-2026-09-05T13-44-42-879Z",
+  "taskId": "tier-4-gp2y0a21yk",
+  "matrixId": "pdf-page/gemini-3.1-pro",
+  "signature": "cfdd97365fd1ecaee9c5f8d16917d2ea2db0ea1c7f3e321fa38c60baab74e49c",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "39f92e12d2dfdb195dbee569649e23fd41693fa29181616083d4d5f58ca34c1c",
+    "harness": {
+      "kind": "pdf-page",
+      "provider": "google",
+      "model": "gemini-3.1-pro-preview",
+      "modelOptions": {
+        "config": {
+          "maxOutputTokens": 64000
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "google",
+  "model": "gemini-3.1-pro-preview",
+  "resolvedModel": "gemini-3.1-pro-preview",
+  "harness": {
+    "kind": "pdf-page",
+    "pdfUrl": "https://jp.sharp/products/device/doc/opto/gp2y0a21yk_e.pdf",
+    "pages": [
+      2
+    ]
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 132579
+  },
+  "tokens": {
+    "input": 1528,
+    "output": 15913,
+    "thinking": 14856
+  },
+  "cost_usd": 0.16104,
+  "createdAt": "2026-09-05T13:44:42.879Z",
+  "gitCommit": "31b26591f6ecbc65bad04b0d239e615457bc3de6"
+}
