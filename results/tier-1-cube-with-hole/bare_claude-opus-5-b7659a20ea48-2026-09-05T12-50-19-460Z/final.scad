@@ -1,0 +1,14 @@
+// 50mm角の立方体の中央に直径20mmのZ軸方向貫通穴
+
+$fn = 100;
+
+cube_size = 50;
+hole_d = 20;
+
+difference() {
+    // 50mm角の立方体（原点中心）
+    cube([cube_size, cube_size, cube_size], center = true);
+
+    // 中央を z 軸方向に貫通する直径20mmの穴
+    cylinder(h = cube_size + 2, d = hole_d, center = true);
+}

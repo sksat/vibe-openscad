@@ -1,0 +1,23 @@
+// M8 hex bolt (JIS/ISO style, threads omitted)
+
+// --- Parameters ---
+head_across_flats = 13;    // 対辺距離 (mm)
+head_height       = 5.3;   // 頭部高さ (mm)
+shank_diameter    = 8;     // シャンク直径 (mm)
+shank_length      = 30;    // シャンク長さ (mm)
+
+$fn = 64;
+
+// 対辺距離 -> 外接円半径
+head_radius = head_across_flats / sqrt(3);
+
+module m8_hex_bolt() {
+    // 頭部: 底面が z=0、+Z 方向へ
+    cylinder(h = head_height, r = head_radius, $fn = 6);
+
+    // シャンク: z=0 から -Z 方向へ
+    translate([0, 0, -shank_length])
+        cylinder(h = shank_length, d = shank_diameter);
+}
+
+m8_hex_bolt();

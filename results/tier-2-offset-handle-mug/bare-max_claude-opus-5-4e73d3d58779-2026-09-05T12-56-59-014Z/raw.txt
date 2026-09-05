@@ -1,0 +1,73 @@
+```openscad
+// =========================================================
+//  マグカップ(取手は +X 方向のみ / D 字取手)
+//    - 外径 80 / 内径 70(肉厚 5)/ 高さ 90 / 底厚 6
+//    - 取手内側の空間:高さ 30 × 幅 25
+// =========================================================
+
+$fa = 2;
+$fs = 0.5;
+
+/* ---------------- パラメータ ---------------- */
+mug_od   = 80;   // 本体外径
+mug_id   = 70;   // 本体内径(肉厚 5mm)
+mug_h    = 90;   // 本体高さ
+bottom_t = 6;    // 底面の厚み
+
+hole_h   = 30;   // 取手内側の空間:高さ(Z)
+hole_w   = 25;   // 取手内側の空間:幅(X)
+grip_t   = 10;   // 取手の太さ(XZ 面内)
+grip_w   = 12;   // 取手の幅(Y 方向)
+embed    = 4;    // 本体壁への食い込み量(union を確実にする)
+
+mug_or = mug_od / 2;   // 40
+mug_ir = mug_id / 2;   // 35
+
+/* ---------------- 本体 ---------------- */
+module mug_body() {
+    difference() {
+        cylinder(h = mug_h, r = mug_or);
+        // 内側の中空(底厚 6mm を残し、上面は開口)
+        translate([0, 0, bottom_t])
+            cylinder(h = mug_h - bottom_t + 1, r = mug_ir);
+    }
+}
+
+/* ---- 取手の内側空間(D 字の穴):本体側が直線、外側が半円 ---- */
+module hole_2d() {
+    r  = hole_h / 2;              // 15
+    x0 = mug_or;                  // 本体外周から開始(幅 25 を確保)
+    cx = x0 + hole_w - r;         // 半円の中心 X
+    hull() {
+        translate([x0, -r]) square([cx - x0, hole_h]);
+        translate([cx, 0])  circle(r = r);
+    }
+}
+
+/* ---- 取手の 2D 断面(外側=半円、本体側=直線) ---- */
+module handle_2d() {
+    intersection() {
+        difference() {
+            offset(r = grip_t) hole_2d();   // 外形(オフセットで外側が半円状)
+            hole_2d();                      // 指を入れる空間
+        }
+        // 本体側は直線でカット(x = mug_or - embed で壁に食い込ませる)
+        translate([mug_or - embed, -mug_h])
+            square([mug_h * 2, mug_h * 2]);
+    }
+}
+
+/* ---------------- 取手(3D:XZ 平面のループ / 厚みは Y 方向) ---------------- */
+module handle() {
+    translate([0, 0, mug_h / 2])            // 高さ方向の中央
+        rotate([90, 0, 0])                  // 2D 断面を XZ 平面へ
+            linear_extrude(height = grip_w, center = true, convexity = 10)
+                handle_2d();
+}
+
+/* ---------------- 合体(マニフォールド) ---------------- */
+union() {
+    mug_body();
+    handle();      // +X 側のみ
+}
+```

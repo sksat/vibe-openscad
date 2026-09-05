@@ -1,0 +1,106 @@
+```openscad
+// =====================================================================
+//  家具用 小型バット蝶番 (Butt Hinge)  -- 180° 開いた状態で組立表示
+//    ・左板 (x<0) / 右板 (x>0) / ピン軸 (Y軸上)
+//    ・ピン軸中心線 = Y 軸、板の平面は Z 軸に直交 (z = 0 .. 2)
+// =====================================================================
+
+$fn = 96;
+
+// ---------------- パラメータ ----------------
+leaf_len   = 30;      // 板の縦(ピン軸方向 = Y)
+leaf_wid   = 25;      // 板の横(開く方向 = X, 軸中心から)
+leaf_thk   = 2;       // 板厚(Z)
+
+pin_dia    = 4;       // ピン軸 直径
+pin_len    = 32;      // ピン軸 長さ(両端 1mm ずつ突出)
+
+kn_od      = 8;       // knuckle 外径
+kn_id      = 4.6;     // knuckle 内径(ピン軸 + 片側 0.3 クリアランス)
+seg        = 6;       // knuckle 1個の長さ (30 / 5)
+nseg       = 5;       // 分割数
+ax_gap     = 0.15;    // knuckle 同士の軸方向すきま(片側)
+rad_gap    = 0.3;     // 相手 knuckle との半径方向逃げ
+
+scr_dia    = 3.2;     // M3 貫通穴
+cs_dia     = 6;       // 皿(座ぐり)直径
+cs_depth   = 1;       // 皿深さ
+scr_pitch  = 8;       // 穴ピッチ(Y方向)
+scr_x      = 17.5;    // 皿穴の X 位置(knuckle から離れた側)
+
+left_segs  = [0, 2, 4];   // 左板: 外側2個 + 中央1個
+right_segs = [1, 3];      // 右板: 中間2個
+
+// ---------------- ユーティリティ ----------------
+function seg_y0(i) = -leaf_len/2 + seg * i;
+
+// i 番目の区画に置く円筒(knuckle 本体 / 逃げ用)
+module knuckle(i, r, extra = 0) {
+    translate([0, seg_y0(i) - extra, 0])
+        rotate([-90, 0, 0])
+            cylinder(h = seg + 2*extra, r = r);
+}
+
+// M3 皿穴(上面 z = leaf_thk 側から皿加工)
+module screw_hole() {
+    translate([0, 0, -1])
+        cylinder(h = leaf_thk + 2, d = scr_dia);                 // 貫通穴
+    translate([0, 0, leaf_thk - cs_depth])
+        cylinder(h = cs_depth, d1 = scr_dia, d2 = cs_dia);       // テーパ
+    translate([0, 0, leaf_thk - 0.01])
+        cylinder(h = 1, d = cs_dia);                             // 上面逃げ
+}
+
+// ---------------- 板(右向き基本形)----------------
+//   my_segs    : 自分の knuckle 区画
+//   other_segs : 相手の knuckle 区画(逃げを差し引く)
+module leaf(my_segs, other_segs) {
+    difference() {
+        union() {
+            // 板本体 (30 x 25 x t)
+            translate([0, -leaf_len/2, 0])
+                cube([leaf_wid, leaf_len, leaf_thk]);
+            // 自分の knuckle
+            for (i = my_segs) knuckle(i, kn_od/2);
+        }
+        // ピン軸用の穴(全長貫通)
+        translate([0, -leaf_len, 0])
+            rotate([-90, 0, 0])
+                cylinder(h = 2*leaf_len, d = kn_id);
+        // 相手 knuckle の逃げ(回転クリアランス)
+        for (i = other_segs) knuckle(i, kn_od/2 + rad_gap, ax_gap);
+        // M3 皿穴 x3
+        for (k = [-1, 0, 1])
+            translate([scr_x, k*scr_pitch, 0]) screw_hole();
+    }
+}
+
+// ---------------- ピン軸 ----------------
+module pin() {
+    rotate([-90, 0, 0])
+        union() {
+            cylinder(h = 0.6, d1 = pin_dia - 0.8, d2 = pin_dia);
+            translate([0, 0, 0.6])
+                cylinder(h = pin_len - 1.2, d = pin_dia);
+            translate([0, 0, pin_len - 0.6])
+                cylinder(h = 0.6, d1 = pin_dia, d2 = pin_dia - 0.8);
+        }
+}
+
+// ---------------- 組立(180° 開)----------------
+module hinge_assembly() {
+    // 左板 (x < 0)
+    color("Silver")
+        mirror([1, 0, 0]) leaf(left_segs, right_segs);
+
+    // 右板 (x > 0)
+    color("LightSteelBlue")
+        leaf(right_segs, left_segs);
+
+    // ピン軸 (Y軸上・両端 1mm 突出)
+    color("Gold")
+        translate([0, -pin_len/2, 0]) pin();
+}
+
+hinge_assembly();
+```

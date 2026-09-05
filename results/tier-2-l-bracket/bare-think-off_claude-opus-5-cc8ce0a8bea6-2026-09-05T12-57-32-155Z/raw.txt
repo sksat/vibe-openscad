@@ -1,0 +1,68 @@
+```openscad
+// L-bracket with countersunk holes for M4 screws
+// Inner corner at origin; horizontal flange extends +Y, vertical flange extends +Z
+
+// ---------- Parameters ----------
+width      = 50;   // X: common width of both flanges
+h_depth    = 40;   // Y: horizontal flange depth
+v_height   = 40;   // Z: vertical flange height
+thick      = 3;    // plate thickness
+
+hole_d     = 4.5;  // through hole diameter (M4 clearance)
+cs_d       = 8;    // countersink face diameter
+cs_depth   = 2;    // countersink depth
+
+edge_off   = 10;   // distance from flange outer edge to hole center
+x_off      = 15;   // holes symmetric about X center, +/- x_off
+
+$fn = 64;
+
+// ---------- Countersunk hole cutter ----------
+// Cut along -Z direction from the outer surface (z = 0 is the outer face).
+// Countersink cone opens upward (toward the tool/bolt head side).
+module countersunk_hole(plate_t = thick) {
+    eps = 0.01;
+    union() {
+        // through hole
+        translate([0, 0, -plate_t - eps])
+            cylinder(h = plate_t + 2 * eps, d = hole_d);
+        // countersink cone (cs_d at outer face -> hole_d at cs_depth)
+        translate([0, 0, -cs_depth])
+            cylinder(h = cs_depth, d1 = hole_d, d2 = cs_d);
+        // small clearance above the outer face
+        translate([0, 0, -eps])
+            cylinder(h = cs_depth, d = cs_d);
+    }
+}
+
+// ---------- Bracket ----------
+module l_bracket() {
+    difference() {
+        union() {
+            // horizontal flange: X 0..width, Y 0..h_depth, Z -thick..0
+            translate([0, 0, -thick])
+                cube([width, h_depth, thick]);
+            // vertical flange: X 0..width, Y -thick..0, Z 0..v_height
+            translate([0, -thick, 0])
+                cube([width, thick, v_height]);
+            // fill inner corner block
+            translate([0, -thick, -thick])
+                cube([width, thick, thick]);
+        }
+
+        // --- holes in horizontal flange (countersink on bottom, z = -thick) ---
+        for (dx = [-x_off, x_off])
+            translate([width / 2 + dx, h_depth - edge_off, -thick])
+                rotate([180, 0, 0])
+                    countersunk_hole(thick);
+
+        // --- holes in vertical flange (countersink on front, y = -thick) ---
+        for (dx = [-x_off, x_off])
+            translate([width / 2 + dx, -thick, v_height - edge_off])
+                rotate([-90, 0, 0])
+                    countersunk_hole(thick);
+    }
+}
+
+l_bracket();
+```

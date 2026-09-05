@@ -1,0 +1,53 @@
+// ============================================
+//  マグカップ (外径80mm / 高さ100mm / 肉厚4mm)
+//  リング状取手 (半径12mm) 付き
+// ============================================
+
+$fn = 120;
+
+// ---- 基本寸法 ----
+outer_d   = 80;              // 外径
+outer_r   = outer_d / 2;     // 外半径 = 40
+cup_h     = 100;             // 全高
+wall_t    = 4;               // 側面の肉厚
+bottom_t  = 6;               // 底面の厚み
+inner_r   = outer_r - wall_t;// 内半径 = 36
+
+// ---- 取手(リング)寸法 ----
+handle_r  = 12;                              // リングの半径
+handle_t  = 5;                               // リング断面(パイプ)の半径
+handle_z  = cup_h / 2;                       // 高さ方向の取付位置(中心高さ)
+handle_x  = outer_r + handle_r - handle_t;   // 外周から十分はみ出す位置 = 47
+
+// ---- カップ外形 ----
+module cup_outer() {
+    cylinder(h = cup_h, r = outer_r);
+}
+
+// ---- 内側のくり抜き ----
+module cup_cavity() {
+    translate([0, 0, bottom_t])
+        cylinder(h = cup_h - bottom_t + 1, r = inner_r);
+}
+
+// ---- リング状取手(トーラス) ----
+module handle() {
+    translate([handle_x, 0, handle_z])
+        rotate([90, 0, 0])
+            rotate_extrude(convexity = 10)
+                translate([handle_r, 0])
+                    circle(r = handle_t);
+}
+
+// ---- 組み立て ----
+module mug() {
+    difference() {
+        union() {
+            cup_outer();
+            handle();          // 壁を貫通させて確実に接合
+        }
+        cup_cavity();          // 内側をくり抜き(取手の余分な内側も除去)
+    }
+}
+
+mug();
