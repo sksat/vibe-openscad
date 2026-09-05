@@ -1,0 +1,56 @@
+// Parameters
+leaf_w = 25;
+leaf_h = 30;
+leaf_t = 2;
+knuckle_od = 8;
+knuckle_id = 4.3; // 4mm + 0.3mm clearance
+pin_d = 4;
+pin_l = 32;
+knuckle_segment = 6; // 30mm / 5 = 6mm
+hole_pitch = 8;
+
+$fn = 100;
+
+module leaf_part(is_left) {
+    difference() {
+        union() {
+            // 板部分
+            translate([is_left ? -leaf_w : 0, -leaf_h / 2, 0]) 
+                cube([leaf_w, leaf_h, leaf_t]);
+            
+            // Knuckle部分
+            for (i = [0, 1, 2, 3, 4]) {
+                // 左板は 0, 2, 4 (外側2個+中央1個)、右板は 1, 3
+                if ((is_left && (i == 0 || i == 2 || i == 4)) || 
+                    (!is_left && (i == 1 || i == 3))) {
+                    translate([0, -leaf_h / 2 + i * knuckle_segment, 0])
+                    rotate([-90, 0, 0])
+                    cylinder(d = knuckle_od, h = knuckle_segment);
+                }
+            }
+        }
+        // ピン軸用の貫通穴
+        translate([0, -leaf_h / 2, 0]) 
+            rotate([-90, 0, 0]) 
+            cylinder(d = knuckle_id, h = leaf_h);
+        
+        // 皿穴と貫通穴
+        for (i = [-1, 0, 1]) {
+            translate([is_left ? -12.5 : 12.5, i * hole_pitch, -1]) {
+                cylinder(d = 3.2, h = leaf_t + 2); // 貫通穴
+                translate([0, 0, leaf_t - 1]) 
+                    cylinder(d1 = 3.2, d2 = 6, h = 1.1); // 皿穴 (表面から1mm深さ)
+            }
+        }
+    }
+}
+
+// 組み立て
+leaf_part(true);  // 左板
+leaf_part(false); // 右板
+
+// ピン軸 (全長32mm, knuckle 30mm から両端1mmずつ突出)
+color("silver")
+translate([0, -16, 0]) 
+    rotate([-90, 0, 0]) 
+    cylinder(d = pin_d, h = pin_l);

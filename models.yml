@@ -225,11 +225,14 @@ gemini-3-pro:
   rate: { in: 1.25, out: 10 }
   thinking: dynamic
 
+# 価格は GA の公式ページ実測値。preview 時は公式価格が未公表で 2.5 系と同等に
+# 仮置きしていた(0.1/0.4)。テキスト/画像/動画 0.25、音声 0.50 で、本ベンチは
+# テキストと画像しか送らないので 0.25 を使う。
 gemini-3.1-flash-lite:
   provider: google
   line: gemini-3.1-flash-lite
   snapshot: "05-2026"
-  rate: { in: 0.1, out: 0.4 }
+  rate: { in: 0.25, out: 1.5 }
   thinking: dynamic
 
 # 2026-05-25 に shutdown 済み。ただし **404 にならず GA が返る** — 呼ぶと
