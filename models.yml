@@ -257,6 +257,16 @@ gpt-5.6-luna:
   effort: medium
   label: gpt 5.6 luna
   sort: { family: 0, version: 5006, size: 2 }
+# GPT-5.6 Terra(3 ティアの中位)。命名が gpt-<世代>-<ティア> で web 側の
+# パターンから外れるため label / sort を宣言する。sort.size はティア順。
+gpt-5.6-terra:
+  provider: openai
+  rate: { in: 2, out: 12 }
+  vision: true
+  effort: medium
+  label: gpt 5.6 terra
+  sort: { family: 0, version: 5006, size: 1 }
+
 # gpt-5 系はすべて vision 対応・reasoning effort の既定 medium。個別世代の
 # エントリは rate だけ上書きする。
 gpt-5:
