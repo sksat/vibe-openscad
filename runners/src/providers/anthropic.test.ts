@@ -27,7 +27,21 @@ function fakeMessage(
 }
 
 describe("createAnthropicProvider", () => {
-  it("uses the streaming API on the default path", async () => {
+  it("keeps the non-streaming path at or below the SDK's threshold", async () => {
+    // 既存エントリ(max_tokens 4096 / 16000)の転送方式を変えないための境界。
+    // ここを動かすと signature は同じまま転送方式だけが変わってしまう。
+    const create = vi.fn().mockResolvedValue(fakeMessage());
+    const stream = vi.fn();
+    const client = { messages: { create, stream } } as unknown as Anthropic;
+    const provider = createAnthropicProvider({ client });
+
+    await provider.complete({ prompt: "p", model: "claude-opus-5", maxTokens: 21333 });
+
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(stream).not.toHaveBeenCalled();
+  });
+
+  it("uses the streaming API above the SDK's non-streaming threshold", async () => {
     // 非ストリーミングの messages.create は max_tokens > 16000 を
     // "Streaming is required for operations that may take longer than
     // 10 minutes" で SDK が弾く。thinking が既定 on のモデル(Sonnet 5 /
@@ -42,12 +56,12 @@ describe("createAnthropicProvider", () => {
     const res = await provider.complete({
       prompt: "p",
       model: "claude-sonnet-5",
-      maxTokens: 32000,
+      maxTokens: 21334,
     });
 
     expect(stream).toHaveBeenCalledTimes(1);
     expect(create).not.toHaveBeenCalled();
-    expect(stream.mock.calls[0]?.[0]).toMatchObject({ max_tokens: 32000 });
+    expect(stream.mock.calls[0]?.[0]).toMatchObject({ max_tokens: 21334 });
     expect(res.text).toBe("hello");
   });
 
@@ -60,7 +74,11 @@ describe("createAnthropicProvider", () => {
     const client = { messages: { stream } } as unknown as Anthropic;
     const provider = createAnthropicProvider({ client });
 
-    await provider.complete({ prompt: "p", model: "claude-sonnet-5" });
+    await provider.complete({
+      prompt: "p",
+      model: "claude-sonnet-5",
+      maxTokens: 64000,
+    });
 
     const opts = stream.mock.calls[0]?.[1];
     expect(typeof opts?.timeout).toBe("number");

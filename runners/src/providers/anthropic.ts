@@ -54,6 +54,20 @@ export interface AnthropicProviderDeps {
  */
 const STREAM_TIMEOUT_MS = 30 * 60 * 1000;
 
+/**
+ * 非ストリーミングで送れる max_tokens の上限。SDK は送信前に
+ * `3600 * max_tokens / 128000` 秒を見積もり、10 分を超えると
+ * "Streaming is required for operations that may take longer than 10 minutes"
+ * を投げる。境界は 600 * 128000 / 3600 = 21333.33 なので 21333 までが可
+ * (実測で 21333 は通り 21334 で拒否)。モデル非依存の固定式。
+ *
+ * **転送方式を max_tokens だけで決めるのが重要**: max_tokens は modelOptions
+ * 経由で fingerprint に乗るので、こうしておくと「同じ signature なら必ず同じ
+ * 転送方式」が成り立つ。無条件にストリーミングへ切り替えると、既存エントリは
+ * signature が変わらないまま転送方式だけが変わり、差が出たときに検出できない。
+ */
+const MAX_NONSTREAMING_TOKENS = 21333;
+
 // SCAD 出力は数百トークン程度なので、明示しないモデルはこの値で足りる。
 // thinking が既定 on のモデル(Fable 5 / Opus 5 / Sonnet 5 等)は思考トークンも
 // この上限を消費するので、bench-config 側の modelOptions で個別に引き上げる。
@@ -62,22 +76,25 @@ const DEFAULT_MAX_TOKENS = 4096;
 export function createAnthropicProvider(
   deps: AnthropicProviderDeps = {},
 ): Provider {
-  // 本番経路はストリーミング。非ストリーミングの messages.create は
-  // max_tokens > 16000 を SDK が "Streaming is required for operations that
-  // may take longer than 10 minutes" で送信前に弾くため、thinking が既定 on の
-  // モデルに十分な上限を与えられない(16k では思考の途中で切れて SCAD が
-  // 出ない)。OpenAI provider が同じ理由でストリーミングを使っているのと揃える。
-  // 結果と所要時間は非ストリーミングと同じで、テストは deps.create を注入して
-  // この経路を迂回する。
+  // max_tokens が SDK の非ストリーミング上限を超えるときだけストリーミングに
+  // 切り替える。thinking が既定 on のモデル(Fable 5 / Opus 5 / Sonnet 5 等)は
+  // 思考トークンも max_tokens を消費するので十分な上限が要るが、非ストリーミング
+  // では 21333 までしか送れない。
+  //
+  // 上限以下の既存エントリは従来どおり非ストリーミングのままにする。転送方式が
+  // max_tokens の関数になるので、同じ signature の run は必ず同じ経路を通る。
+  // テストは deps.create を注入してこの分岐ごと迂回する。
   const create: CreateMessage =
     deps.create ??
     (async (params) => {
       const client = deps.client ?? new Anthropic();
+      if ((params.max_tokens ?? 0) <= MAX_NONSTREAMING_TOKENS) {
+        return client.messages.create(params);
+      }
       // SSE が途中で無音になった場合、finalMessage() には打ち切る手段が無く
       // 待ち続ける。bench-config の defaults.timeoutSec は provider 呼び出しに
       // 配線されていないので、ここで明示的に上限を持たせないと 1 件の停止で
-      // ベンチ全体が終わらなくなる。effort max + 64k の正当な長時間 run を
-      // 切らない値にする。
+      // ベンチ全体が終わらなくなる。
       return client.messages
         .stream(params, { timeout: STREAM_TIMEOUT_MS })
         .finalMessage();
