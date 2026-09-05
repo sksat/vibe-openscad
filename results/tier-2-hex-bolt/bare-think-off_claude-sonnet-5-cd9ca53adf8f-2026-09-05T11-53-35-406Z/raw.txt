@@ -1,0 +1,36 @@
+```openscad
+// M8 Hex Bolt (simplified, no thread)
+
+// Parameters
+head_across_flats = 13;   // 対辺距離
+head_height = 5.3;        // 頭部高さ
+shank_diameter = 8;       // シャンク直径
+shank_length = 30;        // シャンク長さ
+
+// 六角形の外接円半径 = 対辺距離 / cos(30)
+head_circumradius = head_across_flats / cos(180/6);
+
+module hex_bolt() {
+    // 頭部: 六角柱、底面がz=0から始まりz=head_heightまで
+    translate([0, 0, 0])
+        cylinder(h = head_height, r = head_circumradius / 2 * 2 / 2, $fn = 6);
+
+    // シャンク: z<0側へ伸びる円柱
+    translate([0, 0, -shank_length])
+        cylinder(h = shank_length, d = shank_diameter, $fn = 100);
+}
+
+// 六角柱の半径計算を修正して正しく配置
+module hex_bolt_correct() {
+    r_hex = head_across_flats / (2 * cos(30));
+
+    // 頭部
+    cylinder(h = head_height, r = r_hex, $fn = 6);
+
+    // シャンク
+    translate([0, 0, -shank_length])
+        cylinder(h = shank_length, d = shank_diameter, $fn = 100);
+}
+
+hex_bolt_correct();
+```

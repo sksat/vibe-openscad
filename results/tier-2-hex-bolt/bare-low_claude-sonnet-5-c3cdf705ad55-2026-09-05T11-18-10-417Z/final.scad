@@ -1,0 +1,20 @@
+$fn = 100;
+
+module hex_bolt_m8() {
+    head_afs = 13;
+    head_height = 5.3;
+    shank_diameter = 8;
+    shank_length = 30;
+
+    head_circumradius = head_afs / cos(30);
+
+    // Head: hexagonal prism, bottom at z=0, extending up
+    translate([0, 0, 0])
+        cylinder(h = head_height, r = head_circumradius / 2, $fn = 6);
+
+    // Shank: cylinder extending downward from z=0
+    translate([0, 0, -shank_length])
+        cylinder(h = shank_length, d = shank_diameter);
+}
+
+hex_bolt_m8();

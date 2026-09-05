@@ -1,0 +1,76 @@
+```openscad
+$fn = 100;
+
+// ==================== パラメータ ====================
+// マグ本体
+mug_outer_r  = 40;   // 外径80mm
+mug_inner_r  = 35;   // 内径70mm(肉厚5mm)
+mug_height   = 90;
+bottom_thick = 6;
+
+// 取手
+handle_hole_h   = 30;  // 取手内側空間の高さ
+handle_hole_w   = 25;  // 取手内側空間の幅(本体表面からの突き出し量)
+handle_band_t   = 8;   // 取手バンド material の太さ
+handle_width    = 20;  // 取手のY方向(奥行き)の幅
+handle_embed    = 4;   // 本体側への埋め込み量(確実に union するため)
+handle_center_z = mug_height / 2; // 高さ方向中央
+
+// ==================== マグ本体 ====================
+module mug_body() {
+    difference() {
+        cylinder(r = mug_outer_r, h = mug_height);
+        translate([0, 0, bottom_thick])
+            cylinder(r = mug_inner_r, h = mug_height - bottom_thick + 2);
+    }
+}
+
+// ==================== D字プロファイル(2D断面) ====================
+// flat_u : 本体側の直線部分のu座標(まっすぐな辺)
+// far_u  : 先端(半円の頂点)のu座標
+// half_h : 高さの半分
+// r      : 半円部分の半径
+module d_profile(flat_u, far_u, half_h, r) {
+    rect_w = far_u - r - flat_u;
+    intersection() {
+        union() {
+            if (rect_w > 0) {
+                translate([flat_u, -half_h])
+                    square([rect_w, 2 * half_h]);
+            }
+            translate([far_u - r, 0])
+                circle(r = r);
+        }
+        // flat_u より内側(本体側)にはみ出た部分を切り落として直線にする
+        translate([flat_u, -1000])
+            square([2000, 2000]);
+    }
+}
+
+// ==================== 取手(+X方向のみ) ====================
+module handle() {
+    hole_half_h = handle_hole_h / 2;
+    hole_r      = hole_half_h;
+    flat_u_hole = mug_outer_r;                 // 穴は本体表面から
+    far_u_hole  = flat_u_hole + handle_hole_w; // 穴の奥行き25mm
+
+    outer_half_h = hole_half_h + handle_band_t;
+    outer_r      = outer_half_h;
+    flat_u_outer = mug_outer_r - handle_embed; // 本体内部へ埋め込む
+    far_u_outer  = far_u_hole + handle_band_t; // 外周は穴+バンド厚
+
+    translate([0, 0, handle_center_z])
+        rotate([90, 0, 0])
+            linear_extrude(height = handle_width, center = true)
+                difference() {
+                    d_profile(flat_u_outer, far_u_outer, outer_half_h, outer_r);
+                    d_profile(flat_u_hole,  far_u_hole,  hole_half_h,  hole_r);
+                }
+}
+
+// ==================== 組み立て ====================
+union() {
+    mug_body();
+    handle();
+}
+```

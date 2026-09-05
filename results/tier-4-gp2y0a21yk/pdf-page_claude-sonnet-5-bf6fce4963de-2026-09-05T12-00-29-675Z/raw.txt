@@ -1,0 +1,118 @@
+```openscad
+// ============================================================
+// SHARP GP2Y0A21YK0F  距離センサ 外形モデル (近似)
+// データシート 2 ページ目 "Outline Dimensions" を基にモデリング
+// 単位: mm  /  座標系: 中心が原点, +Z 上方向(レンズ上面), +Y 前方
+// 未指定寸法許容差 ±0.3mm (本モデルでは考慮せず概形のみ表現)
+// ============================================================
+
+$fn = 48;
+
+// ------- データシート記載値 -------
+overall_w      = 37;      // 本体+取付耳 全幅
+lens_block_w   = 29.5;    // レンズケース部 幅
+ear_w          = (overall_w - lens_block_w) / 2; // 3.75 (取付耳の張り出し)
+lens_block_d   = 13;      // レンズケース部 奥行(側面図 13 を奥行に割当)
+lens_block_h   = 8.4;     // レンズケース部 高さ(リブ手前まで)
+
+ridge_d        = 6.3;     // 上部レンズ収容リブ 奥行
+ridge_h        = 2;       // 上部レンズ収容リブ 高さ
+
+tab_r          = 3.75;    // 取付耳 丸め半径 (R3.75)
+hole_d         = 3.2;     // 取付穴 直径 (φ3.2 x2)
+
+emitter_x      = -14.75 + 4.5;    // *4.5  -> -10.25 (発光レンズ中心)
+detector_x     = emitter_x + 20;  // *20±0.1 -> 9.75 (受光レンズ中心)
+
+emitter_bezel_r = 3.75;   // 発光レンズ外枠半径 (R3.75)
+emitter_lens_r  = 2.0;    // 発光レンズ ドーム半径
+detector_w      = 7.5;    // 受光レンズ窓 幅(近似)
+detector_d      = 6.3;    // 受光レンズ窓 奥行(リブ幅に合わせる)
+
+bar_extra_d    = 14.75;   // 連結バー 延長長さ(近似)
+bar_h          = 1.5;     // 連結バー(薄板)厚み ("2-1.5" のステップ相当)
+notch_w        = 10.1;    // ケーブル取り出し切欠き 幅
+notch_d        = 4.15;    // ケーブル取り出し切欠き 深さ
+
+cable_r        = 1.5;     // 簡易ケーブル 半径
+cable_len      = 25;      // 簡易ケーブル 長さ
+
+// ------- 派生位置 -------
+lens_block_y0  = -lens_block_d / 2;            // レンズ部 後端
+lens_block_y1  =  lens_block_d / 2;            // レンズ部 前端
+bar_y0         = lens_block_y0 - bar_extra_d;  // 連結バー 後端(外側)
+bar_y1         = lens_block_y0;                // 連結バー がレンズ部と接する位置
+bar_yc         = (bar_y0 + bar_y1) / 2;        // 連結バー 中心Y
+
+// ------- 部品モジュール -------
+
+// 丸端(左右)長方形プレート
+module rounded_plate(w, d, r, h) {
+    hull() {
+        translate([-w/2 + r, -d/2 + r, 0]) cylinder(r = r, h = h);
+        translate([ w/2 - r, -d/2 + r, 0]) cylinder(r = r, h = h);
+        translate([-w/2 + r,  d/2 - r, 0]) cylinder(r = r, h = h);
+        translate([ w/2 - r,  d/2 - r, 0]) cylinder(r = r, h = h);
+    }
+}
+
+// 連結バー: 取付穴2つ + ケーブル取り出し切欠き
+module connecting_bar() {
+    difference() {
+        translate([0, bar_yc, 0])
+            rounded_plate(overall_w, bar_extra_d, tab_r, bar_h);
+
+        // 取付穴 x2 (左右の丸耳内)
+        for (sx = [-1, 1]) {
+            translate([sx * (overall_w/2 - tab_r), bar_yc, -1])
+                cylinder(d = hole_d, h = bar_h + 2);
+        }
+
+        // ケーブル取り出し切欠き(後端から内側へ)
+        translate([-notch_w/2, bar_y0 - 1, -1])
+            cube([notch_w, notch_d + 1, bar_h + 2]);
+    }
+}
+
+// レンズ部本体ケース + 発光/受光レンズ
+module lens_case() {
+    union() {
+        // 本体ケース(直方体)
+        translate([-lens_block_w/2, lens_block_y0, 0])
+            cube([lens_block_w, lens_block_d, lens_block_h]);
+
+        // 上部レンズ収容リブ
+        translate([-lens_block_w/2, -ridge_d/2, lens_block_h])
+            cube([lens_block_w, ridge_d, ridge_h]);
+
+        // 発光側レンズ(円形の窓+ドーム)
+        translate([emitter_x, 0, lens_block_h + ridge_h]) {
+            cylinder(r = emitter_bezel_r, h = 0.6);
+            translate([0, 0, 0.6])
+                cylinder(r1 = emitter_lens_r, r2 = emitter_lens_r * 0.7, h = 1.2);
+        }
+
+        // 受光側レンズ(矩形の窓)
+        translate([detector_x - detector_w/2, -detector_d/2, lens_block_h + ridge_h])
+            cube([detector_w, detector_d, 1.2]);
+    }
+}
+
+// 簡易ケーブル(丸棒表現)
+module cable() {
+    translate([0, bar_y0, bar_h/2])
+        rotate([90, 0, 0])
+            cylinder(r = cable_r, h = cable_len);
+}
+
+// ------- 全体組み立て -------
+module sensor() {
+    union() {
+        lens_case();
+        connecting_bar();
+        cable();
+    }
+}
+
+sensor();
+```

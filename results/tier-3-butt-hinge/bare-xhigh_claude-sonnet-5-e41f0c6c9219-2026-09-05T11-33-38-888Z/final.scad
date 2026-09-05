@@ -1,0 +1,120 @@
+// ============================================================
+// 家具用 小型バット蝶番 (Butt Hinge) - 180° 開いた状態
+// 3パーツ: 左板(leaf) / 右板(leaf) / ピン軸(pin)
+// ============================================================
+$fn = 64;
+
+// ---------------- 基本寸法パラメータ ----------------
+leaf_len   = 30;   // 板の縦寸法(ヒンジ軸=Y方向)
+leaf_width = 25;   // 板の横寸法(開閉方向=X方向)
+leaf_thick = 2;    // 板厚(Z方向)
+
+pin_d      = 4;    // ピン軸 直径
+pin_r      = pin_d / 2;
+pin_length = 32;   // ピン軸 全長(両端 1mm ずつ knuckle から突出)
+
+knuckle_od = 8;                 // knuckle 外径
+knuckle_or = knuckle_od / 2;
+knuckle_id = 4.6;               // knuckle 内径(ピン+クリアランス)
+knuckle_ir = knuckle_id / 2;
+
+seg         = leaf_len / 5;     // 30mmを5等分 → 6mmずつ
+knuckle_gap = 0.3;              // 隣接knuckle間のクリアランス(合計)
+knuckle_len = seg - knuckle_gap;
+
+bridge_overlap = 0.1;  // knuckleと平板を確実に結合するための重なり量
+hole_eps       = 0.05; // 穴の貫通を確実にするための余裕
+
+// M3用皿穴パラメータ
+screw_d     = 3.2;
+screw_r     = screw_d / 2;
+csk_d       = 6;
+csk_r       = csk_d / 2;
+csk_depth   = 1;
+screw_pitch = 8;
+screw_x     = 18;      // knuckleから離れた側(板の中央よりやや外側)
+
+// ---------------- knuckle 配置(5分割, Y方向中心座標) ----------------
+// 境界: -15,-9,-3,3,9,15 → 各セグメント中心
+seg_centers = [for (i = [0:4]) -leaf_len/2 + seg*(i + 0.5)]; // [-12,-6,0,6,12]
+
+left_idx  = [0, 2, 4]; // 左板: 外側2個 + 中央1個
+right_idx = [1, 3];    // 右板: 中間2個
+
+left_centers  = [for (i = left_idx)  seg_centers[i]];
+right_centers = [for (i = right_idx) seg_centers[i]];
+
+// ============================================================
+// モジュール定義
+// ============================================================
+
+// 板本体 + knuckle(+X方向へ伸びる形状として作成し、左板は後でミラーする)
+module leaf_shape(knuckle_centers) {
+    union() {
+        // 平板部分(knuckle外径の位置から外側へ25mm)
+        translate([knuckle_or, -leaf_len/2, -leaf_thick/2])
+            cube([leaf_width, leaf_len, leaf_thick]);
+
+        // knuckle(筒)部分 + 平板との結合ブリッジ
+        for (yc = knuckle_centers) {
+            // knuckle 本体(円柱)
+            translate([0, yc, 0])
+                rotate([-90, 0, 0])
+                    cylinder(h = knuckle_len, r = knuckle_or, center = true);
+
+            // 平板としっかり結合させるためのブリッジ(自分のknuckle範囲のみ)
+            translate([0, yc - knuckle_len/2, -leaf_thick/2])
+                cube([knuckle_or + bridge_overlap, knuckle_len, leaf_thick]);
+        }
+    }
+}
+
+// 板に開ける穴(ピン穴 + M3皿穴×3)
+module leaf_holes() {
+    // ピン軸貫通穴(X=0, Z=0 を中心に板の全長を貫通)
+    rotate([-90, 0, 0])
+        cylinder(h = leaf_len + 4, r = knuckle_ir, center = true);
+
+    // M3 皿穴 x3 (Y方向 8mm ピッチ, knuckleから離れた側)
+    for (yc = [-screw_pitch, 0, screw_pitch]) {
+        translate([screw_x, yc, 0]) {
+            // 貫通下穴(直径3.2mm)
+            cylinder(h = leaf_thick + 2*hole_eps, r = screw_r, center = true);
+            // 皿穴テーパ(直径6mm × 深さ1mm, 表面(+Z側)から)
+            translate([0, 0, leaf_thick/2 - csk_depth])
+                cylinder(h = csk_depth, r1 = screw_r, r2 = csk_r);
+        }
+    }
+}
+
+// 1枚分の板(穴あけ済み)
+module leaf(knuckle_centers) {
+    difference() {
+        leaf_shape(knuckle_centers);
+        leaf_holes();
+    }
+}
+
+// ピン軸(Y軸方向, 長さ32mm)
+module pin() {
+    rotate([-90, 0, 0])
+        cylinder(h = pin_length, r = pin_r, center = true);
+}
+
+// ============================================================
+// 組み立て(180° 開いた状態)
+// 右板: x>0側 / 左板: x<0側 / ピン軸: Y軸に沿って中心配置
+// ============================================================
+
+// 右板(+X 側, 中間2個のknuckle)
+color("LightSteelBlue")
+    leaf(right_centers);
+
+// 左板(-X 側, 外側2個+中央1個のknuckle) : +X用形状をミラー
+color("LightSteelBlue")
+    mirror([1, 0, 0])
+        leaf(left_centers);
+
+// ピン軸(直径4mm, 長さ32mm)
+color("Silver")
+    pin();

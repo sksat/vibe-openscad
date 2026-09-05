@@ -126,6 +126,36 @@ matrix:
     provider: anthropic
     model: claude-opus-4-7
     modelOptions: { thinking: { type: disabled } }
+  # Sonnet 5 — thinking が既定 on。thinking が on だと出力トークンが増えるので、
+  # max_tokens が足りないと SCAD を出し切る前に打ち切られる(16000 で試すと
+  # 35 run 中 8 件が out=16000 ちょうどで停止した)。公式推奨の 64000 を使う。
+  # この値は SDK の非ストリーミング上限 21333 を超えるのでストリーミング経路
+  # を通る(#11)。
+  - id: bare/claude-sonnet-5
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-sonnet-5
+    modelOptions: { max_tokens: 64000 }
+  - id: bare-low/claude-sonnet-5
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-sonnet-5
+    modelOptions: { output_config: { effort: low }, max_tokens: 64000 }
+  - id: bare-xhigh/claude-sonnet-5
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-sonnet-5
+    modelOptions: { output_config: { effort: xhigh }, max_tokens: 64000 }
+  - id: bare-max/claude-sonnet-5
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-sonnet-5
+    modelOptions: { output_config: { effort: max }, max_tokens: 64000 }
+  - id: bare-think-off/claude-sonnet-5
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-sonnet-5
+    modelOptions: { thinking: { type: disabled }, max_tokens: 64000 }
   - id: bare/claude-sonnet-4-6
     harness: { kind: bare }
     provider: anthropic
@@ -588,6 +618,11 @@ matrix:
     harness: { kind: pdf-page }
     provider: anthropic
     model: claude-opus-4-7
+  - id: pdf-page/claude-sonnet-5
+    harness: { kind: pdf-page }
+    provider: anthropic
+    model: claude-sonnet-5
+    modelOptions: { max_tokens: 64000 }
   - id: pdf-page/claude-sonnet-4-6
     harness: { kind: pdf-page }
     provider: anthropic

@@ -1,0 +1,29 @@
+```openscad
+// M8 六角ボルト（規格準拠、ねじ山省略）
+
+$fn = 100;
+
+// 頭部寸法
+head_af = 13;      // 対辺距離 (across-flats)
+head_h  = 5.3;     // 頭部高さ
+
+// シャンク寸法
+shank_d = 8;       // シャンク直径
+shank_l = 30;      // シャンク長さ
+
+// 六角柱を作るための外接円直径
+// across-flats = across-corners * cos(30°)
+head_diameter = head_af / cos(30);
+
+module hex_bolt() {
+    // 頭部：底面が z=0、上方向(+Z)に高さ head_h
+    translate([0, 0, 0])
+        cylinder(h = head_h, d = head_diameter, $fn = 6);
+
+    // シャンク：z=0 から -shank_l 方向へ伸ばす
+    translate([0, 0, -shank_l])
+        cylinder(h = shank_l, d = shank_d, $fn = 100);
+}
+
+hex_bolt();
+```

@@ -1,0 +1,40 @@
+{
+  "runId": "bare-max_claude-sonnet-5-7b6d3b312933-2026-09-05T11-56-41-243Z",
+  "taskId": "tier-3-butt-hinge",
+  "matrixId": "bare-max/claude-sonnet-5",
+  "signature": "7b6d3b312933bded3eb868c26a8c7e93e7512aa3d697d16dde803b17331ea9ac",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dd7199030a8827a181914869189fc45a2e5637023f0c8c59532d442557036e7c",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-sonnet-5",
+      "modelOptions": {
+        "output_config": {
+          "effort": "max"
+        },
+        "max_tokens": 64000
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-sonnet-5",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "no_code",
+  "timing": {
+    "totalMs": 684700
+  },
+  "tokens": {
+    "input": 743,
+    "output": 64000
+  },
+  "cost_usd": 0.641486,
+  "createdAt": "2026-09-05T11:56:41.243Z",
+  "gitCommit": "e18a2783a33873bb74f722264deabb1b79dee6e4",
+  "error": "model returned empty response (stopReason=max_tokens)"
+}

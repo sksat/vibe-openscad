@@ -1,0 +1,17 @@
+// 3段の階段状ピラミッド
+
+module step_pyramid() {
+    // 1段目: 60mm x 60mm x 10mm
+    translate([-30, -30, 0])
+        cube([60, 60, 10]);
+
+    // 2段目: 40mm x 40mm x 10mm
+    translate([-20, -20, 10])
+        cube([40, 40, 10]);
+
+    // 3段目: 20mm x 20mm x 10mm
+    translate([-10, -10, 20])
+        cube([20, 20, 10]);
+}
+
+step_pyramid();

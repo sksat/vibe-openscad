@@ -1,0 +1,39 @@
+{
+  "runId": "bare-low_claude-sonnet-5-991576abd0fb-2026-09-05T11-18-06-579Z",
+  "taskId": "tier-1-mug",
+  "matrixId": "bare-low/claude-sonnet-5",
+  "signature": "991576abd0fb5cd8dfc93b54745d5af637a043daa4f2093a3f5b440c28923217",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "883b512feb40f76c3fdcb332c7c513c491c27c8511f65b90fecbad6b6c197cd5",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-sonnet-5",
+      "modelOptions": {
+        "output_config": {
+          "effort": "low"
+        },
+        "max_tokens": 64000
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-sonnet-5",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 4634
+  },
+  "tokens": {
+    "input": 220,
+    "output": 387
+  },
+  "cost_usd": 0.00431,
+  "createdAt": "2026-09-05T11:18:06.579Z",
+  "gitCommit": "e18a2783a33873bb74f722264deabb1b79dee6e4"
+}
