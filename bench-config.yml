@@ -465,6 +465,32 @@ matrix:
     model: gpt-5.6-luna
     modelOptions: { reasoning: { effort: max } }
 
+  # --- GPT-5.6 Sol (3 ティアの最上位) ---
+  - id: bare/gpt-5.6-sol
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.6-sol
+  - id: bare-low/gpt-5.6-sol
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.6-sol
+    modelOptions: { reasoning: { effort: low } }
+  - id: bare-high/gpt-5.6-sol
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.6-sol
+    modelOptions: { reasoning: { effort: high } }
+  - id: bare-xhigh/gpt-5.6-sol
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.6-sol
+    modelOptions: { reasoning: { effort: xhigh } }
+  - id: bare-max/gpt-5.6-sol
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-5.6-sol
+    modelOptions: { reasoning: { effort: max } }
+
   # --- GPT-5.6 Terra (3 ティアの中位) ---
   - id: bare/gpt-5.6-terra
     harness: { kind: bare }
@@ -567,6 +593,10 @@ matrix:
     harness: { kind: pdf-page }
     provider: openai
     model: gpt-5.6-luna
+  - id: pdf-page/gpt-5.6-sol
+    harness: { kind: pdf-page }
+    provider: openai
+    model: gpt-5.6-sol
   - id: pdf-page/gpt-5.6-terra
     harness: { kind: pdf-page }
     provider: openai
