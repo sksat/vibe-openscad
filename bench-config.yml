@@ -260,11 +260,11 @@ matrix:
   - id: bare/gemini-3.1-flash-lite
     harness: { kind: bare }
     provider: google
-    model: gemini-3.1-flash-lite-preview
+    model: gemini-3.1-flash-lite
   - id: bare-think-off/gemini-3.1-flash-lite
     harness: { kind: bare }
     provider: google
-    model: gemini-3.1-flash-lite-preview
+    model: gemini-3.1-flash-lite
     modelOptions:
       config: { thinkingConfig: { thinkingBudget: 0 } }
   - id: bare/gemini-2.5-pro
@@ -637,6 +637,10 @@ matrix:
     harness: { kind: pdf-page }
     provider: google
     model: gemini-3.5-flash-lite
+  - id: pdf-page/gemini-3.1-flash-lite
+    harness: { kind: pdf-page }
+    provider: google
+    model: gemini-3.1-flash-lite
   - id: pdf-page/gemini-3.5-flash
     harness: { kind: pdf-page }
     provider: google
@@ -884,15 +888,15 @@ matrix:
   - id: iter-png-1/gemini-3.1-flash-lite
     harness: { kind: bare, iterateFrom: bare/gemini-3.1-flash-lite, iteration: { kind: render-png-feedback } }
     provider: google
-    model: gemini-3.1-flash-lite-preview
+    model: gemini-3.1-flash-lite
   - id: iter-png-2/gemini-3.1-flash-lite
     harness: { kind: bare, iterateFrom: iter-png-1/gemini-3.1-flash-lite, iteration: { kind: render-png-feedback } }
     provider: google
-    model: gemini-3.1-flash-lite-preview
+    model: gemini-3.1-flash-lite
   - id: iter-png-3/gemini-3.1-flash-lite
     harness: { kind: bare, iterateFrom: iter-png-2/gemini-3.1-flash-lite, iteration: { kind: render-png-feedback } }
     provider: google
-    model: gemini-3.1-flash-lite-preview
+    model: gemini-3.1-flash-lite
 
   - id: iter-png-1/gemini-2.5-pro
     harness: { kind: bare, iterateFrom: bare/gemini-2.5-pro, iteration: { kind: render-png-feedback } }
