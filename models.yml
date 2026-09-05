@@ -7,7 +7,8 @@
 #   - thinking     provider 既定の thinking モード。null = thinking 軸無し
 #   - label / sort UI 表示名・並び順。**命名規則から外れるモデルだけ** 書く
 #                  (`claude-opus-5` や `gemini-3.8-flash` のような素直な id は
-#                   web 側のパターンマッチで自動導出されるので不要)
+#                   web 側のパターンマッチで自動導出されるので不要)。書いた
+#                   場合はパターン推論より優先される
 #
 # 「どの組み合わせを実行するか」は bench-config.yml の matrix 側の仕事。
 # ここには実行条件(temperature、max_tokens 等)を書かない。
@@ -123,12 +124,14 @@ claude-sonnet-4-:
   effort: null
   thinking: "off"
 
+# 3.x は extended thinking パラメータ自体が無い(= 軸が存在しないので null。
+# 「明示 opt-in すれば on にできるが既定は off」の 4.x 系とは別物)。
 claude-3-haiku:
   provider: anthropic
   rate: { in: 0.25, out: 1.25 }
   vision: false
   effort: null
-  thinking: "off"
+  thinking: null
 
 # ---------------------------------------------------------------------------
 # Google Gemini

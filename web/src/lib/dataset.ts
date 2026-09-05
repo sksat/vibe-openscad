@@ -139,6 +139,13 @@ export function publisherVendor(
  * 用に最後に model 文字列を入れて辞書順 fallback。
  */
 export function modelSortKey(model: string): [number, number, number, string] {
+  // カタログの明示宣言が最優先。命名規則から外れる id(gpt-5.6-sol のように
+  // 世代とティアが別語彙のもの)は、下の正規表現が「それらしく」拾ってしまう
+  // ので、宣言があるならパターン推論より先に効かせる。
+  const declared = resolveModel(model)?.sort;
+  if (declared) {
+    return [declared.family, -declared.version, declared.size ?? 0, model];
+  }
   // Anthropic: claude-{fable|opus|sonnet|haiku}-X[-Y][-YYYYMMDD]
   // Fable(Opus の上のティア)は minor を持たない(claude-fable-5)。
   // minor は 1-3 桁に限定して 8 桁の date suffix と区別する。
@@ -192,10 +199,6 @@ export function modelSortKey(model: string): [number, number, number, string] {
     else if (/-mini(\b|-)/.test(model)) size = 1;
     return [2, -major * 1000, size, model];
   }
-  // 命名規則から外れるモデル(gpt-5.6-sol のような tier 名)は models.yml の
-  // `sort:` で明示できる。
-  const sort = resolveModel(model)?.sort;
-  if (sort) return [sort.family, -sort.version, sort.size ?? 0, model];
   // 該当なし: 末尾扱いで辞書順。
   return [99, 0, 0, model];
 }
@@ -318,6 +321,21 @@ function isHarnessHead(part: string): boolean {
 
 /** Parse one model id string into vendor + model badges (or fall through). */
 export function parseModelLabel(modelStr: string): MatrixSegment[] {
+  // カタログに表示名の宣言があればそれを使う(vendor バッジは provider から
+  // 引く)。下のパターン群は「素直な id」を賄うためのもので、外れる id を
+  // 誤って拾わないよう宣言を先に見る。
+  const declared = resolveModel(modelStr);
+  if (declared?.label) {
+    const vendor = providerVendor(declared.provider);
+    if (vendor) {
+      return [
+        { kind: "vendor", label: vendor, vendor },
+        { kind: "model", label: declared.label, title: modelStr, vendor },
+      ];
+    }
+    return [{ kind: "model", label: declared.label, title: modelStr }];
+  }
+
   // Anthropic model: claude-(fable|opus|sonnet|haiku)-MAJOR[-MINOR][-YYYYMMDD]
   // Minor is constrained to 1-3 digits to disambiguate from an 8-digit date
   // (e.g. claude-opus-4-20250514 has no minor, just major + date).
@@ -435,20 +453,6 @@ export function parseModelLabel(modelStr: string): MatrixSegment[] {
     return [{ kind: "model", label: modelStr, title: modelStr }];
   }
 
-  // 命名規則から外れるモデルは models.yml の `label:` で表示名を宣言できる
-  // (vendor バッジは provider から引く)。
-  const spec = resolveModel(modelStr);
-  if (spec?.label) {
-    const vendor = providerVendor(spec.provider);
-    if (vendor) {
-      return [
-        { kind: "vendor", label: vendor, vendor },
-        { kind: "model", label: spec.label, title: modelStr, vendor },
-      ];
-    }
-    return [{ kind: "model", label: spec.label, title: modelStr }];
-  }
-
   return [{ kind: "other", label: modelStr }];
 }
 
@@ -467,6 +471,8 @@ export function parseModelLabel(modelStr: string): MatrixSegment[] {
  */
 export function shortModelLabel(model: string): string {
   if (!model) return model;
+  const declared = resolveModel(model)?.label;
+  if (declared) return declared;
   const claude = model.match(
     /^claude-(fable|opus|sonnet|haiku)-(\d+)(?:-(\d{1,3}))?(?:-\d{8})?$/,
   );
@@ -498,7 +504,7 @@ export function shortModelLabel(model: string): string {
   if (gemini) {
     return `gemini ${gemini[1]} ${gemini[2]}`;
   }
-  return resolveModel(model)?.label ?? model;
+  return model;
 }
 
 /**

@@ -127,16 +127,32 @@ export function repoRootFrom(start: string): string {
 }
 
 let cached: ModelRegistry | null = null;
+let rootOverride: string | null = null;
+
+/**
+ * カタログを読むリポジトリルートを明示する。`bench --root <dir>` のように
+ * cwd と対象チェックアウトが食い違う経路で必要(指定しないと cwd から
+ * 遡って別チェックアウトの models.yml を掴む、あるいは見つからず落ちる)。
+ * CLI 起動時に 1 度だけ呼ぶ。
+ */
+export function setModelRegistryRoot(root: string): void {
+  if (rootOverride === root) return;
+  rootOverride = root;
+  cached = null;
+}
 
 /** リポジトリルートの `models.yml`(プロセス内で 1 度だけ読む)。 */
 export function modelRegistry(): ModelRegistry {
-  cached ??= loadModelRegistry(join(repoRootFrom(process.cwd()), "models.yml"));
+  cached ??= loadModelRegistry(
+    join(rootOverride ?? repoRootFrom(process.cwd()), "models.yml"),
+  );
   return cached;
 }
 
-/** テスト用: キャッシュを捨てて次回再読み込みさせる。 */
+/** テスト用: キャッシュと root 指定を捨てて次回再読み込みさせる。 */
 export function resetModelRegistryCache(): void {
   cached = null;
+  rootOverride = null;
 }
 
 /**

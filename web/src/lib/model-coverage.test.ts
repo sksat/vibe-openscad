@@ -1,7 +1,7 @@
 import { loadBenchConfig } from "@vibe-openscad/runners/src/matrix.js";
-import { repoRootFrom } from "@vibe-openscad/runners/src/models.js";
+import { modelRegistry, repoRootFrom } from "@vibe-openscad/runners/src/models.js";
 import { describe, expect, it } from "vitest";
-import { modelSortKey, parseModelLabel } from "./dataset.js";
+import { modelSortKey, parseModelLabel, shortModelLabel } from "./dataset.js";
 
 /**
  * bench-config.yml に載っている全モデルが UI 側でも「知られている」ことを
@@ -45,6 +45,40 @@ describe("bench-config models are renderable", () => {
           modelSortKey(model)[0],
           `${key}: unranked — teach dataset.ts the pattern or add sort: to models.yml`,
         ).not.toBe(99);
+      });
+    }
+  }
+});
+
+/**
+ * `label` / `sort` を宣言したモデルは、web 側のパターン推論より宣言が優先
+ * されること。`gpt-5.6-sol` のように `^gpt-\d` に「それらしく」マッチして
+ * しまう id では、宣言をフォールバックにすると黙って無視される。
+ *
+ * 宣言があるモデルが 1 つも無ければケースが 0 件になるが、それは
+ * 「命名規則から外れるモデルがまだ無い」という意味で正常。
+ */
+describe("declared label / sort win over pattern inference", () => {
+  const registry = modelRegistry();
+
+  // 宣言ゼロでも describe が空にならないように置く番人。
+  it("reads the catalog", () => {
+    expect(Object.keys(registry).length).toBeGreaterThan(0);
+  });
+
+  for (const [id, entry] of Object.entries(registry)) {
+    if (entry.label) {
+      it(`uses the declared label for ${id}`, () => {
+        expect(parseModelLabel(id)).toContainEqual(
+          expect.objectContaining({ kind: "model", label: entry.label }),
+        );
+        expect(shortModelLabel(id)).toBe(entry.label);
+      });
+    }
+    if (entry.sort) {
+      it(`uses the declared sort for ${id}`, () => {
+        const { family, version, size } = entry.sort!;
+        expect(modelSortKey(id)).toEqual([family, -version, size ?? 0, id]);
       });
     }
   }
