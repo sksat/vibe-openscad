@@ -1,0 +1,94 @@
+```openscad
+$fn = 96;
+
+// Dimensions
+leaf_length = 30;
+leaf_width  = 25;
+leaf_thickness = 2;
+
+knuckle_length = 6;
+knuckle_outer_d = 8;
+knuckle_inner_d = 4.6;
+
+pin_d = 4;
+pin_length = 32;
+
+hole_d = 3.2;
+countersink_d = 6;
+countersink_depth = 1;
+
+// The leaf overlaps the knuckle slightly for a connected solid.
+// Each leaf remains exactly 25 mm wide.
+left_leaf_x0  = -28;
+right_leaf_x0 = 3;
+
+hole_y = [7, 15, 23];
+
+module countersunk_hole(x, y) {
+    translate([x, y, -leaf_thickness / 2 - 0.01])
+        cylinder(h = leaf_thickness + 0.02, d = hole_d);
+
+    translate([x, y, 0])
+        cylinder(
+            h = countersink_depth,
+            r1 = hole_d / 2,
+            r2 = countersink_d / 2
+        );
+}
+
+module leaf_plate(x0, hole_x) {
+    difference() {
+        translate([x0, 0, -leaf_thickness / 2])
+            cube([leaf_width, leaf_length, leaf_thickness]);
+
+        for (y = hole_y)
+            countersunk_hole(hole_x, y);
+    }
+}
+
+module knuckle(y0) {
+    difference() {
+        translate([0, y0, 0])
+            rotate([-90, 0, 0])
+                cylinder(h = knuckle_length, d = knuckle_outer_d);
+
+        translate([0, y0 - 0.1, 0])
+            rotate([-90, 0, 0])
+                cylinder(h = knuckle_length + 0.2, d = knuckle_inner_d);
+    }
+}
+
+module left_leaf_assembly() {
+    union() {
+        leaf_plate(left_leaf_x0, -15.5);
+
+        knuckle(0);
+        knuckle(12);
+        knuckle(24);
+    }
+}
+
+module right_leaf_assembly() {
+    union() {
+        leaf_plate(right_leaf_x0, 15.5);
+
+        knuckle(6);
+        knuckle(18);
+    }
+}
+
+module hinge_pin() {
+    translate([0, -1, 0])
+        rotate([-90, 0, 0])
+            cylinder(h = pin_length, d = pin_d);
+}
+
+color([0.42, 0.44, 0.47])
+    left_leaf_assembly();
+
+color([0.48, 0.50, 0.53])
+    right_leaf_assembly();
+
+color([0.72, 0.74, 0.78])
+    hinge_pin();
+```

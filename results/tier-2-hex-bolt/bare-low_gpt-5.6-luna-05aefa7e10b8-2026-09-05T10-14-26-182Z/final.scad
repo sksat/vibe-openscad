@@ -1,0 +1,25 @@
+$fn = 96;
+
+across_flats = 13;
+head_height = 5.3;
+shank_diameter = 8;
+shank_length = 30;
+
+hex_circumradius = across_flats / sqrt(3);
+
+union() {
+    // 六角ボルト頭部
+    rotate([0, 0, 30])
+        cylinder(
+            h = head_height,
+            r = hex_circumradius,
+            $fn = 6
+        );
+
+    // シャンク
+    translate([0, 0, -shank_length])
+        cylinder(
+            h = shank_length,
+            d = shank_diameter
+        );
+}

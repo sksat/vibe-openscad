@@ -1,0 +1,59 @@
+$fn = 128;
+
+outer_diameter = 80;
+inner_diameter = 70;
+height = 90;
+bottom_thickness = 6;
+
+outer_radius = outer_diameter / 2;
+inner_radius = inner_diameter / 2;
+
+handle_thickness = 10;
+
+// マグ本体
+module mug_body() {
+    difference() {
+        cylinder(
+            r = outer_radius,
+            h = height
+        );
+
+        translate([0, 0, bottom_thickness])
+            cylinder(
+                r = inner_radius,
+                h = height - bottom_thickness + 1
+            );
+    }
+}
+
+// +X方向にのみ配置するD字型取手
+module handle() {
+    rotate([90, 0, 0])
+        linear_extrude(
+            height = handle_thickness,
+            center = true
+        ) {
+            difference() {
+                polygon([
+                    [35, 20],
+                    [50, 20],
+                    for (a = [-90 : 10 : 90])
+                        [50 + 25 * cos(a), 45 + 25 * sin(a)],
+                    [35, 70]
+                ]);
+
+                // 内側空間：幅25mm × 高さ30mm
+                polygon([
+                    [40, 30],
+                    [65, 30],
+                    [65, 60],
+                    [40, 60]
+                ]);
+            }
+        }
+}
+
+union() {
+    mug_body();
+    handle();
+}

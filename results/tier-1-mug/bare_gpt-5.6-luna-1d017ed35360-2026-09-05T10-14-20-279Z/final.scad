@@ -1,0 +1,42 @@
+$fn = 128;
+
+// カップ寸法
+outer_diameter = 80;
+outer_radius   = outer_diameter / 2;
+height         = 100;
+wall_thickness = 4;
+bottom_thickness = 6;
+inner_radius   = outer_radius - wall_thickness;
+
+// 取手寸法
+handle_radius = 12;
+handle_tube_radius = 4;
+handle_center_x = outer_radius + handle_radius - handle_tube_radius / 2;
+handle_center_z = height / 2;
+
+// カップ本体
+cup = difference() {
+    cylinder(
+        r = outer_radius,
+        h = height
+    );
+
+    translate([0, 0, bottom_thickness])
+        cylinder(
+            r = inner_radius,
+            h = height
+        );
+};
+
+// リング状の取手
+handle = translate([handle_center_x, 0, handle_center_z])
+    rotate([90, 0, 0])
+        rotate_extrude(angle = 360)
+            translate([handle_radius, 0, 0])
+                circle(r = handle_tube_radius);
+
+// カップと取手を一体化
+union() {
+    cup;
+    handle;
+}

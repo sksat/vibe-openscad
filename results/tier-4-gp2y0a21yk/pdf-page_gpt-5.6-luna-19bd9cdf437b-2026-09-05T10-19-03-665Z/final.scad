@@ -1,0 +1,194 @@
+// GP2Y0A21YK0F outline model
+// Units: mm
+// Coordinate system: X = left/right, Y = front (+Y), Z = up
+
+$fn = 64;
+
+// Main dimensions
+main_w       = 29.5;
+main_d       = 8.4;
+main_h       = 8.4;
+
+lens_spacing = 20.0;
+lens_x       = lens_spacing / 2;
+lens_d       = 6.3;
+lens_h       = 3.0;
+
+bar_w        = 10.1;
+bar_len      = 14.75;
+bar_t        = 1.2;
+
+mount_x      = 3.75;
+mount_y      = -9.0;
+mount_hole_d = 2.0;
+
+ear_x        = 18.5;
+ear_r        = 3.75;
+ear_t        = 2.0;
+ear_hole_d   = 3.2;
+
+cable_r      = 1.0;
+cable_len    = 18.0;
+
+
+// Rounded rectangular prism
+module rounded_box(size, r = 1.0, center = false) {
+    x = size[0];
+    y = size[1];
+    z = size[2];
+
+    translate(center ? [-x/2, -y/2, -z/2] : [0, 0, 0])
+    hull() {
+        for (ix = [r, x-r])
+            for (iy = [r, y-r])
+                translate([ix, iy, 0])
+                    cylinder(r = r, h = z);
+    }
+}
+
+
+// Main lens case
+module lens_case() {
+    difference() {
+        union() {
+            // Main case
+            translate([-main_w/2, -main_d/2, 0])
+                cube([main_w, main_d, main_h]);
+
+            // Slight upper lens-frame shoulder
+            translate([-13.5, -3.6, main_h - 0.8])
+                cube([27.0, 7.2, 0.8]);
+        }
+
+        // Shallow rectangular optical recesses
+        for (x = [-lens_x, lens_x]) {
+            translate([x - 3.0, -3.15, main_h - 0.35])
+                cube([6.0, 6.3, 0.5]);
+        }
+    }
+}
+
+
+// Optical lenses
+module optical_lenses() {
+    for (x = [-lens_x, lens_x]) {
+        // Cylindrical lens housing
+        color("black")
+            translate([x, 0, main_h - 0.1])
+                cylinder(d = lens_d, h = lens_h);
+
+        // Slightly raised optical window
+        color("dimgray")
+            translate([x, 0, main_h + lens_h - 0.25])
+                cylinder(d = 4.8, h = 0.35);
+    }
+}
+
+
+// Side mounting ears with through holes
+module mounting_ears() {
+    for (x = [-ear_x, ear_x]) {
+        difference() {
+            union() {
+                color("black")
+                    translate([x, 0, 0])
+                        cylinder(r = ear_r, h = ear_t);
+
+                // Narrow attachment neck to the main case
+                translate([
+                    min(x, x + (x > 0 ? -ear_r : ear_r)),
+                    -2.0,
+                    0
+                ])
+                cube([
+                    abs(x) - main_w/2 + ear_r,
+                    4.0,
+                    ear_t
+                ]);
+            }
+
+            translate([x, 0, -0.1])
+                cylinder(d = ear_hole_d, h = ear_t + 0.2);
+        }
+    }
+}
+
+
+// Thin connecting bar / lower extension
+module connecting_bar() {
+    difference() {
+        union() {
+            // Main thin plate extending toward -Y
+            translate([-bar_w/2, -4.2 - bar_len, 0])
+                cube([bar_w, bar_len, bar_t]);
+
+            // Short overlap beneath the lens case
+            translate([-bar_w/2, -4.8, 0])
+                cube([bar_w, 1.2, 2.0]);
+
+            // Raised side ribs near the case
+            translate([-bar_w/2, -5.0, 0])
+                cube([1.2, 5.0, 2.5]);
+
+            translate([bar_w/2 - 1.2, -5.0, 0])
+                cube([1.2, 5.0, 2.5]);
+        }
+
+        // Two mounting holes in the connecting bar
+        for (x = [-mount_x, mount_x]) {
+            translate([x, mount_y, -0.1])
+                cylinder(d = mount_hole_d, h = bar_t + 0.2);
+        }
+
+        // Cable exit notch at the rear edge
+        translate([-2.0, -4.2 - bar_len - 0.1, -0.1])
+            cube([4.0, 3.0, bar_t + 0.2]);
+    }
+}
+
+
+// Simplified round cable
+module cable() {
+    // Cable exits from the rear (-Y) edge
+    color("black")
+        translate([0, -4.2 - bar_len - 1.0, 0.6])
+            rotate([90, 0, 0])
+                cylinder(r = cable_r, h = cable_len);
+
+    // Gentle strain-relief section
+    color("black")
+        translate([0, -4.2 - bar_len + 0.2, 0.6])
+            rotate([90, 0, 0])
+                cylinder(r = 1.35, h = 2.5);
+}
+
+
+// Small lower PCB/connector support silhouette
+module lower_support() {
+    translate([-5.05, -6.0, 0])
+        cube([10.1, 1.8, 1.2]);
+
+    translate([-4.4, -7.3, 0])
+        cube([8.8, 1.3, 0.8]);
+}
+
+
+// Complete sensor
+module GP2Y0A21YK0F() {
+    color("black")
+        lens_case();
+
+    color("black")
+        mounting_ears();
+
+    color("black")
+        connecting_bar();
+
+    color("black")
+        lower_support();
+
+    optical_lenses();
+    cable();
+}
+
+GP2Y0A21YK0F();

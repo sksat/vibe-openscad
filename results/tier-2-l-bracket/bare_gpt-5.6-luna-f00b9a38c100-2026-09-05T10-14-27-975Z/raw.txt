@@ -1,0 +1,58 @@
+```openscad
+$fn = 64;
+
+W = 50;
+D = 40;
+H = 40;
+T = 3;
+
+hole_d = 4.5;
+csk_d = 8;
+csk_depth = 2;
+
+hole_r = hole_d / 2;
+csk_r = csk_d / 2;
+
+hole_x = W / 2 - 10;
+horizontal_y = D / 2;
+vertical_z = H / 2;
+
+module horizontal_countersink(x, y) {
+    translate([x, y, -T - 0.01])
+        cylinder(h = T + 0.02, r = hole_r);
+
+    translate([x, y, -T])
+        cylinder(h = csk_depth, r1 = csk_r, r2 = hole_r);
+}
+
+module vertical_countersink(x, z) {
+    translate([x, -T - 0.01, z])
+        rotate([-90, 0, 0])
+            cylinder(h = T + 0.02, r = hole_r);
+
+    translate([x, -T, z])
+        rotate([-90, 0, 0])
+            cylinder(h = csk_depth, r1 = csk_r, r2 = hole_r);
+}
+
+difference() {
+    union() {
+        translate([-W / 2, 0, -T])
+            cube([W, D, T]);
+
+        translate([-W / 2, -T, 0])
+            cube([W, T, H]);
+
+        translate([-W / 2, -T, -T])
+            cube([W, T, T]);
+    }
+
+    union() {
+        horizontal_countersink(-hole_x, horizontal_y);
+        horizontal_countersink( hole_x, horizontal_y);
+
+        vertical_countersink(-hole_x, vertical_z);
+        vertical_countersink( hole_x, vertical_z);
+    }
+}
+```

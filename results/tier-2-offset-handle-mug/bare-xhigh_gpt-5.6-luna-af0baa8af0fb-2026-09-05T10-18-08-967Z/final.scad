@@ -1,0 +1,32 @@
+$fn = 128;
+
+module mug_body() {
+    difference() {
+        cylinder(h = 90, r = 40);
+        translate([0, 0, 6])
+            cylinder(h = 90, r = 35);
+    }
+}
+
+module handle() {
+    rotate([90, 0, 0])
+        linear_extrude(height = 10, center = true, convexity = 10)
+            difference() {
+                polygon(points = concat(
+                    [[35, 25]],
+                    [for (a = [-90:2:90])
+                        [50 + 20 * cos(a), 45 + 20 * sin(a)]],
+                    [[35, 65]]
+                ));
+
+                polygon(points = [
+                    for (a = [-90:2:90])
+                        [40 + 25 * cos(a), 45 + 15 * sin(a)]
+                ]);
+            }
+}
+
+union() {
+    mug_body();
+    handle();
+}
