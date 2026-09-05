@@ -1,0 +1,93 @@
+```openscad
+// =========================================
+// Mug with D-shaped handle on +X side
+// =========================================
+
+$fn = 96;
+
+// ---- Body parameters ----
+outer_d   = 80;              // 外径
+inner_d   = 70;              // 内径 (肉厚 5mm)
+height    = 90;              // 全高
+bottom_th = 6;               // 底厚
+
+outer_r = outer_d / 2;       // 40
+inner_r = inner_d / 2;       // 35
+
+// ---- Handle parameters ----
+h_open_h  = 30;              // 取手内側の空間 高さ
+h_open_w  = 25;              // 取手内側の空間 幅(半径方向)
+h_thick   = 8;               // 取手の太さ(断面の径方向厚み)
+h_width   = 12;              // 取手の幅(Y方向)
+h_center_z = height / 2;     // 高さ方向の中央付近
+
+// 取手の内側開口の始まり(本体外周より少し内側に食い込ませて確実に union)
+h_embed    = 3;                          // 本体へのめり込み量
+h_in_x     = outer_r - h_embed;          // D 形状の直線部 X 位置
+h_out_x    = h_in_x + h_open_w + h_thick;// D 形状の外周 X 位置
+
+// -----------------------------------------
+// 本体
+// -----------------------------------------
+module body() {
+    difference() {
+        cylinder(h = height, r = outer_r);
+        translate([0, 0, bottom_th])
+            cylinder(h = height - bottom_th + 1, r = inner_r);
+    }
+}
+
+// -----------------------------------------
+// 取手 (D 字形状: 外側半円 + 本体側直線)
+//   2D プロファイルを作って linear_extrude し、
+//   Y 方向に厚みを持たせるため回転させて配置
+// -----------------------------------------
+module handle_profile() {
+    // XZ 平面上の D 字リング(中心は z = 0)
+    difference() {
+        // 外形: 直線部 + 外側半円(角丸 D 形状)
+        hull() {
+            // 本体側の直線部(縦の柱)
+            translate([h_in_x, -(h_open_h / 2 + h_thick / 2)])
+                square([1, h_open_h + h_thick]);
+            // 外側の半円をつくるための上下の円
+            translate([h_out_x - h_thick / 2,  h_open_h / 2]) circle(d = h_thick);
+            translate([h_out_x - h_thick / 2, -h_open_h / 2]) circle(d = h_thick);
+        }
+        // 内側の空間 (高さ 30mm × 幅 25mm)
+        hull() {
+            translate([h_in_x - 1, -h_open_h / 2])
+                square([1, h_open_h]);
+            translate([h_in_x + h_open_w - h_thick / 2,  h_open_h / 2 - 0.001])
+                circle(d = h_thick);
+            translate([h_in_x + h_open_w - h_thick / 2, -h_open_h / 2 + 0.001])
+                circle(d = h_thick);
+        }
+    }
+}
+
+module handle() {
+    translate([0, 0, h_center_z])
+        rotate([90, 0, 0])
+            linear_extrude(height = h_width, center = true)
+                handle_profile();
+}
+
+// -----------------------------------------
+// 組み立て(取手は +X 方向のみ)
+// -----------------------------------------
+module mug() {
+    union() {
+        body();
+        // 本体内部にはみ出さないよう、内側の空洞は削らない
+        difference() {
+            handle();
+            // マグ内壁より内側に入り込んだ部分をカット
+            translate([0, 0, bottom_th])
+                cylinder(h = height - bottom_th + 1, r = inner_r);
+        }
+    }
+}
+
+mug();
+```

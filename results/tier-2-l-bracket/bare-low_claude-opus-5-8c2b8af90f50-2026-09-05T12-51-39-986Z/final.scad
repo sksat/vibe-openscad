@@ -1,0 +1,40 @@
+// L-bracket with countersunk holes
+$fn = 64;
+
+W  = 50;   // 幅
+D  = 40;   // 水平面の奥行き
+H  = 40;   // 垂直面の高さ
+T  = 3;    // 板厚
+
+HOLE_D  = 4.5;  // 貫通穴径
+CS_D    = 8;    // 皿座面径
+CS_DEPTH= 2;    // 皿深さ
+
+EDGE = 10;      // 縁からの距離
+XOFF = W/2 - EDGE;   // ±15
+POS  = D - EDGE;     // 30 (外側の縁から10mm内側)
+
+// 皿穴(z-方向に貫通、皿は -Z 側=外側)
+module csk_hole(len) {
+    translate([0, 0, -1])
+        cylinder(d = HOLE_D, h = len + 2);
+    translate([0, 0, -0.01])
+        cylinder(d1 = CS_D, d2 = HOLE_D, h = CS_DEPTH);
+}
+
+difference() {
+    union() {
+        // 水平フランジ (+Y 方向)
+        translate([-W/2, 0, -T]) cube([W, D, T]);
+        // 垂直フランジ (+Z 方向)
+        translate([-W/2, -T, 0]) cube([W, T, H]);
+    }
+
+    // 水平面の皿穴(皿は下面 = 外側)
+    for (x = [-XOFF, XOFF])
+        translate([x, POS, -T]) csk_hole(T);
+
+    // 垂直面の皿穴(皿は -Y 面 = 外側)
+    for (x = [-XOFF, XOFF])
+        translate([x, -T, POS]) rotate([-90, 0, 0]) csk_hole(T);
+}

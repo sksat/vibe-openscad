@@ -1,0 +1,20 @@
+// 3段の階段状ピラミッド
+// 各段は中心を揃えて積み上げる
+
+module step_pyramid() {
+    // 1段目: 60mm x 60mm x 10mm
+    translate([0, 0, 0])
+        cube([60, 60, 10], center = true);
+
+    // 2段目: 40mm x 40mm x 10mm
+    translate([0, 0, 10])
+        cube([40, 40, 10], center = true);
+
+    // 3段目: 20mm x 20mm x 10mm
+    translate([0, 0, 20])
+        cube([20, 20, 10], center = true);
+}
+
+// Z=0 を底面にして配置
+translate([0, 0, 5])
+    step_pyramid();

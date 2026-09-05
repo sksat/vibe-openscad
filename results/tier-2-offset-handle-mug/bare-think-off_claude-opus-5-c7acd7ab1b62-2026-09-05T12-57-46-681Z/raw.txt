@@ -1,0 +1,80 @@
+```openscad
+// ===== パラメータ =====
+$fn = 120;
+
+body_od      = 80;      // 外径
+body_id      = 70;      // 内径
+body_h       = 90;      // 高さ
+bottom_t     = 6;       // 底の厚み
+
+handle_hole_h = 30;     // 取手内側の空間 高さ
+handle_hole_w = 25;     // 取手内側の空間 幅(半径方向)
+handle_t      = 8;      // 取手の断面の太さ(半径方向・上下方向)
+handle_w      = 12;     // 取手の厚み(Y方向)
+handle_z      = body_h / 2;   // 取手の高さ中心
+embed         = 3;      // 本体へのめり込み量(確実に union するため)
+
+body_or = body_od / 2;
+body_ir = body_id / 2;
+
+// ===== 本体 =====
+module body() {
+    difference() {
+        cylinder(h = body_h, r = body_or);
+        translate([0, 0, bottom_t])
+            cylinder(h = body_h - bottom_t + 1, r = body_ir);
+    }
+}
+
+// ===== 取手(D字形状:外側が半円、本体側が直線) =====
+// XZ 平面上の 2D の D 字リングを作り、Y 方向に押し出す
+module handle_profile() {
+    // 外形 D
+    outer_h = handle_hole_h + 2 * handle_t;   // 46
+    outer_w = handle_hole_w + handle_t;       // 33 (本体面から外側へ)
+
+    difference() {
+        // 外側 D 形状(左端が直線、右側が半円)
+        d_shape(outer_w, outer_h);
+        // 内側の空間 D 形状
+        translate([0, 0])
+            d_shape(handle_hole_w, handle_hole_h);
+    }
+}
+
+// 幅 w(x: 0 → w)、高さ h(z: -h/2 → h/2)の D 形状
+// 左端(x=0)が直線、右側が半円 + 直線部
+module d_shape(w, h) {
+    r = h / 2;
+    straight = max(w - r, 0.01);
+    union() {
+        translate([0, -r]) square([straight, h]);
+        translate([straight, 0]) circle(r = r);
+    }
+}
+
+module handle() {
+    // XZ 平面の 2D プロファイルを Y 方向に押し出して、+X 側面に配置
+    translate([body_or - embed, 0, handle_z])
+        rotate([90, 0, 0])
+            translate([0, 0, -handle_w / 2])
+                linear_extrude(height = handle_w)
+                    handle_profile();
+}
+
+// ===== 合体 =====
+module mug() {
+    union() {
+        body();
+        // 本体内部にはみ出さないよう、外形でクリップ
+        difference() {
+            handle();
+            // マグ内部の中空部分を侵さない
+            translate([0, 0, bottom_t])
+                cylinder(h = body_h - bottom_t + 1, r = body_ir);
+        }
+    }
+}
+
+mug();
+```

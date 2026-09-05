@@ -1,0 +1,54 @@
+```openscad
+// ===== マグカップ =====
+// 外径 80mm / 高さ 100mm / 肉厚 4mm / 底厚 6mm
+// 取手: リング状 (トーラス), 半径 12mm
+
+$fn = 96;
+
+outer_d    = 80;    // 外径
+outer_r    = outer_d / 2;
+height     = 100;   // 全高
+wall       = 4;     // 側面肉厚
+bottom     = 6;     // 底の厚み
+inner_r    = outer_r - wall;
+
+// 取手パラメータ
+handle_R   = 12;    // リングの半径(中心線)
+handle_r   = 5;     // リングの太さ(断面半径)
+handle_z   = height / 2;          // 取手の高さ(カップ中心高さ)
+handle_x   = outer_r + handle_R * 0.55;  // 外周から十分はみ出す位置
+
+// --- カップ本体 ---
+module cup_body() {
+    difference() {
+        cylinder(h = height, r = outer_r);
+        translate([0, 0, bottom])
+            cylinder(h = height - bottom + 1, r = inner_r);
+    }
+}
+
+// --- 取手(リング状 = トーラス) ---
+module torus(R, r) {
+    rotate_extrude(convexity = 10)
+        translate([R, 0, 0])
+            circle(r = r);
+}
+
+module handle() {
+    translate([handle_x, 0, handle_z])
+        rotate([90, 0, 0])          // リング面を垂直(XZ平面)に
+            torus(handle_R, handle_r);
+}
+
+// --- 組み立て ---
+difference() {
+    union() {
+        cup_body();
+        // 取手はカップ外壁と交差させて確実に接合
+        handle();
+    }
+    // 内側の飲み物空間に取手がはみ出さないように削る
+    translate([0, 0, bottom])
+        cylinder(h = height - bottom + 1, r = inner_r);
+}
+```

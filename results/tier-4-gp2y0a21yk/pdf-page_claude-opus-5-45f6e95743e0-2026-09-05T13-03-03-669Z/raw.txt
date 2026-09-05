@@ -1,0 +1,154 @@
+```openscad
+// =====================================================================
+//  SHARP GP2Y0A21YK0F  Distance Measuring Sensor (10 - 80 cm, analog)
+//  Outline model based on the "Outline Dimensions" drawing (sheet 2)
+//  Unit : mm   /   Origin : center of the body
+//  +Z = up (lens side)  /  +Y = front  /  long axis = X
+//  Unspecified tolerances : +-0.3 mm   ( ) = reference dimension
+// =====================================================================
+
+$fn = 72;
+
+// ---------------- main dimensions -----------------------------------
+OVERALL_L   = 37.0;    // total length incl. mounting tabs
+CASE_L      = 29.5;    // lens case length
+CASE_D      = 13.0;    // lens case depth (Y)
+TOTAL_H     = 13.5;    // total height (front view)
+
+BAR_T       = 1.5;     // connecting bar / mounting tab thickness (2-1.5)
+BAR_D       = 7.5;     // bar depth (Y)  = 2 x R3.75
+TAB_R       = 3.75;    // R3.75 tab ends
+HOLE_D      = 3.2;     // phi 3.2 mounting holes
+HOLE_DX     = 14.75;   // hole pitch/2  ( (37-2*3.75)/2 )
+
+LENS_PITCH  = 20.0;    // *20 +-0.1  (lens center to lens center)
+LENS_EDGE   = 4.5;     // *4.5 (case edge -> emitter lens center)
+LENS_PROJ   = 0.5;     // lens frame projection above the case top
+LENS_BOSS   = 11.0;    // square lens frame
+LENS_DIA    = 9.0;     // circular lens window
+
+WIN_L       = 12.0;    // rectangular window between the lenses
+WIN_D       = 6.5;
+WIN_Z       = 0.6;
+
+PWB_T       = 1.2;     // PWB thickness
+PWB_L       = 16.3;
+PWB_H       = 8.4;
+
+CONN_W      = 10.1;    // connector body (JST PH / JCTC 12001W90-3P-HF)
+CONN_D      = 3.3;     // (3.3) reference
+CONN_H      = 5.0;
+NOTCH_D     = 3.0;     // cable lead-out notch in the bar
+
+CABLE_D     = 3.0;     // cable bundle (simplified round rod)
+CABLE_L     = 40.0;
+
+// ---------------- derived -------------------------------------------
+Z_BOT     = -TOTAL_H/2;              // -6.75
+Z_BAR_TOP = Z_BOT + BAR_T;           // -5.25
+CASE_H    = TOTAL_H - BAR_T - LENS_PROJ;
+Z_CASE_TOP= Z_BAR_TOP + CASE_H;      // +6.25
+EMIT_X    = -CASE_L/2 + LENS_EDGE;   // -10.25
+DET_X     = EMIT_X + LENS_PITCH;     //  +9.75
+Y_BACK    = -CASE_D/2;               // rear face of the case
+
+// =====================================================================
+//  connecting bar (thin plate with the 2 mounting holes + cable notch)
+// =====================================================================
+module connecting_bar() {
+    difference() {
+        hull()
+            for (s = [-1, 1])
+                translate([s*HOLE_DX, 0, Z_BOT])
+                    cylinder(r = TAB_R, h = BAR_T);
+
+        // phi 3.2 mounting holes
+        for (s = [-1, 1])
+            translate([s*HOLE_DX, 0, Z_BOT - 1])
+                cylinder(d = HOLE_D, h = BAR_T + 2);
+
+        // cable lead-out notch (rear edge, center)
+        translate([-CONN_W/2, -BAR_D/2 - 1, Z_BOT - 1])
+            cube([CONN_W, NOTCH_D + 1, BAR_T + 2]);
+    }
+}
+
+// gussets between the tabs and the case (see front view)
+module gusset(s) {
+    translate([0, BAR_D/2, 0])
+    rotate([90, 0, 0])
+    linear_extrude(height = BAR_D)
+        polygon(points = [
+            [s*CASE_L/2,           Z_BAR_TOP],
+            [s*(CASE_L/2 + 3.0),   Z_BAR_TOP],
+            [s*CASE_L/2,           Z_BAR_TOP + 4.0]
+        ]);
+}
+
+// =====================================================================
+//  lens case body
+// =====================================================================
+module lens_case() {
+    translate([0, 0, Z_BAR_TOP])
+        cube([CASE_L, CASE_D, CASE_H], center = false);
+}
+
+// =====================================================================
+//  one lens (square frame + round lens window sticking out on top)
+// =====================================================================
+module lens(x) {
+    translate([x, 0, Z_CASE_TOP]) {
+        // frame
+        translate([0, 0, LENS_PROJ/2])
+            cube([LENS_BOSS, LENS_BOSS, LENS_PROJ], center = true);
+        // lens window
+        cylinder(d = LENS_DIA, h = LENS_PROJ + 0.3);
+        translate([0, 0, LENS_PROJ + 0.3])
+            cylinder(d1 = LENS_DIA, d2 = LENS_DIA - 1.4, h = 0.4);
+    }
+}
+
+// =====================================================================
+//  PWB + connector + cable  (rear side, -Y)
+// =====================================================================
+module pwb_and_cable() {
+    // PWB
+    translate([-PWB_L/2, Y_BACK - PWB_T, Z_BOT])
+        cube([PWB_L, PWB_T, PWB_H]);
+
+    // connector housing (JST PHR-3 mating side)
+    translate([-CONN_W/2, Y_BACK - PWB_T - CONN_D, Z_BOT])
+        cube([CONN_W, CONN_D, CONN_H]);
+
+    // cable (simplified round bundle)
+    translate([0, Y_BACK - PWB_T - CONN_D, Z_BOT + CONN_H/2])
+        rotate([90, 0, 0])
+            cylinder(d = CABLE_D, h = CABLE_L);
+    translate([0, Y_BACK - PWB_T - CONN_D - CABLE_L, Z_BOT + CONN_H/2])
+        sphere(d = CABLE_D);
+}
+
+// =====================================================================
+//  complete sensor
+// =====================================================================
+module gp2y0a21yk0f() {
+    difference() {
+        union() {
+            // case body (centered on X / Y)
+            translate([-CASE_L/2, -CASE_D/2, 0]) lens_case();
+            connecting_bar();
+            gusset( 1);
+            gusset(-1);
+            lens(EMIT_X);      // light emitter
+            lens(DET_X);       // light detector
+            pwb_and_cable();
+        }
+        // shallow rectangular window/recess between the two lenses
+        translate([(EMIT_X + DET_X)/2, 0, Z_CASE_TOP - WIN_Z + 0.01])
+            cube([WIN_L, WIN_D, WIN_Z + 1], center = false ?
+                 undef : true);
+    }
+}
+
+gp2y0a21yk0f();
+```
