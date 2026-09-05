@@ -361,8 +361,12 @@ export function parseModelLabel(modelStr: string): MatrixSegment[] {
     );
   }
   // パターンが何も拾えなかった id(命名規則から外れる新種)だけ、
-  // provider から vendor を引いて組み立てる。
-  const vendor = providerVendor(declared.provider);
+  // provider から vendor を引いて組み立てる。ただしセルフホストの
+  // provider は API プロトコル(`openai-self-hosted`)でしかないので、
+  // ここから vendor を推定しない(llama-3.2-3b に OpenAI ロゴが付く)。
+  const vendor = isSelfHostedProvider(declared.provider)
+    ? undefined
+    : providerVendor(declared.provider);
   if (vendor) {
     return [
       { kind: "vendor", label: vendor, vendor },
