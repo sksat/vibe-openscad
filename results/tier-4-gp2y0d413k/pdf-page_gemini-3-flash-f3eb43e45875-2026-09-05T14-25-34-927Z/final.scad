@@ -1,0 +1,90 @@
+/*
+    Sharp Distance Sensor GP2Y0D413K0F
+    Units: mm
+    
+    Orientation:
+    - Origin: Center of the main plastic body
+    - +Z direction: Optical axis (front of the sensor)
+    - -Z direction: Mounting surface (PWB/Connector side)
+*/
+
+// --- Parameters ---
+$fn = 32;
+
+// Body Dimensions (Main Case)
+BODY_W = 29.45;
+BODY_H = 13.5;
+BODY_D = 13.4; // 7.1 (front) + 6.3 (back)
+
+// Lens Parts
+LENS_PROTRUSION = 2.0;
+LENS_SPACING = 19.7;
+LENS_X_OFFSET = 4.5; // From left edge to first lens center
+LENS_DIA = 8.0;      // Approximate diameter based on 8.4mm casing
+
+// PWB (Printed Wiring Board)
+PWB_THICKNESS = 1.2;
+PWB_W = BODY_W;
+PWB_H = 13.05; // Based on side view height
+
+// Connector
+CONN_W = 10.1;
+CONN_TOTAL_H = 18.9; // Total height from top of device
+CONN_EXT_H = CONN_TOTAL_H - BODY_H; // Extension below the body
+CONN_D = 3.3;        // Reference dimension from side view
+CONN_X_POS = (7.5 + 4.15) - (BODY_W / 2); // Center of connector pins relative to body center
+
+module GP2Y0D413K0F() {
+    // 1. Main Case (Carbonic ABS - Black)
+    color("DimGray") {
+        difference() {
+            // Main block centered at origin
+            cube([BODY_W, BODY_H, BODY_D], center = true);
+            
+            // Side view shows a step down to 13.05mm at the back section (6.3mm)
+            translate([0, (BODY_H/2), -(BODY_D/2) + (6.3/2)])
+                cube([BODY_W + 1, BODY_H - 13.05 + 0.1, 6.3 + 0.1], center = true);
+        }
+    }
+
+    // 2. Lenses (Acrylic Resin - Dark Blue/Clear)
+    // Calculating X positions relative to center
+    lens1_x = -BODY_W/2 + LENS_X_OFFSET;
+    lens2_x = lens1_x + LENS_SPACING;
+    
+    color("MidnightBlue", 0.8) {
+        for(x = [lens1_x, lens2_x]) {
+            translate([x, 0, BODY_D/2])
+                cylinder(d = LENS_DIA, h = LENS_PROTRUSION);
+        }
+    }
+
+    // 3. PWB (Paper Phenol - Brownish)
+    // Positioned at the back (-Z)
+    color("Sienna") {
+        translate([0, (BODY_H - PWB_H)/2, -(BODY_D/2) - (PWB_THICKNESS/2)])
+            cube([PWB_W, PWB_H, PWB_THICKNESS], center = true);
+    }
+
+    // 4. Connector Housing (White/Grey)
+    color("Ivory") {
+        // Connector sticks out from the bottom (-Y)
+        translate([CONN_X_POS, -BODY_H/2 - CONN_EXT_H/2, -(BODY_D/2) + CONN_D/2])
+            cube([CONN_W, CONN_EXT_H, CONN_D], center = true);
+            
+        // Connector base inside the body area
+        translate([CONN_X_POS, -BODY_H/2 + 2/2, -(BODY_D/2) + CONN_D/2])
+            cube([CONN_W, 2, CONN_D], center = true);
+    }
+    
+    // 5. Metal Pins (Simplified)
+    color("Silver") {
+        for(i = [-1 : 1]) {
+            translate([CONN_X_POS + (i * 2.54), -BODY_H/2 - CONN_EXT_H - 1, -(BODY_D/2) + CONN_D/2])
+                cube([0.6, 2, 0.6], center = true);
+        }
+    }
+}
+
+// Render the model
+GP2Y0D413K0F();

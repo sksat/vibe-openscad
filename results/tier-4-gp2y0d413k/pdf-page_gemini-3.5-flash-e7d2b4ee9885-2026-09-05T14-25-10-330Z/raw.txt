@@ -1,0 +1,98 @@
+シャープ製の距離センサ **GP2Y0D413K0F** のデータシートに基づき、指定された座標系（本体中心が原点、PWB・コネクタ側が -Z 方向、センサーの照射・受光面が +Y 方向）に合わせた OpenSCAD モデルを作成しました。
+
+### モデルの特徴
+* **レンズケース本体**: 炭素配合ABS樹脂（導電性樹脂）をイメージしたダークグレーでモデリング。
+* **レンズ部分**: 可視光カット樹脂の特性に合わせ、極めて濃い紫（ほぼ黒）でエミッタ（丸型）とディテクタ（角丸ベース＋丸型）を表現。
+* **PWB (基板)**: 紙フェノール基板特有の茶褐色。
+* **コネクタ**: ハウジング（アイボリー系）と3本の金属ピンを配置。
+
+### OpenSCAD コード
+
+```openscad
+// Sharp GP2Y0D413K0F Distance Measuring Sensor
+// Unit: mm
+// Coordinate System: 
+//   - Origin (0,0,0): Center of the main lens case body
+//   - -Z direction: Mounting side (PWB / Connector)
+//   - +Y direction: Sensor front (Lenses)
+
+$fn = 50;
+
+// Color Definitions
+color_case = [0.15, 0.15, 0.15]; // Carbonic ABS (Dark Gray)
+color_pwb = [0.65, 0.45, 0.2];   // Paper Phenol (Brownish Yellow)
+color_conn = [0.92, 0.92, 0.88]; // Connector Housing (Ivory/White)
+color_lens = [0.08, 0.05, 0.12]; // Visible light cut-off resin (Dark Violet)
+color_pin = [0.8, 0.8, 0.8];     // Metal Pins (Silver)
+
+module gp2y0d413k0f() {
+    // Principal Dimensions
+    width = 29.45;       // X-axis width
+    depth = 7.1;         // Y-axis thickness of the main body
+    height = 13.05;      // Z-axis height of the lens case
+    
+    pwb_w = 29.45;
+    pwb_d = 7.1;
+    pwb_h = 1.2;
+    
+    conn_w = 10.1;
+    conn_d = 5.0;        // Estimated depth of the connector
+    conn_h = 3.3;        // Protrusion below PWB
+    conn_x_offset = 1.975; // Offset to the right based on datasheet dimensions
+    
+    // Lens positions relative to the center
+    emitter_x = -width/2 + 4.5;      // -10.225 (Left side)
+    detector_x = emitter_x + 19.7;   // 9.475 (Right side)
+    
+    // 1. Lens Case Body
+    color(color_case) {
+        // Main block
+        cube([width, depth, height], center=true);
+        
+        // Light Emitter Holder (Ø8.4, 2mm protrusion)
+        translate([emitter_x, depth/2, 0])
+            rotate([-90, 0, 0])
+                cylinder(d=8.4, h=2.0);
+                
+        // Light Detector Holder (Rectangular base)
+        translate([detector_x, depth/2 + 1.0, 0])
+            cube([10.0, 2.0, 8.4], center=true);
+    }
+    
+    // 2. Lenses
+    color(color_lens) {
+        // Emitter Lens (Ø7.2, total 6.3mm from body front face)
+        translate([emitter_x, depth/2 + 2.0, 0])
+            rotate([-90, 0, 0])
+                cylinder(d=7.2, h=4.3);
+                
+        // Detector Lens (Ø7.2)
+        translate([detector_x, depth/2 + 2.0, 0])
+            rotate([-90, 0, 0])
+                cylinder(d=7.2, h=4.3);
+    }
+    
+    // 3. PWB (Printed Wiring Board)
+    color(color_pwb) {
+        translate([0, 0, -height/2 - pwb_h/2])
+            cube([pwb_w, pwb_d, pwb_h], center=true);
+    }
+    
+    // 4. Connector Housing
+    color(color_conn) {
+        translate([conn_x_offset, 0, -height/2 - pwb_h - conn_h/2])
+            cube([conn_w, conn_d, conn_h], center=true);
+    }
+    
+    // 5. Connector Pins (3 Pins)
+    color(color_pin) {
+        for (i = [-1 : 1]) {
+            translate([conn_x_offset + i * 1.5, 0, -height/2 - pwb_h - conn_h - 1.0])
+                cylinder(d=0.6, h=2.0, center=true);
+        }
+    }
+}
+
+// Render the assembly
+gp2y0d413k0f();
+```
