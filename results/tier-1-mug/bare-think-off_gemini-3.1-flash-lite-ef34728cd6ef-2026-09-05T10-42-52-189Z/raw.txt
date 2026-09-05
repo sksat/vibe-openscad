@@ -1,0 +1,29 @@
+```openscad
+$fn = 100;
+
+// マグカップ本体
+difference() {
+    // 外形
+    cylinder(h = 100, d = 80);
+    
+    // 内側のくり抜き
+    translate([0, 0, 6])
+    cylinder(h = 94, d = 80 - 4 * 2);
+}
+
+// 取手
+translate([40 - 2, 0, 50])
+rotate([0, 90, 0])
+difference() {
+    // 取手のリング
+    torus_major = 15;
+    torus_minor = 6;
+    rotate_extrude()
+    translate([torus_major, 0, 0])
+    circle(r = torus_minor);
+    
+    // カップとの接続部分を切り取るための形状
+    translate([-torus_major, 0, 0])
+    cube([20, 40, 40], center = true);
+}
+```

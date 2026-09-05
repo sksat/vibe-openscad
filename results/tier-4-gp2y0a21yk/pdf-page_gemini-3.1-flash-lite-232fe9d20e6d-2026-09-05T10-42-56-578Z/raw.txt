@@ -1,0 +1,47 @@
+```openscad
+// GP2Y0A21YK0F 外形モデル
+// 単位: mm
+// 中心を原点とする
+
+$fn = 50;
+
+module gp2y0a21yk0f() {
+    // 連結バー部 (取り付け部)
+    // 幅37mm, 高さ13.5mm(Z), 厚み2mm(Y)
+    color("gray")
+    translate([0, 0, 13.5/2 - 2/2])
+    difference() {
+        cube([37, 2, 13.5], center=true);
+        
+        // 取付穴
+        translate([-37/2 + 3.75, 0, 0]) rotate([90, 0, 0]) cylinder(d=3.2, h=5, center=true);
+        translate([37/2 - 3.75, 0, 0]) rotate([90, 0, 0]) cylinder(d=3.2, h=5, center=true);
+    }
+
+    // レンズ部本体ケース
+    // 幅29.5mm, 奥行(Y) 8.4mm (連結部除く), 高さ 7.2mm(Z)
+    color("black")
+    translate([0, 8.4/2 + 2/2, 7.2/2 + 2])
+    cube([29.5, 8.4, 7.2], center=true);
+
+    // レンズ部突起 (2箇所)
+    color("dimgray")
+    for (x = [-10, 10]) {
+        translate([x, 8.4/2 + 2/2, 7.2/2 + 2 + 7.2/2])
+        cylinder(d=7, h=2, center=true);
+    }
+
+    // 下部コネクタ部
+    color("black")
+    translate([0, 2/2 + 3.3/2, -13.5/2 + 3.3/2])
+    cube([10.1, 3.3, 3.3], center=true);
+
+    // ケーブル(簡易表現)
+    color("white")
+    translate([0, 2/2 + 3.3 + 5, -13.5/2 + 3.3/2])
+    rotate([90, 0, 0])
+    cylinder(d=2, h=10);
+}
+
+gp2y0a21yk0f();
+```

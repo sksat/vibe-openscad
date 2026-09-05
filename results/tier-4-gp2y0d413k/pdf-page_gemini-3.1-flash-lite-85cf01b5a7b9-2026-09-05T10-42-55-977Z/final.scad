@@ -1,0 +1,56 @@
+// GP2Y0D413K0F Sensor Model
+// Coordinate System: Origin is center of the main body
+// +Y: Forward (Lens direction), +Z: Up, +X: Right
+
+$fn = 32;
+
+module GP2Y0D413K0F() {
+    // Dimensions
+    main_w = 29.45;
+    main_h = 13.5;
+    main_d = 7.1; // Thickness of the main body block
+    
+    lens_case_w = 20.8;
+    lens_case_h = 8.4;
+    lens_case_d = 2.0;
+    
+    pwb_w = 29.45;
+    pwb_h = 3.3;
+    pwb_d = 1.2;
+    
+    // 1. Main body case
+    color("gray")
+    translate([0, -main_d/2, 0])
+        cube([main_w, main_d, main_h], center = true);
+    
+    // 2. Lens case
+    color("black")
+    translate([0, -main_d/2 - lens_case_d/2, 0])
+        cube([lens_case_w, lens_case_d, lens_case_h], center = true);
+        
+    // 3. Lenses
+    // Light emitter (Left, center is -7.6 from center of unit)
+    // Based on drawing: center to emitter = 4.5 from left edge? 
+    // Actually, center is (-29.45/2 + 4.5) = -10.225 from center
+    color("darkgray")
+    translate([-10.225, -main_d/2 - lens_case_d, 0])
+        rotate([90, 0, 0])
+        cylinder(r = 2.5, h = 0.5);
+        
+    // Light detector (Right, center is 19.7 from emitter center)
+    color("darkgray")
+    translate([-10.225 + 19.7, -main_d/2 - lens_case_d, 0])
+        cube([4.0, 0.5, 3.0], center = true);
+        
+    // 4. PWB
+    color("green")
+    translate([0, -main_d/2 + 1.0, -main_h/2 - pwb_d/2])
+        cube([pwb_w, pwb_h, pwb_d], center = true);
+        
+    // 5. Connector
+    color("white")
+    translate([0, -main_d/2 + 1.0, -main_h/2 - pwb_d - 1.5])
+        cube([10.1, 3.0, 3.0], center = true);
+}
+
+GP2Y0D413K0F();

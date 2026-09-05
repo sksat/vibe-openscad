@@ -1,0 +1,19 @@
+前回のコードでは、配置の指定（「頭部の底面が原点(z=0)に来る」かつ「シャンクはz<0側」）に対し、頭部を z=0 から上（+Z方向）に配置し、シャンクを z=0 から下（-Z方向）に配置することで正しく実装されていましたが、より明確な記述に整理しました。
+
+```openscad
+// M8 六角ボルト (ねじ山なし)
+
+// 頭部: 対辺距離 13mm、高さ 5.3mm
+// cylinder(fn=6)のrは内接円半径(対辺距離の半分)を指定する
+head_across_flats = 13;
+head_height = 5.3;
+shank_diameter = 8;
+shank_length = 30;
+
+// 頭部: z=0 から z=5.3 まで配置
+cylinder(r = (head_across_flats / 2) / cos(180/6), h = head_height, $fn = 6);
+
+// シャンク: z=0 から z=-30 まで配置
+translate([0, 0, -shank_length])
+cylinder(r = shank_diameter / 2, h = shank_length, $fn = 64);
+```

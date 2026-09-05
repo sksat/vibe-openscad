@@ -1,0 +1,58 @@
+// Parameters
+leaf_width = 25;
+leaf_height = 30;
+leaf_thick = 2;
+pin_diam = 4;
+pin_clearance = 0.3;
+knuckle_od = 8;
+knuckle_id = pin_diam + pin_clearance;
+knuckle_len = leaf_height / 5;
+hole_pitch = 8;
+
+module hinge_leaf(is_left = true) {
+    difference() {
+        union() {
+            // Plate
+            translate([is_left ? -leaf_width : 0, -leaf_height / 2, 0])
+                cube([leaf_width, leaf_height, leaf_thick]);
+            
+            // Knuckles
+            for (i = [0:4]) {
+                if ((is_left && (i == 0 || i == 2 || i == 4)) || (!is_left && (i == 1 || i == 3))) {
+                    translate([0, -leaf_height / 2 + i * knuckle_len + knuckle_len / 2, 0])
+                        rotate([-90, 0, 0])
+                        cylinder(d = knuckle_od, h = knuckle_len, center = true);
+                }
+            }
+        }
+        
+        // Pin hole
+        rotate([-90, 0, 0])
+            cylinder(d = knuckle_id, h = leaf_height + 1, center = true);
+        
+        // Countersunk holes
+        for (i = [-1:1]) {
+            y_pos = i * hole_pitch;
+            x_pos = is_left ? -15 : 15;
+            translate([x_pos, y_pos, -0.1]) {
+                cylinder(d = 3.2, h = leaf_thick + 0.2);
+                translate([0, 0, leaf_thick - 1])
+                    cylinder(d1 = 3.2, d2 = 6, h = 1.1);
+            }
+        }
+    }
+}
+
+// Main assembly
+union() {
+    // Left leaf
+    hinge_leaf(true);
+    
+    // Right leaf
+    hinge_leaf(false);
+    
+    // Pin
+    color("silver")
+        rotate([-90, 0, 0])
+        cylinder(d = pin_diam, h = 32, center = true);
+}

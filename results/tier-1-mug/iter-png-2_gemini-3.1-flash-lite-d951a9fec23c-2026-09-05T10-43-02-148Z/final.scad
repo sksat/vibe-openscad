@@ -1,0 +1,30 @@
+$fn = 100;
+
+// マグカップ本体
+union() {
+    difference() {
+        // 外形
+        cylinder(h = 100, d = 80);
+        
+        // 内側のくり抜き
+        translate([0, 0, 6])
+        cylinder(h = 100, d = 80 - 4 * 2);
+    }
+
+    // 取手
+    // カップの外周(半径40mm)から外側に配置する
+    // 指を通せるようmajor_radius(リングの半径)を大きくし、
+    // カップと重なる部分はunionで一体化させる
+    translate([40 - 2, 0, 50]) {
+        rotate([0, 90, 0]) {
+            torus(major_radius = 20, minor_radius = 6);
+        }
+    }
+}
+
+// トーラス作成用モジュール
+module torus(major_radius, minor_radius) {
+    rotate_extrude()
+    translate([major_radius, 0, 0])
+    circle(r = minor_radius);
+}

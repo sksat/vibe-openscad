@@ -1,0 +1,29 @@
+$fn = 100;
+
+// マグカップ本体
+difference() {
+    // 外形
+    cylinder(h = 100, d = 80);
+    
+    // 内側のくり抜き
+    translate([0, 0, 6])
+    cylinder(h = 100, d = 80 - 4 * 2);
+}
+
+// 取手
+// 中心高さ(50mm)に配置し、カップの外壁に接するように調整
+translate([40 - 4, 0, 50]) {
+    rotate([0, 90, 0]) {
+        // 半径12mmの取手（ドーナツ型）
+        // major_radiusは中心からチューブ中心までの距離
+        // minor_radiusはチューブの半径(太さ)
+        torus(major_radius = 12, minor_radius = 4);
+    }
+}
+
+// トーラス作成用モジュール
+module torus(major_radius, minor_radius) {
+    rotate_extrude()
+    translate([major_radius, 0, 0])
+    circle(r = minor_radius);
+}

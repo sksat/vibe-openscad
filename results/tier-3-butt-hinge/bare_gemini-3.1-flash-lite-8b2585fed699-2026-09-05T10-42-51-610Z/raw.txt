@@ -1,0 +1,63 @@
+```openscad
+// Parameters
+leaf_w = 25;
+leaf_h = 30;
+leaf_t = 2;
+knuckle_od = 8;
+knuckle_id = 4.3;
+pin_d = 4;
+pin_l = 32;
+knuckle_segment = 6; // 30mm / 5 = 6mm
+hole_pitch = 8;
+
+$fn = 60;
+
+module hinge() {
+    // Left Leaf
+    difference() {
+        union() {
+            translate([-leaf_w, -leaf_h / 2, 0]) cube([leaf_w, leaf_h, leaf_t]);
+            for (i = [0, 2, 4]) {
+                translate([0, -leaf_h / 2 + i * knuckle_segment, 0])
+                rotate([-90, 0, 0])
+                cylinder(d = knuckle_od, h = knuckle_segment);
+            }
+        }
+        // Pin hole
+        translate([0, -leaf_h / 2, 0]) rotate([-90, 0, 0]) cylinder(d = knuckle_id, h = leaf_h);
+        // Screw holes
+        for (i = [-1, 0, 1]) {
+            translate([-12.5, i * hole_pitch, -1]) {
+                cylinder(d = 3.2, h = 4);
+                cylinder(d1 = 6, d2 = 3.2, h = 1);
+            }
+        }
+    }
+
+    // Right Leaf
+    difference() {
+        union() {
+            translate([0, -leaf_h / 2, 0]) cube([leaf_w, leaf_h, leaf_t]);
+            for (i = [1, 3]) {
+                translate([0, -leaf_h / 2 + i * knuckle_segment, 0])
+                rotate([-90, 0, 0])
+                cylinder(d = knuckle_od, h = knuckle_segment);
+            }
+        }
+        // Pin hole
+        translate([0, -leaf_h / 2, 0]) rotate([-90, 0, 0]) cylinder(d = knuckle_id, h = leaf_h);
+        // Screw holes
+        for (i = [-1, 0, 1]) {
+            translate([12.5, i * hole_pitch, -1]) {
+                cylinder(d = 3.2, h = 4);
+                cylinder(d1 = 6, d2 = 3.2, h = 1);
+            }
+        }
+    }
+
+    // Pin
+    translate([0, -pin_l / 2, 0]) rotate([-90, 0, 0]) cylinder(d = pin_d, h = pin_l);
+}
+
+hinge();
+```
