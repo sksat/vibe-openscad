@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { resolveModel } from "@vibe-openscad/runners/src/models.js";
 import { computeCostUsd } from "@vibe-openscad/runners/src/pricing.js";
 import type { RunMeta, Task } from "@vibe-openscad/runners/src/schema.js";
 import { loadDataset } from "./results.js";
@@ -191,6 +192,10 @@ export function modelSortKey(model: string): [number, number, number, string] {
     else if (/-mini(\b|-)/.test(model)) size = 1;
     return [2, -major * 1000, size, model];
   }
+  // 命名規則から外れるモデル(gpt-5.6-sol のような tier 名)は models.yml の
+  // `sort:` で明示できる。
+  const sort = resolveModel(model)?.sort;
+  if (sort) return [sort.family, -sort.version, sort.size ?? 0, model];
   // 該当なし: 末尾扱いで辞書順。
   return [99, 0, 0, model];
 }
@@ -312,7 +317,7 @@ function isHarnessHead(part: string): boolean {
 }
 
 /** Parse one model id string into vendor + model badges (or fall through). */
-function parseModelLabel(modelStr: string): MatrixSegment[] {
+export function parseModelLabel(modelStr: string): MatrixSegment[] {
   // Anthropic model: claude-(fable|opus|sonnet|haiku)-MAJOR[-MINOR][-YYYYMMDD]
   // Minor is constrained to 1-3 digits to disambiguate from an 8-digit date
   // (e.g. claude-opus-4-20250514 has no minor, just major + date).
@@ -430,6 +435,20 @@ function parseModelLabel(modelStr: string): MatrixSegment[] {
     return [{ kind: "model", label: modelStr, title: modelStr }];
   }
 
+  // 命名規則から外れるモデルは models.yml の `label:` で表示名を宣言できる
+  // (vendor バッジは provider から引く)。
+  const spec = resolveModel(modelStr);
+  if (spec?.label) {
+    const vendor = providerVendor(spec.provider);
+    if (vendor) {
+      return [
+        { kind: "vendor", label: vendor, vendor },
+        { kind: "model", label: spec.label, title: modelStr, vendor },
+      ];
+    }
+    return [{ kind: "model", label: spec.label, title: modelStr }];
+  }
+
   return [{ kind: "other", label: modelStr }];
 }
 
@@ -479,7 +498,7 @@ export function shortModelLabel(model: string): string {
   if (gemini) {
     return `gemini ${gemini[1]} ${gemini[2]}`;
   }
-  return model;
+  return resolveModel(model)?.label ?? model;
 }
 
 /**
@@ -583,77 +602,29 @@ export function effortVariantOf(meta: RunMeta): string | null {
 }
 
 /**
- * Strip a date snapshot suffix (`-YYYYMMDD` / `-YYYY-MM-DD`) so model-family
- * matchers can be written against the alias name.
- */
-function modelBaseName(model: string): string {
-  return model.replace(/-\d{4}-\d{2}-\d{2}$/, "").replace(/-\d{8}$/, "");
-}
-
-/**
- * Provider-default reasoning effort for models that support effort. Returns
- * null for models without effort knob (Sonnet 4.5, Haiku 4.5, gpt-4.1, etc.)
- * or providers we haven't modeled yet (Gemini).
+ * Provider-default reasoning effort。値は models.yml(モデルカタログ)側に
+ * あり、ここは参照するだけ。effort ノブを持たないモデル(Sonnet 4.5 /
+ * Haiku 4.5 / gpt-4.1 等)はカタログで `effort: null` と宣言されている。
  */
 function defaultEffortFor(
   provider: string | null | undefined,
   model: string | null | undefined,
 ): string | null {
   if (!provider || !model) return null;
-  const base = modelBaseName(model);
-  if (provider === "anthropic") {
-    // Fable 5 / Opus 4.5+ / Sonnet 4.6+ accept `output_config.effort` and
-    // default to "high".
-    if (/^claude-fable-\d/.test(base)) return "high";
-    if (/^claude-opus-4-([5-9]|\d{2,})/.test(base)) return "high";
-    if (/^claude-sonnet-4-6$/.test(base)) return "high";
-    if (/^claude-sonnet-4-([7-9]|\d{2,})/.test(base)) return "high";
-    return null;
-  }
-  if (provider === "openai") {
-    // gpt-5 family + reasoning o-series default to "medium".
-    if (/^gpt-5(\.\d+)?(-mini|-nano|-pro)?$/.test(base)) return "medium";
-    if (/^gpt-5(\.\d+)?-codex(-max|-mini)?$/.test(base)) return "medium";
-    if (/^o3(-mini|-pro)?$/.test(base)) return "medium";
-    if (/^o4-mini$/.test(base)) return "medium";
-    return null;
-  }
-  // TODO: Gemini's `thinkingConfig.thinkingBudget` is a different axis (token
-  // budget, not symbolic effort levels) — not modeled in this helper yet.
-  return null;
+  return resolveModel(model, provider)?.effort ?? null;
 }
 
 /**
- * Provider-default thinking mode for Anthropic models that take a
- * `thinking` parameter. Returns null when the model doesn't have a
- * "thinking" axis distinct from effort (OpenAI, Gemini are handled
- * separately or not at all).
+ * Provider-default thinking mode。同じく models.yml 由来。thinking 軸を
+ * 持たない provider / モデル(OpenAI は thinking を effort に内包する)は
+ * カタログに `thinking` を宣言しないので null になる。
  */
 function defaultThinkingFor(
   provider: string | null | undefined,
   model: string | null | undefined,
 ): string | null {
-  if (!model) return null;
-  const base = modelBaseName(model);
-  if (provider === "anthropic") {
-    // Fable 5: adaptive thinking が常時 on(thinking 省略でも適用される)。
-    // 明示の `{type: "disabled"}` は API がエラーを返す = thinking off は
-    // 存在しない。https://platform.claude.com/docs/en/build-with-claude/adaptive-thinking
-    if (/^claude-fable-\d/.test(base)) return "adaptive";
-    // Adaptive thinking is the default on Opus 4.6+/Sonnet 4.6+.
-    if (/^claude-opus-4-([6-9]|\d{2,})$/.test(base)) return "adaptive";
-    if (/^claude-sonnet-4-([6-9]|\d{2,})$/.test(base)) return "adaptive";
-    // Older Anthropic supports thinking via `enabled+budget_tokens` only when
-    // explicitly opted in. Default behaviour without `thinking` is "off".
-    if (/^claude-(opus|sonnet|haiku)-/.test(base)) return "off";
-    return null;
-  }
-  if (provider === "google") {
-    // Gemini 2.5 and 3.x default to `thinkingBudget: -1` (dynamic).
-    if (/^gemini-(2\.5|3)/.test(base)) return "dynamic";
-    return null;
-  }
-  return null;
+  if (!provider || !model) return null;
+  return resolveModel(model, provider)?.thinking ?? null;
 }
 
 /**
