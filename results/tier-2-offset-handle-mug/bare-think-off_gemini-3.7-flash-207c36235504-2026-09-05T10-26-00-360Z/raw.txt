@@ -1,0 +1,40 @@
+```openscad
+$fn = 100;
+
+module handle_2d() {
+    // XZ平面における取手の2Dプロファイル
+    // 外側の厚みを6mmとして設定
+    difference() {
+        // 外形（本体に確実に食い込ませるため X=35 から配置）
+        union() {
+            translate([35, -21]) square([15, 42]);
+            translate([50, 0]) circle(r = 21);
+        }
+        // 内側の空間（幅25mm: X=40〜65, 高さ30mm: Z=-15〜15）
+        union() {
+            translate([40, -15]) square([10, 30]);
+            translate([50, 0]) circle(r = 15);
+        }
+    }
+}
+
+module mug() {
+    difference() {
+        // 外側の本体と取手を結合
+        union() {
+            cylinder(r = 40, h = 90); // 外径80mm (r=40), 高さ90mm
+            
+            // 取手を+X方向、高さ中央(Z=45)に配置、Y軸方向に厚み12mmで押し出し
+            translate([0, 0, 45])
+                rotate([90, 0, 0])
+                linear_extrude(height = 12, center = true)
+                handle_2d();
+        }
+        // 内側をくり抜く（内径70mm (r=35), 底面の厚み6mm）
+        translate([0, 0, 6])
+            cylinder(r = 35, h = 90);
+    }
+}
+
+mug();
+```

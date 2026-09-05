@@ -193,6 +193,18 @@ matrix:
     model: gemini-3.8-flash
     modelOptions:
       config: { thinkingConfig: { thinkingLevel: low } }
+  # 3.7 は 3.8 と同じく thinkingLevel の 'minimal' が廃止されていて 400 になる。
+  # 下限は 'low' で、実タスクでは既定 402 token に対して low は 0 token。
+  - id: bare/gemini-3.7-flash
+    harness: { kind: bare }
+    provider: google
+    model: gemini-3.7-flash
+  - id: bare-think-off/gemini-3.7-flash
+    harness: { kind: bare }
+    provider: google
+    model: gemini-3.7-flash
+    modelOptions:
+      config: { thinkingConfig: { thinkingLevel: low } }
   - id: bare/gemini-3.5-flash
     harness: { kind: bare }
     provider: google
@@ -528,6 +540,10 @@ matrix:
     harness: { kind: pdf-page }
     provider: google
     model: gemini-3.8-flash
+  - id: pdf-page/gemini-3.7-flash
+    harness: { kind: pdf-page }
+    provider: google
+    model: gemini-3.7-flash
   - id: pdf-page/gemini-3.5-flash
     harness: { kind: pdf-page }
     provider: google
