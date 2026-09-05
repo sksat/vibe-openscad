@@ -69,8 +69,8 @@ const STREAM_TIMEOUT_MS = 30 * 60 * 1000;
 const MAX_NONSTREAMING_TOKENS = 21333;
 
 // SCAD 出力は数百トークン程度なので、明示しないモデルはこの値で足りる。
-// thinking が既定 on のモデル(Fable 5 / Opus 5 / Sonnet 5 等)は思考トークンも
-// この上限を消費するので、bench-config 側の modelOptions で個別に引き上げる。
+// thinking が既定 on のモデル(Fable 5 / Opus 5 / Sonnet 5 等)は thinking token
+// もこの上限を消費するので、bench-config 側の modelOptions で引き上げる。
 const DEFAULT_MAX_TOKENS = 4096;
 
 export function createAnthropicProvider(
@@ -78,7 +78,7 @@ export function createAnthropicProvider(
 ): Provider {
   // max_tokens が SDK の非ストリーミング上限を超えるときだけストリーミングに
   // 切り替える。thinking が既定 on のモデル(Fable 5 / Opus 5 / Sonnet 5 等)は
-  // 思考トークンも max_tokens を消費するので十分な上限が要るが、非ストリーミング
+  // thinking token も max_tokens を消費するので十分な上限が要るが、非ストリーミング
   // では 21333 までしか送れない。
   //
   // 上限以下の既存エントリは従来どおり非ストリーミングのままにする。転送方式が
