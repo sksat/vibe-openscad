@@ -117,12 +117,16 @@ claude-opus-4-0:
   thinking: "off"
 
 # snapshot だけの id(claude-opus-4-20250514)を拾う catch-all。
-# snapshot だけの id(claude-opus-4-20250514)を拾う catch-all。この世代は
-# 2026-06-15 に retired。
+# snapshot だけの id を拾う catch-all。shutdownAt はここに置かない — 置くと
+# prefix 継承で現役の opus-4-5 / 4-6 / 4-7 / 4-8 まで止まる。
 claude-opus-4-:
   provider: anthropic
-  shutdownAt: "2026-06-15"
   rate: { in: 15, out: 75 }
+
+# 2026-04-14 に deprecated、2026-06-15 に retired。呼ぶと 404。
+claude-opus-4-20250514:
+  provider: anthropic
+  shutdownAt: "2026-06-15"
   vision: true
   effort: null
   thinking: "off"
@@ -147,8 +151,12 @@ claude-sonnet-4-0:
 
 claude-sonnet-4-:
   provider: anthropic
-  shutdownAt: "2026-06-15"
   rate: { in: 3, out: 15 }
+
+# 2026-04-14 に deprecated、2026-06-15 に retired。
+claude-sonnet-4-20250514:
+  provider: anthropic
+  shutdownAt: "2026-06-15"
   vision: true
   effort: null
   thinking: "off"

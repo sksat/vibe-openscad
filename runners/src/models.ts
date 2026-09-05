@@ -75,6 +75,7 @@ export const ModelEntrySchema = z
      * 宣言する。
      */
     snapshot: z.string().min(1).optional(),
+    /**
      * provider がアナウンスした提供終了日(`YYYY-MM-DD`)。この日を過ぎた
      * モデルは `bench plan` で blocked になり、実行対象から外れる。
      *

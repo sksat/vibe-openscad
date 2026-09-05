@@ -55,7 +55,7 @@ export interface PlanInputs {
   lookupModel?: (
     model: string,
     provider: string,
-  ) => Pick<ResolvedModel, "shutdownAt"> | null;
+  ) => Pick<ResolvedModel, "shutdownAt" | "retirementNotBefore"> | null;
   /** 提供終了日の判定基準。既定は現在時刻。 */
   now?: Date;
 }
