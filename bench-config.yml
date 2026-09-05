@@ -228,6 +228,18 @@ matrix:
     model: gemini-3.5-flash
     modelOptions:
       config: { thinkingConfig: { thinkingLevel: minimal } }
+  # 3.5 Flash-Lite。実タスクでは既定でも thinking 0 token で、minimal / low を
+  # 指定しても 0 のまま。think-off は minimal(3.5 系の正系)で張る。
+  - id: bare/gemini-3.5-flash-lite
+    harness: { kind: bare }
+    provider: google
+    model: gemini-3.5-flash-lite
+  - id: bare-think-off/gemini-3.5-flash-lite
+    harness: { kind: bare }
+    provider: google
+    model: gemini-3.5-flash-lite
+    modelOptions:
+      config: { thinkingConfig: { thinkingLevel: minimal } }
   - id: bare/gemini-3.1-pro
     harness: { kind: bare }
     provider: google
@@ -591,6 +603,10 @@ matrix:
     harness: { kind: pdf-page }
     provider: google
     model: gemini-3.6-flash
+  - id: pdf-page/gemini-3.5-flash-lite
+    harness: { kind: pdf-page }
+    provider: google
+    model: gemini-3.5-flash-lite
   - id: pdf-page/gemini-3.5-flash
     harness: { kind: pdf-page }
     provider: google
