@@ -1,0 +1,6 @@
+```openscad
+difference() {
+    cube([50, 50, 50]);
+    translate([25, 25, 0]) cylinder(r = 10, h = 50);
+}
+```

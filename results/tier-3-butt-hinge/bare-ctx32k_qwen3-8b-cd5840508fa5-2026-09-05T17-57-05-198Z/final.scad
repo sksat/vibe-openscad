@@ -1,0 +1,77 @@
+// 定数定義
+$fn = 24; // 細かさを調整
+
+// ピン軸の長さと直径
+pin_length = 32;
+pin_diameter = 4;
+
+// 板（leaf）の寸法
+leaf_length = 30; // Y方向
+leaf_width = 25;  // X方向
+leaf_thickness = 2; // Z方向
+
+// knuckleの寸法
+knuckle_outer_dia = 8;
+knuckle_inner_hole_dia = 4.6;
+knuckle_height = 6;
+
+// M3皿穴の寸法
+sink_hole_outer_dia = 6;
+sink_hole_depth = 1; // テーパーの深さ
+sink_hole_drill_dia = 3.2;
+
+// knuckleの位置（左板：外側2個 + 中央1個 / 右板：中間2個）
+left_knuckle_positions = [-18, -6, 0]; // Y方向
+right_knuckle_positions = [-6, 0];     // Y方向
+
+// 板の位置（左板X負、右板X正）
+leaf_x_offset = leaf_width / 2;
+
+// ピン軸の中心をY軸に配置
+module pin() {
+    cylinder(r=pin_diameter/2, h=pin_length, center=true);
+}
+
+// knuckleの作成（外径8mm、内径4.6mm）
+module knuckle(y_pos) {
+    difference() {
+        cylinder(r=knuckle_outer_dia/2, h=knuckle_height, center=true, $fn=$fn);
+        translate([0, y_pos - knuckle_height/2, 0])
+            cylinder(r=knuckle_inner_hole_dia/2, h=knuckle_height, center=true, $fn=$fn);
+    }
+}
+
+// 板（leaf）の作成
+module leaf(x_offset) {
+    // パーツ本体
+    translate([x_offset, 0, 0])
+        cube([leaf_width, leaf_length, leaf_thickness], center=true);
+
+    // M3皿穴
+    for (y = [-12, -4, 4, 12]) { // 穴ピッチ8mm間隔（左板のY=-12,-4,4,12など）
+        translate([x_offset, y, 0])
+            difference() {
+                cylinder(r=sink_hole_outer_dia/2, h=sink_hole_depth, center=true, $fn=$fn);
+                cylinder(r=sink_hole_drill_dia/2, h=sink_hole_depth + 1, center=true, $fn=$fn);
+            }
+    }
+}
+
+// ピン軸の配置
+pin();
+
+// 左板（左側）
+translate([-leaf_x_offset, 0, 0]) leaf(-leaf_x_offset);
+
+// 右板（右側）
+translate([leaf_x_offset, 0, 0]) leaf(leaf_x_offset);
+
+// knuckleの配置（左板）
+for (y = left_knuckle_positions) {
+    translate([ -leaf_x_offset, y, 0 ]) knuckle(y);
+}
+
+// knuckleの配置（右板）
+for (y = right_knuckle_positions) {
+    translate([ leaf_x_offset, y, 0 ]) knuckle(y);
+}

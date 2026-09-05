@@ -1,0 +1,16 @@
+// L-bracket with countersunk holes
+difference() {
+    union() {
+        // Horizontal flange: 50x40x3mm
+        cube([50, 40, 3], center=false),
+        // Vertical flange: 50x3x40mm
+        translate([0, 0, 0]) cube([50, 3, 40], center=false)
+    },
+    // Countersunk holes (M4 size: Φ8mm flat, Φ4.5mm through hole, depth 2mm)
+    // Horizontal flange top face
+    translate([10, 40, 1.5]) cylinder(r=4, h=2, $fn=32),
+    translate([40, 40, 1.5]) cylinder(r=4, h=2, $fn=32),
+    // Horizontal flange bottom face
+    translate([10, 0, 1.5]) cylinder(r=4, h=2, $fn=32),
+    translate([40, 0, 1.5]) cylinder(r=4, h=2, $fn=32)
+}
