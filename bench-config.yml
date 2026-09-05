@@ -63,10 +63,11 @@ matrix:
     model: claude-fable-5
     modelOptions: { output_config: { effort: xhigh }, max_tokens: 16000 }
   # Opus 5 — thinking が既定で on(4.8/4.7 は `thinking` 省略 = 思考しない
-  # だったので既定が反転している)。thinking トークンは max_tokens を消費する
-  # ため、runner デフォルトの 4096 では重いタスクで SCAD が出る前に切れる
-  # (Fable 5 で実際に tier-3 が全滅した)。Fable 5 と同じく 16000 を明示する。
-  # max_tokens はモデルから見えない打ち切り上限なので生成分布には影響しない。
+  # だったので既定が反転している)。thinking token も max_tokens を消費する
+  # ので、足りないと SCAD を出し切る前に打ち切られる。16000 で回したときは
+  # xhigh / max の tier-3 が out=16000 ちょうどで停止した。Sonnet 5 /
+  # Fable 5.1 と揃えて 64000 にする(SDK の非ストリーミング上限 21333 を
+  # 超えるのでストリーミング経路を通る)。
   #
   # 明示 disable (`{type: disabled}`) は effort high 以下でのみ受け付ける
   # (xhigh / max と併用すると 400)。既定 effort は high なので
@@ -75,27 +76,27 @@ matrix:
     harness: { kind: bare }
     provider: anthropic
     model: claude-opus-5
-    modelOptions: { max_tokens: 16000 }
+    modelOptions: { max_tokens: 64000 }
   - id: bare-low/claude-opus-5
     harness: { kind: bare }
     provider: anthropic
     model: claude-opus-5
-    modelOptions: { output_config: { effort: low }, max_tokens: 16000 }
+    modelOptions: { output_config: { effort: low }, max_tokens: 64000 }
   - id: bare-xhigh/claude-opus-5
     harness: { kind: bare }
     provider: anthropic
     model: claude-opus-5
-    modelOptions: { output_config: { effort: xhigh }, max_tokens: 16000 }
+    modelOptions: { output_config: { effort: xhigh }, max_tokens: 64000 }
   - id: bare-max/claude-opus-5
     harness: { kind: bare }
     provider: anthropic
     model: claude-opus-5
-    modelOptions: { output_config: { effort: max }, max_tokens: 16000 }
+    modelOptions: { output_config: { effort: max }, max_tokens: 64000 }
   - id: bare-think-off/claude-opus-5
     harness: { kind: bare }
     provider: anthropic
     model: claude-opus-5
-    modelOptions: { thinking: { type: disabled }, max_tokens: 16000 }
+    modelOptions: { thinking: { type: disabled }, max_tokens: 64000 }
   # Opus 4.8 — 4.7 と同じ API surface(breaking change なし)。
   - id: bare/claude-opus-4-8
     harness: { kind: bare }
@@ -638,6 +639,11 @@ matrix:
     provider: anthropic
     model: claude-fable-5
     modelOptions: { max_tokens: 16000 }
+  - id: pdf-page/claude-opus-5
+    harness: { kind: pdf-page }
+    provider: anthropic
+    model: claude-opus-5
+    modelOptions: { max_tokens: 64000 }
   - id: pdf-page/claude-opus-4-8
     harness: { kind: pdf-page }
     provider: anthropic
