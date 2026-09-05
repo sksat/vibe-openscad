@@ -96,6 +96,27 @@ Gemini だけ分離されているため、合算しないと出力トークン�
 `maxOutputTokens` は合計に対して効くので、`candidatesTokenCount` だけ見ていると
 「出力が少ないのに MAX_TOKENS で止まる」という辻褄の合わない記録になる。
 
+#### Anthropic のストリーミング経路では内訳を自前で拾う
+
+Anthropic SDK(0.91.1 で確認)の `messages.stream().finalMessage()` は
+`message_delta` の usage を積算するときに **`output_tokens_details` を落とす**。
+同じモデル・同じパラメータでも、非ストリーミングなら内訳が返るのに
+ストリーミングだと消える:
+
+```
+non-stream usage: {..., "output_tokens":14, "output_tokens_details":{"thinking_tokens":11}}
+stream    usage: {..., "output_tokens":12}
+```
+
+生の `message_delta` イベントには乗っているので、`streamEvent` を購読して保持し、
+`finalMessage()` が内訳を持っていなければ差し込む。SDK が積算するようになったら
+message 側を優先する。
+
+転送方式は `max_tokens > 21333` で切り替わる(→「非ストリーミングの上限」節)ので、
+拾わないと **その閾値を超える run だけ内訳が欠ける**。`output_tokens` 自体は正しく、
+コストにも集計にも影響しないが、thinking がどれだけ占めたかが results から分から
+なくなる。
+
 ### API が名乗ったモデル id を残す(`resolvedModel`)
 
 alias で送ったとき、provider 側で dated snapshot に解決されることがある。その
