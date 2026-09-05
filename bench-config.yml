@@ -19,6 +19,29 @@ matrix:
   # 公式ドキュメントの標準例に合わせ 16000 を modelOptions で明示する
   # (fingerprint に乗るので条件変更として検出される)。
   # https://platform.claude.com/docs/en/build-with-claude/adaptive-thinking
+  # Fable 5.1 — thinking が常時 on で明示 disable は 400 なので think-off は
+  # 張れない。thinking が on だと出力トークンが増えるため max_tokens は
+  # 64000(Fable 5 の 16000 では tier-3 が落ちた実績がある)。
+  - id: bare/claude-fable-5-1
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-fable-5-1
+    modelOptions: { max_tokens: 64000 }
+  - id: bare-low/claude-fable-5-1
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-fable-5-1
+    modelOptions: { output_config: { effort: low }, max_tokens: 64000 }
+  - id: bare-xhigh/claude-fable-5-1
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-fable-5-1
+    modelOptions: { output_config: { effort: xhigh }, max_tokens: 64000 }
+  - id: bare-max/claude-fable-5-1
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-fable-5-1
+    modelOptions: { output_config: { effort: max }, max_tokens: 64000 }
   - id: bare/claude-fable-5
     harness: { kind: bare }
     provider: anthropic
@@ -605,6 +628,11 @@ matrix:
   # --- pdf-page (tier-4 vision tasks: PDF page → image → bare-style call) ---
   # bare の単発と同形だが、task 側 `pdf_source` を pdftoppm で PNG に切り出して
   # provider に投げる前段が入る。vision capable な現行世代モデルだけ並べる。
+  - id: pdf-page/claude-fable-5-1
+    harness: { kind: pdf-page }
+    provider: anthropic
+    model: claude-fable-5-1
+    modelOptions: { max_tokens: 64000 }
   - id: pdf-page/claude-fable-5
     harness: { kind: pdf-page }
     provider: anthropic

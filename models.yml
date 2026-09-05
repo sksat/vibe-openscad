@@ -27,6 +27,16 @@
 # 出典: Anthropic 公式ドキュメント(価格は 2026-09 時点)
 # ---------------------------------------------------------------------------
 
+# Fable 5.1 は Fable 5 の後継で同ティア・同単価。thinking の制約も同じ
+# (常時 on、明示 disable は 400)。tool_choice の any / tool が 400 になる等の
+# 差はあるが、本ベンチは tool を使わないので影響しない。
+claude-fable-5-1:
+  provider: anthropic
+  rate: { in: 10, out: 50 }
+  vision: true
+  effort: high
+  thinking: adaptive
+
 # Fable は Opus の上の新ティア。adaptive thinking が常時 on で、明示の
 # `{type: disabled}` は API が 400 を返す(= thinking off が存在しない)。
 claude-fable-5:
