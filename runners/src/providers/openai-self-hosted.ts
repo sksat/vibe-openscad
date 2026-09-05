@@ -217,6 +217,11 @@ function toOpenAIMessages(
 export interface OpenAISelfHostedProviderDeps {
   /** OpenAI SDK client(テスト時は mock を inject)。 */
   client?: OpenAI;
+  /**
+   * 指定 context 長でモデルをロードし直す手段。省略時は LM Studio の
+   * WebSocket RPC を使う(テスト時は mock を inject)。
+   */
+  loadModel?: (modelKey: string, contextLength: number) => Promise<void>;
   /** Base URL override(env より優先)。`/v1` まで含めて指定。 */
   baseURL?: string;
   /** API key。LM Studio / Ollama 双方ダミーで通る。 */
@@ -237,27 +242,11 @@ export interface OpenAISelfHostedProviderDeps {
 const REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
 
 
-/**
- * 宣言した context 長で実際にロードされているかを確かめる。
- *
- * コンテキスト長は **モデルの性質ではなくロード時の設定**。GGUF に書かれた
- * 上限(`max_context_length`)以下なら任意の値でロードでき、LM Studio は VRAM
- * を抑えるため控えめな既定値を使う。同じモデルでもロードのしかたで出力が途中で
- * 切れるかどうかが変わるので、実行条件として fingerprint に載せる
- * (bench-config の `modelOptions.context_length`)。
- *
- * 宣言と実態がずれたまま記録されると、8192 で走った run が 32768 の signature
- * で残ってしまう。突き合わせて落とす。
- *
- * probe はリクエストの **後** に行う。LM Studio は最初のリクエストで JIT ロード
- * するので、前に読むと `state: "not-loaded"` で `loaded_context_length` 自体が
- * 無い。
- */
-async function assertLoadedContextLength(
+/** `/api/v0/models` から現在のロード幅を読む。未ロード / 不明なら undefined。 */
+async function readLoadedContextLength(
   baseURL: string,
   model: string,
-  declared: number,
-): Promise<void> {
+): Promise<number | undefined> {
   const hostRoot = baseURL.replace(/\/(v1|api\/v0)$/, "");
   const res = await fetch(`${hostRoot}/api/v0/models`, {
     signal: AbortSignal.timeout(10000),
@@ -265,20 +254,210 @@ async function assertLoadedContextLength(
   if (!res.ok) {
     throw new Error(
       `openai-self-hosted: /api/v0/models が ${res.status} を返したため ` +
-        `context_length を確認できない(宣言: ${declared})`,
+        `context_length を確認できない`,
     );
   }
   const body = (await res.json()) as {
     data?: { id?: string; loaded_context_length?: number }[];
   };
-  const loaded = body.data?.find((m) => m.id === model)?.loaded_context_length;
+  return body.data?.find((m) => m.id === model)?.loaded_context_length;
+}
+
+/**
+ * 宣言した context 長でモデルが載っている状態にしてから返る。
+ *
+ * コンテキスト長は **モデルの性質ではなくロード時の設定**。GGUF に書かれた
+ * 上限(`max_context_length`)以下なら任意の値でロードでき、LM Studio は VRAM
+ * を抑えるため控えめな既定値を使う。同じモデルでもロードのしかたで出力が途中で
+ * 切れるかどうかが変わるので、実行条件として fingerprint に載せる
+ * (bench-config の `modelOptions.context_length`)。
+ *
+ * ずれていればロードし直す。ロードしても宣言どおりにならなければ、その条件では
+ * 走らせずに落とす。8192 で走った run が 32768 の signature で残るのを防ぐ。
+ *
+ * **生成の前**に済ませる。後から突き合わせても、条件が違うと分かった時点で
+ * 数分かけた生成が無駄になる。
+ */
+async function ensureLoadedContextLength(
+  baseURL: string,
+  model: string,
+  declared: number,
+  loadModel: (modelKey: string, contextLength: number) => Promise<void>,
+): Promise<void> {
+  if ((await readLoadedContextLength(baseURL, model)) === declared) return;
+  await loadModel(model, declared);
+  const loaded = await readLoadedContextLength(baseURL, model);
   if (loaded !== declared) {
     throw new Error(
-      `openai-self-hosted: ${model} は context ${loaded ?? "不明"} でロード ` +
-        `されている(bench-config の宣言は ${declared})。` +
-        `\`lms load ${model} --context-length ${declared}\` でロードし直す`,
+      `openai-self-hosted: ${model} を context ${declared} でロードできない ` +
+        `(現在 ${loaded ?? "不明"})。VRAM 不足か、LM Studio 以外の runtime の ` +
+        `可能性がある`,
     );
   }
+}
+
+/** `/llm` namespace に繋いで認証まで済ませる。認証の作法は surveyHardware と同じ。 */
+function connectLlmNamespace(
+  baseUrl: string,
+  timeoutMs: number,
+  onReady: (ws: WebSocket) => void,
+  onMessage: (obj: Record<string, unknown>, done: (err?: Error) => void) => void,
+): Promise<void> {
+  const wsUrl =
+    baseUrl.replace(/\/(v1|api\/v0)\/?$/, "").replace(/^http/, "ws") + "/llm";
+  return new Promise<void>((resolve, reject) => {
+    let ws: WebSocket;
+    try {
+      ws = new WebSocket(wsUrl);
+    } catch (e) {
+      reject(e);
+      return;
+    }
+    const done = (err?: Error) => {
+      clearTimeout(timer);
+      try {
+        ws.close();
+      } catch {
+        /* ignore */
+      }
+      if (err) reject(err);
+      else resolve();
+    };
+    const timer = setTimeout(
+      () => done(new Error(`${wsUrl}: timed out after ${timeoutMs}ms`)),
+      timeoutMs,
+    );
+    ws.addEventListener("open", () => {
+      ws.send(
+        JSON.stringify({
+          type: "authenticate",
+          authVersion: 1,
+          clientIdentifier: "vibe-openscad-bench",
+          clientPasskey: "vibe-openscad-bench",
+        }),
+      );
+    });
+    ws.addEventListener("message", (ev) => {
+      let msg: unknown;
+      try {
+        msg = JSON.parse(typeof ev.data === "string" ? ev.data : "");
+      } catch {
+        return;
+      }
+      const obj = msg as Record<string, unknown>;
+      if (obj["success"] === true && obj["type"] === undefined) {
+        onReady(ws);
+        return;
+      }
+      onMessage(obj, done);
+    });
+    ws.addEventListener("error", () =>
+      done(new Error(`${wsUrl}: WebSocket error`)),
+    );
+  });
+}
+
+/**
+ * LM Studio からモデルを降ろす。既にロード済みなら必ず先に呼ぶ必要がある
+ * (理由は loadLMStudioModel を参照)。未ロード等で失敗しても無視してよい。
+ */
+export async function unloadLMStudioModel(
+  baseUrl: string,
+  modelKey: string,
+  opts: { timeoutMs?: number } = {},
+): Promise<void> {
+  await connectLlmNamespace(
+    baseUrl,
+    opts.timeoutMs ?? 60_000,
+    (ws) =>
+      ws.send(
+        JSON.stringify({
+          type: "rpcCall",
+          callId: 1,
+          endpoint: "unloadModel",
+          parameter: { identifier: modelKey },
+        }),
+      ),
+    (obj, done) => {
+      if (obj["type"] === "rpcResult") done();
+      else done(new Error(`unloadModel: ${JSON.stringify(obj).slice(0, 200)}`));
+    },
+  );
+}
+
+/**
+ * LM Studio の WebSocket RPC で、指定 context 長でモデルをロードする。
+ *
+ * REST(`/api/v0`)側にロード用の endpoint は無く、これは WS だけの機能。
+ * `/llm` namespace の `loadModel` channel に、`apiOverride` レイヤとして
+ * `llm.load.contextLength` を渡す。
+ *
+ * **呼ぶ前に unloadLMStudioModel が要る**。既にロード済みのモデルに loadModel を
+ * 送っても既存のインスタンスがそのまま返り、context 長は変わらない(実測: 8192 で
+ * 載っている qwen3-32b に 32768 を指定しても 8192 のままだった)。
+ *
+ * unload と load は接続を分けている。1 本にまとめられない理由は確認できていない
+ * (まとめた実装が止まったことはあるが、そのときホスト機が再起動していたので
+ * 原因を切り分けられていない)。分けたほうが状態を持たずに済むのでこの形にする。
+ *
+ * LM Studio 以外の runtime(Ollama / vLLM / llama.cpp server)には無い機能なので、
+ * その場合は失敗する。呼び出し側が「ロードできない」として扱う。
+ */
+export async function loadLMStudioModel(
+  baseUrl: string,
+  modelKey: string,
+  contextLength: number,
+  opts: { timeoutMs?: number } = {},
+): Promise<void> {
+  await connectLlmNamespace(
+    baseUrl,
+    opts.timeoutMs ?? 10 * 60 * 1000,
+    (ws) =>
+      ws.send(
+        JSON.stringify({
+          type: "channelCreate",
+          channelId: 1,
+          endpoint: "loadModel",
+          creationParameter: {
+            modelKey,
+            loadConfigStack: {
+              layers: [
+                {
+                  layerName: "apiOverride",
+                  config: {
+                    fields: [
+                      { key: "llm.load.contextLength", value: contextLength },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        }),
+      ),
+    (obj, done) => {
+      const inner = (obj["message"] as { type?: string } | undefined)?.type;
+      if (inner === "success") done();
+      else if (inner === "error")
+        done(new Error(`loadModel failed: ${JSON.stringify(obj["message"])}`));
+      else if (obj["type"] === "communicationWarning")
+        done(new Error(`loadModel rejected: ${JSON.stringify(obj)}`));
+    },
+  );
+}
+
+/** unload → load。ensureLoadedContextLength の既定の実装。 */
+async function reloadLMStudioModel(
+  baseUrl: string,
+  modelKey: string,
+  contextLength: number,
+): Promise<void> {
+  try {
+    await unloadLMStudioModel(baseUrl, modelKey);
+  } catch {
+    // 未ロードなら unload は失敗する。そのまま load へ進む。
+  }
+  await loadLMStudioModel(baseUrl, modelKey, contextLength);
 }
 
 export function createOpenAISelfHostedProvider(
@@ -347,13 +526,18 @@ export function createOpenAISelfHostedProvider(
         ...modelOptions,
       };
       const client = await getClient();
+      if (typeof declaredContext === "number") {
+        await ensureLoadedContextLength(
+          baseURL,
+          req.model,
+          declaredContext,
+          deps.loadModel ?? reloadLMStudioModel.bind(null, baseURL),
+        );
+      }
       const res = await client.chat.completions.create(params, {
         timeout: REQUEST_TIMEOUT_MS,
         maxRetries: 0,
       });
-      if (typeof declaredContext === "number") {
-        await assertLoadedContextLength(baseURL, req.model, declaredContext);
-      }
       const choice = res.choices[0];
       const out: CompletionResponse = {
         text: choice?.message?.content ?? "",
