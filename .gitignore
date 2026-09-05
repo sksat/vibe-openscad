@@ -1,4 +1,7 @@
 node_modules/
+# worktree で本体の node_modules を symlink することがある。末尾スラッシュの
+# パターンはディレクトリにしかマッチしないので、symlink 形も明示する。
+node_modules
 dist/
 .astro/
 *.log
