@@ -227,8 +227,20 @@ gemini-3-pro:
 
 gemini-3.1-flash-lite:
   provider: google
+  line: gemini-3.1-flash-lite
+  snapshot: "05-2026"
   rate: { in: 0.1, out: 0.4 }
   thinking: dynamic
+
+# 2026-05-25 に shutdown 済み。ただし **404 にならず GA が返る** — 呼ぶと
+# modelVersion=gemini-3.1-flash-lite になる。そのまま走らせると preview の
+# ラベルで GA を測ることになるので、shutdownAt で実行対象から外す。
+# 過去に取得した run は results に残る。
+gemini-3.1-flash-lite-preview:
+  provider: google
+  line: gemini-3.1-flash-lite
+  snapshot: "preview-03-2026"
+  shutdownAt: "2026-05-25"
 
 gemini-3.1-flash:
   provider: google
