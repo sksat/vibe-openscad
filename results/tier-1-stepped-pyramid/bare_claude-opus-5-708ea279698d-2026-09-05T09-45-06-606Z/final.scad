@@ -1,0 +1,22 @@
+// 3段の階段状ピラミッド
+// 各段は中心を揃えて積み上げる
+
+step_sizes = [60, 40, 20];  // 各段の一辺の長さ (mm)
+step_height = 10;           // 各段の高さ (mm)
+
+module stepped_pyramid(sizes, h) {
+    for (i = [0 : len(sizes) - 1]) {
+        translate([0, 0, i * h])
+            cube([sizes[i], sizes[i], h], center = false);
+    }
+}
+
+// 中心を揃えるために各段を平行移動して配置
+module stepped_pyramid_centered(sizes, h) {
+    for (i = [0 : len(sizes) - 1]) {
+        translate([0, 0, i * h + h / 2])
+            cube([sizes[i], sizes[i], h], center = true);
+    }
+}
+
+stepped_pyramid_centered(step_sizes, step_height);

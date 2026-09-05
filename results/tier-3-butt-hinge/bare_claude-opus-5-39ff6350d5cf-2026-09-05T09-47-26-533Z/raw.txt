@@ -1,0 +1,103 @@
+```openscad
+// ============================================================
+//  家具用 小型バット蝶番 (butt hinge)
+//  leaf 30 x 25 x t2 / pin φ4 x 32 / knuckle φ8
+//  180°(全開)状態のアセンブリ
+//  座標系: ピン軸中心線 = Y軸 / 板面は Z軸直交 / 左板 x<0, 右板 x>0
+// ============================================================
+
+$fn = 96;
+
+// ---------------- パラメータ ----------------
+leaf_len    = 30;                  // 縦(ヒンジ軸方向)
+leaf_wid    = 25;                  // 横(開く方向)
+leaf_thk    = 2;                   // 板厚
+pin_d       = 4;                   // ピン軸径
+pin_len     = 32;                  // ピン軸長(両端 1mm ずつ突出)
+
+knuckle_od  = 8;                   // knuckle 外径
+pin_clr     = 0.3;                 // ピンとのクリアランス
+knuckle_id  = pin_d + pin_clr;     // = 4.6
+
+n_seg       = 5;                   // 30mm を 5 等分
+seg_len     = leaf_len / n_seg;    // = 6mm
+y_start     = -leaf_len / 2;       // = -15
+
+ax_gap      = 0.3;                 // knuckle 同士の軸方向隙間
+rad_gap     = 0.3;                 // 相手 knuckle の逃げ半径隙間
+
+knuckle_r   = knuckle_od / 2;      // = 4
+plate_z0    = knuckle_r - leaf_thk; // = 2 (板の裏面)
+plate_z1    = knuckle_r;            // = 4 (板の表面 : knuckle に接する)
+
+screw_pitch = 8;                   // 皿穴ピッチ(Y方向)
+screw_x     = 18;                  // 皿穴の X 位置(軸からの距離)
+cs_top_d    = 6;                   // 皿穴テーパ上端径
+cs_depth    = 1;                   // テーパ深さ
+hole_d      = 3.2;                 // M3 貫通穴
+
+left_segs   = [0, 2, 4];           // 左板: 外側 2 個 + 中央 1 個
+right_segs  = [1, 3];              // 右板: 中間 2 個
+
+// ---------------- ヘルパ ----------------
+function seg_y0(i) = y_start + i * seg_len       + ((i == 0)         ? 0 : ax_gap / 2);
+function seg_y1(i) = y_start + (i + 1) * seg_len - ((i == n_seg - 1) ? 0 : ax_gap / 2);
+
+// Y 軸に沿った円柱
+module ycyl(d, ya, yb) {
+    translate([0, ya, 0]) rotate([-90, 0, 0]) cylinder(d = d, h = yb - ya);
+}
+
+// knuckle 群
+module knuckle_set(segs) {
+    for (i = segs) ycyl(knuckle_od, seg_y0(i), seg_y1(i));
+}
+
+// M3 皿穴(表面 z = plate_z1 側から)
+module countersink() {
+    translate([0, 0, plate_z0 - 1])
+        cylinder(d = hole_d, h = leaf_thk + 2);
+    translate([0, 0, plate_z1 - cs_depth])
+        cylinder(d1 = hole_d, d2 = cs_top_d, h = cs_depth + 0.01);
+}
+
+// 板 1 枚(+X 方向に伸びる形で生成 / 左板は mirror して使用)
+module leaf(my_segs, other_segs) {
+    difference() {
+        union() {
+            // 板本体
+            translate([0, y_start, plate_z0])
+                cube([leaf_wid, leaf_len, leaf_thk]);
+            // 自分の knuckle
+            knuckle_set(my_segs);
+        }
+
+        // ピン穴(全長貫通)
+        ycyl(knuckle_id, -leaf_len, leaf_len);
+
+        // 相手 knuckle の逃げ
+        for (i = other_segs)
+            ycyl(knuckle_od + 2 * rad_gap,
+                 seg_y0(i) - ax_gap,
+                 seg_y1(i) + ax_gap);
+
+        // 皿穴 3 個
+        for (k = [-1, 0, 1])
+            translate([screw_x, k * screw_pitch, 0]) countersink();
+    }
+}
+
+// ---------------- アセンブリ(180° 開) ----------------
+
+// 左板 (x < 0)
+color("SteelBlue")
+    mirror([1, 0, 0]) leaf(left_segs, right_segs);
+
+// 右板 (x > 0)
+color("LightSteelBlue")
+    leaf(right_segs, left_segs);
+
+// ピン軸 (両端 1mm 突出)
+color("Silver")
+    ycyl(pin_d, -pin_len / 2, pin_len / 2);
+```

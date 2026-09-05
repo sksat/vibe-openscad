@@ -1,0 +1,77 @@
+// ===== Mug with D-shaped handle on +X side =====
+
+$fn = 120;
+
+// --- Body parameters ---
+outer_d   = 80;
+inner_d   = 70;
+mug_h     = 90;
+bottom_th = 6;
+
+// --- Handle parameters ---
+hole_h    = 30;   // 取手内側の空間 高さ
+hole_w    = 25;   // 取手内側の空間 幅
+bar       = 8;    // 取手の太さ(断面)
+handle_z  = mug_h / 2;              // 高さ方向の中央
+overlap   = 4;    // 本体へ食い込ませる量(確実に union)
+
+// 取手の外形サイズ
+out_h = hole_h + 2*bar;   // 46
+out_w = hole_w + bar;     // 33  (本体側は直線なので片側のみ)
+
+// D 字断面(XZ 平面上の 2D プロファイル)を作って Y 方向に押し出す
+module d_profile(w, h) {
+    // 左端(本体側)が直線、右端が半円 の D 形状
+    hull() {
+        translate([0, -h/2]) square([0.01, h]);          // 直線側
+        translate([w - h/2, 0]) circle(d = h);           // 半円側
+    }
+}
+
+module handle() {
+    x0 = outer_d/2 - overlap;   // 直線側の開始 X(本体内部に食い込む)
+    difference() {
+        // 外形
+        translate([x0, bar/2, handle_z])
+            rotate([90, 0, 0])
+                linear_extrude(height = bar)
+                    d_profile(out_w + overlap, out_h);
+        // 内側の穴
+        translate([x0 + bar + overlap, bar, handle_z])
+            rotate([90, 0, 0])
+                linear_extrude(height = bar * 2, center = false)
+                    translate([-0.01, 0])
+                        d_profile(hole_w, hole_h);
+    }
+}
+
+module body() {
+    difference() {
+        cylinder(d = outer_d, h = mug_h);
+        translate([0, 0, bottom_th])
+            cylinder(d = inner_d, h = mug_h);   // 上へ突き抜ける
+    }
+}
+
+module mug() {
+    union() {
+        body();
+        intersection() {
+            handle();
+            // 取手が本体内部(中空部)へ侵入しないようにクリップ
+            union() {
+                // 本体外側の領域(+X 側)
+                difference() {
+                    translate([0, -100, -1])
+                        cube([200, 200, mug_h + 2]);
+                    translate([0, 0, bottom_th])
+                        cylinder(d = inner_d, h = mug_h);
+                }
+                // 本体の実体部分は残す
+                translate([0, -100, -1]) cube([0.001, 200, mug_h + 2]);
+            }
+        }
+    }
+}
+
+mug();

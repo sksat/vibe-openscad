@@ -1,0 +1,16 @@
+```openscad
+// 50mm 角の立方体に直径 20mm の貫通穴（z軸方向）
+
+$fn = 100;
+
+cube_size = 50;
+hole_d = 20;
+
+difference() {
+    // 中心を原点に配置した 50mm 角の立方体
+    cube([cube_size, cube_size, cube_size], center = true);
+
+    // z 軸方向の貫通穴（少し長めにして確実に貫通させる）
+    cylinder(h = cube_size + 2, d = hole_d, center = true);
+}
+```

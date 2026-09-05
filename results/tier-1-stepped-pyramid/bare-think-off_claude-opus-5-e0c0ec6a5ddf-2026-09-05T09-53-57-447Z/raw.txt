@@ -1,0 +1,30 @@
+```openscad
+// 3段の階段状ピラミッド
+
+// 各段のパラメータ: [一辺の長さ, 高さ]
+steps = [
+    [60, 10],
+    [40, 10],
+    [20, 10]
+];
+
+module step_pyramid(steps) {
+    z = 0;
+    for (i = [0 : len(steps) - 1]) {
+        // i段目までの高さの合計を求める
+        translate([0, 0, i == 0 ? 0 :
+            // 下の段の高さを積算
+            add_heights(steps, i)])
+            cube([steps[i][0], steps[i][0], steps[i][1]], center = false);
+    }
+}
+
+// 0段目から (n-1) 段目までの高さの合計
+function add_heights(steps, n) =
+    n <= 0 ? 0 : steps[n - 1][1] + add_heights(steps, n - 1);
+
+// 中心を揃えて積み上げる
+for (i = [0 : len(steps) - 1])
+    translate([-steps[i][0] / 2, -steps[i][0] / 2, add_heights(steps, i)])
+        cube([steps[i][0], steps[i][0], steps[i][1]]);
+```

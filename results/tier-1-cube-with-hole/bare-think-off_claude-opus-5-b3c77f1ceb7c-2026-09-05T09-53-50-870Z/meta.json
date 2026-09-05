@@ -1,0 +1,39 @@
+{
+  "runId": "bare-think-off_claude-opus-5-b3c77f1ceb7c-2026-09-05T09-53-50-870Z",
+  "taskId": "tier-1-cube-with-hole",
+  "matrixId": "bare-think-off/claude-opus-5",
+  "signature": "b3c77f1ceb7c034475c27c7c4c00e9968df97da2470b337c6ef7a38e07b9c533",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "8ff7e36af4bc202429ec68b7eb9cc3f195b6a3c68668be31239bcea23345a048",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-opus-5",
+      "modelOptions": {
+        "thinking": {
+          "type": "disabled"
+        },
+        "max_tokens": 16000
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-opus-5",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 11200
+  },
+  "tokens": {
+    "input": 111,
+    "output": 143
+  },
+  "cost_usd": 0.00413,
+  "createdAt": "2026-09-05T09:53:50.870Z",
+  "gitCommit": "ae06af89b6388affad3c5beb21f2e8723e659e93"
+}
