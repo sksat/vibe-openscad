@@ -1,0 +1,79 @@
+// 家具用小型バット蝶番 (butt hinge)
+
+// 寸法
+plate_width = 30;
+plate_height = 25;
+plate_thickness = 2;
+pin_diameter = 4;
+pin_length = 32;
+knuckle_outer_diameter = 8;
+knuckle_inner_diameter = pin_diameter + 0.3;
+knuckle_length = 6;
+screw_hole_diameter = 3.2;
+screw_hole_depth = 1;
+screw_hole_counterbore_diameter = 6;
+screw_hole_pitch = 8;
+
+// knuckle 配置
+num_left_knuckles = 3;
+num_right_knuckles = 2;
+knuckle_offset = plate_width / (num_left_knuckles + num_right_knuckles -1);
+
+
+module left_plate() {
+  difference() {
+    // 板本体
+    cube([plate_width, plate_height, plate_thickness]);
+
+    // knuckle 穴
+    for (i = [0, knuckle_offset, 2 * knuckle_offset]) {
+      translate([i - plate_width/2, plate_height / 2, -1])
+        cylinder(h = plate_thickness + 2, r = knuckle_inner_diameter / 2);
+    }
+
+    // M3 皿穴
+    for (i = [plate_height / 2 - screw_hole_pitch/2, plate_height / 2, plate_height / 2 + screw_hole_pitch/2]) {
+      translate([plate_width/2 - 1.5 , i, -0.5])
+        rotate([90,0,0])
+          cylinder(h = plate_thickness+1, r=screw_hole_counterbore_diameter/2);
+      translate([plate_width/2 - 1.5 , i, -0.5])
+        rotate([90,0,0])
+          cylinder(h = plate_thickness + screw_hole_depth, r = screw_hole_diameter / 2);
+
+    }
+  }
+}
+
+module right_plate() {
+  difference() {
+    // 板本体
+    cube([plate_width, plate_height, plate_thickness]);
+
+    // knuckle 穴
+    for (i = [knuckle_offset/2, knuckle_offset * 3/2]) {
+      translate([-i + plate_width/2, plate_height / 2, -1])
+        cylinder(h = plate_thickness + 2, r = knuckle_inner_diameter / 2);
+    }
+
+    // M3 皿穴
+    for (i = [plate_height / 2 - screw_hole_pitch/2, plate_height / 2, plate_height / 2 + screw_hole_pitch/2]) {
+      translate([-plate_width/2 + 1.5 , i, -0.5])
+        rotate([90,0,0])
+          cylinder(h = plate_thickness+1, r=screw_hole_counterbore_diameter/2);
+      translate([-plate_width/2 + 1.5 , i, -0.5])
+        rotate([90,0,0])
+          cylinder(h = plate_thickness + screw_hole_depth, r = screw_hole_diameter / 2);
+
+    }
+  }
+}
+
+module pin() {
+  cylinder(h = pin_length, r = pin_diameter / 2);
+}
+
+
+// 完成品配置 (180° 開いた状態)
+translate([-plate_width/2 - knuckle_offset/2 , 0, 0]) left_plate();
+translate([plate_width/2 + knuckle_offset/2, 0, 0]) right_plate();
+translate([0, 0, -pin_length / 2]) pin();

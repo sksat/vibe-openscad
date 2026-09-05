@@ -1,0 +1,13 @@
+```openscad
+// Main Body of Mug
+difference() {
+    union() {
+        cylinder(r=40, h=90, $fn=32);
+        cylinder(r=40, h=6, $fn=32); // Base thickness
+    }
+    cylinder(r=35, h=84, $fn=32); // Inner hollow part
+}
+
+// Handle (D-shaped on +X side)
+union() {
+    translate([40, 0, 0]) rotate([-90, 0, 0]) cylinder(r=25, h=30, $fn=32); // Cur

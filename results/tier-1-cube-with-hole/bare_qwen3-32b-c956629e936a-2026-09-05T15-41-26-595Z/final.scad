@@ -1,0 +1,4 @@
+difference() {
+    cube([50, 50, 50], true);
+    cylinder(r = 10, h = 50, center = true);
+}
