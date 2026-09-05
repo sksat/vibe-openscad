@@ -165,6 +165,11 @@ gemini-3.8-flash:
   rate: { in: 0.75, out: 3.75 }
   thinking: dynamic
 
+gemini-3.7-flash:
+  provider: google
+  rate: { in: 0.75, out: 3.75 }
+  thinking: dynamic
+
 # 3.5 世代(GA、2026-05-19 I/O)
 gemini-3.5-flash:
   provider: google
