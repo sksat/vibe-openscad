@@ -1,0 +1,74 @@
+$fn = 180;
+
+// 単位: mm
+outer_diameter = 80;
+inner_diameter = 70;
+mug_height = 90;
+bottom_thickness = 6;
+
+handle_opening_height = 30;
+handle_opening_width = 25;
+handle_frame = 6;
+handle_depth = 10;
+
+outer_radius = outer_diameter / 2;
+inner_radius = inner_diameter / 2;
+
+handle_center_z = mug_height / 2;
+handle_base_x = outer_radius - 3;
+handle_outer_radius = handle_opening_width + 2 * handle_frame;
+epsilon = 0.1;
+
+// 外周は半円と直線からなる D 字。
+// 開口は高さ 30 mm、幅 25 mm の半楕円。
+module handle_profile() {
+    difference() {
+        intersection() {
+            circle(r = handle_outer_radius);
+            translate([0, -handle_outer_radius])
+                square([
+                    handle_outer_radius,
+                    2 * handle_outer_radius
+                ]);
+        }
+
+        translate([handle_frame, 0])
+            intersection() {
+                scale([
+                    handle_opening_width,
+                    handle_opening_height / 2
+                ])
+                    circle(r = 1);
+
+                translate([0, -handle_opening_height / 2])
+                    square([
+                        handle_opening_width,
+                        handle_opening_height
+                    ]);
+            }
+    }
+}
+
+module handle() {
+    // プロファイルを XZ 平面に配置し、Y 方向へ厚みを付ける。
+    // 本体外周へ 3 mm 食い込ませ、面接触ではなく体積で接続。
+    translate([handle_base_x, 0, handle_center_z])
+        rotate([90, 0, 0])
+            linear_extrude(height = handle_depth, center = true)
+                handle_profile();
+}
+
+render(convexity = 10)
+difference() {
+    union() {
+        cylinder(r = outer_radius, h = mug_height);
+        handle();
+    }
+
+    // 上面を開放し、底に 6 mm 残す。
+    translate([0, 0, bottom_thickness])
+        cylinder(
+            r = inner_radius,
+            h = mug_height - bottom_thickness + epsilon
+        );
+}

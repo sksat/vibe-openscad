@@ -1,0 +1,70 @@
+```openscad
+// 単位: mm
+$fn = 96;
+
+width = 50;
+depth = 40;
+height = 40;
+thickness = 3;
+
+hole_diameter = 4.5;
+countersink_diameter = 8;
+countersink_depth = 2;
+edge_offset = 10;
+
+eps = 0.01;
+
+// 内側コーナー: Y=0, Z=0。幅方向は X=0 を中心に配置。
+module bracket_body() {
+    union() {
+        // 水平フランジ: +Y 方向
+        translate([-width / 2, 0, -thickness])
+            cube([width, depth, thickness]);
+
+        // 垂直フランジ: +Z 方向
+        translate([-width / 2, -thickness, 0])
+            cube([width, thickness, height]);
+
+        // 直角接続部
+        translate([-width / 2, -thickness, -thickness])
+            cube([width, thickness, thickness]);
+    }
+}
+
+// ローカル Z=0 が外側表面、+Z が板内部へ向かう方向
+module countersunk_hole() {
+    taper = (countersink_diameter - hole_diameter)
+            / (2 * countersink_depth);
+
+    union() {
+        translate([0, 0, -eps])
+            cylinder(
+                h = thickness + 2 * eps,
+                d = hole_diameter
+            );
+
+        translate([0, 0, -eps])
+            cylinder(
+                h = countersink_depth + eps,
+                d1 = countersink_diameter + 2 * eps * taper,
+                d2 = hole_diameter
+            );
+    }
+}
+
+difference() {
+    bracket_body();
+
+    for (x = [-width / 2 + edge_offset,
+               width / 2 - edge_offset]) {
+        // 水平面: 中心線 Y=20、皿座面は下面 (-Z)
+        translate([x, depth / 2, -thickness])
+            countersunk_hole();
+
+        // 垂直面: 中心線 Z=20、皿座面は背面 (-Y)
+        translate([x, -thickness, height / 2])
+            rotate([-90, 0, 0])
+                countersunk_hole();
+    }
+}
+```

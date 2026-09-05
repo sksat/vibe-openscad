@@ -1,0 +1,33 @@
+{
+  "runId": "bare_gpt-6-astra-ef251a53f6a7-2026-09-05T10-10-19-194Z",
+  "taskId": "tier-1-stepped-pyramid",
+  "matrixId": "bare/gpt-6-astra",
+  "signature": "ef251a53f6a7fe13525795c87114e04f065dbe9da55795dd49bf60d93a67098e",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "f33c33343b97cdee4ab2a95d84c7f4be5791294d1e997d9c55a752a15c9a2446",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-6-astra"
+    },
+    "openscadVersion": "OpenSCAD version 2026.04.27",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-6-astra",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 3903
+  },
+  "tokens": {
+    "input": 151,
+    "output": 79
+  },
+  "cost_usd": 0.00546,
+  "createdAt": "2026-09-05T10:10:19.195Z",
+  "gitCommit": "d69c2b8ad7096565c04e35c594251b6b21e60c3b"
+}
