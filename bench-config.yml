@@ -1,6 +1,6 @@
 defaults:
   samples: 1
-  timeoutSec: 300
+  timeoutSec: 1200   # ローカルの推論モデルは生成が遅く 300 秒では足りない
 
 # 可能なら dated snapshot を使う。Anthropic がエイリアスを内部的に
 # 別スナップショットへ向け直しても、エイリアス文字列は変わらず
@@ -737,6 +737,10 @@ matrix:
     harness: { kind: bare }
     provider: openai-self-hosted
     model: openai/gpt-oss-20b
+  - id: bare/gemma-4-12b-qat
+    harness: { kind: bare }
+    provider: openai-self-hosted
+    model: google/gemma-4-12b-qat
   - id: bare/gemma-3-27b
     harness: { kind: bare }
     provider: openai-self-hosted

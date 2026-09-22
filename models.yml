@@ -498,3 +498,8 @@ nvidia/nemotron-3-nano-4b:
 qwen3-:
   provider: openai-self-hosted
   vision: false
+
+# Gemma 4 12B（公式 QAT）
+google/gemma-4-12b-qat:
+  provider: openai-self-hosted
+  vision: false
