@@ -1,0 +1,33 @@
+{
+  "runId": "bare_gemma-4-12b-qat-6c2350d80e60-2026-09-22T21-38-06-402Z",
+  "taskId": "tier-2-hex-bolt",
+  "matrixId": "bare/gemma-4-12b-qat",
+  "signature": "6c2350d80e60fe4e1e042cbdc7c1087bddcd07c3781887e8417853a1e794c6df",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "0fee46bf3152dd6738d6d2af93e06dad04bb6bddd3b2b528c57138298ec0b5d0",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "google/gemma-4-12b-qat"
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "google/gemma-4-12b-qat",
+  "resolvedModel": "google/gemma-4-12b-qat",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 152278
+  },
+  "tokens": {
+    "input": 187,
+    "output": 5296
+  },
+  "createdAt": "2026-09-22T21:38:06.402Z",
+  "gitCommit": "fcc36cdc7378c52bb7c12abf4ce2491c1a67bf5c"
+}
