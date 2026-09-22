@@ -229,17 +229,16 @@ export interface OpenAISelfHostedProviderDeps {
 }
 
 /**
- * 1 リクエストの上限(10 分)。
+ * 1 リクエストの上限(30 分)。ローカル生成は遅い。実測で qwen3-32b の
+ * tier-2 offset-handle-mug が 796.9 秒(13 分)かかった。Anthropic の
+ * ストリーミング(STREAM_TIMEOUT_MS)と同じ 30 分に揃える。
  *
- * openai-node の既定は 1 リクエスト 10 分 + リトライ 2 回で、ローカル endpoint
- * が応答を返さないまま固まると最悪 30 分待つ。実測では成功する run は 5 分以内
- * (qwen3-32b の tier-2 で 290s)に終わる一方、固まった run は 15 分ずつ溶かした。
- *
- * リトライは 0 にする。固まる相手は自分のローカル endpoint なので、10 分返って
- * こない時点でサーバかコネクションが詰まっており、同じ長い生成をもう一度投げても
- * 待ち時間が伸びるだけになる。落として api_error として記録し、次の候補へ進める。
+ * リトライは 0 にする。相手は自分のローカル endpoint なので、この時間返って
+ * こない時点でサーバかコネクションが詰まっており、同じ長い生成をもう一度
+ * 投げても待ち時間が伸びるだけになる。落として `api_error` にし、次の候補へ
+ * 進めたほうがよい。
  */
-const REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
+const REQUEST_TIMEOUT_MS = 30 * 60 * 1000;
 
 
 /** `/api/v0/models` から現在のロード幅を読む。未ロード / 不明なら undefined。 */
@@ -460,6 +459,64 @@ async function reloadLMStudioModel(
   await loadLMStudioModel(baseUrl, modelKey, contextLength);
 }
 
+/**
+ * STREAMING_NOTE — セルフホストはストリーミングで受ける。
+ *
+ * Node の fetch(undici)は `headersTimeout` が既定 300 秒。非ストリーミングだと
+ * 生成が終わるまでレスポンスヘッダが返らないので、5 分を超える run は SDK に何秒
+ * 渡しても undici が先に接続を切る。素の fetch に 900 秒の AbortSignal を付けて
+ * 直接投げても 300.7 秒で `fetch failed` になった。qwen3-32b の tier-2 以降は
+ * 5 分を超えるため、非ストリーミングでは記録そのものが取れない。
+ *
+ * ストリーミングならヘッダが即座に返り、chunk が届き続けるかぎり body も切られない。
+ *
+ * SDK が非ストリーミングの応答(テストのモック等)を返した場合はそのまま通す。
+ */
+async function collectStream(
+  raw: unknown,
+): Promise<{
+  choices: { message?: { content?: string }; finish_reason?: string }[];
+  model?: string;
+  usage?: { prompt_tokens: number; completion_tokens: number };
+  stats?: LMStudioStats;
+}> {
+  const iterable = raw as AsyncIterable<unknown> & { choices?: unknown };
+  if (typeof iterable?.[Symbol.asyncIterator] !== "function") {
+    return raw as never;
+  }
+  let text = "";
+  let finishReason: string | undefined;
+  let model: string | undefined;
+  let usage: { prompt_tokens: number; completion_tokens: number } | undefined;
+  let stats: LMStudioStats | undefined;
+  for await (const chunk of iterable) {
+    const c = chunk as {
+      model?: string;
+      usage?: { prompt_tokens: number; completion_tokens: number };
+      stats?: LMStudioStats;
+      choices?: { delta?: { content?: string }; finish_reason?: string }[];
+    };
+    if (c.model) model = c.model;
+    if (c.usage) usage = c.usage;
+    if (c.stats) stats = c.stats;
+    for (const ch of c.choices ?? []) {
+      if (ch.delta?.content) text += ch.delta.content;
+      if (ch.finish_reason) finishReason = ch.finish_reason;
+    }
+  }
+  return {
+    choices: [
+      {
+        message: { content: text },
+        ...(finishReason ? { finish_reason: finishReason } : {}),
+      },
+    ],
+    ...(model ? { model } : {}),
+    ...(usage ? { usage } : {}),
+    ...(stats ? { stats } : {}),
+  };
+}
+
 export function createOpenAISelfHostedProvider(
   deps: OpenAISelfHostedProviderDeps = {},
 ): Provider {
@@ -518,13 +575,17 @@ export function createOpenAISelfHostedProvider(
         (req.modelOptions ?? {}) as Record<string, unknown> & {
           context_length?: unknown;
         };
-      const params: ChatCompletionCreateParamsNonStreaming = {
+      const params = {
         model: req.model,
         messages,
         // ローカル LLM 側 max_tokens は実装によって名前が違う(num_predict
         // 等)。modelOptions に `max_tokens` を入れて override する想定。
         ...modelOptions,
-      };
+        // ストリーミングで受ける。理由は STREAMING_NOTE を参照。
+        stream: true,
+        // 既定ではストリーミング応答に usage が乗らない。明示的に要求する。
+        stream_options: { include_usage: true },
+      } as unknown as ChatCompletionCreateParamsNonStreaming;
       const client = await getClient();
       if (typeof declaredContext === "number") {
         await ensureLoadedContextLength(
@@ -534,10 +595,11 @@ export function createOpenAISelfHostedProvider(
           deps.loadModel ?? reloadLMStudioModel.bind(null, baseURL),
         );
       }
-      const res = await client.chat.completions.create(params, {
+      const raw = await client.chat.completions.create(params, {
         timeout: REQUEST_TIMEOUT_MS,
         maxRetries: 0,
       });
+      const res = await collectStream(raw);
       const choice = res.choices[0];
       const out: CompletionResponse = {
         text: choice?.message?.content ?? "",

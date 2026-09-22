@@ -16,6 +16,19 @@ function makeMockClient(response: unknown) {
   };
 }
 
+/** ストリーミング応答のモック。chunk を順に流す async iterable を返す。 */
+function makeStreamingMockClient(chunks: unknown[]) {
+  const create = vi.fn().mockResolvedValue({
+    async *[Symbol.asyncIterator]() {
+      for (const c of chunks) yield c;
+    },
+  });
+  return {
+    create,
+    client: { chat: { completions: { create } } } as unknown as OpenAI,
+  };
+}
+
 describe("ollama provider (OpenAI-compat /v1/chat/completions)", () => {
   it("invokes chat.completions.create with single-shot prompt + parses tokens/text", async () => {
     const { client, create } = makeMockClient({
@@ -270,6 +283,59 @@ describe("ollama provider (OpenAI-compat /v1/chat/completions)", () => {
     expect(res.text).toBe("x");
     expect(fetchMock).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
+  });
+
+  it("streams the request and concatenates the deltas", async () => {
+    // Node の fetch(undici)は headersTimeout が既定 300 秒。非ストリーミング
+    // だと生成が終わるまでヘッダが返らないので、5 分を超える run は SDK に
+    // 何秒渡しても undici に切られる。ストリーミングならヘッダが即座に返る。
+    const { client, create } = makeStreamingMockClient([
+      { choices: [{ delta: { content: "cu" } }] },
+      { choices: [{ delta: { content: "be(" } }] },
+      { choices: [{ delta: { content: "10);" }, finish_reason: "stop" }] },
+      {
+        choices: [],
+        model: "qwen3-32b",
+        usage: { prompt_tokens: 12, completion_tokens: 34 },
+      },
+    ]);
+    const p = createOpenAISelfHostedProvider({ client });
+
+    const res = await p.complete({ prompt: "p", model: "qwen3-32b" });
+
+    expect(create.mock.calls[0]?.[0]).toMatchObject({ stream: true });
+    expect(res.text).toBe("cube(10);");
+    expect(res.stopReason).toBe("stop");
+    expect(res.tokens).toEqual({ input: 12, output: 34 });
+  });
+
+  it("asks for usage on the stream", async () => {
+    // 既定ではストリーミング応答に usage が乗らない。明示的に要求する。
+    const { client, create } = makeStreamingMockClient([
+      { choices: [{ delta: { content: "x" }, finish_reason: "stop" }] },
+    ]);
+    const p = createOpenAISelfHostedProvider({ client });
+
+    await p.complete({ prompt: "p", model: "qwen3-32b" });
+
+    expect(create.mock.calls[0]?.[0]).toMatchObject({
+      stream_options: { include_usage: true },
+    });
+  });
+
+  it("survives chunks that carry neither content nor usage", async () => {
+    // role だけの先頭 chunk や、空の choices を挟む実装がある。
+    const { client } = makeStreamingMockClient([
+      { choices: [{ delta: { role: "assistant" } }] },
+      { choices: [] },
+      { choices: [{ delta: {} }] },
+      { choices: [{ delta: { content: "ok" }, finish_reason: "stop" }] },
+    ]);
+    const p = createOpenAISelfHostedProvider({ client });
+
+    const res = await p.complete({ prompt: "p", model: "qwen3-32b" });
+
+    expect(res.text).toBe("ok");
   });
 
   it("propagates SDK errors as-is(host が落ちている等の判別を上位に任せる)", async () => {

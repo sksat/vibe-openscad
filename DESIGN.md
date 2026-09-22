@@ -159,6 +159,27 @@ context でロードし直してから走らせる。** ロードしても宣言
 しないまま残っているが、宣言を後から足すとその時点で signature が変わり回し直しに
 なるので、必要になったときに判断する。
 
+### セルフホストはストリーミングで受ける
+
+Node の fetch(undici)は `headersTimeout` が既定 **300 秒**。非ストリーミングだと
+生成が終わるまでレスポンスヘッダが返らないので、5 分を超える run は SDK に何秒
+渡しても undici が先に接続を切る。素の fetch に 900 秒の AbortSignal を付けて直接
+投げても 300.7 秒で `fetch failed` になった。
+
+ローカル生成はこの壁に当たる。qwen3-32b の tier-2 offset-handle-mug は
+`headersTimeout: 0` の dispatcher で計ると 796.9 秒(13 分)かかっていた。
+非ストリーミングでは記録そのものが取れない。
+
+ストリーミングならヘッダが即座に返り、chunk が届き続けるかぎり body も切られない。
+既定ではストリーミング応答に usage が乗らないので `stream_options.include_usage`
+を明示する。
+
+**転送方式は全 self-hosted エントリで一律**。Anthropic では `max_tokens` で分岐させて
+「同じ signature なら同じ転送方式」を保っているが、セルフホストには対応する分岐条件が
+無い。この変更より前に取った run は非ストリーミングで、signature は同じまま残る。
+非ストリーミングでは 5 分超の run が原理的に取れない以上、選択肢として並存しないため
+`revision` は上げていない。
+
 ### provider 呼び出しには明示的な上限を持たせる
 
 `bench-config.yml` の `defaults.timeoutSec` は provider 呼び出しに配線されていない。
