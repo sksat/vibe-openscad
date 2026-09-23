@@ -1,0 +1,29 @@
+```openscad
+module bolt() {
+  // Hexagon Head
+  // M8 Across flats = 13mm -> Inradius = 6.5mm
+  // Head height = 5.3mm
+  // Head bottom at z=0
+  
+  $r = 6.5;
+  $pts = [];
+  for (i = [0 : 5]) {
+    $pts = concat($pts, [[ $r * cos(i * 60 * pi / 180), $r * sin(i * 60 * pi / 180) ]]);
+  }
+
+  translate([0, 0, 0])
+  linear_extrude(height = 5.3) {
+    polygon(points = $pts);
+  }
+
+  // Shank
+  // Diameter = 8mm
+  // Length = 30mm
+  // Top at z=0, Bottom at z=-30
+  
+  translate([0, 0, -30])
+  cylinder(d = 8, h = 30, center = false);
+}
+
+bolt();
+```

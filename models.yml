@@ -503,3 +503,8 @@ qwen3-:
 google/gemma-4-12b-qat:
   provider: openai-self-hosted
   vision: false
+
+# Qwen3.5 9B
+qwen/qwen3.5-9b:
+  provider: openai-self-hosted
+  vision: false

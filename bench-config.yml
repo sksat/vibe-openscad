@@ -1,6 +1,13 @@
 defaults:
   samples: 1
-  timeoutSec: 1200   # ローカルの推論モデルは生成が遅く 300 秒では足りない
+  timeoutSec: 3600   # 推論モデルは 4 万トークン超の思考を吐く
+  concurrency:
+    global: 4
+    perProvider:
+      anthropic: 2
+      # セルフホストは llama.cpp サーバー 1 本に投げるので直列。並走させると
+      # 待たされた側が timeoutSec を使い切って api_error になる
+      openai-self-hosted: 1
 
 # 可能なら dated snapshot を使う。Anthropic がエイリアスを内部的に
 # 別スナップショットへ向け直しても、エイリアス文字列は変わらず
@@ -737,6 +744,10 @@ matrix:
     harness: { kind: bare }
     provider: openai-self-hosted
     model: openai/gpt-oss-20b
+  - id: bare/qwen3.5-9b
+    harness: { kind: bare }
+    provider: openai-self-hosted
+    model: qwen/qwen3.5-9b
   - id: bare/gemma-4-12b-qat
     harness: { kind: bare }
     provider: openai-self-hosted

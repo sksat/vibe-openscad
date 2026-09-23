@@ -1,0 +1,83 @@
+module lbracket() {
+  // L-Bracket Dimensions
+  width = 50;    // X axis
+  depth_h = 40;  // Y axis (Horizontal)
+  height_v = 40; // Z axis (Vertical)
+  thickness = 3; // mm
+  
+  // Inner corner at origin (0,0,0)
+  // Horizontal flange extends +Y
+  // Vertical flange extends +Z
+  // Thickness is centered on the inner plane
+  
+  union() {
+    // Horizontal Flange (XY plane, thickness Z)
+    // X: 0 to 50, Y: 0 to 40, Z: -1.5 to 1.5
+    translate([0, 0, 0])
+      cube([width, depth_h, thickness]);
+    
+    // Vertical Flange (XZ plane, thickness Y)
+    // X: 0 to 50, Z: 0 to 40, Y: -1.5 to 1.5
+    translate([0, 0, 0])
+      cube([width, thickness, height_v]);
+  }
+  
+  // Remove holes
+  difference() {
+    // Re-extract shape for hole positioning
+    union() {
+      translate([0, 0, 0])
+        cube([width, depth_h, thickness]);
+      translate([0, 0, 0])
+        cube([width, thickness, height_v]);
+    }
+    
+    // Hole positions
+    // Horizontal Flange: X=25, Y=10, Y=30 (Centered on X-axis)
+    // Vertical Flange: X=25, Z=10, Z=30 (Centered on X-axis)
+    // Thickness: 3mm, Counterbore depth: 2mm
+    
+    // Hole parameters
+    d_through = 4.5;
+    d_counter = 8;
+    h_counter = 2;
+    
+    // Horizontal Flange Holes (Axis Z)
+    // Counterbore on outer side (Z=1.5 face) -> Center Z=0.5
+    // Through hole centered (Z=0)
+    // Y positions: 10, 30
+    // X position: 25
+    for (y = [10, 30]) {
+      translate([25, y, 0]) {
+        // Counterbore
+        translate([0, 0, 0.5])
+          cylinder(d = d_counter, h = h_counter, $fn=64);
+        // Through Hole
+        translate([0, 0, 0])
+          cylinder(d = d_through, h = thickness, $fn=64);
+      }
+    }
+    
+    // Vertical Flange Holes (Axis Y)
+    // Counterbore on outer side (Y=1.5 face) -> Center Y=0.5
+    // Through hole centered (Y=0)
+    // Z positions: 10, 30
+    // X position: 25
+    for (z = [10, 30]) {
+      translate([25, 0, z]) {
+        // Counterbore
+        translate([0, 0.5, 0])
+          cylinder(d = d_counter, h = h_counter, $fn=64);
+        // Through Hole
+        translate([0, 0, 0])
+          cylinder(d = d_through, h = thickness, $fn=64);
+      }
+    }
+  }
+}
+
+// Display
+module lbracket_view() {
+  // Rotate for better visualization if needed, but keeping inner corner at origin
+  // lbracket();
+}
