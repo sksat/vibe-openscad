@@ -1,0 +1,39 @@
+$fn = 64;
+
+W = 50;
+D = 40;
+H = 40;
+T = 3;
+
+x0 = -W / 2;
+row_h = D / 2;
+row_v = H / 2;
+hole_x = [-W / 2 + 10, W / 2 - 10];
+
+module countersunk_hole_z() {
+    union() {
+        translate([0, 0, -1])
+            cylinder(h = T + 2, r1 = 2.25, r2 = 2.25);
+        cylinder(h = 2, r1 = 4, r2 = 2.25);
+    }
+}
+
+difference() {
+    union() {
+        translate([x0, 0, -T])
+            cube([W, D, T]);
+        translate([x0, -T, 0])
+            cube([W, T, H]);
+        translate([x0, -T, -T])
+            cube([W, T, T]);
+    }
+
+    for (x = hole_x) {
+        translate([x, row_h, -T])
+            countersunk_hole_z();
+
+        translate([x, -T, row_v])
+            rotate([-90, 0, 0])
+                countersunk_hole_z();
+    }
+}

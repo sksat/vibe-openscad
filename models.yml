@@ -512,3 +512,8 @@ qwen/qwen3.5-9b:
 openai/gpt-oss-120b:
   provider: openai-self-hosted
   vision: false
+
+# Qwen3.8 27B（IQ3_XXS 量子化）
+qwen/qwen3.8-27b:
+  provider: openai-self-hosted
+  vision: false
