@@ -1,0 +1,102 @@
+$fn = 64;
+
+//-------------------------------------------------
+// Parameters
+leaf_thick = 2;
+leaf_len   = 30;
+leaf_wid   = 25;
+
+knuckle_len = 6;
+knuckle_out_r = 4;
+knuckle_in_r  = 2.3; // pin radius 2 + 0.3 clearance
+
+pin_r   = 2;
+pin_len = 32;
+
+hole_dia_top = 6;   // countersink top diameter
+hole_dia_bot = 3.2; // through hole diameter
+hole_depth   = 1;   // countersink depth
+hole_pitch   = 8;
+hole_ys = [6, 14, 22]; // positions for three holes
+
+//-------------------------------------------------
+// Helper modules
+module knuckle(yc) {
+    // tube (outer - inner) centered at X=0, Z=0, Y=yc
+    translate([0, yc, 0])
+        rotate([90,0,0])
+            difference() {
+                cylinder(r=knuckle_out_r, h=knuckle_len, center=true);
+                cylinder(r=knuckle_in_r,  h=knuckle_len, center=true);
+            }
+}
+
+module countersink_hole(yc, side="left") {
+    // side = "left"  -> X negative outward
+    // side = "right" -> X positive outward
+    sign = (side=="left") ? -1 : 1;
+    // countersink cone (base on leaf surface)
+    translate([sign*(leaf_thick/2 + hole_depth), yc, 0])
+        rotate([0,90,0])
+            cylinder(r1=hole_dia_top/2, r2=hole_dia_bot/2, h=hole_depth, center=false);
+    // through hole cylinder
+    translate([sign*(leaf_thick/2), yc, 0])
+        rotate([0,90,0])
+            cylinder(r=hole_dia_bot/2, h=leaf_thick+0.01, center=true);
+}
+
+//-------------------------------------------------
+// Leaf definition
+module leaf(side="left") {
+    sign = (side=="left") ? -1 : 1;
+    // Main block
+    block = translate([sign*leaf_thick, 0, -leaf_wid/2])
+                cube([leaf_thick, leaf_len, leaf_wid], center=false);
+    // Knuckles (interleaved)
+    knuckles = [];
+    if (side=="left") {
+        // sections 0,2,4  -> centers 3,15,27
+        knuckles = [3, 15, 27];
+    } else {
+        // sections 1,3 -> centers 9,21
+        knuckles = [9, 21];
+    }
+    // Build leaf with knuckles
+    leaf_union = union() {
+        block;
+        for (yc = knuckles) knuckle(yc);
+    }
+    // Subtract countersink holes on outer side
+    for (yh = hole_ys)
+        difference() {
+            leaf_union;
+            countersink_hole(yh, side);
+        }
+    // The above loop would overwrite leaf_union each iteration,
+    // so we instead apply subtraction in a single difference:
+    difference() {
+        leaf_union;
+        for (yh = hole_ys)
+            countersink_hole(yh, side);
+    }
+}
+
+//-------------------------------------------------
+// Pin definition
+module pin() {
+    // Pin centered in Y at leaf midpoint, extends 1mm beyond each leaf end
+    translate([0, leaf_len/2, 0])
+        rotate([90,0,0])
+            cylinder(r=pin_r, h=pin_len, center=true);
+}
+
+//-------------------------------------------------
+// Assembly
+union() {
+    // Left leaf (x negative side)
+    leaf("left");
+    // Right leaf (x positive side)
+    leaf("right");
+    // Pin
+    pin();
+}

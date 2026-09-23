@@ -1,0 +1,33 @@
+{
+  "runId": "bare_gpt-oss-120b-3c55a560264c-2026-09-23T02-18-30-027Z",
+  "taskId": "tier-1-stepped-pyramid",
+  "matrixId": "bare/gpt-oss-120b",
+  "signature": "3c55a560264c5feb92df5978141c5af763382dd236ef122c8fd3f5c8ff91e0b0",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "f33c33343b97cdee4ab2a95d84c7f4be5791294d1e997d9c55a752a15c9a2446",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "openai/gpt-oss-120b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "openai/gpt-oss-120b",
+  "resolvedModel": "openai/gpt-oss-120b",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 5881
+  },
+  "tokens": {
+    "input": 212,
+    "output": 518
+  },
+  "createdAt": "2026-09-23T02:18:30.027Z",
+  "gitCommit": "c38d83c1786012547f450a29dbdc72d0bf2a39c0"
+}

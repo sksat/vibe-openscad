@@ -1,0 +1,34 @@
+{
+  "runId": "bare_gpt-oss-120b-47bd72458108-2026-09-23T02-21-25-001Z",
+  "taskId": "tier-3-butt-hinge",
+  "matrixId": "bare/gpt-oss-120b",
+  "signature": "47bd72458108c803ac7feff2bedbe99c81b8b6543a6f8ff951237765e28cc435",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dd7199030a8827a181914869189fc45a2e5637023f0c8c59532d442557036e7c",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "openai/gpt-oss-120b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "openai/gpt-oss-120b",
+  "resolvedModel": "openai/gpt-oss-120b",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "render_error",
+  "timing": {
+    "totalMs": 52487
+  },
+  "tokens": {
+    "input": 653,
+    "output": 4837
+  },
+  "createdAt": "2026-09-23T02:21:25.001Z",
+  "gitCommit": "c38d83c1786012547f450a29dbdc72d0bf2a39c0",
+  "error": "openscad stl render failed (exit 1): ERROR: Parser error: syntax error in file ../../../../../tmp/render-asWeQa/input.scad, line 54\nCan't parse file '/tmp/render-asWeQa/input.scad'!\n\n"
+}

@@ -508,3 +508,7 @@ google/gemma-4-12b-qat:
 qwen/qwen3.5-9b:
   provider: openai-self-hosted
   vision: false
+
+openai/gpt-oss-120b:
+  provider: openai-self-hosted
+  vision: false
