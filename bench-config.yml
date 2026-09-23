@@ -748,6 +748,10 @@ matrix:
     harness: { kind: bare }
     provider: openai-self-hosted
     model: qwen/qwen3.5-9b
+  - id: bare/gpt-oss-120b
+    harness: { kind: bare }
+    provider: openai-self-hosted
+    model: openai/gpt-oss-120b
   - id: bare/gemma-4-12b-qat
     harness: { kind: bare }
     provider: openai-self-hosted

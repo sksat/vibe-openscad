@@ -1,0 +1,47 @@
+```openscad
+$fn = 64; // smooth circles
+
+module cs_hole_z(pos) {
+    translate(pos)
+        union() {
+            // through hole
+            cylinder(d = 4.5, h = 3, center = false);
+            // countersink (outer side, +Z)
+            translate([0, 0, 3])
+                cylinder(r1 = 4.5/2, r2 = 8/2, h = 2, center = false);
+        }
+}
+
+module cs_hole_y(pos) {
+    translate(pos)
+        rotate([90, 0, 0])  // align hole axis with +Y
+        union() {
+            // through hole
+            cylinder(d = 4.5, h = 3, center = false);
+            // countersink (outer side, +Y)
+            translate([0, 0, 3])
+                cylinder(r1 = 4.5/2, r2 = 8/2, h = 2, center = false);
+        }
+}
+
+difference() {
+    // L‑bracket body
+    union() {
+        // horizontal flange (extends +Y)
+        translate([0, 0, 0])
+            cube([50, 40, 3]);          // width X, depth Y, thickness Z
+
+        // vertical flange (extends +Z)
+        translate([0, 0, 0])
+            cube([50, 3, 40]);          // width X, thickness Y, height Z
+    }
+
+    // holes on horizontal flange
+    cs_hole_z([10, 20, 0]);   // left hole
+    cs_hole_z([40, 20, 0]);   // right hole
+
+    // holes on vertical flange
+    cs_hole_y([10, 0, 20]);   // left hole
+    cs_hole_y([40, 0, 20]);   // right hole
+}
+```

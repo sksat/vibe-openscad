@@ -1,0 +1,50 @@
+```openscad
+$fn = 128;
+
+// パラメータ
+outer_d   = 80;   // 外径 (mm)
+wall      = 4;    // 壁厚 (mm)
+bottom    = 6;    // 底厚 (mm)
+height    = 100;  // 高さ (mm)
+handle_r  = 12;   // 取手の断面半径 (mm)
+
+// 計算
+outer_r   = outer_d/2;          // 外半径
+inner_r   = outer_r - wall;     // 内半径
+inner_h   = height - bottom;    // 内部高さ
+
+// カップ本体
+module cup() {
+    difference() {
+        cylinder(h = height, r = outer_r);
+        translate([0,0,bottom])
+            cylinder(h = inner_h, r = inner_r);
+    }
+}
+
+// トーラス (取手のベース)
+module torus(R, r) {
+    rotate_extrude()
+        translate([R,0])
+            circle(r = r);
+}
+
+// 取手（半トーラス）
+module handle() {
+    // 完全トーラスを作成し、外側半分だけを残す
+    intersection() {
+        // カップの中心高さに配置
+        translate([0,0,height/2])
+            torus(R = outer_r + handle_r, r = handle_r);
+        // x ≥ outer_r の領域だけ残す
+        translate([outer_r, -100, -100])
+            cube([200, 200, 200]);
+    }
+}
+
+// 組み立て
+union() {
+    cup();
+    handle();
+}
+```
