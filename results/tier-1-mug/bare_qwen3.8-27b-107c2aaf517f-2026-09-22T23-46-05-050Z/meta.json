@@ -1,0 +1,33 @@
+{
+  "runId": "bare_qwen3.8-27b-107c2aaf517f-2026-09-22T23-46-05-050Z",
+  "taskId": "tier-1-mug",
+  "matrixId": "bare/qwen3.8-27b",
+  "signature": "107c2aaf517ffd1b6ed1649f50d0110a897de32a462da3155cff15ff9961ac74",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "883b512feb40f76c3fdcb332c7c513c491c27c8511f65b90fecbad6b6c197cd5",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "qwen/qwen3.8-27b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "qwen/qwen3.8-27b",
+  "resolvedModel": "qwen/qwen3.8-27b",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 598239
+  },
+  "tokens": {
+    "input": 193,
+    "output": 25684
+  },
+  "createdAt": "2026-09-22T23:46:05.050Z",
+  "gitCommit": "c38d83c1786012547f450a29dbdc72d0bf2a39c0"
+}
