@@ -1,0 +1,16 @@
+```openscad
+difference() {
+    union() {
+        cube([50, 40, 3]);
+        cube([50, 3, 40]);
+    }
+
+    for (x = [10, 40]) {
+        translate([x, 20, 0]) cylinder(d = 4.5, h = 3);
+        translate([x, 20, 1]) cylinder(r1 = 2.25, r2 = 4, h = 2);
+
+        translate([x, 3, 20]) rotate([90, 0, 0]) cylinder(d = 4.5, h = 3);
+        translate([x, 3, 20]) rotate([90, 0, 0]) cylinder(r1 = 4, r2 = 2.25, h = 2);
+    }
+}
+```

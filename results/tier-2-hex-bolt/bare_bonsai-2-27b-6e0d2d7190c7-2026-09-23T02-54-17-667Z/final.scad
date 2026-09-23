@@ -1,0 +1,4 @@
+union() {
+    translate([0, 0, -30]) cylinder(d = 8, h = 30);
+    polygon([for(i = 0..5) [cos(i * 60) * 13 / sqrt(3), sin(i * 60) * 13 / sqrt(3)]], h = 5.3);
+}

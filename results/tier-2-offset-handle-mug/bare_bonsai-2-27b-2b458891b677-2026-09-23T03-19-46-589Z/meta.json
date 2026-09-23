@@ -1,0 +1,33 @@
+{
+  "runId": "bare_bonsai-2-27b-2b458891b677-2026-09-23T03-19-46-589Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "bare/bonsai-2-27b",
+  "signature": "2b458891b6773f3496284fb65a68285a5a08cb60ffd31822e935e3447bf0f580",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "prism-ml/bonsai-2-27b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "prism-ml/bonsai-2-27b",
+  "resolvedModel": "prism-ml/bonsai-2-27b",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 1118451
+  },
+  "tokens": {
+    "input": 289,
+    "output": 57864
+  },
+  "createdAt": "2026-09-23T03:19:46.589Z",
+  "gitCommit": "c38d83c1786012547f450a29dbdc72d0bf2a39c0"
+}

@@ -1,0 +1,20 @@
+```openscad
+union() {
+    difference() {
+        cylinder(h = 90, d = 80);
+        cylinder(h = 84, d = 70, z = 6);
+    }
+    rotate([90, 0, 0])
+    linear_extrude(height = 12, center = true)
+    difference() {
+        union() {
+            square([19, 50], pos = [36, 20]);
+            difference() {
+                circle(d = 50, pos = [55, 45]);
+                square([155, 200], pos = [-100, -50]);
+            }
+        }
+        square([25, 30], pos = [40, 30]);
+    }
+}
+```

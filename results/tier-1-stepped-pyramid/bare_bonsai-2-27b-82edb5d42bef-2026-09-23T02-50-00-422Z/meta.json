@@ -1,0 +1,33 @@
+{
+  "runId": "bare_bonsai-2-27b-82edb5d42bef-2026-09-23T02-50-00-422Z",
+  "taskId": "tier-1-stepped-pyramid",
+  "matrixId": "bare/bonsai-2-27b",
+  "signature": "82edb5d42befd1b63ce3fc90e58bd96cd43318cb03b5516dea49a2b0523c06e6",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "f33c33343b97cdee4ab2a95d84c7f4be5791294d1e997d9c55a752a15c9a2446",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "prism-ml/bonsai-2-27b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "prism-ml/bonsai-2-27b",
+  "resolvedModel": "prism-ml/bonsai-2-27b",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 10593
+  },
+  "tokens": {
+    "input": 191,
+    "output": 585
+  },
+  "createdAt": "2026-09-23T02:50:00.422Z",
+  "gitCommit": "c38d83c1786012547f450a29dbdc72d0bf2a39c0"
+}
