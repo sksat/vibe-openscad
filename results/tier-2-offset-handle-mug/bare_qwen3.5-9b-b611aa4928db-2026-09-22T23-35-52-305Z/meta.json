@@ -1,0 +1,33 @@
+{
+  "runId": "bare_qwen3.5-9b-b611aa4928db-2026-09-22T23-35-52-305Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "bare/qwen3.5-9b",
+  "signature": "b611aa4928dbbcc404db58b365e13e5c2f1f0ea51ce3199bd2df4f6bc3b8ac3e",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "qwen/qwen3.5-9b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "qwen/qwen3.5-9b",
+  "resolvedModel": "qwen/qwen3.5-9b",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 432634
+  },
+  "tokens": {
+    "input": 247,
+    "output": 21956
+  },
+  "createdAt": "2026-09-22T23:35:52.305Z",
+  "gitCommit": "c38d83c1786012547f450a29dbdc72d0bf2a39c0"
+}
