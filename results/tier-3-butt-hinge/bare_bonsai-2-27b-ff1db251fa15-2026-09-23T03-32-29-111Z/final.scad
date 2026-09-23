@@ -1,0 +1,88 @@
+$fn = 128;
+
+const W = 25;
+const L = 30;
+const T = 2;
+
+const PIN_D = 4;
+const BORE_D = 4.6;
+const K_D = 8;
+const SEG = 6;
+
+const LEFT_K = [0, 12, 24];
+const RIGHT_K = [6, 18];
+
+const HOLE_X = 20;
+const HOLE_Y = [7, 15, 23];
+
+const CS_D = 6;
+const TH_D = 3.2;
+
+module cs_hole(x, y) {
+    union {
+        translate([x, y, -1])
+            cylinder(1, d=TH_D, d2=CS_D);
+
+        translate([x, y, -2])
+            cylinder(2, d=TH_D);
+    }
+}
+
+module left_part() {
+    difference {
+        union {
+            translate([-W, 0, -T])
+                cube([W, L, T]);
+
+            for (yy = LEFT_K)
+                translate([0, yy, 0])
+                    cylinder(SEG, d=K_D, direction=[0,1,0]);
+        }
+
+        union {
+            translate([0, -1, 0])
+                cylinder(L + 2, d=BORE_D, direction=[0,1,0]);
+
+            for (yy = RIGHT_K)
+                translate([0, yy, 0])
+                    cylinder(SEG, d=K_D, direction=[0,1,0]);
+
+            for (yy = HOLE_Y)
+                cs_hole(-HOLE_X, yy);
+        }
+    }
+}
+
+module right_part() {
+    difference {
+        union {
+            translate([0, 0, -T])
+                cube([W, L, T]);
+
+            for (yy = RIGHT_K)
+                translate([0, yy, 0])
+                    cylinder(SEG, d=K_D, direction=[0,1,0]);
+        }
+
+        union {
+            translate([0, -1, 0])
+                cylinder(L + 2, d=BORE_D, direction=[0,1,0]);
+
+            for (yy = LEFT_K)
+                translate([0, yy, 0])
+                    cylinder(SEG, d=K_D, direction=[0,1,0]);
+
+            for (yy = HOLE_Y)
+                cs_hole(HOLE_X, yy);
+        }
+    }
+}
+
+module pin_axis() {
+    translate([0, -1, 0])
+        cylinder(L + 2, d=PIN_D, direction=[0,1,0]);
+}
+
+left_part();
+right_part();
+pin_axis();

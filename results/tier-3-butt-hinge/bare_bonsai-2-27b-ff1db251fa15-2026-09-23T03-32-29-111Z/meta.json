@@ -1,0 +1,34 @@
+{
+  "runId": "bare_bonsai-2-27b-ff1db251fa15-2026-09-23T03-32-29-111Z",
+  "taskId": "tier-3-butt-hinge",
+  "matrixId": "bare/bonsai-2-27b",
+  "signature": "ff1db251fa150e11884968e6e197bbcb8f282519c9cdbd18843036bfa80c0179",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "dd7199030a8827a181914869189fc45a2e5637023f0c8c59532d442557036e7c",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "prism-ml/bonsai-2-27b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "prism-ml/bonsai-2-27b",
+  "resolvedModel": "prism-ml/bonsai-2-27b",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "render_error",
+  "timing": {
+    "totalMs": 762502
+  },
+  "tokens": {
+    "input": 599,
+    "output": 40693
+  },
+  "createdAt": "2026-09-23T03:32:29.111Z",
+  "gitCommit": "c38d83c1786012547f450a29dbdc72d0bf2a39c0",
+  "error": "openscad stl render failed (exit 1): ERROR: Parser error: syntax error in file ../../../../../tmp/render-XUqjyL/input.scad, line 3\nCan't parse file '/tmp/render-XUqjyL/input.scad'!\n\n"
+}

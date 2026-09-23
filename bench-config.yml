@@ -756,6 +756,10 @@ matrix:
     harness: { kind: bare }
     provider: openai-self-hosted
     model: qwen/qwen3.8-27b
+  - id: bare/bonsai-2-27b
+    harness: { kind: bare }
+    provider: openai-self-hosted
+    model: prism-ml/bonsai-2-27b
   - id: bare/gemma-4-12b-qat
     harness: { kind: bare }
     provider: openai-self-hosted

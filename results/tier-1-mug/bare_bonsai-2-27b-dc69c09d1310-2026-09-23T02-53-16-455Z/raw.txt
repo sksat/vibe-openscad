@@ -1,0 +1,23 @@
+```openscad
+outer_r = 80 / 2;
+height = 100;
+wall_t = 4;
+bottom_t = 6;
+inner_r = outer_r - wall_t;
+inner_h = height - bottom_t;
+
+handle_r = 12;
+handle_t = 4;
+handle_x = outer_r + handle_r + 1;
+handle_z = height / 2;
+
+union() {
+  difference() {
+    cylinder(d = outer_r * 2, h = height, center = false);
+    cylinder(d = inner_r * 2, h = inner_h, center = false, position = [0, 0, bottom_t]);
+  }
+  translate([handle_x, 0, handle_z])
+    rotate([90, 0, 0])
+    torus(r = handle_r, tube_r = handle_t);
+}
+```

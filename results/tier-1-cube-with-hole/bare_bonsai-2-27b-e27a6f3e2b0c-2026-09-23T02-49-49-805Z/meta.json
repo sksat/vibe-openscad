@@ -1,0 +1,33 @@
+{
+  "runId": "bare_bonsai-2-27b-e27a6f3e2b0c-2026-09-23T02-49-49-805Z",
+  "taskId": "tier-1-cube-with-hole",
+  "matrixId": "bare/bonsai-2-27b",
+  "signature": "e27a6f3e2b0cc9a345235055b3d1186a7365765a38d084120a7e075666731a3b",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "8ff7e36af4bc202429ec68b7eb9cc3f195b6a3c68668be31239bcea23345a048",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "prism-ml/bonsai-2-27b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "prism-ml/bonsai-2-27b",
+  "resolvedModel": "prism-ml/bonsai-2-27b",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 4535
+  },
+  "tokens": {
+    "input": 119,
+    "output": 232
+  },
+  "createdAt": "2026-09-23T02:49:49.806Z",
+  "gitCommit": "c38d83c1786012547f450a29dbdc72d0bf2a39c0"
+}
