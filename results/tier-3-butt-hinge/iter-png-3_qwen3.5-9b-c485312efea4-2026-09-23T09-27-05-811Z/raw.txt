@@ -1,0 +1,98 @@
+```openscad
+// 家具用小型バット蝶番 (180°開き)
+// 3 パーツ構成：左板、右板、ピン軸
+
+// 共通モジュール：筒部 (knuckle)
+// Y 軸位置を引数に受け取り、ピン軸位置 (X=0) に配置
+module knuckle(y_pos) {
+    // 筒部は板の厚さ (2mm) に沿う
+    // 外径 8mm, 内径 4.6mm (半径 2.3mm)
+    // 位置：X=0 (軸心)
+    difference() {
+        union() {
+            // 筒部本体
+            translate([0, y_pos, 0]) cylinder(h = 2, r = 4);
+        }
+        // ピン穴 (半径 2.3mm)
+        translate([0, y_pos, 0]) cylinder(h = 2, r = 2.3);
+    }
+}
+
+module hinge_part_left() {
+    // 左板
+    // 板厚 2mm (Z 軸), 縦 30mm (Y 軸), 横 25mm (X 軸)
+    // 位置：X < 0 側 (ピン軸中心から左へ 25mm)
+    // 板の中心：X = -12.5, Y = 0
+    difference() {
+        // 板本体
+        translate([-12.5, 0, 0]) cube([25, 30, 2]);
+        
+        // 筒部 (knuckle) 3 つ
+        // 左板：外側 2 個 + 中央 1 個
+        // Y 軸 30mm (中心 0) -> 範囲 -15 ~ 15
+        // 5 等分 (各 6mm) -> 位置 -12, -6, 0, 6, 12
+        // 左板の筒部：-12, 0, 12
+        for (y = [-12, 0, 12]) {
+            knuckle(y);
+        }
+        
+        // M3 皿穴 3 つ
+        // 位置：板の端 (X = -25mm)
+        // Y 軸方向ピッチ 8mm
+        // 中心対称配置 (板の中心 Y=0) -> Y = -8, 0, 8
+        for (y = [-8, 0, 8]) {
+            // 皿穴：表面から直径 6mm x 深さ 1mm テーパ + 直径 3.2mm 貫通穴
+            translate([-25, y, 0]) {
+                difference() {
+                    cylinder(h = 1, r = 3, r2 = 1.6, $fn = 32);
+                    cylinder(h = 2, r = 1.6);
+                }
+            }
+        }
+    }
+}
+
+module hinge_part_right() {
+    // 右板
+    // 板厚 2mm, 縦 30mm, 横 25mm
+    // 位置：X > 0 側 (ピン軸中心から右へ 25mm)
+    // 板の中心：X = 12.5, Y = 0
+    difference() {
+        // 板本体
+        translate([12.5, 0, 0]) cube([25, 30, 2]);
+        
+        // 筒部 (knuckle) 2 つ
+        // 右板：中間 2 個
+        // Y 軸位置：-6, 6
+        for (y = [-6, 6]) {
+            knuckle(y);
+        }
+        
+        // M3 皿穴 3 つ (右板にも 3 つの穴が必要)
+        // 位置：板の端 (X = 25mm)
+        // Y 軸方向ピッチ 8mm
+        // 中心対称配置
+        for (y = [-8, 0, 8]) {
+            translate([25, y, 0]) {
+                difference() {
+                    cylinder(h = 1, r = 3, r2 = 1.6, $fn = 32);
+                    cylinder(h = 2, r = 1.6);
+                }
+            }
+        }
+    }
+}
+
+module hinge_pin() {
+    // ピン軸
+    // 直径 4mm, 長さ 32mm
+    // 両端 1mm ずつ筒部から飛び出す (筒部範囲 -12~12, ピン -16~16)
+    translate([0, 0, 0]) cylinder(h = 32, r = 2);
+}
+
+union() {
+    hinge_part_left();
+    hinge_part_right();
+    hinge_pin();
+}
+```

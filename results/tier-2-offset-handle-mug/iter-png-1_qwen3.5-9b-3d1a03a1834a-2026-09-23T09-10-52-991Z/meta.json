@@ -1,0 +1,43 @@
+{
+  "runId": "iter-png-1_qwen3.5-9b-3d1a03a1834a-2026-09-23T09-10-52-991Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "iter-png-1/qwen3.5-9b",
+  "signature": "3d1a03a1834a6aa371517a3d39ccb691be7a7a4100cc389ff88c2f970fd3e8fd",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "qwen/qwen3.5-9b",
+      "iterateFrom": "bare/qwen3.5-9b",
+      "iteration": {
+        "kind": "render-png-feedback"
+      },
+      "parentSignature": "b611aa4928dbbcc404db58b365e13e5c2f1f0ea51ce3199bd2df4f6bc3b8ac3e"
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "qwen/qwen3.5-9b",
+  "resolvedModel": "qwen/qwen3.5-9b",
+  "harness": {
+    "kind": "bare",
+    "iteration": {
+      "kind": "render-png-feedback"
+    }
+  },
+  "status": "no_code",
+  "timing": {
+    "totalMs": 633589
+  },
+  "tokens": {
+    "input": 1524,
+    "output": 64012
+  },
+  "createdAt": "2026-09-23T09:10:52.991Z",
+  "gitCommit": "54e55cb7b2b0c45e02bb82ebc49dac9ae2bd1708",
+  "error": "model returned empty response (stopReason=length)",
+  "parentRunId": "bare_qwen3.5-9b-b611aa4928db-2026-09-22T23-35-52-305Z"
+}

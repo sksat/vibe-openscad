@@ -507,7 +507,7 @@ google/gemma-4-12b-qat:
 # Qwen3.5 9B
 qwen/qwen3.5-9b:
   provider: openai-self-hosted
-  vision: false
+  vision: true
 
 openai/gpt-oss-120b:
   provider: openai-self-hosted

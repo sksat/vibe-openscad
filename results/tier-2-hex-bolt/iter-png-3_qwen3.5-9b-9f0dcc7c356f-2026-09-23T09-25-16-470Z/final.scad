@@ -1,0 +1,18 @@
+// Hexagonal Head
+R = 13 / (2 * cos(30 deg));
+H = 5.3;
+
+translate([0, 0, 0])
+linear_extrude(height = H)
+polygon([
+    [R, 0],
+    [R * cos(60 deg), R * sin(60 deg)],
+    [R * cos(120 deg), R * sin(120 deg)],
+    [R * cos(180 deg), R * sin(180 deg)],
+    [R * cos(240 deg), R * sin(240 deg)],
+    [R * cos(300 deg), R * sin(300 deg)]
+]);
+
+// Shank
+translate([0, 0, -30])
+cylinder(d = 8, h = 30, center = false);

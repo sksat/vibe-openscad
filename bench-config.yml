@@ -748,6 +748,22 @@ matrix:
     harness: { kind: bare }
     provider: openai-self-hosted
     model: qwen/qwen3.5-9b
+  - id: pdf-page/qwen3.5-9b
+    harness: { kind: pdf-page }
+    provider: openai-self-hosted
+    model: qwen/qwen3.5-9b
+  - id: iter-png-1/qwen3.5-9b
+    harness: { kind: bare, iterateFrom: bare/qwen3.5-9b, iteration: { kind: render-png-feedback } }
+    provider: openai-self-hosted
+    model: qwen/qwen3.5-9b
+  - id: iter-png-2/qwen3.5-9b
+    harness: { kind: bare, iterateFrom: iter-png-1/qwen3.5-9b, iteration: { kind: render-png-feedback } }
+    provider: openai-self-hosted
+    model: qwen/qwen3.5-9b
+  - id: iter-png-3/qwen3.5-9b
+    harness: { kind: bare, iterateFrom: iter-png-2/qwen3.5-9b, iteration: { kind: render-png-feedback } }
+    provider: openai-self-hosted
+    model: qwen/qwen3.5-9b
   - id: bare/gpt-oss-120b
     harness: { kind: bare }
     provider: openai-self-hosted

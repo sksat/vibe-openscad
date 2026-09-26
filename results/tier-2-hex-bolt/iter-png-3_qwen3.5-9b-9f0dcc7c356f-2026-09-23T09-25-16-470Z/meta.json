@@ -1,0 +1,43 @@
+{
+  "runId": "iter-png-3_qwen3.5-9b-9f0dcc7c356f-2026-09-23T09-25-16-470Z",
+  "taskId": "tier-2-hex-bolt",
+  "matrixId": "iter-png-3/qwen3.5-9b",
+  "signature": "9f0dcc7c356f9fc998c65769937c6ddbd326067dcc49a940a86b80bcd63255fe",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "0fee46bf3152dd6738d6d2af93e06dad04bb6bddd3b2b528c57138298ec0b5d0",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "qwen/qwen3.5-9b",
+      "iterateFrom": "iter-png-2/qwen3.5-9b",
+      "iteration": {
+        "kind": "render-png-feedback"
+      },
+      "parentSignature": "20e64dd8849732792d95de3ae0573fbbb0c636b1675509d5a33413e46354c434"
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "qwen/qwen3.5-9b",
+  "resolvedModel": "qwen/qwen3.5-9b",
+  "harness": {
+    "kind": "bare",
+    "iteration": {
+      "kind": "render-png-feedback"
+    }
+  },
+  "status": "render_error",
+  "timing": {
+    "totalMs": 23220
+  },
+  "tokens": {
+    "input": 584,
+    "output": 2607
+  },
+  "createdAt": "2026-09-23T09:25:16.470Z",
+  "gitCommit": "54e55cb7b2b0c45e02bb82ebc49dac9ae2bd1708",
+  "error": "openscad stl render failed (exit 1): ERROR: Parser error: syntax error in file ../../../../../tmp/render-ze0SQN/input.scad, line 2\nCan't parse file '/tmp/render-ze0SQN/input.scad'!\n\n",
+  "parentRunId": "iter-png-2_qwen3.5-9b-20e64dd88497-2026-09-23T09-11-49-747Z"
+}
