@@ -1,0 +1,68 @@
+```openscad
+// Sharp GP2Y0D413K0F Distance Sensor
+// Model based on the provided datasheet.
+// Units: mm
+// Coordinate System:
+// - Origin (0,0,0) is at the center of the body.
+// - Mounting surface (PWB side) faces the -Z direction.
+
+$fn = 50;
+
+// --- Parameters ---
+// Body dimensions
+body_w = 29.45;
+body_h = 13.5;
+body_d = 18.6;
+
+// Connector / PWB dimensions
+pwb_w = 10.1;
+connector_d = 3.3;
+connector_h = 13.0; // Slightly shorter than the body height
+
+// Lens Case front face
+lens_w = 7.1;
+lens_h = 13.05;
+
+// --- Modules ---
+
+module body() {
+    // Main body block
+    // The depth is 18.6. Since origin is center, Z goes from -9.3 to 9.3.
+    cube([body_w, body_h, body_d], center = true);
+}
+
+module connector() {
+    // The connector is on the PWB side (-Z direction).
+    // PWB face is at Z = -9.3.
+    // Connector extends further in -Z by 3.3mm.
+    // Center of connector is at Z = -9.3 - (3.3 / 2) = -10.95.
+    translate([0, 0, -9.3 - (connector_d / 2)])
+        cube([pwb_w, connector_h, connector_d], center = true);
+}
+
+module lens_case_detail() {
+    // The front face of the "Lens case" is narrower (7.1mm).
+    // It occupies the front-most part of the body.
+    // We model this as a slight step/profile on the front.
+    // This is a simplified representation of the lens housing.
+    translate([0, 0, 8.5]) // Positioned at the front
+        difference() {
+            // Main front area
+            cube([lens_w, lens_h, 2], center = true);
+            // Keep it slightly recessed or flat to match the drawing
+        }
+}
+
+// --- Assembly ---
+
+union() {
+    body();
+    connector();
+    lens_case_detail();
+}
+
+// Note: 
+// The -Z direction is the mounting face. 
+// The body sits in the +Z region (mostly), 
+// while the connector sticks out in the -Z region.
+```

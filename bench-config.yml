@@ -764,6 +764,22 @@ matrix:
     harness: { kind: bare }
     provider: openai-self-hosted
     model: google/gemma-4-12b-qat
+  - id: pdf-page/gemma-4-12b-qat
+    harness: { kind: pdf-page }
+    provider: openai-self-hosted
+    model: google/gemma-4-12b-qat
+  - id: iter-png-1/gemma-4-12b-qat
+    harness: { kind: bare, iterateFrom: bare/gemma-4-12b-qat, iteration: { kind: render-png-feedback } }
+    provider: openai-self-hosted
+    model: google/gemma-4-12b-qat
+  - id: iter-png-2/gemma-4-12b-qat
+    harness: { kind: bare, iterateFrom: iter-png-1/gemma-4-12b-qat, iteration: { kind: render-png-feedback } }
+    provider: openai-self-hosted
+    model: google/gemma-4-12b-qat
+  - id: iter-png-3/gemma-4-12b-qat
+    harness: { kind: bare, iterateFrom: iter-png-2/gemma-4-12b-qat, iteration: { kind: render-png-feedback } }
+    provider: openai-self-hosted
+    model: google/gemma-4-12b-qat
   - id: bare/gemma-3-27b
     harness: { kind: bare }
     provider: openai-self-hosted

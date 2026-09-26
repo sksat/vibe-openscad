@@ -1,0 +1,46 @@
+// L-bracket parameters
+width = 50;
+depth = 40;
+thickness = 3;
+
+// Hole parameters
+hole_diameter = 4.5;
+countersink_diameter = 8;
+countersink_depth = 2;
+
+// Final assembly
+difference() {
+    // Bracket geometry
+    union() {
+        // Horizontal plate: X=width, Y=depth, Z=thickness
+        cube([width, depth, thickness]);
+        // Vertical plate: X=width, Y=thickness, Z=depth
+        cube([width, thickness, depth]);
+    }
+
+    // Holes on the Horizontal face (Top surface: Z = thickness)
+    // X positions: 10mm and 40mm (Symmetrical, 10mm from edges 0 and 50)
+    // Y position: 30mm (10mm from edge 40)
+    for (x = [10, 40]) {
+        translate([x, depth - 10, thickness]) {
+            // Countersink seat (outward in +Z direction)
+            cylinder(d1=countersink_diameter, d2=hole_diameter, h=countersink_depth, $fn=32);
+            // Through hole (inward in -Z direction)
+            translate([0, 0, -thickness]) 
+                cylinder(d=hole_diameter, h=thickness + 1, $fn=32);
+        }
+    }
+
+    // Holes on the Vertical face (Side surface: Y = thickness)
+    // X positions: 10mm and 40mm
+    // Z position: 30mm (10mm from edge 40)
+    for (x = [10, 40]) {
+        translate([x, thickness, depth - 10]) {
+            // Countersink seat (outward in +Y direction)
+            cylinder(d1=countersink_diameter, d2=hole_diameter, h=countersink_depth, $fn=32);
+            // Through hole (inward in -Y direction)
+            translate([0, -thickness, 0]) 
+                cylinder(d=hole_diameter, h=thickness + 1, $fn=32);
+        }
+    }
+}
