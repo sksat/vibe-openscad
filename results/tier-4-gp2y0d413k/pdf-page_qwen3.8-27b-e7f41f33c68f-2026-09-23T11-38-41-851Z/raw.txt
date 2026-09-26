@@ -1,0 +1,68 @@
+```openscad
+// Sharp GP2Y0D413K0F - infrared distance sensor
+// Coordinate system: unit mm, body center at origin,
+// mounting face (PWB / connector side) -> -Z, lens face -> +Z
+//
+// Dimension mapping (from "Outline Dimensions", unit mm):
+//   W  = 29.45   overall width  (X)
+//   H  = 13.05   case height    (Y)
+//   D  =  7.1   case depth      (Z)
+//   lens centers: 4.5 and 19.7 from left edge (lens-center dims)
+//   PWB / connector tab: 10.1 x 3.75, protruding at -Z / bottom
+
+W  = 29.45;                 // overall width  (X)
+H  = 13.05;                 // case height    (Y)
+D  =  7.1;                  // case depth     (Z)
+
+em  = -W/2 + 4.5;           // light-emitter center X
+det =  em  + 19.7;          // light-detector center X
+xc  = (em + det) / 2;      // approximate center of optics / PWB
+
+tabW = 10.1;               // PWB / connector width
+tabH =  3.75;              // PWB / connector height
+ytab = -H/2 + tabH/2;     // tab sits at the bottom edge
+pwbD =  1.2;              // PWB protrusion depth (-Z)
+
+r_em  = 2.3;              // emitter lens radius (approx)
+r_det = 2.1;              // detector lens radius (approx)
+
+// ---------------- main solid (case + PWB + connector) ----------------
+difference() {
+    union() {
+        // main lens-case body
+        cube([W, H, D], center = true);
+
+        // PWB / connector tab at the back (-Z), bottom edge
+        translate([xc, ytab, -D/2 - pwbD/2])
+            cube([tabW, tabH, pwbD], center = true);
+
+        // connector housing
+        translate([xc, ytab - 0.3, -D/2 - pwbD - 1.5])
+            cube([8, 3, 3.0], center = true);
+
+        // 3 connector pins (Vo, GND, Vcc)
+        for (i = [-1, 0, 1])
+            translate([xc + i*2.0, ytab - 0.3, -D/2 - pwbD - 3.0 - 0.6])
+                cube([1.0, 0.6, 1.2], center = true);
+    }
+
+    // ----- cuts -----
+    // lens bores (through the front face)
+    translate([em,  0, 0]) cylinder(h = D + 2, d = 2*r_em,  $fn = 64);
+    translate([det, 0, 0]) cylinder(h = D + 2, d = 2*r_det, $fn = 64);
+
+    // front window recess (between the two lenses)
+    translate([xc, 0, D/2]) cube([14, 6, 0.3], center = true);
+
+    // horizontal seam line on the front face
+    translate([0, -H/2 + 2.0, D/2]) cube([W, 0.2, 0.25], center = true);
+}
+
+// ---------------- lenses (acrylic) seated in the bores ----------------
+color([0.6, 0.7, 0.85, 1]) {
+    translate([em,  0, 0]) translate([0, 0, D/2 - 0.35])
+        cylinder(h = 0.5, d = 2*(r_em  - 0.3), $fn = 64);
+    translate([det, 0, 0]) translate([0, 0, D/2 - 0.35])
+        cylinder(h = 0.5, d = 2*(r_det - 0.3), $fn = 64);
+}
+```

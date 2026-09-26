@@ -1,0 +1,37 @@
+{
+  "runId": "pdf-page_qwen3.8-27b-e7f41f33c68f-2026-09-23T11-38-41-851Z",
+  "taskId": "tier-4-gp2y0d413k",
+  "matrixId": "pdf-page/qwen3.8-27b",
+  "signature": "e7f41f33c68f4b8f3103a99c9526aebd9defcdbe8ea714b5eda54a0a09538f7e",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "8b7a5431f4cfca3c35d8146fcd061fcd5780603812e70e08416222d75b3025e4",
+    "harness": {
+      "kind": "pdf-page",
+      "provider": "openai-self-hosted",
+      "model": "qwen/qwen3.8-27b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "qwen/qwen3.8-27b",
+  "resolvedModel": "qwen/qwen3.8-27b",
+  "harness": {
+    "kind": "pdf-page",
+    "pdfUrl": "https://jp.sharp/products/device/doc/opto/gp2y0d413k_e.pdf",
+    "pages": [
+      2
+    ]
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 226994
+  },
+  "tokens": {
+    "input": 2291,
+    "output": 9758
+  },
+  "createdAt": "2026-09-23T11:38:41.851Z",
+  "gitCommit": "54e55cb7b2b0c45e02bb82ebc49dac9ae2bd1708"
+}
