@@ -516,7 +516,7 @@ openai/gpt-oss-120b:
 # Qwen3.8 27B（IQ3_XXS 量子化）
 qwen/qwen3.8-27b:
   provider: openai-self-hosted
-  vision: false
+  vision: true
 
 # Bonsai 2 27B（ternary 1.72 bpw、ベースは Qwen3.8-27B）
 prism-ml/bonsai-2-27b:
