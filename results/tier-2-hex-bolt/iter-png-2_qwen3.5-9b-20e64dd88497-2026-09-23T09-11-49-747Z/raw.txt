@@ -1,0 +1,31 @@
+```openscad
+// Hexagonal Head
+// Across flats = 13mm -> Circumradius = 13 / (2 * cos(30deg))
+// Head height = 5.3mm
+// Head bottom at z=0
+
+R = 13 / (2 * cos(30 deg));
+
+// Define vertices for hexagonal prism
+points = [
+    [R, 0],
+    [R * cos(60 deg), R * sin(60 deg)],
+    [R * cos(120 deg), R * sin(120 deg)],
+    [R * cos(180 deg), R * sin(180 deg)],
+    [R * cos(240 deg), R * sin(240 deg)],
+    [R * cos(300 deg), R * sin(300 deg)]
+];
+
+// Extrude to height 5.3mm
+// This ensures the hexagonal prism shape is correct
+translate([0, 0, 0])
+linear_extrude(height = 5.3)
+polygon(points);
+
+// Shank
+// Diameter = 8mm
+// Length = 30mm
+// Top at z=0, Bottom at z=-30
+translate([0, 0, -30])
+cylinder(d = 8, h = 30, center = false);
+```

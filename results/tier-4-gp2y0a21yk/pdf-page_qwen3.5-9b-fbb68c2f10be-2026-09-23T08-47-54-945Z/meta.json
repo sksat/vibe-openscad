@@ -1,0 +1,38 @@
+{
+  "runId": "pdf-page_qwen3.5-9b-fbb68c2f10be-2026-09-23T08-47-54-945Z",
+  "taskId": "tier-4-gp2y0a21yk",
+  "matrixId": "pdf-page/qwen3.5-9b",
+  "signature": "fbb68c2f10be62d34127e7977c538c6049fd36ea528fccea7cee58eb71f50ec7",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "be8447efaad1d128f8fe25ada8d6776d55e66bc75ed71840c218201a51da8e80",
+    "harness": {
+      "kind": "pdf-page",
+      "provider": "openai-self-hosted",
+      "model": "qwen/qwen3.5-9b"
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "qwen/qwen3.5-9b",
+  "resolvedModel": "qwen/qwen3.5-9b",
+  "harness": {
+    "kind": "pdf-page",
+    "pdfUrl": "https://jp.sharp/products/device/doc/opto/gp2y0a21yk_e.pdf",
+    "pages": [
+      2
+    ]
+  },
+  "status": "no_code",
+  "timing": {
+    "totalMs": 629378
+  },
+  "tokens": {
+    "input": 2250,
+    "output": 63286
+  },
+  "createdAt": "2026-09-23T08:47:54.945Z",
+  "gitCommit": "54e55cb7b2b0c45e02bb82ebc49dac9ae2bd1708",
+  "error": "model returned empty response (stopReason=length)"
+}
