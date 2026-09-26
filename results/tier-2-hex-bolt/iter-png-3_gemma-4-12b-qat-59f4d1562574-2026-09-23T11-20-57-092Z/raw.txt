@@ -1,0 +1,29 @@
+```openscad
+// M8 Hex Bolt (Standard Dimensions)
+// $fn is set globally for the shank smoothness.
+$fn = 64;
+
+// Dimensions
+head_across_flats = 13;
+head_height = 5.3;
+shank_diameter = 8;
+shank_length = 30;
+
+// Hexagon calculation:
+// The distance across the flats (W) is related to the vertex-to-vertex diameter (D) by:
+// W = D * cos(30 degrees)  =>  D = W / cos(30 degrees)
+head_diameter = head_across_flats / cos(30);
+
+// --- Shank ---
+// Placed from z = -30 to z = 0
+// The bottom of the cylinder is at z = -30, top is at z = 0
+translate([0, 0, -shank_length])
+    cylinder(d = shank_diameter, h = shank_length);
+
+// --- Head ---
+// Placed from z = 0 to z = 5.3
+// Using $fn=6 creates a perfect hexagon.
+// Rotating by 30 degrees ensures the flat face is perpendicular to the X-axis.
+rotate([0, 0, 30])
+    cylinder(d = head_diameter, h = head_height, $fn = 6);
+```

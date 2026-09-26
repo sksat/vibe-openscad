@@ -1,0 +1,42 @@
+{
+  "runId": "iter-png-1_gemma-4-12b-qat-4d53079769f7-2026-09-23T10-54-20-814Z",
+  "taskId": "tier-1-mug",
+  "matrixId": "iter-png-1/gemma-4-12b-qat",
+  "signature": "4d53079769f726f077cad3ed5c5903f5a1900b47b7655a71441a717acc4fd42c",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "883b512feb40f76c3fdcb332c7c513c491c27c8511f65b90fecbad6b6c197cd5",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai-self-hosted",
+      "model": "google/gemma-4-12b-qat",
+      "iterateFrom": "bare/gemma-4-12b-qat",
+      "iteration": {
+        "kind": "render-png-feedback"
+      },
+      "parentSignature": "5af1b42968d5fd8e60a4bcc22eb427ed9ec0d50c4db437d50526348f182502c5"
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai-self-hosted",
+  "model": "google/gemma-4-12b-qat",
+  "resolvedModel": "google/gemma-4-12b-qat",
+  "harness": {
+    "kind": "bare",
+    "iteration": {
+      "kind": "render-png-feedback"
+    }
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 103021
+  },
+  "tokens": {
+    "input": 871,
+    "output": 7646
+  },
+  "createdAt": "2026-09-23T10:54:20.814Z",
+  "gitCommit": "54e55cb7b2b0c45e02bb82ebc49dac9ae2bd1708",
+  "parentRunId": "bare_gemma-4-12b-qat-5af1b42968d5-2026-09-22T22-08-32-650Z"
+}
