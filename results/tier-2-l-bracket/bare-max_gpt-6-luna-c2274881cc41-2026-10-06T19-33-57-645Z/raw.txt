@@ -1,0 +1,58 @@
+```openscad
+$fn = 64;
+
+bracket_width = 50;
+flange_depth = 40;
+flange_height = 40;
+thickness = 3;
+
+through_diameter = 4.5;
+countersink_diameter = 8;
+countersink_depth = 2;
+
+edge_offset = 10;
+hole_x_offset = bracket_width / 2 - edge_offset;
+epsilon = 0.01;
+
+module bracket_body() {
+    // Cross-section coordinates are (Y, Z); extrusion is along X.
+    rotate([90, 0, 90])
+        linear_extrude(height = bracket_width, center = true)
+            polygon(points = [
+                [0, 0],
+                [0, flange_height],
+                [-thickness, flange_height],
+                [-thickness, -thickness],
+                [flange_depth, -thickness],
+                [flange_depth, 0]
+            ]);
+}
+
+difference() {
+    bracket_body();
+
+    for (x_pos = [-hole_x_offset, hole_x_offset]) {
+        // Horizontal flange: countersinks face outward in -Z.
+        translate([x_pos, flange_depth / 2, -thickness - epsilon])
+            cylinder(h = thickness + 2 * epsilon, d = through_diameter);
+        translate([x_pos, flange_depth / 2, -thickness])
+            cylinder(
+                h = countersink_depth,
+                d1 = countersink_diameter,
+                d2 = through_diameter
+            );
+
+        // Vertical flange: countersinks face outward in -Y.
+        translate([x_pos, -thickness - epsilon, flange_height / 2])
+            rotate([-90, 0, 0])
+                cylinder(h = thickness + 2 * epsilon, d = through_diameter);
+        translate([x_pos, -thickness, flange_height / 2])
+            rotate([-90, 0, 0])
+                cylinder(
+                    h = countersink_depth,
+                    d1 = countersink_diameter,
+                    d2 = through_diameter
+                );
+    }
+}
+```

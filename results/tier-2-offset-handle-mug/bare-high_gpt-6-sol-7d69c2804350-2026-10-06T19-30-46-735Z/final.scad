@@ -1,0 +1,51 @@
+$fn = 96;
+
+outer_diameter = 80;
+inner_diameter = 70;
+mug_height = 90;
+bottom_thickness = 6;
+
+handle_thickness = 12;  // Y方向
+handle_center_z = 45;
+arc_segments = 64;
+
+// XZ平面上のD字形状。左側が直線、右側が半円。
+module d_shape(left_x, arc_center_x, radius, center_z) {
+    polygon(points = concat(
+        [[left_x, center_z - radius]],
+        [
+            for (i = [0:arc_segments])
+                let(a = -90 + 180 * i / arc_segments)
+                [arc_center_x + radius * cos(a),
+                 center_z + radius * sin(a)]
+        ],
+        [[left_x, center_z + radius]]
+    ));
+}
+
+module mug_body() {
+    difference() {
+        cylinder(d = outer_diameter, h = mug_height);
+        translate([0, 0, bottom_thickness])
+            cylinder(d = inner_diameter,
+                     h = mug_height - bottom_thickness + 1);
+    }
+}
+
+module handle() {
+    translate([0, handle_thickness / 2, 0])
+        rotate([90, 0, 0])
+            linear_extrude(height = handle_thickness)
+                difference() {
+                    // 外形：高さ50mm、+X方向へ張り出す半円
+                    d_shape(37, 52, 25, handle_center_z);
+
+                    // 指を入れる空間：高さ30mm、幅25mm（X=40～65）
+                    d_shape(40, 50, 15, handle_center_z);
+                }
+}
+
+union() {
+    mug_body();
+    handle();
+}

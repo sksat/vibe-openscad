@@ -1,0 +1,9 @@
+// M8 hex bolt (thread omitted)
+union() {
+    // Hex head: 13 mm across flats, 5.3 mm high
+    cylinder(h = 5.3, d = 13 / cos(30), $fn = 6);
+
+    // Shank: 8 mm diameter, extending 30 mm below the head
+    translate([0, 0, -30])
+        cylinder(h = 30, d = 8, $fn = 64);
+}

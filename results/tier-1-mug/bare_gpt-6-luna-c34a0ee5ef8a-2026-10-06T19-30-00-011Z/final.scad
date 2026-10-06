@@ -1,0 +1,29 @@
+$fn = 128;
+
+outer_diameter = 80;
+height = 100;
+wall_thickness = 4;
+bottom_thickness = 6;
+
+handle_radius = 12;
+handle_tube_radius = 2;
+handle_center_x = outer_diameter / 2 + handle_radius - 1;
+handle_center_z = height / 2;
+
+union() {
+    difference() {
+        cylinder(d = outer_diameter, h = height);
+
+        translate([0, 0, bottom_thickness])
+            cylinder(
+                d = outer_diameter - 2 * wall_thickness,
+                h = height - bottom_thickness + 0.1
+            );
+    }
+
+    translate([handle_center_x, 0, handle_center_z])
+        rotate([90, 0, 0])
+            rotate_extrude()
+                translate([handle_radius, 0, 0])
+                    circle(r = handle_tube_radius);
+}

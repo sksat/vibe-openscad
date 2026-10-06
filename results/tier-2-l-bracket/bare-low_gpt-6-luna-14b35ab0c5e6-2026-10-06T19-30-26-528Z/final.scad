@@ -1,0 +1,64 @@
+$fn = 64;
+
+width = 50;
+depth = 40;
+height = 40;
+thickness = 3;
+
+through_diameter = 4.5;
+countersink_diameter = 8;
+countersink_depth = 2;
+
+module horizontal_hole(y) {
+    // Through-hole
+    translate([0, y, -thickness])
+        cylinder(d = through_diameter, h = thickness);
+
+    // Countersink on the outside face (z = -thickness)
+    translate([0, y, -thickness])
+        cylinder(
+            h = countersink_depth,
+            d1 = countersink_diameter,
+            d2 = through_diameter
+        );
+}
+
+module vertical_hole(z) {
+    // Through-hole, along the Y axis
+    translate([0, -thickness, z])
+        rotate([-90, 0, 0])
+            cylinder(d = through_diameter, h = thickness);
+
+    // Countersink on the outside face (y = -thickness)
+    translate([0, -thickness, z])
+        rotate([-90, 0, 0])
+            cylinder(
+                h = countersink_depth,
+                d1 = countersink_diameter,
+                d2 = through_diameter
+            );
+}
+
+difference() {
+    union() {
+        // Horizontal flange: extends in +Y
+        translate([-width / 2, 0, -thickness])
+            cube([width, depth, thickness]);
+
+        // Vertical flange: extends in +Z
+        translate([-width / 2, -thickness, 0])
+            cube([width, thickness, height]);
+
+        // Corner connector
+        translate([-width / 2, -thickness, -thickness])
+            cube([width, thickness, thickness]);
+    }
+
+    // Horizontal flange holes, 10 mm from each end
+    horizontal_hole(10);
+    horizontal_hole(depth - 10);
+
+    // Vertical flange holes, 10 mm from each end
+    vertical_hole(10);
+    vertical_hole(height - 10);
+}

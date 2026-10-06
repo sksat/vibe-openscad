@@ -511,6 +511,60 @@ matrix:
     model: gpt-6-astra
     modelOptions: { reasoning: { effort: max } }
 
+  # --- GPT-6 Sol (2026-09-22、GPT-6 の中位ティア) ---
+  # effort は none / low / medium(既定) / high / xhigh / max。Astra と同じ low〜max の 5 点を張る。
+  - id: bare/gpt-6-sol
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-6-sol
+  - id: bare-low/gpt-6-sol
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-6-sol
+    modelOptions: { reasoning: { effort: low } }
+  - id: bare-high/gpt-6-sol
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-6-sol
+    modelOptions: { reasoning: { effort: high } }
+  - id: bare-xhigh/gpt-6-sol
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-6-sol
+    modelOptions: { reasoning: { effort: xhigh } }
+  - id: bare-max/gpt-6-sol
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-6-sol
+    modelOptions: { reasoning: { effort: max } }
+
+  # --- GPT-6 Luna (2026-09-22、GPT-6 の最小ティア) ---
+  # effort は Sol と同じ。Astra / Sol と同じ 5 点を張る。
+  - id: bare/gpt-6-luna
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-6-luna
+  - id: bare-low/gpt-6-luna
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-6-luna
+    modelOptions: { reasoning: { effort: low } }
+  - id: bare-high/gpt-6-luna
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-6-luna
+    modelOptions: { reasoning: { effort: high } }
+  - id: bare-xhigh/gpt-6-luna
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-6-luna
+    modelOptions: { reasoning: { effort: xhigh } }
+  - id: bare-max/gpt-6-luna
+    harness: { kind: bare }
+    provider: openai
+    model: gpt-6-luna
+    modelOptions: { reasoning: { effort: max } }
+
   # --- GPT-5.6 (数字=世代 / Sol・Terra・Luna=ティアの新命名) ---
   # Luna は 3 ティアの最小。effort は low / medium(既定) / high / xhigh / max。
   - id: bare/gpt-5.6-luna
@@ -676,6 +730,14 @@ matrix:
     harness: { kind: pdf-page }
     provider: openai
     model: gpt-6-astra
+  - id: pdf-page/gpt-6-sol
+    harness: { kind: pdf-page }
+    provider: openai
+    model: gpt-6-sol
+  - id: pdf-page/gpt-6-luna
+    harness: { kind: pdf-page }
+    provider: openai
+    model: gpt-6-luna
 
   - id: pdf-page/gpt-5.6-luna
     harness: { kind: pdf-page }

@@ -1,0 +1,82 @@
+```openscad
+$fn = 96;
+
+// 寸法（mm）
+leaf_length = 30;
+leaf_width = 25;
+leaf_thickness = 2;
+leaf_inner_x = 4.1;
+
+knuckle_length = 6;
+knuckle_od = 8;
+knuckle_id = 4.6;
+
+pin_d = 4;
+pin_length = 32;
+
+hole_d = 3.2;
+countersink_d = 6;
+countersink_depth = 1;
+hole_pitch = 8;
+
+// ヒンジ軸に沿う円柱
+module y_cylinder(y, length, diameter) {
+    translate([0, y, 0])
+        rotate([-90, 0, 0])
+            cylinder(h = length, d = diameter);
+}
+
+module leaf(left = true) {
+    outer_x = left
+        ? -leaf_inner_x - leaf_width
+        : leaf_inner_x;
+
+    hole_x = left
+        ? outer_x + 6
+        : outer_x + leaf_width - 6;
+
+    difference() {
+        union() {
+            // 板：両板の表裏面を同じ Z 座標に揃える
+            translate([outer_x, 0, -leaf_thickness / 2])
+                cube([leaf_width, leaf_length, leaf_thickness]);
+
+            // 互い違いの筒部と、板につなぐ短い接続部
+            for (i = left ? [0, 2, 4] : [1, 3]) {
+                y_cylinder(i * knuckle_length,
+                           knuckle_length, knuckle_od);
+
+                translate([
+                    left ? -4.4 : 3.7,
+                    i * knuckle_length,
+                    -0.9
+                ])
+                    cube([0.7, knuckle_length, 1.8]);
+            }
+        }
+
+        // 各筒部のピン穴
+        for (i = left ? [0, 2, 4] : [1, 3])
+            y_cylinder(i * knuckle_length - 0.01,
+                       knuckle_length + 0.02, knuckle_id);
+
+        // 表面（+Z 側）からの M3 皿穴 3 個
+        for (y = [7, 7 + hole_pitch, 7 + 2 * hole_pitch]) {
+            translate([hole_x, y, -leaf_thickness / 2 - 0.01])
+                cylinder(h = leaf_thickness + 0.02, d = hole_d);
+
+            translate([hole_x, y,
+                       leaf_thickness / 2 - countersink_depth])
+                cylinder(h = countersink_depth + 0.01,
+                         d1 = hole_d, d2 = countersink_d);
+        }
+    }
+}
+
+// 180° 開いた組立状態
+color("silver") leaf(true);
+color("lightgray") leaf(false);
+
+color("dimgray")
+    y_cylinder(-1, pin_length, pin_d);
+```

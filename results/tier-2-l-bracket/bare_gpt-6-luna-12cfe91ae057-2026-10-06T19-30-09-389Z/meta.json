@@ -1,0 +1,35 @@
+{
+  "runId": "bare_gpt-6-luna-12cfe91ae057-2026-10-06T19-30-09-389Z",
+  "taskId": "tier-2-l-bracket",
+  "matrixId": "bare/gpt-6-luna",
+  "signature": "12cfe91ae057cd9736c8b3d5964a1f0c14e3101ea17525a2a28df1ece47cb0c6",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "b20dcf3dd07e532496944d76485b954e0ab614f3cda1919fee5dc406f59b3ea5",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-6-luna"
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-6-luna",
+  "resolvedModel": "gpt-6-luna",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 20925
+  },
+  "tokens": {
+    "input": 294,
+    "output": 2088,
+    "thinking": 1661
+  },
+  "cost_usd": 0.0010734,
+  "createdAt": "2026-10-06T19:30:09.389Z",
+  "gitCommit": "f205f3241c4c869eb42ffd2548bec384b8a3bcb6"
+}
