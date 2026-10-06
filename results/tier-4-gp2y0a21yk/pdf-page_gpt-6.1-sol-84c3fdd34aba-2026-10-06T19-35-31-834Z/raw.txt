@@ -1,0 +1,312 @@
+```openscad
+// Sharp GP2Y0A21YK0F
+// 単位: mm
+// X: 本体の長手方向
+// Y: 短手方向（コネクタは -Y 側）
+// Z: 光学面が +Z、取付面 / PWB・コネクタ側が -Z
+//
+// 原点は、耳・コネクタを除く本体外形
+// 29.5 × 13 × 13.5 mm の中心。
+// 図面で寸法指定のないレンズ曲面、肉厚、コネクタ内部は近似。
+
+$fn = 96;
+eps = 0.02;
+
+// ---------- 主要寸法 ----------
+body_w = 29.5;
+body_h = 13;
+total_d = 13.5;
+
+rear_z       = -total_d / 2;
+lens_front_z =  total_d / 2;
+case_front_z =  lens_front_z - 2.0;
+
+ear_pitch = 37;
+ear_r     = 3.75;
+hole_d    = 3.2;
+flange_t  = 1.5;
+
+// 側面図の段差
+rear_h     = 7.2;
+middle_h   = 8.4;
+shoulder_z = rear_z + 6.3;
+
+// 光学中心位置
+emitter_x  = -body_w / 2 + 4.5;
+detector_x = emitter_x + 20;
+optical_y  = 0;
+
+// レンズケース
+emitter_case_w = 7.5;
+detector_case_w = 16.3;
+lens_case_h = 7.2;
+
+emitter_case_x  = emitter_x;
+detector_case_x = body_w / 2 - 0.75 - detector_case_w / 2;
+
+// PWB
+pwb_t       = 1.2;
+pwb_front_z = lens_front_z - 3.3;
+pwb_back_z  = pwb_front_z - pwb_t;
+
+// コネクタ
+connector_w = 10.1;
+connector_bottom_y = body_h / 2 - 18.9;
+connector_top_y = -4.6;
+connector_d = 6.0;
+connector_back_z = pwb_back_z - connector_d;
+
+// ---------- 色 ----------
+case_color = [0.055, 0.058, 0.062];
+lens_color = [0.12, 0.045, 0.065];
+pwb_color  = [0.34, 0.23, 0.12];
+connector_color = [0.82, 0.80, 0.73];
+metal_color = [0.72, 0.74, 0.76];
+
+// 指定した上下端間に直方体を配置
+module box_between(x, y, w, h, z0, z1) {
+    translate([x, y, (z0 + z1) / 2])
+        cube([w, h, z1 - z0], center = true);
+}
+
+// ---------- 取付耳 ----------
+module mounting_ear(side) {
+    hull() {
+        translate([side * ear_pitch / 2, 0, rear_z])
+            cylinder(h = flange_t, r = ear_r);
+
+        box_between(
+            side * (body_w / 2 - 0.75),
+            0, 1.5, 2 * ear_r,
+            rear_z, rear_z + flange_t
+        );
+    }
+}
+
+// 耳から本体へ続く斜めの補強部
+module ear_brace(side) {
+    p = [
+        [side * (body_w / 2 - 0.2), rear_z + flange_t],
+        [side * ear_pitch / 2,     rear_z + flange_t],
+        [side * (body_w / 2 - 0.2), rear_z + 5.2]
+    ];
+
+    // 2D の第2軸を Z に対応させ、Y 方向に押し出す
+    rotate([90, 0, 0])
+        linear_extrude(height = rear_h, center = true)
+            polygon(points = p);
+}
+
+// ---------- 本体 ----------
+module housing() {
+    color(case_color)
+    difference() {
+        union() {
+            // 背面側の細い部分
+            box_between(
+                0, 0, body_w, rear_h,
+                rear_z, rear_z + 2.0
+            );
+
+            // 中間部
+            box_between(
+                0, 0, body_w, middle_h,
+                rear_z + 1.5, shoulder_z + eps
+            );
+
+            // 前方のレンズ支持ケース
+            box_between(
+                0, 0, body_w, body_h,
+                shoulder_z, case_front_z
+            );
+
+            for (side = [-1, 1]) {
+                mounting_ear(side);
+                ear_brace(side);
+            }
+        }
+
+        // 取付穴：取付面に垂直
+        for (side = [-1, 1])
+            translate([
+                side * ear_pitch / 2,
+                0,
+                rear_z - eps
+            ])
+                cylinder(h = total_d + 2 * eps, d = hole_d);
+
+        // コネクタ基部の逃げ
+        box_between(
+            0,
+            (-body_h / 2 + connector_top_y) / 2,
+            connector_w + 0.3,
+            connector_top_y + body_h / 2 + 2 * eps,
+            connector_back_z - eps,
+            pwb_back_z + eps
+        );
+    }
+}
+
+// ---------- 光学窓 ----------
+module lens_frame(cx, width, aperture_x, aperture_d) {
+    color(case_color)
+    difference() {
+        box_between(
+            cx, optical_y,
+            width, lens_case_h,
+            case_front_z - eps, lens_front_z
+        );
+
+        // 長方形の窓。底を残して凹部とする
+        box_between(
+            cx, optical_y,
+            width - 1.1, lens_case_h - 1.0,
+            case_front_z + 0.35,
+            lens_front_z + eps
+        );
+    }
+
+    // 窓の暗い底面
+    color([0.075, 0.035, 0.045])
+        box_between(
+            cx, optical_y,
+            width - 1.1, lens_case_h - 1.0,
+            case_front_z + 0.25,
+            case_front_z + 0.45
+        );
+
+    // レンズ外周の環状部
+    color(case_color)
+    translate([aperture_x, optical_y, case_front_z + 0.35])
+        difference() {
+            cylinder(
+                h = 1.35,
+                d = aperture_d + 0.65
+            );
+            translate([0, 0, -eps])
+                cylinder(
+                    h = 1.35 + 2 * eps,
+                    d = aperture_d
+                );
+        }
+
+    // アクリルレンズの曲面近似
+    color(lens_color)
+    translate([aperture_x, optical_y, case_front_z + 0.65])
+        intersection() {
+            scale([aperture_d / 2, aperture_d / 2, 1.25])
+                sphere(r = 1);
+
+            translate([-aperture_d, -aperture_d, 0])
+                cube([2 * aperture_d, 2 * aperture_d, 1.3]);
+        }
+}
+
+// ---------- PWB ----------
+module pwb() {
+    color(pwb_color)
+    union() {
+        // ケース内部の基板
+        box_between(
+            0, 0,
+            body_w - 0.8, body_h - 0.8,
+            pwb_back_z, pwb_front_z
+        );
+
+        // コネクタ側へ張り出す基板
+        box_between(
+            0,
+            (connector_bottom_y - body_h / 2) / 2,
+            connector_w,
+            -body_h / 2 - connector_bottom_y,
+            pwb_back_z, pwb_front_z
+        );
+    }
+}
+
+// ---------- 3極コネクタ ----------
+module connector() {
+    conn_h = connector_top_y - connector_bottom_y;
+    wall = 0.9;
+
+    color(connector_color)
+    difference() {
+        union() {
+            box_between(
+                0,
+                (connector_top_y + connector_bottom_y) / 2,
+                connector_w, conn_h,
+                connector_back_z, pwb_back_z
+            );
+
+            // 背面のロック突起
+            box_between(
+                0,
+                connector_top_y - 1.7,
+                7.8, 2.6,
+                connector_back_z - 0.6,
+                connector_back_z + 0.2
+            );
+        }
+
+        // -Y 方向に開く差込口
+        box_between(
+            0,
+            connector_bottom_y + (conn_h - 1.7) / 2 - eps,
+            connector_w - 2 * wall,
+            conn_h - 1.7 + 2 * eps,
+            connector_back_z + wall,
+            pwb_back_z - wall
+        );
+
+        // ロック用の小さな切欠き
+        box_between(
+            0, connector_bottom_y + 0.7,
+            3.2, 1.5,
+            connector_back_z - eps,
+            connector_back_z + 1.25
+        );
+    }
+
+    // 端子ピッチ・断面は近似
+    color(metal_color)
+    for (x = [-2, 0, 2]) {
+        box_between(
+            x,
+            connector_bottom_y + 3.3,
+            0.5, 4.0,
+            connector_back_z + 2.5,
+            connector_back_z + 3.0
+        );
+
+        // 基板への接続部
+        box_between(
+            x, connector_top_y - 1.1,
+            0.5, 0.6,
+            connector_back_z + 2.5,
+            pwb_front_z + 0.1
+        );
+    }
+}
+
+// ---------- 完成モデル ----------
+union() {
+    housing();
+    pwb();
+    connector();
+
+    lens_frame(
+        emitter_case_x,
+        emitter_case_w,
+        emitter_x,
+        5.7
+    );
+
+    lens_frame(
+        detector_case_x,
+        detector_case_w,
+        detector_x,
+        6.0
+    );
+}
+```

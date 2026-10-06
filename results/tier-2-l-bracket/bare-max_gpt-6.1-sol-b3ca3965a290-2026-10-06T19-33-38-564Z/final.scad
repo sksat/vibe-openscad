@@ -1,0 +1,55 @@
+$fn = 96;
+
+width = 50;
+depth = 40;
+height = 40;
+thickness = 3;
+
+edge_offset = 10;
+hole_diameter = 4.5;
+countersink_diameter = 8;
+countersink_depth = 2;
+
+eps = 0.01;
+hole_x = width / 2 - edge_offset;
+
+module countersunk_hole() {
+    union() {
+        translate([0, 0, -eps])
+            cylinder(
+                h = thickness + 2 * eps,
+                d = hole_diameter
+            );
+
+        translate([0, 0, -eps])
+            cylinder(
+                h = countersink_depth + eps,
+                d1 = countersink_diameter
+                    + (countersink_diameter - hole_diameter)
+                    * eps / countersink_depth,
+                d2 = hole_diameter
+            );
+    }
+}
+
+difference() {
+    union() {
+        translate([-width / 2, 0, -thickness])
+            cube([width, depth, thickness]);
+
+        translate([-width / 2, -thickness, 0])
+            cube([width, thickness, height]);
+
+        translate([-width / 2, -thickness, -thickness])
+            cube([width, thickness, thickness]);
+    }
+
+    for (x = [-hole_x, hole_x]) {
+        translate([x, depth / 2, -thickness])
+            countersunk_hole();
+
+        translate([x, -thickness, height / 2])
+            rotate([-90, 0, 0])
+                countersunk_hole();
+    }
+}

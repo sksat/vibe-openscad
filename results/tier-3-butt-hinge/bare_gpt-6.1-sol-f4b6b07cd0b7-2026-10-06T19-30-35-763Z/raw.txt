@@ -1,0 +1,124 @@
+```openscad
+$fn = 96;
+
+// 単位: mm
+leaf_length    = 30;
+leaf_width     = 25;
+leaf_thickness = 2;
+
+pin_diameter = 4;
+pin_length   = 32;
+
+knuckle_od     = 8;
+knuckle_id     = 4.6;
+knuckle_count  = 5;
+knuckle_length = leaf_length / knuckle_count;
+
+screw_diameter = 3.2;
+countersink_d  = 6;
+countersink_h  = 1;
+screw_pitch    = 8;
+
+eps = 0.01;
+
+// 板本体は筒部の外側から25mm伸ばす。
+// 両板とも下面 Z=-2、上面 Z=0。
+leaf_root_x = knuckle_od / 2;
+hole_x      = leaf_root_x + leaf_width - 7;
+
+// Z方向の円柱を、中心線がY軸になるように配置。
+module y_cylinder(y_start, length, diameter) {
+    translate([0, y_start, 0])
+        rotate([-90, 0, 0])
+            cylinder(h = length, d = diameter);
+}
+
+module screw_hole(x, y) {
+    // 貫通穴
+    translate([x, y, -leaf_thickness - eps])
+        cylinder(
+            h = leaf_thickness + 2 * eps,
+            d = screw_diameter
+        );
+
+    // 上面から深さ1mmの皿穴。
+    // Z=0での直径を正確に6mmに保ち、上方へ微小延長する。
+    translate([x, y, -countersink_h])
+        cylinder(
+            h  = countersink_h + eps,
+            d1 = screw_diameter,
+            d2 = countersink_d
+                 + (countersink_d - screw_diameter)
+                   * eps / countersink_h
+        );
+}
+
+// +X側の板を生成。
+// parity=0: Y=0..6, 12..18, 24..30 の3筒。
+// parity=1: Y=6..12, 18..24 の2筒。
+module positive_leaf(parity) {
+    difference() {
+        union() {
+            translate([leaf_root_x, 0, -leaf_thickness])
+                cube([leaf_width, leaf_length, leaf_thickness]);
+
+            for (i = [0 : knuckle_count - 1]) {
+                if (i % 2 == parity) {
+                    y_cylinder(
+                        i * knuckle_length,
+                        knuckle_length,
+                        knuckle_od
+                    );
+
+                    // 板と筒を体積的に接続する部分。
+                    // 内径に侵入する部分は下の軸穴で除去。
+                    translate([
+                        knuckle_id / 2 - 0.5,
+                        i * knuckle_length,
+                        -leaf_thickness
+                    ])
+                        cube([
+                            leaf_root_x - knuckle_id / 2 + 0.5 + eps,
+                            knuckle_length,
+                            leaf_thickness
+                        ]);
+                }
+            }
+        }
+
+        y_cylinder(-eps, leaf_length + 2 * eps, knuckle_id);
+
+        for (offset = [-screw_pitch, 0, screw_pitch])
+            screw_hole(hole_x, leaf_length / 2 + offset);
+    }
+}
+
+module left_leaf() {
+    mirror([1, 0, 0])
+        positive_leaf(0);
+}
+
+module right_leaf() {
+    positive_leaf(1);
+}
+
+module hinge_pin() {
+    y_cylinder(
+        -(pin_length - leaf_length) / 2,
+        pin_length,
+        pin_diameter
+    );
+}
+
+// 180°開いた完成品。
+// 3部品を結合せず、独立したソリッドとして配置。
+// 各筒は指定どおり長さ6mmで、隣接端面は接触する。
+color([0.65, 0.68, 0.72])
+    left_leaf();
+
+color([0.72, 0.75, 0.79])
+    right_leaf();
+
+color([0.42, 0.45, 0.49])
+    hinge_pin();
+```

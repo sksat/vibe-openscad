@@ -311,6 +311,19 @@ gemini-1.5-flash:
 # thinking 軸を持たない。
 # ---------------------------------------------------------------------------
 
+# GPT-6.1 Sol(2026-09-29)。Astra に近い性能を低単価で出す位置づけ。
+# $2/$10、1.05M context、max output 128k(272k 超の入力は割増だが bench では
+# 届かないので rate は標準値のみ)。effort は low / medium(既定) / high /
+# xhigh / max。label / sort を宣言する。sort.version は major*1000+minor で
+# 6.1 が 6 より前に並ぶ。sort.size は Astra(派生値 0)の下のティアとして 1。
+gpt-6.1-sol:
+  provider: openai
+  rate: { in: 2, out: 10 }
+  vision: true
+  effort: medium
+  label: gpt 6.1 sol
+  sort: { family: 0, version: 6001, size: 1 }
+
 # GPT-6 Astra(2026-09-03)。id が gpt-<世代>-<コードネーム> で web 側の
 # パターンから外れるため label を宣言する(sort は ^gpt-6 が拾える)。
 # effort は low / medium / high / xhigh / max。既定は明記されていないが

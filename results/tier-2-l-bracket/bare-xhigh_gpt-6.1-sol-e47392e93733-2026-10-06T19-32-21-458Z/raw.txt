@@ -1,0 +1,63 @@
+```openscad
+$fn = 96;
+
+// 寸法（mm）
+width     = 50;
+depth     = 40;
+height    = 40;
+thickness = 3;
+
+edge_offset = 10;
+hole_d      = 4.5;
+countersink_d     = 8;
+countersink_depth = 2;
+
+eps = 0.01;
+
+// 外側表面をローカル Z=0 とし、+Z 方向へ穴を開ける
+module countersunk_hole() {
+    // 貫通穴
+    translate([0, 0, -eps])
+        cylinder(
+            h = thickness + 2 * eps,
+            d = hole_d
+        );
+
+    // 円錐状の皿座面：表面で直径8mm、深さ2mmで直径4.5mm
+    translate([0, 0, -eps])
+        cylinder(
+            h  = countersink_depth + eps,
+            d1 = countersink_d
+                 + (countersink_d - hole_d)
+                 * eps / countersink_depth,
+            d2 = hole_d
+        );
+}
+
+difference() {
+    union() {
+        // 水平フランジ：内側表面 Z=0、+Y 方向
+        translate([0, 0, -thickness])
+            cube([width, depth, thickness]);
+
+        // 垂直フランジ：内側表面 Y=0、+Z 方向
+        translate([0, -thickness, 0])
+            cube([width, thickness, height]);
+
+        // 折れ部を埋め、両フランジを一体化
+        translate([0, -thickness, -thickness])
+            cube([width, thickness, thickness]);
+    }
+
+    for (x = [edge_offset, width - edge_offset]) {
+        // 水平面：皿座面は下面（-Z 側）
+        translate([x, depth / 2, -thickness])
+            countersunk_hole();
+
+        // 垂直面：皿座面は背面（-Y 側）
+        translate([x, -thickness, height / 2])
+            rotate([-90, 0, 0])
+                countersunk_hole();
+    }
+}
+```
