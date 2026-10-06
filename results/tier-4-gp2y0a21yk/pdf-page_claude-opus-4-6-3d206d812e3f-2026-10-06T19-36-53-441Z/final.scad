@@ -1,0 +1,136 @@
+// Sharp GP2Y0A21YK0F Distance Sensor Model
+// Units: mm
+// Origin: center of main body, mounting face (PWB/connector side) facing -Z
+
+/* Key dimensions from datasheet:
+   Body width:  29.5 mm
+   Body height: 13.5 mm (total with connector area)
+   Body depth:  13.0 mm
+   Overall width with emitter bump: ~37 mm
+*/
+
+$fn = 40;
+
+// Main body dimensions
+body_w = 29.5;      // X width of main case
+body_h = 13.0;      // Z height of case (depth direction)
+body_d = 8.4;       // Y depth of main case body
+
+// Derived center offsets - origin at center of main body
+// PWB/connector side faces -Z
+
+module gp2y0a21yk0f() {
+    // --- Color: dark grey case ---
+    color("DimGray") {
+        // Main rectangular case body
+        // Center of body at origin, PWB side at -Z
+        difference() {
+            union() {
+                // Main body block
+                translate([0, 0, body_h/2])
+                    cube([body_w, body_d, body_h], center=true);
+                
+                // Light emitter housing (extends to the left)
+                // From datasheet: light emitter is at the left side
+                // Total width with emitter = 37mm, body = 29.5mm
+                // Extra on left side = (37 - 29.5) = 7.5mm
+                translate([-(body_w/2 + 7.5/2), 0, body_h - 4.0])
+                    cube([7.5, body_d, 6.0], center=true);
+                
+                // Lens case - protruding from front (+Y direction)
+                // Lens case: 6.3mm wide, about 13mm tall (18.9-body dims)
+                // From side view: total with lens ~18.9mm reference
+                lens_protrusion = 18.9 - 13.0 - body_d/2;
+                translate([body_w/2 - 6.3/2 - 2.0, body_d/2 + lens_protrusion/2, body_h/2 + 1.5])
+                    cube([6.3, lens_protrusion + 0.01, 10.0], center=true);
+            }
+            
+            // Mounting holes - φ3.0, positioned relative to body
+            // Hole 1: at x = -body_w/2 + 3.75 from left body edge
+            // From datasheet: holes at 4.5mm and 20+4.5=24.5mm from left edge (lens center ref)
+            // Using body coordinates: 
+            // Left hole: 3.75mm from left edge of body
+            hole1_x = -body_w/2 + 3.75;
+            // Right hole: 3.75mm from right edge
+            hole2_x = body_w/2 - 3.75;
+            
+            // Holes are at 3.75mm from bottom edge (PWB side)
+            hole_z = 3.75;
+            
+            // Through holes in Y direction
+            translate([hole1_x, 0, hole_z])
+                rotate([0, 0, 0])
+                    cylinder(d=3.0, h=body_d+2, center=true);
+            
+            translate([hole2_x, 0, hole_z])
+                rotate([0, 0, 0])
+                    cylinder(d=3.0, h=body_d+2, center=true);
+            
+            // Light emitter window (left side) - rounded rectangle cutout
+            translate([-body_w/2 + 4.5, body_d/2, body_h - 4.0])
+                rotate([90, 0, 0])
+                    resize([5.0, 5.0, 0])
+                        cylinder(r=1.75, h=3, center=true);
+            
+            // Light detector window (right side, near lens)
+            translate([body_w/2 - 6.3/2 - 2.0, body_d/2, body_h - 4.0])
+                rotate([90, 0, 0])
+                    resize([5.0, 5.0, 0])
+                        cylinder(r=1.75, h=3, center=true);
+        }
+    }
+    
+    // --- Lens (acrylic, semi-transparent) ---
+    color("DarkRed", 0.6) {
+        // Lens over light detector - curved surface
+        translate([body_w/2 - 6.3/2 - 2.0, body_d/2 + 2.0, body_h - 3.5])
+            scale([1.0, 0.5, 1.0])
+                sphere(r=3.0);
+    }
+    
+    // --- Emitter lens ---
+    color("DarkSlateGray", 0.7) {
+        translate([-body_w/2 - 7.5/2, body_d/2, body_h - 4.0])
+            scale([1.0, 0.5, 1.0])
+                sphere(r=2.5);
+    }
+    
+    // --- PWB (circuit board) at bottom, -Z side ---
+    color("Green") {
+        // PWB: extends below the case by 1.2mm
+        // Width ~14.75mm, positioned under case
+        translate([0, -body_d/2 + 7.2/2, -0.6])
+            cube([14.75, 7.2, 1.2], center=true);
+    }
+    
+    // --- Connector ---
+    color("Ivory") {
+        // Connector housing: at bottom of sensor
+        // Position from datasheet: 7.5mm from left edge, 4.15mm wide
+        conn_x = -body_w/2 + 7.5 + 4.15/2;
+        translate([conn_x, -body_d/2 + 3.5, -1.2 - 5.0/2])
+            cube([7.0, 5.0, 5.0], center=true);
+    }
+    
+    // --- Connector pins ---
+    color("Gold") {
+        // 3 pins, 2.54mm pitch
+        for (i = [-1, 0, 1]) {
+            conn_x = -body_w/2 + 7.5 + 4.15/2;
+            translate([conn_x + i * 2.54, -body_d/2 + 3.5, -1.2 - 2.5])
+                cube([0.5, 0.5, 8.0], center=true);
+        }
+    }
+    
+    // --- Stamp label area on top ---
+    color("White") {
+        translate([0, 0, body_h + 0.01])
+            cube([20, 6, 0.05], center=true);
+    }
+}
+
+// Render the sensor
+// Translate so that the mounting face (PWB/connector side) is at -Z
+// and the body center is at origin
+translate([0, 0, 0])
+    gp2y0a21yk0f();

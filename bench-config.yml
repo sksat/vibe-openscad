@@ -157,6 +157,30 @@ matrix:
     provider: anthropic
     model: claude-opus-4-7
     modelOptions: { thinking: { type: disabled } }
+  # Opus 4.6 — `thinking` 省略時は思考しない。bare / low / max は 4.7 / 4.8 と
+  # 同じ条件(thinking 無し)で比較できるよう揃え、thinking は adaptive を
+  # 明示する variant で見る。xhigh は 4.7 からなので張らない。
+  # adaptive は thinking token も max_tokens を消費するので 64000 にする
+  # (非ストリーミング上限 21333 を超えるのでストリーミング経路)。
+  - id: bare/claude-opus-4-6
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-opus-4-6
+  - id: bare-low/claude-opus-4-6
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-opus-4-6
+    modelOptions: { output_config: { effort: low } }
+  - id: bare-max/claude-opus-4-6
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-opus-4-6
+    modelOptions: { output_config: { effort: max } }
+  - id: bare-think-adaptive/claude-opus-4-6
+    harness: { kind: bare }
+    provider: anthropic
+    model: claude-opus-4-6
+    modelOptions: { thinking: { type: adaptive }, max_tokens: 64000 }
   # Sonnet 5 — thinking が既定 on。thinking が on だと出力トークンが増えるので、
   # max_tokens が足りないと SCAD を出し切る前に打ち切られる(16000 で試すと
   # 35 run 中 8 件が out=16000 ちょうどで停止した)。公式推奨の 64000 を使う。
@@ -659,6 +683,10 @@ matrix:
     harness: { kind: pdf-page }
     provider: anthropic
     model: claude-opus-4-7
+  - id: pdf-page/claude-opus-4-6
+    harness: { kind: pdf-page }
+    provider: anthropic
+    model: claude-opus-4-6
   - id: pdf-page/claude-sonnet-5
     harness: { kind: pdf-page }
     provider: anthropic

@@ -1,0 +1,41 @@
+{
+  "runId": "bare-think-adaptive_claude-opus-4-6-56bd0e815ab8-2026-10-06T19-35-14-531Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "bare-think-adaptive/claude-opus-4-6",
+  "signature": "56bd0e815ab8b5de796394f30d6c26a684ad6ba64492398719dddb18e294e53d",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-opus-4-6",
+      "modelOptions": {
+        "thinking": {
+          "type": "adaptive"
+        },
+        "max_tokens": 64000
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-opus-4-6",
+  "resolvedModel": "claude-opus-4-6",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 94644
+  },
+  "tokens": {
+    "input": 330,
+    "output": 5179,
+    "thinking": 4825
+  },
+  "cost_usd": 0.131125,
+  "createdAt": "2026-10-06T19:35:14.531Z",
+  "gitCommit": "a3d95c0e1adbb06cc44c789437daa80b75144fe5"
+}

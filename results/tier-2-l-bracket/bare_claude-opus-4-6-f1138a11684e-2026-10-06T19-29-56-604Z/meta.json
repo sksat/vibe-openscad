@@ -1,0 +1,34 @@
+{
+  "runId": "bare_claude-opus-4-6-f1138a11684e-2026-10-06T19-29-56-604Z",
+  "taskId": "tier-2-l-bracket",
+  "matrixId": "bare/claude-opus-4-6",
+  "signature": "f1138a11684e53d441b9d5d13b6514a6609788e253a744ca566abe785eec8a0f",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "b20dcf3dd07e532496944d76485b954e0ab614f3cda1919fee5dc406f59b3ea5",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-opus-4-6"
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-opus-4-6",
+  "resolvedModel": "claude-opus-4-6",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 15216
+  },
+  "tokens": {
+    "input": 361,
+    "output": 902
+  },
+  "cost_usd": 0.024355,
+  "createdAt": "2026-10-06T19:29:56.605Z",
+  "gitCommit": "a3d95c0e1adbb06cc44c789437daa80b75144fe5"
+}
