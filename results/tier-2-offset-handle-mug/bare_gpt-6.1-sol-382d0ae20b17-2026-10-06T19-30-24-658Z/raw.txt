@@ -1,0 +1,66 @@
+```openscad
+$fn = 160;
+
+// 単位: mm
+outer_diameter = 80;
+inner_diameter = 70;
+mug_height = 90;
+bottom_thickness = 6;
+
+handle_opening_height = 30;
+handle_opening_width = 25;
+handle_depth = 10;
+
+handle_outer_radius = 32;
+handle_back_x = outer_diameter / 2 - 2;  // 本体へ2mm食い込ませる
+handle_inner_offset = 4;
+handle_center_z = mug_height / 2;
+
+epsilon = 0.1;
+
+// +X側を向く半円。直線部分は x=0。
+module half_circle_2d(radius) {
+    intersection() {
+        circle(r = radius);
+        translate([0, -radius])
+            square([radius, 2 * radius]);
+    }
+}
+
+// 外側は半円、内側の開口は幅25mm・高さ30mmのD字形。
+module handle_profile_2d() {
+    difference() {
+        half_circle_2d(handle_outer_radius);
+
+        translate([handle_inner_offset, 0])
+            scale([
+                handle_opening_width,
+                handle_opening_height / 2
+            ])
+                half_circle_2d(1);
+    }
+}
+
+// XZ平面に配置し、Y方向に厚みを付ける。
+module handle() {
+    translate([handle_back_x, 0, handle_center_z])
+        rotate([90, 0, 0])
+            linear_extrude(height = handle_depth, center = true)
+                handle_profile_2d();
+}
+
+render(convexity = 10)
+difference() {
+    union() {
+        cylinder(d = outer_diameter, h = mug_height);
+        handle();
+    }
+
+    // 上面まで貫通する空洞。底は6mm残す。
+    translate([0, 0, bottom_thickness])
+        cylinder(
+            d = inner_diameter,
+            h = mug_height - bottom_thickness + epsilon
+        );
+}
+```

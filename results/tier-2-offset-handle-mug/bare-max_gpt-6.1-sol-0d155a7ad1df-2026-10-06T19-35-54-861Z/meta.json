@@ -1,0 +1,40 @@
+{
+  "runId": "bare-max_gpt-6.1-sol-0d155a7ad1df-2026-10-06T19-35-54-861Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "bare-max/gpt-6.1-sol",
+  "signature": "0d155a7ad1df8120934d10ca1c0a76c2795c122a38057b3dcfff83a2aa210e39",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-6.1-sol",
+      "modelOptions": {
+        "reasoning": {
+          "effort": "max"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-6.1-sol",
+  "resolvedModel": "gpt-6.1-sol",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 163582
+  },
+  "tokens": {
+    "input": 273,
+    "output": 6641,
+    "thinking": 6212
+  },
+  "cost_usd": 0.066956,
+  "createdAt": "2026-10-06T19:35:54.861Z",
+  "gitCommit": "8cb022fa99b9cf39b94a40763859d5e8d92fcc5c"
+}

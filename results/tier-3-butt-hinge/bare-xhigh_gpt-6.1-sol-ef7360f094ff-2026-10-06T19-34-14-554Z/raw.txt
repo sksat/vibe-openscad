@@ -1,0 +1,154 @@
+```openscad
+// 単位: mm
+// ヒンジ軸: X=0, Z=0 の Y 軸。
+// 板の表面: Z=0、裏面: Z=-2。
+// 開き角: 180°=全開、0°=閉じた状態。
+$fn = 96;
+
+opening_angle = 180;
+
+leaf_length    = 30;
+leaf_width     = 25;
+leaf_thickness = 2;
+
+pin_diameter = 4;
+pin_length   = 32;
+
+knuckle_diameter = 8;
+knuckle_count    = 5;
+knuckle_length   = leaf_length / knuckle_count;
+
+// ピンに対して片側 0.3 mm、穴径は 4.6 mm。
+pin_radial_clearance = 0.3;
+bore_diameter = pin_diameter + 2 * pin_radial_clearance;
+
+screw_hole_diameter = 3.2;
+screw_pitch         = 8;
+countersink_diameter = 6;
+countersink_depth    = 1;
+screw_outer_margin   = 5;
+
+eps = 0.01;
+
+// 相手側の筒に板が干渉しないよう、矩形板を外径の外側に配置。
+// 自分側の筒だけを短い接続部で板につなぐ。
+barrel_leaf_clearance = 0.2;
+leaf_inner_x = knuckle_diameter / 2 + barrel_leaf_clearance;
+leaf_outer_x = leaf_inner_x + leaf_width;
+
+neck_inner_x = bore_diameter / 2 + 0.3;
+neck_overlap = 0.5;
+neck_width   = leaf_inner_x + neck_overlap - neck_inner_x;
+
+screw_x = leaf_outer_x - screw_outer_margin;
+screw_y_positions = [
+    leaf_length / 2 - screw_pitch,
+    leaf_length / 2,
+    leaf_length / 2 + screw_pitch
+];
+
+// ローカル Z 方向の円柱を +Y 方向へ向ける。
+module cylinder_y(diameter, length) {
+    rotate([-90, 0, 0])
+        cylinder(d = diameter, h = length);
+}
+
+// Z=0 の表面から、深さ 1 mm の皿穴。
+module countersunk_hole(x, y) {
+    translate([x, y, -leaf_thickness - eps])
+        cylinder(
+            d = screw_hole_diameter,
+            h = leaf_thickness + 2 * eps
+        );
+
+    // Z=0 で正確に直径 6 mm となるよう、テーパを上方へ延長。
+    translate([x, y, -countersink_depth])
+        cylinder(
+            h = countersink_depth + eps,
+            d1 = screw_hole_diameter,
+            d2 = countersink_diameter
+                 + (countersink_diameter - screw_hole_diameter)
+                 * eps / countersink_depth
+        );
+}
+
+// side=-1: 左板、side=+1: 右板。
+// 各筒は正確に 6 mm。隣接端面は接触するが体積は重ならない。
+module leaf_part(side) {
+    indices = side < 0 ? [0, 2, 4] : [1, 3];
+
+    difference() {
+        union() {
+            // 30 × 25 × 2 mm の矩形板。
+            translate([
+                side < 0 ? -leaf_outer_x : leaf_inner_x,
+                0,
+                -leaf_thickness
+            ])
+                cube([leaf_width, leaf_length, leaf_thickness]);
+
+            for (i = indices) {
+                // 筒部。
+                translate([0, i * knuckle_length, 0])
+                    cylinder_y(
+                        knuckle_diameter,
+                        knuckle_length
+                    );
+
+                // 板と自分側の筒を一体化する接続部。
+                translate([
+                    side < 0
+                        ? -leaf_inner_x - neck_overlap
+                        : neck_inner_x,
+                    i * knuckle_length,
+                    -leaf_thickness
+                ])
+                    cube([
+                        neck_width,
+                        knuckle_length,
+                        leaf_thickness
+                    ]);
+            }
+        }
+
+        // すべての自分側の筒を同軸でくり抜く。
+        translate([0, -eps, 0])
+            cylinder_y(
+                bore_diameter,
+                leaf_length + 2 * eps
+            );
+
+        for (y = screw_y_positions)
+            countersunk_hole(side * screw_x, y);
+    }
+}
+
+module left_leaf() {
+    leaf_part(-1);
+}
+
+module right_leaf() {
+    leaf_part(1);
+}
+
+module hinge_pin() {
+    // 筒全体は Y=0～30、ピンは Y=-1～31。
+    translate([0, (leaf_length - pin_length) / 2, 0])
+        cylinder_y(pin_diameter, pin_length);
+}
+
+module butt_hinge(angle = 180) {
+    color([0.58, 0.60, 0.62])
+        left_leaf();
+
+    // Y 軸まわりに回転。180°では左右の表面がともに Z=0。
+    color([0.64, 0.66, 0.68])
+        rotate([0, angle - 180, 0])
+            right_leaf();
+
+    color([0.76, 0.78, 0.80])
+        hinge_pin();
+}
+
+butt_hinge(opening_angle);
+```
