@@ -73,12 +73,15 @@ claude-opus-4-7:
   effort: high
   thinking: adaptive
 
+# Opus 4.6 は `thinking` 省略時は思考しない(adaptive は明示 opt-in)。
+# effort は low〜max(xhigh は 4.7 から)。dated snapshot は無く alias のみ。
 claude-opus-4-6:
   provider: anthropic
+  retirementNotBefore: "2027-02-05"
   rate: { in: 5, out: 25 }
   vision: true
   effort: high
-  thinking: adaptive
+  thinking: "off"
 
 # Sonnet 5 は Sonnet 4.6($3/$15)から値下げ。thinking は adaptive のみが
 # on モード(`thinking` 省略でも adaptive)、明示 disable は受け付ける。
