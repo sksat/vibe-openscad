@@ -1,0 +1,31 @@
+$fn = 100;
+
+/* ---- Mug body ---- */
+cup_r   = 40;          // outer radius  (80 mm diameter)
+cup_h   = 100;         // total height
+wall_t  = 4;           // wall thickness
+bot_t   = 6;           // bottom thickness
+inner_r = cup_r - wall_t;   // 36 mm
+
+/* ---- Handle (torus) ---- */
+handle_R = 17;         // major radius of torus
+handle_r = 5;          // minor radius  (tube cross-section)
+// clear finger-hole radius = handle_R - handle_r = 12 mm
+
+difference() {
+    union() {
+        /* solid cup cylinder */
+        cylinder(r = cup_r, h = cup_h);
+
+        /* ring handle – vertical torus on +X side at mid-height */
+        translate([cup_r, 0, cup_h / 2])
+            rotate([90, 0, 0])
+                rotate_extrude(convexity = 4)
+                    translate([handle_R, 0])
+                        circle(r = handle_r);
+    }
+
+    /* hollow out the interior */
+    translate([0, 0, bot_t])
+        cylinder(r = inner_r, h = cup_h - bot_t + 1);
+}

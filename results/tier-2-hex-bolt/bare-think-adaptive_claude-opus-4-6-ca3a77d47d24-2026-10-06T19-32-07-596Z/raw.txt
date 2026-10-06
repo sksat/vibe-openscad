@@ -1,0 +1,25 @@
+```openscad
+$fn = 64;
+
+// Head: hexagonal prism, across-flats 13 mm, height 5.3 mm
+// Bottom of head at z=0, top at z=5.3
+// Shank: diameter 8 mm, length 30 mm, extending downward (z<0)
+
+module hex_bolt() {
+    af = 13;            // across-flats distance
+    r_hex = af / 2 / cos(30);  // circumradius of regular hexagon
+    h_head = 5.3;
+    d_shank = 8;
+    l_shank = 30;
+
+    // Head (z = 0 to 5.3)
+    translate([0, 0, h_head / 2])
+        cylinder(h = h_head, r = r_hex, $fn = 6, center = true);
+
+    // Shank (z = 0 to -30)
+    translate([0, 0, -l_shank / 2])
+        cylinder(h = l_shank, d = d_shank, center = true);
+}
+
+hex_bolt();
+```

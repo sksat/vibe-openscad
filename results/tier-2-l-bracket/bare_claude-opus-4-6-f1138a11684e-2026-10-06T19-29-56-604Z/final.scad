@@ -1,0 +1,78 @@
+// L-bracket parameters
+width = 50;        // X direction
+flange = 40;       // flange length (Y for horizontal, Z for vertical)
+thickness = 3;     // plate thickness
+
+// Hole parameters
+hole_dia = 4.5;    // M4 through hole
+csink_dia = 8;     // countersink diameter
+csink_depth = 2;   // countersink depth
+edge_offset = 10;  // distance from edge to hole center
+hole_spacing = 30; // distance between two holes (symmetric about center)
+
+module countersunk_hole() {
+    // Through hole + countersink
+    union() {
+        // Through hole (tall enough to cut through)
+        cylinder(d=hole_dia, h=thickness+2, center=true, $fn=36);
+        // Countersink on top (positive Z side)
+        translate([0, 0, thickness/2 - csink_depth + 0.01])
+            cylinder(d1=hole_dia, d2=csink_dia, h=csink_depth, $fn=36);
+    }
+}
+
+module horizontal_flange() {
+    difference() {
+        // Horizontal plate: X=[0,width], Y=[0,flange], Z=[-thickness,0]
+        translate([0, 0, -thickness])
+            cube([width, flange, thickness]);
+
+        // Holes on horizontal flange
+        // Center line X = width/2 = 25
+        // Two holes at X = width/2 ± hole_spacing/2 = 10 and 40
+        // Y = edge_offset from far edge: Y = flange - edge_offset = 30
+        // Countersink faces downward (outside = -Z side)
+        hole_x1 = (width - hole_spacing) / 2;
+        hole_x2 = (width + hole_spacing) / 2;
+        hole_y = flange - edge_offset;
+
+        // Rotate so countersink faces -Z (outside of horizontal flange)
+        translate([hole_x1, hole_y, -thickness/2])
+            rotate([180, 0, 0])
+                countersunk_hole();
+        translate([hole_x2, hole_y, -thickness/2])
+            rotate([180, 0, 0])
+                countersunk_hole();
+    }
+}
+
+module vertical_flange() {
+    difference() {
+        // Vertical plate: X=[0,width], Y=[-thickness,0], Z=[0,flange]
+        translate([0, -thickness, 0])
+            cube([width, thickness, flange]);
+
+        // Holes on vertical flange
+        // Center line X = width/2 = 25
+        // Two holes at X = width/2 ± hole_spacing/2 = 10 and 40
+        // Z = flange - edge_offset = 30
+        // Countersink faces -Y (outside of vertical flange)
+        hole_x1 = (width - hole_spacing) / 2;
+        hole_x2 = (width + hole_spacing) / 2;
+        hole_z = flange - edge_offset;
+
+        // Rotate so countersink faces -Y (outside)
+        translate([hole_x1, -thickness/2, hole_z])
+            rotate([-90, 0, 0])
+                countersunk_hole();
+        translate([hole_x2, -thickness/2, hole_z])
+            rotate([-90, 0, 0])
+                countersunk_hole();
+    }
+}
+
+// Assemble L-bracket
+union() {
+    horizontal_flange();
+    vertical_flange();
+}

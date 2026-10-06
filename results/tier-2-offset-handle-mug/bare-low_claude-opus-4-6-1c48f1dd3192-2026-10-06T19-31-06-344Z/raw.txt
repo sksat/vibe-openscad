@@ -1,0 +1,169 @@
+```openscad
+$fn = 80;
+
+outer_r = 40;
+inner_r = 35;
+height = 90;
+bottom = 6;
+
+// Body
+difference() {
+    cylinder(r=outer_r, h=height);
+    translate([0, 0, bottom])
+        cylinder(r=inner_r, h=height);
+}
+
+// Handle on +X side
+handle_h = 30;
+handle_w = 25;
+handle_thick = 8;
+handle_z = (height - handle_h) / 2;
+
+translate([outer_r, 0, handle_z])
+difference() {
+    scale([handle_w / handle_h, 1, 1])
+        rotate([-90, 0, 0])
+        rotate([0, 90, 0])
+        linear_extrude(height = handle_thick, center = true)
+        resize([handle_h + handle_thick * 2, handle_w + handle_thick * 2])
+        circle(d = 1);
+    scale([handle_w / handle_h, 1, 1])
+        rotate([-90, 0, 0])
+        rotate([0, 90, 0])
+        linear_extrude(height = handle_thick + 2, center = true)
+        resize([handle_h, handle_w])
+        circle(d = 1);
+    // Cut inner half (toward mug body)
+    translate([-(handle_w + handle_thick * 2) / 2 - 1, 0, 0])
+        cube([handle_w + handle_thick * 2 + 2, handle_w + handle_thick * 2 + 2, handle_h + handle_thick * 2 + 2], center = true);
+}
+```
+
+Hmm, let me redo this more cleanly.
+
+```openscad
+$fn = 80;
+
+outer_r = 40;
+inner_r = 35;
+height = 90;
+bottom_thick = 6;
+
+// Mug body
+difference() {
+    cylinder(r = outer_r, h = height);
+    translate([0, 0, bottom_thick])
+        cylinder(r = inner_r, h = height);
+}
+
+// Handle on +X side
+module handle() {
+    h_inner = 30;      // inner vertical space
+    w_inner = 25;       // inner horizontal depth (outward from mug)
+    thick = 8;          // tube diameter of handle
+
+    center_z = height / 2;
+
+    translate([outer_r, 0, center_z]) {
+        difference() {
+            // Outer rounded-rect torus shape: half ellipse
+            rotate([0, 0, 0])
+            linear_extrude(height = thick, center = true)
+            difference() {
+                offset(r = thick / 2)
+                    square([w_inner, h_inner], center = true);
+                square([w_inner, h_inner], center = true);
+                // Keep only +X half
+                translate([-(w_inner / 2 + thick + 1), 0])
+                    square([w_inner + thick + 2, h_inner + thick * 2 + 2], center = true);
+            }
+        }
+    }
+}
+
+// Actually let me use a torus-like approach with rotate_extrude
+
+module handle2() {
+    grip_h = 30;
+    grip_w = 25;
+    tube_r = 5;
+    cz = height / 2;
+
+    translate([outer_r, 0, cz]) {
+        // D-shape: two vertical bars + one semicircular/curved outer part
+        // Top bar
+        translate([grip_w / 2, 0, grip_h / 2])
+            rotate([0, 90, 0])
+            rotate([90, 0, 0])
+            cylinder(r = tube_r, h = grip_w, center = true);
+        // Bottom bar  
+        translate([grip_w / 2, 0, -grip_h / 2])
+            rotate([0, 90, 0])
+            rotate([90, 0, 0])
+            cylinder(r = tube_r, h = grip_w, center = true);
+        // Outer vertical bar
+        translate([grip_w, 0, 0])
+            cylinder(r = tube_r, h = grip_h, center = true);
+        // Fillets at corners (spheres)
+        for (z = [grip_h/2, -grip_h/2])
+            translate([grip_w, 0, z]) sphere(r = tube_r);
+        for (z = [grip_h/2, -grip_h/2])
+            translate([0, 0, z]) sphere(r = tube_r);
+        // Inner connection bars
+        translate([0, 0, grip_h / 2])
+            cylinder(r = tube_r, h = 1, center = true);
+        translate([0, 0, -grip_h / 2])
+            cylinder(r = tube_r, h = 1, center = true);
+    }
+}
+
+handle2();
+```
+
+Let me just write a clean simple version:
+
+```openscad
+$fn = 80;
+
+outer_r = 40;
+inner_r = 35;
+mug_h = 90;
+bottom = 6;
+
+// Mug body
+difference() {
+    cylinder(r = outer_r, h = mug_h);
+    translate([0, 0, bottom])
+        cylinder(r = inner_r, h = mug_h);
+}
+
+// Handle: D-shape on +X side
+// Path: rectangular U-shape with rounded corners, extruded as a tube
+module handle() {
+    tube_r = 5;
+    grip_w = 25;  // how far handle extends from mug surface
+    grip_h = 30;  // inner vertical span
+    z_center = mug_h / 2;
+    
+    translate([outer_r, 0, z_center]) {
+        // Bottom horizontal segment
+        translate([0, 0, -grip_h/2])
+            rotate([0, 90, 0])
+                cylinder(r = tube_r, h = grip_w);
+        // Top horizontal segment
+        translate([0, 0, grip_h/2])
+            rotate([0, 90, 0])
+                cylinder(r = tube_r, h = grip_w);
+        // Outer vertical segment
+        translate([grip_w, 0, -grip_h/2])
+            cylinder(r = tube_r, h = grip_h);
+        // Corner spheres
+        for (z = [-grip_h/2, grip_h/2]) {
+            translate([0, 0, z]) sphere(r = tube_r);
+            translate([grip_w, 0, z]) sphere(r = tube_r);
+        }
+    }
+}
+
+handle();
+```

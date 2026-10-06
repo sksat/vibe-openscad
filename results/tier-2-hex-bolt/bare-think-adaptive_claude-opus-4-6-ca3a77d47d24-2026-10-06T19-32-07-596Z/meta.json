@@ -1,0 +1,41 @@
+{
+  "runId": "bare-think-adaptive_claude-opus-4-6-ca3a77d47d24-2026-10-06T19-32-07-596Z",
+  "taskId": "tier-2-hex-bolt",
+  "matrixId": "bare-think-adaptive/claude-opus-4-6",
+  "signature": "ca3a77d47d2489fc4d8b7056f8987d9eeccb04f16a1ca8557bf314ede6d73ba2",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "0fee46bf3152dd6738d6d2af93e06dad04bb6bddd3b2b528c57138298ec0b5d0",
+    "harness": {
+      "kind": "bare",
+      "provider": "anthropic",
+      "model": "claude-opus-4-6",
+      "modelOptions": {
+        "thinking": {
+          "type": "adaptive"
+        },
+        "max_tokens": 64000
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "anthropic",
+  "model": "claude-opus-4-6",
+  "resolvedModel": "claude-opus-4-6",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 6511
+  },
+  "tokens": {
+    "input": 252,
+    "output": 318,
+    "thinking": 32
+  },
+  "cost_usd": 0.00921,
+  "createdAt": "2026-10-06T19:32:07.596Z",
+  "gitCommit": "a3d95c0e1adbb06cc44c789437daa80b75144fe5"
+}

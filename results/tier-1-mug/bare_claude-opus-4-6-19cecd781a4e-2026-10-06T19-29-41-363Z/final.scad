@@ -1,0 +1,30 @@
+// Mug parameters
+outer_radius = 80 / 2;       // 40mm
+height = 100;
+wall_thickness = 4;
+bottom_thickness = 6;
+inner_radius = outer_radius - wall_thickness;
+
+// Handle parameters
+handle_tube_radius = 5;       // thickness of the handle ring
+handle_ring_radius = 22;      // radius of the handle ring center path
+handle_center_z = height / 2; // vertical center of the handle
+handle_offset_x = outer_radius + handle_ring_radius - 4; // offset so it merges into the wall
+
+// Cup body
+difference() {
+    // Outer shell
+    cylinder(r = outer_radius, h = height, $fn = 100);
+    
+    // Inner cavity
+    translate([0, 0, bottom_thickness])
+        cylinder(r = inner_radius, h = height - bottom_thickness + 1, $fn = 100);
+}
+
+// Handle (torus ring on the side)
+translate([handle_offset_x, 0, handle_center_z])
+    rotate([0, 90, 0])
+        rotate([0, 0, 0])
+            rotate_extrude(convexity = 10, $fn = 80)
+                translate([handle_ring_radius, 0, 0])
+                    circle(r = handle_tube_radius, $fn = 40);

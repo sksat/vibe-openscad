@@ -1,0 +1,191 @@
+// Sharp GP2Y0D413K0F Distance Sensor Model
+// Unit: mm
+// Origin: center of body, mounting face (PWB/Connector side) facing -Z
+
+$fn = 40;
+
+// === Key dimensions from datasheet ===
+// Overall width (left-right): 29.45mm total span
+//   Light emitter center at *4.5 from left edge
+//   Light detector at *19.7 from left edge (lens center)
+//   Total width ~29.45 but the main case body
+// From the drawing:
+//   Bottom view: 7.5 + 4.15 + 16.3 = 27.95 (approx body width at base)
+//   But top dimension shows 29.45 total span
+// Main body width: ~29.45
+// Body depth (front-back): 10.1 (PWB depth)
+// Body heights: 8.4 total from PWB bottom to top of case
+//   Case portion: 7.2 from PWB top surface
+//   PWB thickness implied ~1.2
+// Lens case: 7.1 wide, protrudes from front
+//   Lens height: 13.05 from PWB bottom
+//   Lens depth: (6.3) reference + 2 = ~8.3 from case front
+// Connector: protrudes below, 3.3 wide, 13.5 tall area
+
+// Derived dimensions
+body_width = 29.45;
+body_depth = 10.1;
+pwb_thickness = 1.2;
+case_height_above_pwb = 7.2;
+total_case_height = case_height_above_pwb + pwb_thickness; // 8.4
+
+// Lens case
+lens_width = 7.1;
+lens_height = 13.05;
+lens_protrusion = 6.3; // reference dimension, depth beyond front face
+lens_front_extra = 2.0; // the "2" shown before (6.3)
+
+// Connector
+connector_width = 3.3;
+connector_depth = 3.75; // approximate from drawing
+connector_drop = 1.2; // below PWB
+
+// Light emitter bump
+emitter_width = 4.5; // approximate
+emitter_depth = 3.75;
+emitter_height = total_case_height;
+
+// Positions - lens center offset from body left edge
+// From drawing: lens center is at 19.7 from left edge (marked with *)
+// Light emitter center at 4.5 from left edge
+// Body center is at body_width/2 = 14.725 from left edge
+
+lens_center_from_left = 19.7;
+emitter_center_from_left = 4.5;
+
+// In our coordinate system, X=0 is body center
+lens_center_x = lens_center_from_left - body_width/2;
+emitter_center_x = emitter_center_from_left - body_width/2;
+
+// Z coordinate: PWB bottom is at -total_case_height/2, top at +total_case_height/2
+// But we want mounting face (PWB/connector side) at -Z
+// So PWB bottom at z=0 would be wrong. Let's define:
+//   Body center vertically: half of total_case_height
+//   PWB bottom face is at -total_case_height/2
+//   Case top face is at +total_case_height/2
+
+// Actually lens_height = 13.05 from PWB bottom, and 18.9 is the max height dimension
+// 18.9 seems to be total from some reference. Let me re-read:
+// 13.05 is lens top from PWB bottom
+// 18.9 appears to be total height including connector below
+
+// Let me reconsider the Z axis:
+// The mounting face (PWB bottom) faces -Z
+// PWB bottom surface: z = 0 for calculation, then shift to center
+
+// Heights from PWB bottom (z=0 before centering):
+//   PWB top surface: z = pwb_thickness = 1.2
+//   Case top: z = pwb_thickness + case_height_above_pwb = 1.2 + 7.2 = 8.4
+//   Lens top: z = 13.05
+//   Connector bottom: z = -connector_drop (below PWB)
+
+// For centering at body center, the body goes from z=0 (PWB bottom) to z=8.4 (case top)
+// Center of main body: z = 8.4/2 = 4.2
+// So offset everything by -4.2
+
+z_offset = -total_case_height / 2;
+
+// Y axis: front face (sensor/lens side) faces +Y, PWB back faces -Y
+// PWB depth = 10.1, main case sits on PWB
+// Let's say PWB back face at y = -body_depth/2, front face at y = +body_depth/2
+
+module sensor() {
+    // === PWB (Printed Wiring Board) ===
+    // The green PCB substrate
+    color("darkgreen")
+    translate([0, 0, z_offset + pwb_thickness/2])
+        cube([body_width, body_depth, pwb_thickness], center=true);
+
+    // === Main Case (Carbonic ABS) ===
+    // Sits on top of PWB, covers most of the width
+    // From the side view, case is roughly 8.4mm wide (depth) and 7.2mm tall above PWB
+    case_depth = 8.4; // approximate case depth, slightly less than PWB
+    
+    color("dimgray")
+    translate([0, (body_depth - case_depth)/2 - (body_depth - case_depth)/4, 
+               z_offset + pwb_thickness + case_height_above_pwb/2])
+        cube([body_width - 2, case_depth, case_height_above_pwb], center=true);
+
+    // === Light Emitter Housing ===
+    // Left side bump, extends a bit taller than main case
+    // From drawing it looks like a separate protruding element
+    color("dimgray")
+    translate([emitter_center_x, body_depth/2 - emitter_depth/2, 
+               z_offset + pwb_thickness + case_height_above_pwb/2])
+        cube([5.0, emitter_depth + 1, case_height_above_pwb], center=true);
+
+    // === Lens Case (Acrylic acid resin) ===
+    // Protrudes from the front of the case, on the right side
+    // Width: 7.1mm, height: 13.05 from PWB bottom
+    // Protrudes forward by (6.3) + 2 from front of case roughly
+    lens_total_depth = lens_protrusion;
+    lens_z_center = z_offset + lens_height / 2;
+    
+    // Lens housing - rectangular with slight features
+    color("black")
+    translate([lens_center_x, body_depth/2 + lens_total_depth/2, lens_z_center])
+        cube([lens_width, lens_total_depth, lens_height], center=true);
+    
+    // Lens aperture (front face detail)
+    color("darkred")
+    translate([lens_center_x, body_depth/2 + lens_total_depth + 0.1, 
+               z_offset + pwb_thickness + case_height_above_pwb/2])
+        cube([5, 0.5, 5], center=true);
+
+    // === Light Emitter Window ===
+    // Small window/lens on the emitter side
+    color("darkred")
+    translate([emitter_center_x, body_depth/2 + 1.5, 
+               z_offset + pwb_thickness + case_height_above_pwb/2])
+        cube([3, 3, 4], center=true);
+
+    // === Connector ===
+    // 3-pin connector on the back, bottom side
+    // From bottom view: pins labeled 1,2,3 on left side
+    // Connector width ~3.3, hangs below PWB
+    // Position: from bottom view drawing, connector is roughly centered 
+    // around x position near 7.5+4.15 area from left = ~11.65 from left
+    // Actually from side view, connector is at back of PWB
+    
+    connector_x_from_left = 7.5 + 4.15/2; // approximate center from bottom view
+    connector_x = connector_x_from_left - body_width/2;
+    connector_height = 3.0;
+    connector_actual_width = 5.0; // 3-pin connector housing width
+    
+    color("ivory")
+    translate([connector_x, -body_depth/2 + connector_depth/2 + 1, 
+               z_offset - connector_height/2])
+        cube([connector_actual_width, connector_depth, connector_height], center=true);
+
+    // === Connector Pins ===
+    pin_spacing = 1.5; // typical for small connectors
+    for (i = [-1, 0, 1]) {
+        color("gold")
+        translate([connector_x + i * pin_spacing, 
+                   -body_depth/2 + connector_depth/2 + 1,
+                   z_offset - connector_height - 1.5])
+            cube([0.4, 0.4, 3.5], center=true);
+    }
+
+    // === Bottom view outline features ===
+    // The sensor has a distinctive bottom profile with notch/step
+    // From bottom view: 7.5 | 4.15 | 16.3 = 27.95, close to 29.45 with margins
+    
+    // Side profile - the case has a step on the left (emitter) side
+    // Height from side: 13.5 shown for the emitter+case area
+    emitter_total_height = 13.5;
+    
+    color("dimgray")
+    translate([emitter_center_x, body_depth/2 - 2, 
+               z_offset + emitter_total_height/2]) {
+        difference() {
+            cube([6, 4, emitter_total_height], center=true);
+            // Cutout for LED window
+            translate([0, 2, 0])
+                cube([3.5, 2, 4], center=true);
+        }
+    }
+}
+
+// Render the sensor
+sensor();

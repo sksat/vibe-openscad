@@ -1,0 +1,200 @@
+
+
+```openscad
+// Butt Hinge - 3 parts: left leaf, right leaf, pin
+
+$fn = 64;
+
+// Dimensions
+leaf_height = 30;      // along Y (hinge axis)
+leaf_width = 25;       // along X
+leaf_thick = 2;        // along Z
+
+pin_dia = 4;
+pin_length = 32;
+pin_clearance = 0.3;
+
+knuckle_od = 8;
+knuckle_id = pin_dia + pin_clearance; // 4.6
+knuckle_segment = 6;   // each segment height
+num_segments = 5;
+
+// Countersink holes
+cs_top_dia = 6;
+cs_depth = 1;
+hole_dia = 3.2;
+hole_spacing = 8;      // pitch along Y
+
+// Knuckle radius
+kr = knuckle_od / 2;   // 4
+
+// -------------------------------------------------------
+// Module: single knuckle segment (centered at origin, along Y)
+// -------------------------------------------------------
+module knuckle_segment(h) {
+    difference() {
+        cylinder(d = knuckle_od, h = h);
+        translate([0, 0, -0.1])
+            cylinder(d = knuckle_id, h = h + 0.2);
+    }
+}
+
+// -------------------------------------------------------
+// Module: countersink hole (drilled along +Z, positioned at origin)
+// -------------------------------------------------------
+module countersink_hole() {
+    // Taper from cs_top_dia down to hole_dia over cs_depth
+    translate([0, 0, leaf_thick - cs_depth])
+        cylinder(d1 = hole_dia, d2 = cs_top_dia, h = cs_depth + 0.01);
+    // Through hole
+    translate([0, 0, -0.1])
+        cylinder(d = hole_dia, h = leaf_thick + 0.2);
+}
+
+// -------------------------------------------------------
+// Module: leaf plate with countersink holes
+// side: -1 for left (x<0), +1 for right (x>0)
+// -------------------------------------------------------
+module leaf_plate(side) {
+    // Plate extends from knuckle center outward
+    // For left leaf (side=-1): x from -leaf_width to 0
+    // For right leaf (side=+1): x from 0 to +leaf_width
+    // But knuckle outer radius overlaps, so plate starts at x=0 edge
+    // and knuckle adds the cylindrical part.
+    // Plate: from x=0 toward side, width = leaf_width
+    // The plate bottom edge aligns with knuckle bottom (tangent)
+    // In 180° open, both plates lie flat: Z from -leaf_thick to 0
+    // (top surface at Z=0, matching knuckle axis center)
+    // Actually, when open 180°, the flat surfaces are coplanar.
+    // Knuckle center is at Z=0, X=0. Plate top at Z = kr (so surface is at top of knuckle)
+    // No: for a butt hinge open 180°, the leaf surface is at the bottom of the knuckle.
+    // The leaf connects to the knuckle at the bottom. Let's place:
+    // - Knuckle axis at (0, Y, 0)
+    // - Leaf flat surface at Z = -kr (bottom tangent of knuckle)
+    // - Leaf thickness goes from Z = -kr - leaf_thick to Z = -kr
+    // Actually, standard butt hinge: the leaf surface is flush with the bottom of the knuckle.
+    // The leaf top surface is at Z = -kr + leaf_thick ... no.
+    // Let me think more carefully:
+    // The knuckle is a half-cylinder attached to the leaf. The leaf's top surface
+    // continues tangentially from the knuckle. So the leaf top surface is at
+    // Z = -(kr) and the knuckle extends above from Z = -kr to Z = +kr.
+    // No. The standard geometry: the leaf plate's TOP surface is at the same Z
+    // as the knuckle CENTER. The knuckle barrel sticks up above the plate by kr,
+    // and below the plate top surface into the plate thickness... 
+    //
+    // Simplest standard approach: 
+    // - Leaf top surface at Z=0 (the mounting surface)
+    // - Knuckle center at Z = kr = 4 (above the plate surface by knuckle radius)
+    // - But leaf_thick = 2, kr = 4, so the plate can't reach the center.
+    //
+    // More typical for thin leaves: the knuckle is formed by rolling the edge.
+    // The plate surface is tangent to the bottom of the knuckle.
+    // Top surface of plate at Z = 0
+    // Knuckle center at Z = kr = 4 above plate surface... that's a lot.
+    //
+    // For a simple/practical model, let's just do:
+    // Knuckle axis at (0, Y, 0)
+    // Both leaves' TOP (flat) surfaces at Z = 0  (same plane, 180° open)
+    // Leaves go from Z = -leaf_thick to Z = 0
+    // Knuckle barrels centered at Z = 0, extending from Z = -kr to Z = +kr
+    // The leaf connects to the knuckle with a smooth join at the edge.
+    // The leaf at x=0 merges into the knuckle bottom half.
+
+    difference() {
+        union() {
+            // Main plate
+            if (side == -1) {
+                // Left leaf: x from -leaf_width to 0
+                translate([-leaf_width, 0, -leaf_thick])
+                    cube([leaf_width, leaf_height, leaf_thick]);
+            } else {
+                // Right leaf: x from 0 to leaf_width
+                translate([0, 0, -leaf_thick])
+                    cube([leaf_width, leaf_height, leaf_thick]);
+            }
+        }
+        // Countersink holes: 3 holes along Y
+        // Centered in X on the plate (excluding knuckle area)
+        // Hole center X: midpoint of the plate
+        hole_x = side * (leaf_width / 2);
+        // Holes centered vertically on the leaf: at Y = leaf_height/2 - hole_spacing, leaf_height/2, leaf_height/2 + hole_spacing
+        for (i = [-1, 0, 1]) {
+            translate([hole_x, leaf_height/2 + i * hole_spacing, -leaf_thick - 0.01])
+                // Hole goes through from bottom (Z = -leaf_thick) to top (Z = 0)
+                // Countersink is on the top surface (Z=0 side, visible side)
+                union() {
+                    // Through hole
+                    cylinder(d = hole_dia, h = leaf_thick + 0.02);
+                    // Countersink at top: taper at Z = leaf_thick - cs_depth
+                    translate([0, 0, leaf_thick - cs_depth])
+                        cylinder(d1 = hole_dia, d2 = cs_top_dia, h = cs_depth + 0.01);
+                }
+        }
+    }
+}
+
+// -------------------------------------------------------
+// Module: left leaf with knuckles (segments 0, 2, 4 — i.e., outer two + center)
+// -------------------------------------------------------
+module left_leaf() {
+    color("Silver") {
+        union() {
+            leaf_plate(-1);
+            // Knuckles: segments 0, 2, 4 (left leaf gets 3)
+            for (i = [0, 2, 4]) {
+                translate([0, i * knuckle_segment, 0])
+                    rotate([-90, 0, 0])
+                        knuckle_segment(knuckle_segment);
+            }
+            // Fillet/connection between plate and knuckle bottom
+            // Add a small block to connect the plate to the knuckle
+            // The plate is at Z = -leaf_thick to 0, the knuckle bottom is at Z = -kr
+            // We need material connecting them. Add a rectangular bridge:
+            for (i = [0, 2, 4]) {
+                translate([-kr, i * knuckle_segment, -leaf_thick])
+                    cube([kr, knuckle_segment, leaf_thick]);
+            }
+        }
+    }
+}
+
+// -------------------------------------------------------
+// Module: right leaf with knuckles (segments 1, 3 — right leaf gets 2)
+// -------------------------------------------------------
+module right_leaf() {
+    color("DarkGray") {
+        union() {
+            leaf_plate(1);
+            // Knuckles: segments 1, 3
+            for (i = [1, 3]) {
+                translate([0, i * knuckle_segment, 0])
+                    rotate([-90, 0, 0])
+                        knuckle_segment(knuckle_segment);
+            }
+            // Connection block between plate and knuckle
+            for (i = [1, 3]) {
+                translate([0, i * knuckle_segment, -leaf_thick])
+                    cube([kr, knuckle_segment, leaf_thick]);
+            }
+        }
+    }
+}
+
+// -------------------------------------------------------
+// Module: pin
+// -------------------------------------------------------
+module pin() {
+    color("Gold")
+        translate([0, -1, 0])
+            rotate([-90, 0, 0])
+                cylinder(d = pin_dia, h = pin_length);
+}
+
+// -------------------------------------------------------
+// Assembly
+// -------------------------------------------------------
+
+left_leaf();
+right_leaf();
+pin();
+```

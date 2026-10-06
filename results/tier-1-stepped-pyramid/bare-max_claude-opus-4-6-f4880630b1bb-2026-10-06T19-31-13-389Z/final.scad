@@ -1,0 +1,12 @@
+union() {
+    // 1段目: 60x60x10
+    cube([60, 60, 10], center = false);
+
+    // 2段目: 40x40x10, 中央揃え
+    translate([10, 10, 10])
+        cube([40, 40, 10], center = false);
+
+    // 3段目: 20x20x10, 中央揃え
+    translate([20, 20, 20])
+        cube([20, 20, 10], center = false);
+}
