@@ -1,0 +1,71 @@
+$fn = 128;
+
+outer_diameter = 80;
+inner_diameter = 70;
+mug_height = 90;
+bottom_thickness = 6;
+
+handle_opening_width = 25;
+handle_opening_height = 30;
+handle_wall = 5;
+handle_depth = 12;
+handle_inner_x = 42;
+handle_center_z = mug_height / 2;
+handle_arc_steps = 48;
+
+// D-shaped profile: straight back with a semicircular outer end.
+function d_profile_points(x, zc, w, h, steps) =
+    let(
+        r = h / 2,
+        straight = w - r
+    )
+    concat(
+        [[x, zc + r], [x + straight, zc + r]],
+        [
+            for (i = [1:steps])
+                let(a = 90 - 180 * i / steps)
+                    [x + straight + r * cos(a), zc + r * sin(a)]
+        ],
+        [[x, zc - r]]
+    );
+
+module mug_body() {
+    difference() {
+        cylinder(h = mug_height, d = outer_diameter);
+
+        translate([0, 0, bottom_thickness])
+            cylinder(h = mug_height, d = inner_diameter);
+    }
+}
+
+module handle_profile() {
+    difference() {
+        offset(r = handle_wall)
+            polygon(points = d_profile_points(
+                handle_inner_x,
+                handle_center_z,
+                handle_opening_width,
+                handle_opening_height,
+                handle_arc_steps
+            ));
+
+        polygon(points = d_profile_points(
+            handle_inner_x,
+            handle_center_z,
+            handle_opening_width,
+            handle_opening_height,
+            handle_arc_steps
+        ));
+    }
+}
+
+module mug_handle() {
+    rotate([90, 0, 0])
+        linear_extrude(height = handle_depth, center = true, convexity = 10)
+            handle_profile();
+}
+
+union() {
+    mug_body();
+    mug_handle();
+}

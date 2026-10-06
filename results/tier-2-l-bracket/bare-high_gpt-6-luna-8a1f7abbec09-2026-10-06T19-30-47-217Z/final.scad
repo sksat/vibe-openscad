@@ -1,0 +1,53 @@
+$fn = 64;
+
+width = 50;
+depth = 40;
+height = 40;
+thickness = 3;
+
+through_diameter = 4.5;
+countersink_diameter = 8;
+countersink_depth = 2;
+edge_offset = 10;
+
+hole_x = [-width / 2 + edge_offset, width / 2 - edge_offset];
+
+difference() {
+    union() {
+        // Horizontal flange: extends in +Y, with its inner face at Z=0
+        translate([-width / 2, 0, -thickness])
+            cube([width, depth, thickness]);
+
+        // Vertical flange: extends in +Z, with its inner face at Y=0
+        translate([-width / 2, -thickness, 0])
+            cube([width, thickness, height]);
+
+        // Material joining the flanges at the inner corner
+        translate([-width / 2, -thickness, -thickness])
+            cube([width, thickness, thickness]);
+    }
+
+    // Horizontal flange holes; countersinks face outward (-Z)
+    for (x = hole_x) {
+        translate([x, depth / 2, -thickness - 0.1])
+            cylinder(h = thickness + 0.2, d = through_diameter);
+
+        translate([x, depth / 2, -thickness])
+            cylinder(h = countersink_depth,
+                     d1 = countersink_diameter,
+                     d2 = through_diameter);
+    }
+
+    // Vertical flange holes; countersinks face outward (-Y)
+    for (x = hole_x) {
+        translate([x, -thickness - 0.1, height / 2])
+            rotate([-90, 0, 0])
+                cylinder(h = thickness + 0.2, d = through_diameter);
+
+        translate([x, -thickness, height / 2])
+            rotate([-90, 0, 0])
+                cylinder(h = countersink_depth,
+                         d1 = countersink_diameter,
+                         d2 = through_diameter);
+    }
+}

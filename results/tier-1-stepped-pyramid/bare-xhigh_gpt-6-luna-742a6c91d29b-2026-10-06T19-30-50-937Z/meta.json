@@ -1,0 +1,40 @@
+{
+  "runId": "bare-xhigh_gpt-6-luna-742a6c91d29b-2026-10-06T19-30-50-937Z",
+  "taskId": "tier-1-stepped-pyramid",
+  "matrixId": "bare-xhigh/gpt-6-luna",
+  "signature": "742a6c91d29b5edcca23d1b575015d0501d0f9a67b5a2868b107975436e6d936",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "f33c33343b97cdee4ab2a95d84c7f4be5791294d1e997d9c55a752a15c9a2446",
+    "harness": {
+      "kind": "bare",
+      "provider": "openai",
+      "model": "gpt-6-luna",
+      "modelOptions": {
+        "reasoning": {
+          "effort": "xhigh"
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "openai",
+  "model": "gpt-6-luna",
+  "resolvedModel": "gpt-6-luna",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 3699
+  },
+  "tokens": {
+    "input": 151,
+    "output": 169,
+    "thinking": 79
+  },
+  "cost_usd": 0.0000996,
+  "createdAt": "2026-10-06T19:30:50.937Z",
+  "gitCommit": "f205f3241c4c869eb42ffd2548bec384b8a3bcb6"
+}

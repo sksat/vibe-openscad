@@ -1,0 +1,34 @@
+$fn = 128;
+
+module mug_body() {
+    difference() {
+        cylinder(d = 80, h = 90);
+        translate([0, 0, 6])
+            cylinder(d = 70, h = 85);
+    }
+}
+
+module handle() {
+    translate([0, 0, 45])
+        rotate([90, 0, 0])
+            linear_extrude(height = 10, center = true)
+                difference() {
+                    union() {
+                        translate([38, -25])
+                            square([27, 50]);
+                        translate([65, 0])
+                            circle(r = 25);
+                    }
+                    union() {
+                        translate([34, -15])
+                            square([16, 30]);
+                        translate([50, 0])
+                            circle(r = 15);
+                    }
+                }
+}
+
+union() {
+    mug_body();
+    handle();
+}

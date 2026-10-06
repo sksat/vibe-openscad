@@ -1,0 +1,115 @@
+// Sharp GP2Y0D413K0F distance sensor
+// Units: mm
+// Origin: center of the main housing
+// Optical face: +Y; PWB / connector side: -Z
+
+$fn = 64;
+
+// Main housing dimensions
+body_width = 29.45;
+body_height = 13.05;
+body_depth = 17.0;
+
+// Lens centers measured from the left edge of the housing
+emitter_x  = -body_width/2 + 4.5;
+detector_x = emitter_x + 19.7;
+
+// Main housing and front optical face
+color([0.20, 0.20, 0.20])
+union() {
+    // Main case
+    cube([body_width, body_depth, body_height], center=true);
+
+    // Front lens-case lip
+    translate([0, body_depth/2 + 0.55, 0])
+        cube([body_width - 0.6, 1.1, body_height - 0.8], center=true);
+
+    // Rear case seam
+    translate([0, -body_depth/2 - 0.12, 0])
+        cube([body_width - 0.8, 0.24, body_height - 1.0], center=true);
+
+    // Small rear mounting ribs
+    for (x = [-8.0, 8.0]) {
+        translate([x, -body_depth/2 - 0.65, 0])
+            cube([4.15, 1.3, body_height - 1.2], center=true);
+    }
+}
+
+// Raised rectangular optical surrounds on the front face
+color([0.12, 0.12, 0.12]) {
+    translate([emitter_x, body_depth/2 + 1.13, 0])
+        cube([8.0, 0.22, 8.4], center=true);
+
+    translate([detector_x, body_depth/2 + 1.13, 0])
+        cube([15.8, 0.22, 8.4], center=true);
+}
+
+// Lens recess backgrounds
+color([0.035, 0.035, 0.035]) {
+    translate([emitter_x, body_depth/2 + 1.255, 0])
+        rotate([90, 0, 0])
+            cylinder(d=6.3, h=0.08, center=true);
+
+    translate([detector_x, body_depth/2 + 1.255, 0])
+        rotate([90, 0, 0])
+            cylinder(d=6.3, h=0.08, center=true);
+}
+
+// Optical lenses
+color([0.30, 0.42, 0.48, 0.8]) {
+    translate([emitter_x, body_depth/2 + 1.31, 0])
+        rotate([90, 0, 0])
+            cylinder(d=5.2, h=0.14, center=true);
+
+    translate([detector_x, body_depth/2 + 1.31, 0])
+        rotate([90, 0, 0])
+            cylinder(d=5.2, h=0.14, center=true);
+}
+
+// Concentric lens rims
+module lens_rim(xpos, diameter) {
+    color([0.48, 0.48, 0.46])
+    translate([xpos, body_depth/2 + 1.39, 0])
+        rotate([90, 0, 0])
+            difference() {
+                cylinder(d=diameter, h=0.16, center=true);
+                cylinder(d=diameter - 0.55, h=0.20, center=true);
+            }
+}
+
+lens_rim(emitter_x, 6.1);
+lens_rim(detector_x, 6.1);
+
+// PWB on the mounting / connector side
+color([0.42, 0.28, 0.14])
+translate([0, -0.25, -body_height/2 - 0.18])
+    cube([11.5, 9.0, 0.36], center=true);
+
+// Connector housing, extending from the -Z mounting side
+color([0.17, 0.17, 0.17])
+translate([0, -0.25, -body_height/2 - 3.05])
+    cube([10.1, 7.5, 5.9], center=true);
+
+// Connector front inset
+color([0.09, 0.09, 0.09])
+translate([0, 3.56, -body_height/2 - 3.1])
+    cube([8.7, 0.18, 4.2], center=true);
+
+// Three connector terminals
+color([0.72, 0.70, 0.62])
+for (x = [-2.54, 0, 2.54]) {
+    translate([x, -0.15, -body_height/2 - 6.05])
+        cube([0.55, 0.55, 3.0], center=true);
+}
+
+// Small molded details on the connector face
+color([0.70, 0.70, 0.66])
+for (x = [-2.54, 0, 2.54]) {
+    translate([x, 3.67, -body_height/2 - 2.55])
+        cube([0.48, 0.08, 0.48], center=true);
+}
+
+// Subtle lower ledge along the housing
+color([0.16, 0.16, 0.16])
+translate([0, 0, -body_height/2 + 0.25])
+    cube([body_width - 1.0, body_depth - 0.8, 0.5], center=true);

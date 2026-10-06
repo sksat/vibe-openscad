@@ -1,0 +1,29 @@
+```openscad
+$fn = 128;
+
+outer_diameter = 80;
+height = 100;
+wall_thickness = 4;
+bottom_thickness = 6;
+
+handle_ring_radius = 12;
+handle_tube_radius = 3;
+
+union() {
+    difference() {
+        cylinder(d = outer_diameter, h = height);
+
+        translate([0, 0, bottom_thickness])
+            cylinder(
+                d = outer_diameter - 2 * wall_thickness,
+                h = height - bottom_thickness + 1
+            );
+    }
+
+    translate([outer_diameter / 2 + handle_ring_radius, 0, height / 2])
+        rotate([90, 0, 0])
+            rotate_extrude()
+                translate([handle_ring_radius, 0, 0])
+                    circle(r = handle_tube_radius);
+}
+```

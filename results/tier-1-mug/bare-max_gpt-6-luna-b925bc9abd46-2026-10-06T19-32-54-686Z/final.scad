@@ -1,0 +1,39 @@
+$fn = 128;
+
+cup_outer_diameter = 80;
+cup_height = 100;
+wall_thickness = 4;
+bottom_thickness = 6;
+
+handle_loop_radius = 12;
+handle_tube_radius = 3;
+
+outer_radius = cup_outer_diameter / 2;
+inner_radius = outer_radius - wall_thickness;
+epsilon = 0.2;
+
+module torus(major_radius, tube_radius) {
+    rotate_extrude($fn = 128)
+        translate([major_radius, 0])
+            circle(r = tube_radius, $fn = 48);
+}
+
+union() {
+    difference() {
+        cylinder(h = cup_height, r = outer_radius);
+
+        translate([0, 0, bottom_thickness])
+            cylinder(
+                h = cup_height - bottom_thickness + epsilon,
+                r = inner_radius
+            );
+    }
+
+    translate([
+        outer_radius + handle_loop_radius,
+        0,
+        cup_height / 2
+    ])
+        rotate([90, 0, 0])
+            torus(handle_loop_radius, handle_tube_radius);
+}

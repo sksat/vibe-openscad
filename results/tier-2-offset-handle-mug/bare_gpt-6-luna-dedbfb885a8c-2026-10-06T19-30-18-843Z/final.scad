@@ -1,0 +1,55 @@
+$fn = 128;
+
+outer_diameter = 80;
+inner_diameter = 70;
+height = 90;
+bottom_thickness = 6;
+
+handle_thickness = 12;
+handle_center_z = height / 2;
+handle_segments = 64;
+
+// D-shaped profile: a straight body-side edge and a semicircular outer edge.
+module d_profile(x_flat, x_arc_center, radius, segments = 64) {
+    polygon(points = concat(
+        [[x_flat, -radius], [x_arc_center, -radius]],
+        [
+            for (i = [1:segments])
+                [
+                    x_arc_center + radius * cos(-90 + 180 * i / segments),
+                    radius * sin(-90 + 180 * i / segments)
+                ]
+        ],
+        [[x_flat, radius]]
+    ));
+}
+
+module mug_body() {
+    difference() {
+        cylinder(d = outer_diameter, h = height);
+
+        translate([0, 0, bottom_thickness])
+            cylinder(
+                d = inner_diameter,
+                h = height - bottom_thickness + 1
+            );
+    }
+}
+
+module mug_handle() {
+    translate([0, handle_thickness / 2, handle_center_z])
+        rotate([90, 0, 0])
+            linear_extrude(height = handle_thickness)
+                difference() {
+                    // Outer D profile, overlapping the mug for a solid union.
+                    d_profile(36, 53, 23, handle_segments);
+
+                    // Clear opening: 25 mm wide by 30 mm high.
+                    d_profile(44, 54, 15, handle_segments);
+                }
+}
+
+union() {
+    mug_body();
+    mug_handle();
+}

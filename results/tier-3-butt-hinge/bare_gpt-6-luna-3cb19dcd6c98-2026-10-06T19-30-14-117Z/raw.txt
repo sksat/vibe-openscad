@@ -1,0 +1,60 @@
+```openscad
+$fn = 96;
+
+leaf_thickness = 2;
+leaf_length = 30;
+leaf_width = 25;
+
+knuckle_outer_d = 8;
+knuckle_inner_d = 4.6;
+knuckle_length = 6;
+
+module y_cylinder(y0, length, diameter) {
+    translate([0, y0, 0])
+        rotate([-90, 0, 0])
+            cylinder(h = length, d = diameter);
+}
+
+module knuckle(y0) {
+    difference() {
+        y_cylinder(y0, knuckle_length, knuckle_outer_d);
+        y_cylinder(y0 - 0.01, knuckle_length + 0.02, knuckle_inner_d);
+    }
+}
+
+module leaf(side) {
+    union() {
+        difference() {
+            if (side < 0)
+                translate([-28, 0, -leaf_thickness / 2])
+                    cube([leaf_width, leaf_length, leaf_thickness]);
+            else
+                translate([3, 0, -leaf_thickness / 2])
+                    cube([leaf_width, leaf_length, leaf_thickness]);
+
+            for (hole_y = [7, 15, 23]) {
+                translate([side * 23, hole_y, -leaf_thickness / 2])
+                    cylinder(h = leaf_thickness, d = 3.2);
+
+                // Countersink: 6 mm diameter at the top face, 1 mm deep.
+                translate([side * 23, hole_y, 0])
+                    cylinder(h = 1, d1 = 3.2, d2 = 6);
+            }
+        }
+
+        if (side < 0) {
+            for (y0 = [0, 12, 24])
+                knuckle(y0);
+        } else {
+            for (y0 = [6, 18])
+                knuckle(y0);
+        }
+    }
+}
+
+leaf(-1);
+leaf(1);
+
+// Hinge pin, extending 1 mm beyond the knuckles at each end.
+y_cylinder(-1, 32, 4);
+```
