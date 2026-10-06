@@ -1,0 +1,35 @@
+{
+  "runId": "bare_gemma-4-26b-a4b-it-2019af505a12-2026-10-06T19-52-36-158Z",
+  "taskId": "tier-2-offset-handle-mug",
+  "matrixId": "bare/gemma-4-26b-a4b-it",
+  "signature": "2019af505a126365b5430422972caba9a2f9f831b4528c9851432e1ccb1a1cd3",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "17bb90c155f260f31d8daa97595de1807509cc61813e556917ac42d7bc25944a",
+    "harness": {
+      "kind": "bare",
+      "provider": "google",
+      "model": "gemma-4-26b-a4b-it"
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "google",
+  "model": "gemma-4-26b-a4b-it",
+  "resolvedModel": "gemma-4-26b-a4b-it",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 209695
+  },
+  "tokens": {
+    "input": 232,
+    "output": 9859,
+    "thinking": 9486
+  },
+  "cost_usd": 0,
+  "createdAt": "2026-10-06T19:52:36.159Z",
+  "gitCommit": "f9f85ea20c031ffa6f4e6cfd53c717e0b17ac66c"
+}

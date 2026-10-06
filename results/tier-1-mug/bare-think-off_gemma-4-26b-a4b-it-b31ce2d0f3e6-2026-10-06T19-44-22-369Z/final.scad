@@ -1,0 +1,65 @@
+// Parameters
+outer_diameter = 80;
+height = 100;
+wall_thickness = 4;
+bottom_thickness = 6;
+handle_radius = 12;
+handle_thickness = 4;
+
+// Calculated values
+inner_diameter = outer_diameter - (wall_thickness * 2);
+inner_height = height - bottom_thickness;
+
+$fn = 100; // Smoothness
+
+difference() {
+    // Main body
+    cylinder(d = outer_diameter, h = height);
+    
+    // Hollow interior
+    translate([0, 0, bottom_thickness])
+        cylinder(d = inner_diameter, h = inner_height + 1);
+}
+
+// Handle (Ring shape)
+translate([outer_diameter / 2, 0, height / 2])
+    rotate([90, 0, 0])
+        difference() {
+            // Outer part of the ring
+            cylinder(r = handle_radius + handle_thickness, h = handle_thickness, center = true);
+            // Inner part of the ring
+            cylinder(r = handle_radius, h = handle_thickness + 2, center = true);
+        }
+
+// Connecting the handle to the cup (using a torus-like approach or simple cylinders)
+// To ensure it is a single manifold object, we use a union of the ring and connecting parts.
+// Actually, in OpenSCAD, adding a cylinder that intersects with the main body 
+// automatically merges them when using union or simply placing them.
+
+union() {
+    // Main body
+    difference() {
+        cylinder(d = outer_diameter, h = height);
+        translate([0, 0, bottom_thickness])
+            cylinder(d = inner_diameter, h = height);
+    }
+
+    // Handle
+    translate([outer_diameter / 2, 0, height / 2])
+        rotate([90, 0, 0])
+            difference() {
+                // The ring itself
+                rotate_extrude()
+                    translate([handle_radius, 0, 0])
+                        circle(r = handle_thickness);
+                
+                // This ensures the handle is actually a ring with a hole
+                // (Handled by rotate_extrude + circle logic above)
+            }
+            
+    // Note: The rotate_extrude approach above creates a ring centered at [handle_radius, 0, 0] 
+    // relative to the handle's local coordinate system. 
+    // Let's refine the handle to be a proper ring attached to the side.
+}
+
+// REFINED CODE STRUCTURE FOR CLEANER OUTPUT

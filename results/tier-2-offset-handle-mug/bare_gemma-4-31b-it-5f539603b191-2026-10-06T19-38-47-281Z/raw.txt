@@ -1,0 +1,46 @@
+```openscad
+$fn = 100;
+
+// Parameters
+outer_dia = 80;
+inner_dia = 70;
+height = 90;
+bottom_thickness = 6;
+wall_thickness = (outer_dia - inner_dia) / 2;
+
+handle_void_h = 30;
+handle_void_w = 25;
+handle_thickness = 10; // thickness of the handle "wire"
+
+union() {
+    // --- Mug Body ---
+    difference() {
+        // Outer shell
+        cylinder(h = height, d = outer_dia);
+        
+        // Inner hollow
+        translate([0, 0, bottom_thickness])
+            cylinder(h = height - bottom_thickness + 1, d = inner_dia);
+    }
+
+    // --- Handle ---
+    // Positioned at +X axis, centered vertically
+    translate([outer_dia / 2, 0, height / 2])
+    rotate([0, 90, 0]) 
+    // Scale the X-axis (which is the handle's width extension) 
+    // to achieve the specific void width while keeping height circular
+    scale([handle_void_w / (handle_void_h / 2), 1, 1])
+    difference() {
+        // Outer shape of the handle ring
+        cylinder(h = handle_thickness, r = (handle_void_h / 2) + (handle_thickness / 2), center = true);
+        
+        // Inner void of the handle ring
+        cylinder(h = handle_thickness + 2, r = handle_void_h / 2, center = true);
+        
+        // Cut off the half that would be inside the mug to create the D-shape
+        // Offset the cube to ensure a clean cut and slight overlap for manifold union
+        translate([-(handle_void_h / 2), 0, 0])
+            cube([handle_void_h, handle_void_h * 2, handle_thickness + 2], center = true);
+    }
+}
+```

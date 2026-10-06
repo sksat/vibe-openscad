@@ -1,0 +1,35 @@
+{
+  "runId": "bare_gemma-4-26b-a4b-it-e12b7ff9d274-2026-10-06T19-42-02-737Z",
+  "taskId": "tier-1-stepped-pyramid",
+  "matrixId": "bare/gemma-4-26b-a4b-it",
+  "signature": "e12b7ff9d274a35d32f7da1e63e19706dde00e9211f443d5316f7f3382cd67dd",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "f33c33343b97cdee4ab2a95d84c7f4be5791294d1e997d9c55a752a15c9a2446",
+    "harness": {
+      "kind": "bare",
+      "provider": "google",
+      "model": "gemma-4-26b-a4b-it"
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "google",
+  "model": "gemma-4-26b-a4b-it",
+  "resolvedModel": "gemma-4-26b-a4b-it",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 32266
+  },
+  "tokens": {
+    "input": 138,
+    "output": 1470,
+    "thinking": 1397
+  },
+  "cost_usd": 0,
+  "createdAt": "2026-10-06T19:42:02.737Z",
+  "gitCommit": "f9f85ea20c031ffa6f4e6cfd53c717e0b17ac66c"
+}

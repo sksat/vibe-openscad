@@ -1,0 +1,82 @@
+$fn = 64;
+
+// --- Dimensions ---
+leaf_w = 25;        // Width of the rectangular plate
+leaf_h = 30;        // Height of the leaf (along axis)
+leaf_t = 2;         // Thickness of the plate
+knuckle_od = 8;     // Outer diameter of knuckle
+knuckle_id = 4.6;   // Inner diameter (pin 4mm + 0.6mm clearance)
+knuckle_seg = 6;    // Segment height (30mm / 5)
+
+pin_d = 4;          // Pin diameter
+pin_l = 32;         // Pin total length
+
+screw_d = 3.2;      // M3 clearance hole
+screw_cs_d = 6;     // Countersink diameter
+screw_cs_h = 1;     // Countersink depth
+screw_pitch = 8;    // Y-axis pitch between holes
+
+// --- Modules ---
+
+module leaf_part(side="left") {
+    is_left = (side == "left");
+    
+    // Mirror the leaf for the left side
+    mirror([is_left ? 1 : 0, 0, 0]) {
+        difference() {
+            union() {
+                // Main Plate
+                translate([0, 0, -leaf_t/2]) 
+                    cube([leaf_w, leaf_h, leaf_t]);
+                
+                // Knuckles
+                if (is_left) {
+                    // Left leaf: Indices 0, 2, 4 (Outer and Center)
+                    for (y = [0, knuckle_seg * 2, knuckle_seg * 4]) {
+                        translate([0, y, 0]) 
+                            cylinder(d=knuckle_od, h=knuckle_seg);
+                    }
+                } else {
+                    // Right leaf: Indices 1, 3 (Intermediate)
+                    for (y = [knuckle_seg, knuckle_seg * 3]) {
+                        translate([0, y, 0]) 
+                            cylinder(d=knuckle_od, h=knuckle_seg);
+                    }
+                }
+            }
+            
+            // Pin Hole (Internal diameter for the axis)
+            translate([0, -0.1, 0]) 
+                cylinder(d=knuckle_id, h=leaf_h + 0.2);
+            
+            // Screw Holes (3 per leaf)
+            // Center X on the flat part: (knuckle_radius + leaf_width) / 2
+            hole_x = (knuckle_od/2 + leaf_w) / 2;
+            for (y = [7, 15, 23]) { // Pitched 8mm, centered in 30mm
+                // Through hole
+                translate([hole_x, y, -leaf_t/2 - 0.1]) 
+                    cylinder(d=screw_d, h=leaf_t + 0.2);
+                // Countersink (taper)
+                translate([hole_x, y, leaf_t/2 - screw_cs_h]) 
+                    cylinder(d1=screw_d, d2=screw_cs_d, h=screw_cs_h);
+            }
+        }
+    }
+}
+
+module pin_axis() {
+    // Pin length 32mm, centered along 30mm knuckle (1mm overhang each end)
+    translate([0, -1, 0]) 
+        cylinder(d=pin_d, h=pin_l);
+}
+
+// --- Assembly ---
+
+// Left Leaf (x < 0)
+leaf_part("left");
+
+// Right Leaf (x > 0)
+leaf_part("right");
+
+// Pin Axis (centered on Y axis)
+pin_axis();

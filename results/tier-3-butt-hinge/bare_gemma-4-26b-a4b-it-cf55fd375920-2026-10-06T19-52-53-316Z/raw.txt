@@ -1,0 +1,89 @@
+```openscad
+$fn = 50;
+
+// --- Constants ---
+LEAF_W = 25;
+LEAF_H = 30;
+LEAF_T = 2;
+PIN_D = 4;
+PIN_L = 32;
+KNUCKLE_OD = 8;
+KNUCKLE_ID = 4.6; // 4mm + 0.3mm clearance on both sides? 
+                  // Actually, 4 + 0.3 = 4.3. 
+                  // But the prompt says "4.6mm hole", so I'll use 4.6.
+KNUCKLE_SEG = 6;
+SCREW_D = 3.2;
+SCREW_D_TOP = 6;
+SCREW_DEPTH = 1;
+
+// --- Modules ---
+
+// Screw hole with countersink
+module screw_hole() {
+    difference() {
+        // Through hole
+        cylinder(d = SCREW_D, h = LEAF_T);
+        // Countersink (taper)
+        // Starts at d=3.2 at depth 1mm, expands to 6mm at the surface
+        translate([0, 0, LEAF_T - SCREW_DEPTH])
+            cylinder(d1 = SCREW_D, d2 = SCREW_D_TOP, h = SCREW_DEPTH);
+    }
+}
+
+// Single leaf module
+module leaf(is_left) {
+    difference() {
+        union() {
+            // The metal plate
+            if (is_left) {
+                translate([-LEAF_W, 0, 0]) cube([LEAF_W, LEAF_H, LEAF_T]);
+            } else {
+                translate([0, 0, 0]) cube([LEAF_W, LEAF_H, LEAF_T]);
+            }
+
+            // The knuckles (cylindrical parts)
+            for (i = [0:4]) {
+                // Left leaf: 0, 2, 4 (3 knuckles); Right leaf: 1, 3 (2 knuckles)
+                if ((is_left && i % 2 == 0) || (!is_left && i % 2 != 0)) {
+                    translate([0, i * KNUCKLE_SEG, - (KNUCKLE_OD - LEAF_T) / 2])
+                        cylinder(d = KNUCKLE_OD, h = KNUCKLE_SEG);
+                }
+            }
+        }
+
+        // Subtraction: Pin axis holes in the knuckles
+        for (i = [0:4]) {
+            if ((is_left && i % 2 == 0) || (!is_left && i % 2 != 0)) {
+                translate([0, i * KNUCKLE_SEG, - (KNUCKLE_OD - LEAF_T) / 2])
+                    cylinder(d = KNUCKLE_ID, h = KNUCKLE_SEG + 0.1);
+            }
+        }
+
+        // Subtraction: M3 Screw holes
+        for (j = [0:2]) {
+            y_pos = 7 + j * 8; // 8mm pitch
+            // Positioned on the far side of the knuckle
+            x_pos = is_left ? -LEAF_W + 3 : LEAF_W - 3;
+            translate([x_pos, y_pos, 0]) {
+                screw_hole();
+            }
+        }
+    }
+}
+
+// --- Final Assembly ---
+
+union() {
+    // Left Leaf
+    leaf(true);
+    
+    // Right Leaf
+    leaf(false);
+    
+    // Pin Axis
+    // Centered at X=0, Z=middle of knuckle. 
+    // Pin is 32mm, protruding 1mm from the 30mm hinge.
+    translate([0, -1, (KNUCKLE_OD - LEAF_T) / 2])
+        cylinder(d = PIN_D, h = PIN_L);
+}
+```

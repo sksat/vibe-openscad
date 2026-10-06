@@ -1,0 +1,43 @@
+$fn = 50;
+
+difference() {
+    // --- L-bracket Body ---
+    union() {
+        // Horizontal flange: 50mm (W) x 40mm (D) x 3mm (T)
+        // Positioned so inner surface is at Z=0 and outer surface is at Z=3
+        cube([50, 40, 3]);
+        
+        // Vertical flange: 50mm (W) x 3mm (T) x 40mm (H)
+        // Positioned so inner surface is at Y=0 and outer surface is at Y=-3
+        translate([0, -3, 0])
+            cube([50, 3, 40]);
+    }
+
+    // --- Countersunk Holes: Horizontal Plane (Top surface at Z=3) ---
+    // Holes are located at X=25, Y=10 and Y=30
+    for (y_pos = [10, 30]) {
+        // M4 Through-hole (Φ4.5mm)
+        translate([25, y_pos, -1])
+            cylinder(d=4.5, h=5);
+        
+        // Countersink (Φ8mm, depth 2mm) 
+        // d1 is the base diameter (at the outer surface Z=3), d2 is the top diameter
+        translate([25, y_pos, 3])
+            cylinder(d1=8, d2=4.5, h=2);
+    }
+
+    // --- Countersunk Holes: Vertical Plane (Back surface at Y=-3) ---
+    // Holes are located at X=25, Z=10 and Z=30
+    for (z_pos = [10, 30]) {
+        // M4 Through-hole (Φ4.5mm)
+        translate([25, -4, z_pos])
+            rotate([0, 90, 0])
+            cylinder(d=4.5, h=5);
+            
+        // Countersink (Φ8mm, depth 2mm)
+        // Rotated to face the outer surface Y=-3
+        translate([25, -3, z_pos])
+            rotate([0, 90, 0])
+            cylinder(d1=8, d2=4.5, h=2);
+    }
+}

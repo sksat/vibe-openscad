@@ -1,0 +1,41 @@
+{
+  "runId": "bare-think-off_gemma-4-26b-a4b-it-72c299f405fc-2026-10-06T19-43-58-492Z",
+  "taskId": "tier-1-cube-with-hole",
+  "matrixId": "bare-think-off/gemma-4-26b-a4b-it",
+  "signature": "72c299f405fca97ed85a1b1dcf5d5238e2abebee9ca4aef8f455b711d65046a4",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "8ff7e36af4bc202429ec68b7eb9cc3f195b6a3c68668be31239bcea23345a048",
+    "harness": {
+      "kind": "bare",
+      "provider": "google",
+      "model": "gemma-4-26b-a4b-it",
+      "modelOptions": {
+        "config": {
+          "thinkingConfig": {
+            "thinkingLevel": "minimal"
+          }
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "google",
+  "model": "gemma-4-26b-a4b-it",
+  "resolvedModel": "gemma-4-26b-a4b-it",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 3251
+  },
+  "tokens": {
+    "input": 68,
+    "output": 107
+  },
+  "cost_usd": 0,
+  "createdAt": "2026-10-06T19:43:58.492Z",
+  "gitCommit": "f9f85ea20c031ffa6f4e6cfd53c717e0b17ac66c"
+}

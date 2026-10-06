@@ -1,0 +1,11 @@
+// 1段目: 底辺 60mm x 60mm x 高さ 10mm
+translate([0, 0, 0])
+    cube([60, 60, 10], center = true);
+
+// 2段目: 底辺 40mm x 40mm x 高さ 10mm (上に載せる)
+translate([0, 0, 10])
+    cube([40, 40, 10], center = true);
+
+// 3段目: 底辺 20mm x 20mm x 高さ 10mm (さらに上に載せる)
+translate([0, 0, 20])
+    cube([20, 20, 10], center = true);

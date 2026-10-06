@@ -1,0 +1,59 @@
+```openscad
+// Parameters
+width = 50;
+depth = 40;
+height = 40;
+thickness = 3;
+
+hole_dia = 4.5;
+countersink_dia = 8;
+countersink_depth = 2;
+hole_margin = 10;
+
+// L-Bracket Body
+union() {
+    // Horizontal flange (XY plane, extending +Y)
+    cube([width, depth, thickness]);
+    
+    // Vertical flange (XZ plane, extending +Z)
+    cube([width, thickness, height]);
+}
+
+// Module for a countersunk hole
+module countersunk_hole() {
+    union() {
+        // Through hole
+        cylinder(d = hole_dia, h = thickness + 2, center = false);
+        // Countersink (cone)
+        translate([0, 0, thickness])
+            cylinder(d1 = hole_dia, d2 = countersink_dia, h = countersink_depth);
+    }
+}
+
+// Subtract holes
+difference() {
+    // The body is already defined above, but for difference we need to group it
+    union() {
+        cube([width, depth, thickness]);
+        cube([width, thickness, height]);
+    }
+
+    // Holes on Horizontal surface (Top side, looking down -Z)
+    // Since the body is 0 to thickness, the countersink must be at the top.
+    // To flip the countersink to the top, we rotate the hole module.
+    for (x = [hole_margin, width - hole_margin]) {
+        translate([x, depth / 2, thickness])
+            rotate([180, 0, 0])
+                countersunk_hole();
+    }
+
+    // Holes on Vertical surface (Front side, looking -Y)
+    // The vertical face is at Y=0 to thickness. 
+    // The countersink must be at Y=0 (outer side).
+    for (x = [hole_margin, width - hole_margin]) {
+        translate([x, 0, height / 2])
+            rotate([0, -90, 0])
+                countersunk_hole();
+    }
+}
+```

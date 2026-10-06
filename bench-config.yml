@@ -353,6 +353,31 @@ matrix:
     modelOptions:
       config: { thinkingConfig: { thinkingBudget: 0 } }
 
+  # --- Gemma 4(Gemini API 経由) ---
+  # セルフホストの `google/gemma-4-*` と区別するため matrix id にも `-it` まで
+  # 含めた API の id をそのまま使う。thinking は thinkingLevel の
+  # 'high' / 'minimal' の 2 値で、think-off は 'minimal'。
+  - id: bare/gemma-4-31b-it
+    harness: { kind: bare }
+    provider: google
+    model: gemma-4-31b-it
+  - id: bare-think-off/gemma-4-31b-it
+    harness: { kind: bare }
+    provider: google
+    model: gemma-4-31b-it
+    modelOptions:
+      config: { thinkingConfig: { thinkingLevel: minimal } }
+  - id: bare/gemma-4-26b-a4b-it
+    harness: { kind: bare }
+    provider: google
+    model: gemma-4-26b-a4b-it
+  - id: bare-think-off/gemma-4-26b-a4b-it
+    harness: { kind: bare }
+    provider: google
+    model: gemma-4-26b-a4b-it
+    modelOptions:
+      config: { thinkingConfig: { thinkingLevel: minimal } }
+
   # --- OpenAI ---
   # `pnpm --filter runners run list-openai-models` で確認した、API key で
   # 実際に見えるモデル。ただし "*-pro" 系は組織認証(verified org)が必要で
@@ -828,6 +853,14 @@ matrix:
     harness: { kind: pdf-page }
     provider: google
     model: gemini-3-flash-preview
+  - id: pdf-page/gemma-4-31b-it
+    harness: { kind: pdf-page }
+    provider: google
+    model: gemma-4-31b-it
+  - id: pdf-page/gemma-4-26b-a4b-it
+    harness: { kind: pdf-page }
+    provider: google
+    model: gemma-4-26b-a4b-it
 
   # --- セルフホスト OpenAI 互換 endpoint (LM Studio / Ollama / vLLM 等) ---
   # OPENAI_SELF_HOSTED_BASE_URL=.../v1 で接続先指定。VRAM 制約で並走できない

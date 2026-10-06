@@ -1,0 +1,32 @@
+$fn = 100;
+
+union() {
+    // --- 本体 (Mug Body) ---
+    difference() {
+        // 外径 80mm (半径 40mm) の円筒
+        cylinder(h = 90, r = 40);
+        
+        // 内径 70mm (半径 35mm) の中空部分
+        // 底面の厚み 6mm を確保するため z=6 から開始
+        translate([0, 0, 6])
+            cylinder(h = 85, r = 35);
+    }
+
+    // --- 取手 (Handle) ---
+    // マグの +X 軸方向、高さ中央 (45mm) に配置
+    translate([40, 0, 45])
+    // 断面の厚み（Y軸方向）を 10mm とし、中央に配置
+    linear_extrude(height = 10, center = true)
+    difference() {
+        // 外側が半円の形状を作成
+        intersection() {
+            circle(r = 35);
+            // 半円にするため、x > 0 の領域のみを残す
+            translate([0, -35]) square([35, 70]);
+        }
+        
+        // 内側の空間 (高さ 30mm × 幅 25mm) を切り抜く
+        // 本体側 (x=0) から内側へ 25mm、高さ中央から上下に 15mm
+        translate([0, -15]) square([25, 30]);
+    }
+}

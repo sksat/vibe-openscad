@@ -290,6 +290,33 @@ gemini-2.5-flash:
   rate: { in: 0.3, out: 2.5 }
   thinking: dynamic
 
+# Gemini API 上の Gemma 4(open weights を Google がホスト)。
+# 価格ページでは Free Tier のみ "Free of charge"、Paid Tier は "Not available"
+# (2026-10-07 時点)。課金が発生しないので rate は 0 で宣言する。
+# thinking は thinkingConfig.thinkingLevel の 'high'(on)/ 'minimal'(off)の
+# 2 値で切り替える。models.get は thinking: true。
+# id に `google/` が付かないので、セルフホスト(LM Studio)の `google/gemma-4-`
+# とは prefix が一致しない。命名規則が Gemini と違うので label / sort を宣言する。
+gemma-4-:
+  provider: google
+  rate: { in: 0, out: 0 }
+  vision: true
+  effort: null
+  thinking: dynamic
+
+# Models API: version "001"、inputTokenLimit 262144 / outputTokenLimit 32768
+gemma-4-31b-it:
+  provider: google
+  snapshot: "001"
+  label: gemma 4 31b
+  sort: { family: 3, version: 4000, size: 0 }
+
+gemma-4-26b-a4b-it:
+  provider: google
+  snapshot: "001"
+  label: gemma 4 26b a4b
+  sort: { family: 3, version: 4000, size: 1 }
+
 # 1.5 系(legacy、thinking 軸なし)
 gemini-1.5-pro:
   provider: google
