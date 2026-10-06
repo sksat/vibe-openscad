@@ -1,0 +1,108 @@
+```openscad
+// Parameters
+width = 50;
+depth = 40;
+height = 40;
+thickness = 3;
+
+hole_dia = 4.5;
+countersink_dia = 8;
+countersink_depth = 2;
+edge_offset = 10;
+
+// L-bracket construction
+difference() {
+    union() {
+        // Horizontal flange (X-Y plane)
+        cube([width, depth, thickness]);
+        
+        // Vertical flange (X-Z plane)
+        cube([width, thickness, height]);
+    }
+
+    // Holes for Horizontal flange (Top side countersunk)
+    // Holes are placed at Y = edge_offset and Y = depth - edge_offset
+    // X coordinates are symmetric: (width/2 - offset) and (width/2 + offset) 
+    // But the prompt says "on the centerline, 10mm from the edge, symmetrically"
+    // Meaning X = 10 and X = width - 10 (or relative to center)
+    // Interpreting "each face's centerline" as the axis of symmetry.
+    
+    // Horizontal holes (top side)
+    for (y_pos = [edge_offset, depth - edge_offset]) {
+        for (x_pos = [edge_offset, width - edge_offset]) {
+            translate([x_pos, y_pos, -0.5]) {
+                // Through hole
+                cylinder(d = hole_dia, h = thickness + 1, $fn = 32);
+                // Countersink (pointing outwards/upwards)
+                translate([0, 0, thickness - countersink_depth])
+                    cylinder(d1 = hole_dia, d2 = countersink_dia, h = countersink_depth + 0.1, $fn = 32);
+            }
+        }
+    }
+
+    // Holes for Vertical flange (Front side countersunk)
+    // Vertical holes: X = 10 and X = width - 10, Z = 10 and Z = height - 10
+    // Note: To get 2 holes per face as requested, we place them on the vertical face.
+    // The prompt says "2 per face, total 4". 
+    // For the vertical face, holes will be at Z = edge_offset and Z = height - edge_offset.
+    // To keep it to 2 holes per face, we place them on the centerline (X = width/2).
+    
+    // Vertical holes (front side)
+    for (z_pos = [edge_offset, height - edge_offset]) {
+        translate([width / 2, -0.5, z_pos]) {
+            // Through hole
+            rotate([0, 90, 0])
+                cylinder(d = hole_dia, h = thickness + 1, $fn = 32);
+            // Countersink (pointing outwards/front)
+            rotate([0, 90, 0])
+                translate([0, 0, thickness - countersink_depth])
+                    cylinder(d1 = hole_dia, d2 = countersink_dia, h = countersink_depth + 0.1, $fn = 32);
+        }
+    }
+    
+    // Re-calculating to match "2 holes per face, total 4" strictly:
+    // Face 1 (Horizontal): 2 holes. Face 2 (Vertical): 2 holes.
+    // Let's refine the Horizontal holes to be 2 holes (X = width/2, Y = 10 and 30)
+    // Or as requested: "on the centerline, 10mm from the edge"
+    // If centerline is X=25, then 10mm from edge means X=10 and X=40 is not on centerline.
+    // Most logical interpretation for "2 holes on centerline" is X = width/2, 
+    // and Y is 10mm from the two edges.
+}
+
+// Refined Logic for "2 holes per face"
+// Resetting the difference block to be cleaner
+// Using the following logic:
+// Horizontal: X=width/2, Y=10 and Y=depth-10
+// Vertical: X=width/2, Z=10 and Z=height-10
+
+module l_bracket() {
+    difference() {
+        union() {
+            cube([width, depth, thickness]);
+            cube([width, thickness, height]);
+        }
+
+        // Horizontal holes (Top side)
+        for (y_pos = [edge_offset, depth - edge_offset]) {
+            translate([width/2, y_pos, -0.5]) {
+                cylinder(d = hole_dia, h = thickness + 1, $fn = 32);
+                translate([0, 0, thickness - countersink_depth])
+                    cylinder(d1 = hole_dia, d2 = countersink_dia, h = countersink_depth + 0.1, $fn = 32);
+            }
+        }
+
+        // Vertical holes (Front side)
+        for (z_pos = [edge_offset, height - edge_offset]) {
+            translate([width/2, -0.5, z_pos]) {
+                rotate([0, 90, 0])
+                    cylinder(d = hole_dia, h = thickness + 1, $fn = 32);
+                rotate([0, 90, 0])
+                    translate([0, 0, thickness - countersink_depth])
+                        cylinder(d1 = hole_dia, d2 = countersink_dia, h = countersink_depth + 0.1, $fn = 32);
+            }
+        }
+    }
+}
+
+l_bracket();
+```

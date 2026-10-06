@@ -1,0 +1,24 @@
+$fn = 100;
+
+// Parameters
+outer_dia = 80;
+height = 100;
+wall_thickness = 4;
+bottom_thickness = 6;
+handle_radius = 12;
+
+difference() {
+    // Main Body
+    cylinder(d = outer_dia, h = height);
+    
+    // Inner Hollow
+    translate([0, 0, bottom_thickness])
+        cylinder(d = outer_dia - wall_thickness * 2, h = height);
+}
+
+// Handle
+translate([outer_dia/2, 0, height/2])
+    rotate([0, 90, 0])
+        rotate_extrude(convexity = 10)
+            translate([handle_radius, 0, 0])
+                circle(d = wall_thickness * 2);

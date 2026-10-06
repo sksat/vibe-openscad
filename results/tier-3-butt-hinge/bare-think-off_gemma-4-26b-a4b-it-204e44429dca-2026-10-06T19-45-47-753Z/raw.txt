@@ -1,0 +1,105 @@
+```openscad
+// Parameters
+leaf_w = 25;
+leaf_h = 30;
+leaf_t = 2;
+
+pin_d = 4;
+pin_l = 32;
+clearance = 0.3;
+knuckle_outer_d = 8;
+knuckle_inner_d = pin_d + clearance;
+
+knuckle_count = 5;
+knuckle_h = leaf_h / knuckle_count;
+
+screw_hole_d = 3.2;
+screw_head_d = 6;
+screw_head_depth = 1;
+screw_pitch = 8;
+
+// Set overall view
+$fn = 64;
+
+// Main assembly - 180 degrees open
+module assembly() {
+    // Pin axis
+    translate([0, 0, 0])
+        cylinder(d = pin_d, h = pin_l);
+    
+    // Left leaf (x < 0)
+    translate([0, 0, 0])
+        left_leaf();
+        
+    // Right leaf (x > 0)
+    translate([0, 0, 0])
+        right_leaf();
+}
+
+module left_leaf() {
+    difference() {
+        union() {
+            // Plate
+            translate([-leaf_w, 0, -leaf_t/2])
+                cube([leaf_w, leaf_h, leaf_t]);
+            
+            // Knuckles (3 pieces: index 0, 2, 4)
+            for (i = [0, 2, 4]) {
+                translate([0, i * knuckle_h + knuckle_h/2, 0])
+                    cylinder(d = knuckle_outer_d, h = knuckle_h);
+            }
+        }
+        
+        // Pin hole (inner clearance)
+        translate([0, -1, 0])
+            cylinder(d = knuckle_inner_d, h = leaf_h + 2);
+            
+        // Screw holes (3 pieces)
+        for (i = [1, 2, 3]) {
+            translate([-leaf_w + 4, i * screw_pitch, 0]) {
+                // Countersink
+                translate([0, 0, -leaf_t/2])
+                    cylinder(d1 = screw_head_d, d2 = screw_hole_d, h = screw_head_depth + 0.1);
+                // Through hole
+                translate([0, 0, -leaf_t/2])
+                    cylinder(d = screw_hole_d, h = leaf_t + 0.2);
+            }
+        }
+    }
+}
+
+module right_leaf() {
+    difference() {
+        union() {
+            // Plate
+            translate([0, 0, -leaf_t/2])
+                cube([leaf_w, leaf_h, leaf_t]);
+            
+            // Knuckles (2 pieces: index 1, 3)
+            for (i = [1, 3]) {
+                translate([0, i * knuckle_h + knuckle_h/2, 0])
+                    cylinder(d = knuckle_outer_d, h = knuckle_h);
+            }
+        }
+        
+        // Pin hole (inner clearance)
+        translate([0, -1, 0])
+            cylinder(d = knuckle_inner_d, h = leaf_h + 2);
+            
+        // Screw holes (3 pieces)
+        for (i = [1, 2, 3]) {
+            translate([4, i * screw_pitch, 0]) {
+                // Countersink
+                translate([0, 0, -leaf_t/2])
+                    cylinder(d1 = screw_head_d, d2 = screw_hole_d, h = screw_head_depth + 0.1);
+                // Through hole
+                translate([0, 0, -leaf_t/2])
+                    cylinder(d = screw_hole_d, h = leaf_t + 0.2);
+            }
+        }
+    }
+}
+
+// Execute
+assembly();
+```

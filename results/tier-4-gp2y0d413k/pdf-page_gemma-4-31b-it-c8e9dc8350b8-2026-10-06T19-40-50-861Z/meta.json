@@ -1,0 +1,39 @@
+{
+  "runId": "pdf-page_gemma-4-31b-it-c8e9dc8350b8-2026-10-06T19-40-50-861Z",
+  "taskId": "tier-4-gp2y0d413k",
+  "matrixId": "pdf-page/gemma-4-31b-it",
+  "signature": "c8e9dc8350b8e9483ce1e0ed84ee20a8f44b79caf49810d6ca4361aea6143db7",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "8b7a5431f4cfca3c35d8146fcd061fcd5780603812e70e08416222d75b3025e4",
+    "harness": {
+      "kind": "pdf-page",
+      "provider": "google",
+      "model": "gemma-4-31b-it"
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "google",
+  "model": "gemma-4-31b-it",
+  "resolvedModel": "gemma-4-31b-it",
+  "harness": {
+    "kind": "pdf-page",
+    "pdfUrl": "https://jp.sharp/products/device/doc/opto/gp2y0d413k_e.pdf",
+    "pages": [
+      2
+    ]
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 123295
+  },
+  "tokens": {
+    "input": 349,
+    "output": 4297,
+    "thinking": 3291
+  },
+  "cost_usd": 0,
+  "createdAt": "2026-10-06T19:40:50.861Z",
+  "gitCommit": "f9f85ea20c031ffa6f4e6cfd53c717e0b17ac66c"
+}

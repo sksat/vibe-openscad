@@ -1,0 +1,79 @@
+提供されたデータシートに基づき、OpenSCADでモデリングしたコードを作成しました。
+
+座標系は指示通り、本体の中心を原点とし、取付面（PWB側）を $-Z$ 方向に配置しています。
+
+```openscad
+// Sharp GP2Y0A21YK0F Distance Sensor Model
+// Units: mm
+
+// --- Parameters ---
+body_width = 29.5;
+total_width = 37.0;
+body_depth = 13.0; // Estimated from side view
+total_height = 13.5;
+pwb_thickness = 1.2;
+hole_dist = 20.0;
+hole_dia = 3.2;
+lens_case_width = 6.3;
+lens_dist = 12.0; // Estimated distance between lens centers
+connector_width = 10.1;
+
+// Coordinate adjustment: Center of the body is origin
+// Z-axis: PWB surface is at -total_height/2
+z_offset = total_height / 2;
+
+module gp2y0a21yk0f() {
+    difference() {
+        union() {
+            // Main Body Case
+            translate([0, 0, z_offset - (total_height - pwb_thickness)/2])
+                cube([body_width, body_depth, total_height - pwb_thickness], center=true);
+            
+            // Mounting Ears (Tabs)
+            translate([-(total_width/2 - (total_width-body_width)/4), 0, z_offset - (total_height - pwb_thickness)/2])
+                cube([(total_width - body_width)/2, body_depth, total_height - pwb_thickness], center=true);
+            
+            translate([(total_width/2 - (total_width-body_width)/4), 0, z_offset - (total_height - pwb_thickness)/2])
+                cube([(total_width - body_width)/2, body_depth, total_height - pwb_thickness], center=true);
+            
+            // PWB (Base Plate)
+            translate([0, 0, -z_offset + pwb_thickness/2])
+                cube([total_width, body_depth, pwb_thickness], center=true);
+                
+            // Lens Cases (Protrusions at the front)
+            // Based on top view, lenses are placed symmetrically
+            translate([lens_dist/2, body_depth/2 - 3.15, z_offset - (total_height - pwb_thickness)/2 + 2])
+                cube([lens_case_width, 6.3, 8.0], center=true);
+                
+            translate([-lens_dist/2, body_depth/2 - 3.15, z_offset - (total_height - pwb_thickness)/2 + 2])
+                cube([lens_case_width, 6.3, 8.0], center=true);
+            
+            // Connector (simplified)
+            translate([0, -body_depth/2, -z_offset - 1.0])
+                cube([connector_width, 4.0, 2.0], center=true);
+        }
+        
+        // Mounting Holes
+        translate([hole_dist/2, 0, 0])
+            rotate([90, 0, 0])
+                cylinder(d=hole_dia, h=total_width, center=true, $fn=20);
+                
+        translate([-hole_dist/2, 0, 0])
+            rotate([90, 0, 0])
+                cylinder(d=hole_dia, h=total_width, center=true, $fn=20);
+    }
+}
+
+// Execute modeling
+gp2y0a21yk0f();
+
+// Reference markers (optional, for verification)
+%translate([0,0,-z_offset]) cube([total_width, body_depth, 0.1], center=true); // Mounting Plane
+```
+
+### モデリングのポイント:
+1.  **座標系**: 指示通り、全体の中心を原点 $(0,0,0)$ とし、PWB（基板）面が $-Z$ 方向に位置するように `z_offset` で調整しています。
+2.  **本体形状**: データシートの「Outline Dimensions」に基づき、本体幅 $29.5\text{mm}$ と取付耳を含めた全幅 $37\text{mm}$ を再現しました。
+3.  **取付穴**: 中心間距離 $20\text{mm}$、直径 $3.2\text{mm}$ の穴を `difference()` を用いて開けています。
+4.  **レンズ部**: 正面（$+Y$方向）に突き出たレンズケースを配置しています。データシートに詳細なレンズ間距離の数値記載が少ないため、図面比率から推定値（$12\text{mm}$）を適用しています。
+5.  **コネクタ部**: 基板面から下方向（$-Z$）に突き出す形状として簡略化して配置しました。

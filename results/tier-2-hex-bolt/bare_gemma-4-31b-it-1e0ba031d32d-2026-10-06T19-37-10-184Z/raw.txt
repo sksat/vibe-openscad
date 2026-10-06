@@ -1,0 +1,12 @@
+```openscad
+// M8 Hex Bolt (Simplified)
+
+// Head: Hexagonal prism
+// Across-flats (S) = 13mm. 
+// The circumradius (r) for a hexagon is S / sqrt(3).
+cylinder(h = 5.3, r = 13 / sqrt(3), $fn = 6);
+
+// Shank: Circular cylinder
+// Diameter = 8mm (r = 4mm), Length = 30mm
+cylinder(h = -30, r = 4, $fn = 64);
+```

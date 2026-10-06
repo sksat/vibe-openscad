@@ -1,0 +1,13 @@
+```openscad
+// パラメータ設定
+cube_size = 50;
+hole_diameter = 20;
+
+difference() {
+    // 50mm角の立方体
+    cube(cube_size, center = true);
+    
+    // z軸方向に貫通する直径20mmの円柱
+    cylinder(h = cube_size + 2, d = hole_diameter, center = true, $fn = 100);
+}
+```

@@ -1,0 +1,41 @@
+{
+  "runId": "bare-think-off_gemma-4-31b-it-49badf9682e6-2026-10-06T19-38-24-436Z",
+  "taskId": "tier-2-l-bracket",
+  "matrixId": "bare-think-off/gemma-4-31b-it",
+  "signature": "49badf9682e6bbca2306ac177a505c96694b7fad2d99d43174789a865b6d8264",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "taskHash": "b20dcf3dd07e532496944d76485b954e0ab614f3cda1919fee5dc406f59b3ea5",
+    "harness": {
+      "kind": "bare",
+      "provider": "google",
+      "model": "gemma-4-31b-it",
+      "modelOptions": {
+        "config": {
+          "thinkingConfig": {
+            "thinkingLevel": "minimal"
+          }
+        }
+      }
+    },
+    "openscadVersion": "OpenSCAD version 2026.09.23",
+    "promptTemplateHash": "3bfc269594ef649228e9a74bab00f042efc91d5acc6fbee31a382e80d42388fe"
+  },
+  "provider": "google",
+  "model": "gemma-4-31b-it",
+  "resolvedModel": "gemma-4-31b-it",
+  "harness": {
+    "kind": "bare"
+  },
+  "status": "success",
+  "timing": {
+    "totalMs": 14731
+  },
+  "tokens": {
+    "input": 252,
+    "output": 496
+  },
+  "cost_usd": 0,
+  "createdAt": "2026-10-06T19:38:24.436Z",
+  "gitCommit": "f9f85ea20c031ffa6f4e6cfd53c717e0b17ac66c"
+}
